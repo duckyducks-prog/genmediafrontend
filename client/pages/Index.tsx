@@ -375,6 +375,10 @@ export default function Index() {
                 </div>
               )}
             </TabsContent>
+
+            <TabsContent value="workflow" className="h-[calc(100vh-200px)]">
+              <WorkflowCanvas />
+            </TabsContent>
           </Tabs>
         </div>
       </div>
