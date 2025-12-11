@@ -4,6 +4,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Download, Loader2, Image as ImageIcon, Video as VideoIcon, Upload, X, Home, Workflow as WorkflowIcon } from "lucide-react";
 import WorkflowCanvas from "@/components/workflow/WorkflowCanvas";
+import NodePalette from "@/components/workflow/NodePalette";
+import { NodeType } from "@/components/workflow/types";
 
 export default function Index() {
   const [currentTab, setCurrentTab] = useState("image");
@@ -381,6 +383,12 @@ export default function Index() {
             </TabsContent>
           </Tabs>
         </div>
+
+        {currentTab === 'workflow' && (
+          <aside className="w-64 border-l border-border hidden lg:block">
+            <NodePalette onAddNode={(type: NodeType) => {}} />
+          </aside>
+        )}
       </div>
     </div>
   );
