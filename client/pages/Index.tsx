@@ -52,25 +52,42 @@ export default function Index() {
     }
   };
 
-  const handleGenerateImage = async () => {
-    if (!imagePrompt.trim()) return;
+  const handleGenerateVideo = async () => {
+    if (!videoPrompt.trim()) return;
 
-    setIsGeneratingImage(true);
+    setIsGeneratingVideo(true);
     try {
-      const response = await fetch('https://veo-api-82187245577.us-central1.run.app/generate/image', {
+      // Start video generation
+      const response = await fetch('https://veo-api-82187245577.us-central1.run.app/generate/video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: imagePrompt }),
+        body: JSON.stringify({ prompt: videoPrompt }),
       });
 
       const data = await response.json();
-      if (data.images && data.images[0]) {
-        setImageResult(`data:image/png;base64,${data.images[0]}`);
+      const operationName = data.operation_name;
+
+      // Poll for completion
+      let complete = false;
+      while (!complete) {
+        await new Promise(resolve => setTimeout(resolve, 10000)); // Wait 10 seconds
+
+        const statusResponse = await fetch(
+          `https://veo-api-82187245577.us-central1.run.app/video/status/${encodeURIComponent(operationName)}`
+        );
+        const statusData = await statusResponse.json();
+
+        if (statusData.status === 'complete') {
+          complete = true;
+          if (statusData.video_base64) {
+            setVideoResult(`data:video/mp4;base64,${statusData.video_base64}`);
+          }
+        }
       }
     } catch (error) {
-      console.error('Error generating image:', error);
+      console.error('Error generating video:', error);
     } finally {
-      setIsGeneratingImage(false);
+      setIsGeneratingVideo(false);
     }
   };
 
