@@ -190,6 +190,12 @@ export function useWorkflowExecution(
               const extension = isVideo ? 'mp4' : 'png';
               const fileName = `generated-${isVideo ? 'video' : 'image'}-${Date.now()}.${extension}`;
 
+              // Notify user about download attempt
+              toast({
+                title: "Download Started",
+                description: `Downloading ${fileName}. If blocked by browser, use the download button on the output node.`,
+              });
+
               // For base64 data URIs, download directly
               if (mediaUrl.startsWith('data:')) {
                 const link = document.createElement('a');
@@ -211,6 +217,11 @@ export function useWorkflowExecution(
               }
             } catch (error) {
               console.error('Download failed:', error);
+              toast({
+                title: "Download Failed",
+                description: "Opening file in new tab instead. You can save it manually.",
+                variant: "destructive",
+              });
               // Fallback: open URL in new tab
               window.open(mediaUrl, '_blank');
             }

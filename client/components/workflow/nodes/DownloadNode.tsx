@@ -51,9 +51,14 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
           )}
         </div>
 
-        <div className="flex items-center gap-2 p-2 bg-background/50 rounded border border-border">
-          <Download className="w-4 h-4 text-primary" />
-          <span className="text-xs">Auto-download on run</span>
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 p-2 bg-background/50 rounded border border-border">
+            <Download className="w-4 h-4 text-primary" />
+            <span className="text-xs">Auto-download on run</span>
+          </div>
+          <p className="text-[10px] text-muted-foreground leading-tight px-1">
+            Note: Browser may block auto-download. Use output node's download button if needed.
+          </p>
         </div>
       </div>
     </div>
