@@ -142,7 +142,7 @@ export default function Index() {
         </div>
       </header>
 
-      <div className="flex flex-1 gap-6">
+      <div className="flex flex-1 gap-0">
         <aside className="w-20 border-r border-border px-3 py-8 hidden lg:flex flex-col gap-4 items-center">
           <NavLink icon={<Home className="w-5 h-5" />} label="Home" value="home" />
           <NavLink icon={<ImageIcon className="w-5 h-5" />} label="Image" value="image" />
@@ -150,7 +150,13 @@ export default function Index() {
           <NavLink icon={<WorkflowIcon className="w-5 h-5" />} label="Workflow" value="workflow" />
         </aside>
 
-        <div className="flex-1 container mx-auto px-4 py-8 max-w-4xl">
+        {currentTab === 'workflow' && (
+          <aside className="w-64 border-r border-border hidden lg:block">
+            <NodePalette onAddNode={(type: NodeType) => {}} />
+          </aside>
+        )}
+
+        <div className={`flex-1 container mx-auto px-4 py-8 ${currentTab === 'workflow' ? 'max-w-none' : 'max-w-4xl'}`}>
           <Tabs value={currentTab} className="w-full">
             <TabsContent value="image" className="space-y-6">
               <div className="bg-card border border-border rounded-lg p-6 shadow-sm space-y-4">
@@ -383,12 +389,6 @@ export default function Index() {
             </TabsContent>
           </Tabs>
         </div>
-
-        {currentTab === 'workflow' && (
-          <aside className="w-64 border-l border-border hidden lg:block">
-            <NodePalette onAddNode={(type: NodeType) => {}} />
-          </aside>
-        )}
       </div>
     </div>
   );
