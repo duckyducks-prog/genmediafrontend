@@ -106,17 +106,56 @@ export default function Index() {
           </TabsList>
 
           <TabsContent value="image" className="space-y-6">
-            <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
-              <label htmlFor="image-prompt" className="block text-sm font-medium mb-2">
-                Describe your image
-              </label>
-              <Textarea
-                id="image-prompt"
-                placeholder="A serene mountain landscape at sunset with vibrant colors..."
-                value={imagePrompt}
-                onChange={(e) => setImagePrompt(e.target.value)}
-                className="mb-4 min-h-[100px]"
-              />
+            <div className="bg-card border border-border rounded-lg p-6 shadow-sm space-y-4">
+              <div>
+                <label htmlFor="image-prompt" className="block text-sm font-medium mb-2">
+                  Describe your image
+                </label>
+                <Textarea
+                  id="image-prompt"
+                  placeholder="A serene mountain landscape at sunset with vibrant colors..."
+                  value={imagePrompt}
+                  onChange={(e) => setImagePrompt(e.target.value)}
+                  className="min-h-[100px]"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="reference-image" className="block text-sm font-medium mb-2">
+                  Reference Image (Optional)
+                </label>
+                {referenceImage ? (
+                  <div className="relative rounded-lg overflow-hidden border border-border bg-muted">
+                    <img src={referenceImage} alt="Reference" className="w-full h-48 object-cover" />
+                    <Button
+                      onClick={() => setReferenceImage(null)}
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <label
+                    htmlFor="reference-image"
+                    className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-border rounded-lg cursor-pointer bg-muted/30 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex flex-col items-center justify-center py-6">
+                      <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">Click to upload reference image</p>
+                    </div>
+                    <input
+                      id="reference-image"
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleReferenceImageUpload}
+                    />
+                  </label>
+                )}
+              </div>
+
               <Button
                 onClick={handleGenerateImage}
                 disabled={!imagePrompt.trim() || isGeneratingImage}
