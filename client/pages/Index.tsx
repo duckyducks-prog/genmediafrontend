@@ -378,12 +378,6 @@ export default function Index() {
             </TabsContent>
           </Tabs>
         </div>
-
-        <aside className="w-48 border-l border-border px-4 py-8 hidden lg:flex flex-col gap-4">
-          <NavLink icon={<Home className="w-4 h-4" />} label="Home" value="home" />
-          <NavLink icon={<ImageIcon className="w-4 h-4" />} label="Image" value="image" />
-          <NavLink icon={<VideoIcon className="w-4 h-4" />} label="Video" value="video" />
-        </aside>
       </div>
     </div>
   );
