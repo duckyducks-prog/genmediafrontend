@@ -113,9 +113,11 @@ export default function Index() {
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         <header className="text-center mb-12">
           <div className="inline-flex items-center gap-2 mb-4">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Sparkles className="w-6 h-6 text-primary-foreground" />
-            </div>
+            <img
+              src="https://cdn.builder.io/api/v1/image/assets%2Fb1d3bf7cc0eb4f0daca65fdc5a7d5179%2F30fc0e70b75040f4858161ac143ab00c?format=webp&width=800"
+              alt="Sprocket"
+              className="w-10 h-10"
+            />
             <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               HubSpot Gen Media Studio
             </h1>
