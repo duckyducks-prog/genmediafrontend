@@ -1,13 +1,15 @@
 import { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
+import { Button } from '@/components/ui/button';
 import { GenerateVideoNodeData } from '../types';
-import { Sparkles, Loader2, Video as VideoIcon, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Sparkles, Loader2, Video as VideoIcon, CheckCircle2, AlertCircle, Download } from 'lucide-react';
 
 function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
   const status = data.status || 'ready';
   const isGenerating = status === 'executing';
   const isCompleted = status === 'completed';
   const isError = status === 'error';
+  const videoUrl = (data as any).videoUrl;
 
   const getBorderColor = () => {
     if (isGenerating) return 'border-yellow-500';
@@ -21,6 +23,43 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
     if (isCompleted) return 'Completed';
     if (isError) return data.error || 'Error';
     return 'Ready';
+  };
+
+  const handleDownload = async () => {
+    if (!videoUrl) return;
+
+    try {
+      // For base64 data URIs, download directly
+      if (videoUrl.startsWith('data:')) {
+        const link = document.createElement('a');
+        link.href = videoUrl;
+        link.download = `generated-video-${Date.now()}.mp4`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        return;
+      }
+
+      // For external URLs, try to fetch with CORS mode
+      try {
+        const response = await fetch(videoUrl, { mode: 'cors' });
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `generated-video-${Date.now()}.mp4`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } catch (fetchError) {
+        // Fallback: open in new tab if CORS fails
+        window.open(videoUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Download failed:', error);
+      window.open(videoUrl, '_blank');
+    }
   };
 
   return (
@@ -75,6 +114,18 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
             <div className="font-medium mb-1">Prompt:</div>
             <div className="line-clamp-2">{data.promptInput}</div>
           </div>
+        )}
+
+        {isCompleted && videoUrl && (
+          <Button
+            onClick={handleDownload}
+            variant="outline"
+            size="sm"
+            className="w-full"
+          >
+            <Download className="w-3 h-3 mr-1" />
+            Download
+          </Button>
         )}
       </div>
 
