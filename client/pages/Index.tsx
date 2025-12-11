@@ -263,6 +263,42 @@ export default function Index() {
                 )}
               </div>
 
+              <div>
+                <label htmlFor="last-frame" className="block text-sm font-medium mb-2">
+                  Last Frame (Optional)
+                </label>
+                {lastFrame ? (
+                  <div className="relative rounded-lg overflow-hidden border border-border bg-muted">
+                    <img src={lastFrame} alt="Last Frame" className="w-full h-48 object-cover" />
+                    <Button
+                      onClick={() => setLastFrame(null)}
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <label
+                    htmlFor="last-frame"
+                    className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-border rounded-lg cursor-pointer bg-muted/30 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex flex-col items-center justify-center py-6">
+                      <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">Click to upload last frame</p>
+                    </div>
+                    <input
+                      id="last-frame"
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleLastFrameUpload}
+                    />
+                  </label>
+                )}
+              </div>
+
               <Button
                 onClick={handleGenerateVideo}
                 disabled={!videoPrompt.trim() || isGeneratingVideo}
