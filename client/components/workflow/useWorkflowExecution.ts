@@ -212,17 +212,17 @@ export function useWorkflowExecution(
 
             // Poll for video completion
             const operationName = apiData.operation_name;
-            const maxAttempts = 60; // 5 minutes max (60 * 5 seconds)
+            const maxAttempts = 30; // 5 minutes max (30 * 10 seconds)
             let attempts = 0;
 
             while (attempts < maxAttempts) {
-              // Wait 5 seconds between polls
-              await new Promise(resolve => setTimeout(resolve, 5000));
+              // Wait 10 seconds between polls
+              await new Promise(resolve => setTimeout(resolve, 10000));
               attempts++;
 
               try {
                 const statusResponse = await fetch(
-                  `https://veo-api-82187245577.us-central1.run.app/operations/${operationName}`,
+                  `https://veo-api-82187245577.us-central1.run.app/video/status/${encodeURIComponent(operationName)}`,
                   {
                     method: 'GET',
                     headers: { 'Content-Type': 'application/json' },
@@ -237,19 +237,26 @@ export function useWorkflowExecution(
                 const statusData = await statusResponse.json();
 
                 // Check if video is ready
-                if (statusData.done && statusData.response?.generated_samples) {
-                  const videoUrl = statusData.response.generated_samples[0];
+                if (statusData.status === 'complete') {
+                  if (statusData.video_base64) {
+                    const videoUrl = `data:video/mp4;base64,${statusData.video_base64}`;
 
-                  return {
-                    success: true,
-                    data: {
-                      videoUrl,
-                      prompt,
-                      firstFrame,
-                      lastFrame,
-                      operationName,
-                    }
-                  };
+                    return {
+                      success: true,
+                      data: {
+                        videoUrl,
+                        prompt,
+                        firstFrame,
+                        lastFrame,
+                        operationName,
+                      }
+                    };
+                  } else {
+                    return {
+                      success: false,
+                      error: 'Video generation completed but no video data returned'
+                    };
+                  }
                 }
 
                 // Check for errors
