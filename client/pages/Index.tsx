@@ -2,11 +2,13 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Download, Loader2, Image as ImageIcon, Video as VideoIcon } from "lucide-react";
+import { Sparkles, Download, Loader2, Image as ImageIcon, Video as VideoIcon, Upload, X } from "lucide-react";
 
 export default function Index() {
   const [imagePrompt, setImagePrompt] = useState("");
   const [videoPrompt, setVideoPrompt] = useState("");
+  const [referenceImage, setReferenceImage] = useState<string | null>(null);
+  const [firstFrame, setFirstFrame] = useState<string | null>(null);
   const [imageResult, setImageResult] = useState<string | null>(null);
   const [videoResult, setVideoResult] = useState<string | null>(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
