@@ -132,16 +132,36 @@ export function useWorkflowExecution(
             return { success: false, error: 'No prompt provided' };
           }
 
-          // Simulate API call
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          try {
+            // Call the real image generation API
+            const response = await fetch('https://veo-api-82187245577.us-central1.run.app/generate/image', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ prompt }),
+            });
 
-          // Mock generated image URL
-          const generatedImageUrl = `https://via.placeholder.com/512x512.png?text=${encodeURIComponent(prompt.slice(0, 20))}`;
+            if (!response.ok) {
+              throw new Error(`API error: ${response.status}`);
+            }
 
-          return {
-            success: true,
-            data: { imageUrl: generatedImageUrl, prompt, referenceImage }
-          };
+            const apiData = await response.json();
+
+            if (apiData.images && apiData.images[0]) {
+              const imageUrl = `data:image/png;base64,${apiData.images[0]}`;
+
+              return {
+                success: true,
+                data: { imageUrl, prompt, referenceImage }
+              };
+            } else {
+              return { success: false, error: 'No image returned from API' };
+            }
+          } catch (error) {
+            return {
+              success: false,
+              error: error instanceof Error ? error.message : 'Image generation failed'
+            };
+          }
         }
 
         case NodeType.GenerateVideo: {
@@ -154,16 +174,41 @@ export function useWorkflowExecution(
             return { success: false, error: 'No prompt provided' };
           }
 
-          // Simulate API call
-          await new Promise(resolve => setTimeout(resolve, 3000));
+          try {
+            // Call the real video generation API
+            const response = await fetch('https://veo-api-82187245577.us-central1.run.app/generate/video', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ prompt }),
+            });
 
-          // Mock generated video URL
-          const generatedVideoUrl = `https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4`;
+            if (!response.ok) {
+              throw new Error(`API error: ${response.status}`);
+            }
 
-          return {
-            success: true,
-            data: { videoUrl: generatedVideoUrl, prompt, firstFrame, lastFrame }
-          };
+            const apiData = await response.json();
+
+            if (apiData.operation_name) {
+              // Video generation is async, return operation info
+              return {
+                success: true,
+                data: {
+                  operationName: apiData.operation_name,
+                  prompt,
+                  firstFrame,
+                  lastFrame,
+                  message: 'Video generation started. Check operation: ' + apiData.operation_name
+                }
+              };
+            } else {
+              return { success: false, error: 'No operation name returned from API' };
+            }
+          } catch (error) {
+            return {
+              success: false,
+              error: error instanceof Error ? error.message : 'Video generation failed'
+            };
+          }
         }
 
         case NodeType.ImageOutput: {
