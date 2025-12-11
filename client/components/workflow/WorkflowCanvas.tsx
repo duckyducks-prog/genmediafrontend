@@ -18,6 +18,7 @@ import './workflow.css';
 import { WorkflowNode, WorkflowEdge, NodeType } from './types';
 import NodePalette from './NodePalette';
 import WorkflowToolbar from './WorkflowToolbar';
+import { useWorkflowExecution } from './useWorkflowExecution';
 
 // Import all custom node components
 import PromptInputNode from './nodes/PromptInputNode';
@@ -139,10 +140,17 @@ function WorkflowCanvasInner() {
     setEdges([]);
   }, [setNodes, setEdges]);
 
+  // Workflow execution
+  const { executeWorkflow, resetWorkflow, isExecuting } = useWorkflowExecution(
+    nodes,
+    edges,
+    setNodes
+  );
+
   return (
     <div className="w-full h-full flex">
       <NodePalette onAddNode={addNode} />
-      
+
       <div ref={reactFlowWrapper} className="flex-1 relative">
         <ReactFlow
           nodes={nodes}
@@ -166,7 +174,12 @@ function WorkflowCanvasInner() {
             nodeColor="#F3C5DB"
             maskColor="rgba(70, 6, 43, 0.6)"
           />
-          <WorkflowToolbar onClearCanvas={clearCanvas} />
+          <WorkflowToolbar
+            onClearCanvas={clearCanvas}
+            onExecuteWorkflow={executeWorkflow}
+            onResetWorkflow={resetWorkflow}
+            isExecuting={isExecuting}
+          />
         </ReactFlow>
       </div>
     </div>
