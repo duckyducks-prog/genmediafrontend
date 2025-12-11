@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Download, Loader2, Image as ImageIcon, Video as VideoIcon, Upload, X, Home } from "lucide-react";
+import { Sparkles, Download, Loader2, Image as ImageIcon, Video as VideoIcon, Upload, X, Home, Workflow as WorkflowIcon } from "lucide-react";
+import WorkflowCanvas from "@/components/workflow/WorkflowCanvas";
 
 export default function Index() {
   const [currentTab, setCurrentTab] = useState("image");
@@ -144,6 +145,7 @@ export default function Index() {
           <NavLink icon={<Home className="w-5 h-5" />} label="Home" value="home" />
           <NavLink icon={<ImageIcon className="w-5 h-5" />} label="Image" value="image" />
           <NavLink icon={<VideoIcon className="w-5 h-5" />} label="Video" value="video" />
+          <NavLink icon={<WorkflowIcon className="w-5 h-5" />} label="Workflow" value="workflow" />
         </aside>
 
         <div className="flex-1 container mx-auto px-4 py-8 max-w-4xl">
