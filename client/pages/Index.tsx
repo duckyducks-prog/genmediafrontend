@@ -52,6 +52,28 @@ export default function Index() {
     }
   };
 
+  const handleGenerateImage = async () => {
+    if (!imagePrompt.trim()) return;
+
+    setIsGeneratingImage(true);
+    try {
+      const response = await fetch('https://veo-api-82187245577.us-central1.run.app/generate/image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: imagePrompt }),
+      });
+
+      const data = await response.json();
+      if (data.images && data.images[0]) {
+        setImageResult(`data:image/png;base64,${data.images[0]}`);
+      }
+    } catch (error) {
+      console.error('Error generating image:', error);
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
   const handleGenerateVideo = async () => {
     if (!videoPrompt.trim()) return;
 
