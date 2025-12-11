@@ -9,6 +9,7 @@ export default function Index() {
   const [videoPrompt, setVideoPrompt] = useState("");
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
   const [firstFrame, setFirstFrame] = useState<string | null>(null);
+  const [lastFrame, setLastFrame] = useState<string | null>(null);
   const [imageResult, setImageResult] = useState<string | null>(null);
   const [videoResult, setVideoResult] = useState<string | null>(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
