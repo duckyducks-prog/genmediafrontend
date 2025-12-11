@@ -141,9 +141,9 @@ export default function Index() {
 
       <div className="flex flex-1 gap-6">
         <aside className="w-20 border-r border-border px-3 py-8 hidden lg:flex flex-col gap-4 items-center">
-          <NavLink icon={<Home className="w-4 h-4" />} label="Home" value="home" />
-          <NavLink icon={<ImageIcon className="w-4 h-4" />} label="Image" value="image" />
-          <NavLink icon={<VideoIcon className="w-4 h-4" />} label="Video" value="video" />
+          <NavLink icon={<Home className="w-5 h-5" />} label="Home" value="home" />
+          <NavLink icon={<ImageIcon className="w-5 h-5" />} label="Image" value="image" />
+          <NavLink icon={<VideoIcon className="w-5 h-5" />} label="Video" value="video" />
         </aside>
 
         <div className="flex-1 container mx-auto px-4 py-8 max-w-4xl">
