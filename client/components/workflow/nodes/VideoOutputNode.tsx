@@ -1,7 +1,8 @@
 import { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
+import { Button } from '@/components/ui/button';
 import { OutputNodeData } from '../types';
-import { Video as VideoIcon, CheckCircle2, Loader2 } from 'lucide-react';
+import { Video as VideoIcon, CheckCircle2, Loader2, Download } from 'lucide-react';
 
 function VideoOutputNode({ data, id }: NodeProps<OutputNodeData>) {
   const videoUrl = (data as any).videoUrl || data.result;
@@ -13,6 +14,33 @@ function VideoOutputNode({ data, id }: NodeProps<OutputNodeData>) {
     if (isExecuting) return 'border-yellow-500';
     if (isCompleted) return 'border-green-500';
     return 'border-border';
+  };
+
+  const handleDownload = async () => {
+    if (!videoUrl) return;
+
+    try {
+      const response = await fetch(videoUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `generated-video-${Date.now()}.mp4`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed:', error);
+      // Fallback to direct link
+      const link = document.createElement('a');
+      link.href = videoUrl;
+      link.download = `generated-video-${Date.now()}.mp4`;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   return (
@@ -39,13 +67,24 @@ function VideoOutputNode({ data, id }: NodeProps<OutputNodeData>) {
       {/* Node Content */}
       <div className="space-y-2">
         {videoUrl ? (
-          <div className="relative rounded-lg overflow-hidden bg-muted border border-border">
-            <video
-              src={videoUrl}
-              controls
-              className="w-full h-auto max-h-[200px]"
-            />
-          </div>
+          <>
+            <div className="relative rounded-lg overflow-hidden bg-muted border border-border">
+              <video
+                src={videoUrl}
+                controls
+                className="w-full h-auto max-h-[200px]"
+              />
+            </div>
+            <Button
+              onClick={handleDownload}
+              variant="outline"
+              size="sm"
+              className="w-full"
+            >
+              <Download className="w-3 h-3 mr-1" />
+              Download Video
+            </Button>
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center h-[150px] border-2 border-dashed border-border rounded-lg bg-muted/30">
             <VideoIcon className="w-8 h-8 text-muted-foreground mb-2" />

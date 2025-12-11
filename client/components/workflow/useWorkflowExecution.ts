@@ -182,13 +182,20 @@ export function useWorkflowExecution(
           // Get media from input
           const mediaData = inputs['media-input'] || {};
           const mediaUrl = mediaData.imageUrl || mediaData.videoUrl || null;
-          
+          const isVideo = !!mediaData.videoUrl;
+
           if (mediaUrl) {
+            // Determine file extension
+            const extension = isVideo ? 'mp4' : 'png';
+            const fileName = `generated-${isVideo ? 'video' : 'image'}-${Date.now()}.${extension}`;
+
             // Trigger download
             const link = document.createElement('a');
             link.href = mediaUrl;
-            link.download = `media-${Date.now()}`;
+            link.download = fileName;
+            document.body.appendChild(link);
             link.click();
+            document.body.removeChild(link);
           }
 
           return { success: true, data: { downloaded: !!mediaUrl } };

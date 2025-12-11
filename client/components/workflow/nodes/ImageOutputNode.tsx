@@ -1,7 +1,8 @@
 import { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
+import { Button } from '@/components/ui/button';
 import { OutputNodeData } from '../types';
-import { Image as ImageIcon, CheckCircle2, Loader2 } from 'lucide-react';
+import { Image as ImageIcon, CheckCircle2, Loader2, Download } from 'lucide-react';
 
 function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
   const imageUrl = (data as any).imageUrl || data.result;
@@ -13,6 +14,17 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
     if (isExecuting) return 'border-yellow-500';
     if (isCompleted) return 'border-green-500';
     return 'border-border';
+  };
+
+  const handleDownload = () => {
+    if (!imageUrl) return;
+
+    const link = document.createElement('a');
+    link.href = imageUrl;
+    link.download = `generated-image-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -39,13 +51,24 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
       {/* Node Content */}
       <div className="space-y-2">
         {imageUrl ? (
-          <div className="relative rounded-lg overflow-hidden bg-muted border border-border">
-            <img
-              src={imageUrl}
-              alt="Generated output"
-              className="w-full h-auto max-h-[200px] object-contain"
-            />
-          </div>
+          <>
+            <div className="relative rounded-lg overflow-hidden bg-muted border border-border">
+              <img
+                src={imageUrl}
+                alt="Generated output"
+                className="w-full h-auto max-h-[200px] object-contain"
+              />
+            </div>
+            <Button
+              onClick={handleDownload}
+              variant="outline"
+              size="sm"
+              className="w-full"
+            >
+              <Download className="w-3 h-3 mr-1" />
+              Download Image
+            </Button>
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center h-[150px] border-2 border-dashed border-border rounded-lg bg-muted/30">
             <ImageIcon className="w-8 h-8 text-muted-foreground mb-2" />
