@@ -79,7 +79,6 @@ export default function Index() {
 
     setIsGeneratingVideo(true);
     try {
-      // Start video generation
       const response = await fetch('https://veo-api-82187245577.us-central1.run.app/generate/video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -89,13 +88,17 @@ export default function Index() {
       const data = await response.json();
       const operationName = data.operation_name;
 
-      // Poll for completion
       let complete = false;
       while (!complete) {
-        await new Promise(resolve => setTimeout(resolve, 10000)); // Wait 10 seconds
+        await new Promise(resolve => setTimeout(resolve, 10000));
 
         const statusResponse = await fetch(
-          `https://veo-api-82187245577.us-central1.run.app/video/status/${encodeURIComponent(operationName)}`
+          'https://veo-api-82187245577.us-central1.run.app/video/status',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ operation_name: operationName }),
+          }
         );
         const statusData = await statusResponse.json();
 
