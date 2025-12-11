@@ -97,7 +97,7 @@ export default function Index() {
               <Sparkles className="w-6 h-6 text-primary-foreground" />
             </div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              AI Studio
+              HubSpot Gen Media Studio
             </h1>
           </div>
           <p className="text-muted-foreground text-lg">
