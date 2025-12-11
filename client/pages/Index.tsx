@@ -37,6 +37,17 @@ export default function Index() {
     }
   };
 
+  const handleLastFrameUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setLastFrame(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleGenerateImage = async () => {
     if (!imagePrompt.trim()) return;
 
