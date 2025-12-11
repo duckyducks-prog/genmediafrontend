@@ -171,7 +171,12 @@ export function useWorkflowExecution(
           const lastFrame = inputs['last-frame-input']?.imageUrl || null;
 
           if (!prompt) {
-            return { success: false, error: 'No prompt provided' };
+            console.log('Generate Video inputs:', inputs);
+            console.log('Prompt input data:', inputs['prompt-input']);
+            return {
+              success: false,
+              error: 'No prompt connected. Connect a Prompt Input node to the top pink handle.'
+            };
           }
 
           try {
