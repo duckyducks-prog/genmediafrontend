@@ -136,9 +136,6 @@ export default function Index() {
               HubSpot Gen Media Studio
             </h1>
           </div>
-          <p className="text-muted-foreground text-lg">
-            Generate stunning images and videos with AI
-          </p>
         </div>
       </header>
 
