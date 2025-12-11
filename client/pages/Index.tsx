@@ -91,27 +91,6 @@ export default function Index() {
     }
   };
 
-  const handleGenerateVideo = async () => {
-    if (!videoPrompt.trim()) return;
-
-    setIsGeneratingVideo(true);
-    try {
-      const response = await fetch('https://veo-api-82187245577.us-central1.run.app/generate/video', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: videoPrompt }),
-      });
-
-      const data = await response.json();
-      console.log('Video generation started:', data);
-      alert('Video generation started! Operation: ' + data.operation_name);
-    } catch (error) {
-      console.error('Error generating video:', error);
-    } finally {
-      setIsGeneratingVideo(false);
-    }
-  };
-
   const handleDownloadImage = () => {
     if (!imageResult) return;
     const link = document.createElement("a");
