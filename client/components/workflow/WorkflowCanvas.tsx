@@ -163,6 +163,7 @@ function WorkflowCanvasInner() {
         connectionMode={ConnectionMode.Loose}
         fitView
         className="bg-background"
+        proOptions={{ hideAttribution: true }}
       >
         <Background className="bg-background" />
         <Controls className="bg-card border border-border" />
