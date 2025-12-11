@@ -1,12 +1,27 @@
 import { memo } from 'react';
-import { Handle, Position, NodeProps } from 'reactflow';
+import { Handle, Position, NodeProps, useReactFlow } from 'reactflow';
 import { Textarea } from '@/components/ui/textarea';
 import { PromptInputNodeData } from '../types';
 import { Type, CheckCircle2, Loader2 } from 'lucide-react';
 
 function PromptInputNode({ data, id }: NodeProps<PromptInputNodeData>) {
+  const { setNodes } = useReactFlow();
+
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    data.prompt = e.target.value;
+    const newPrompt = e.target.value;
+    setNodes((nodes) =>
+      nodes.map((node) =>
+        node.id === id
+          ? {
+              ...node,
+              data: {
+                ...node.data,
+                prompt: newPrompt,
+              },
+            }
+          : node
+      )
+    );
   };
 
   const status = (data as any).status || 'ready';
