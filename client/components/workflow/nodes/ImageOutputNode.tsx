@@ -16,15 +16,42 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
     return 'border-border';
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!imageUrl) return;
 
-    const link = document.createElement('a');
-    link.href = imageUrl;
-    link.download = `generated-image-${Date.now()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      // For base64 data URIs, download directly
+      if (imageUrl.startsWith('data:')) {
+        const link = document.createElement('a');
+        link.href = imageUrl;
+        link.download = `generated-image-${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        return;
+      }
+
+      // For external URLs, try to fetch with CORS mode
+      try {
+        const response = await fetch(imageUrl, { mode: 'cors' });
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `generated-image-${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } catch (fetchError) {
+        // Fallback: open in new tab if CORS fails
+        window.open(imageUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Download failed:', error);
+      // Last resort: try direct link
+      window.open(imageUrl, '_blank');
+    }
   };
 
   return (

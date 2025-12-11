@@ -20,26 +20,37 @@ function VideoOutputNode({ data, id }: NodeProps<OutputNodeData>) {
     if (!videoUrl) return;
 
     try {
-      const response = await fetch(videoUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `generated-video-${Date.now()}.mp4`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      // For base64 data URIs, download directly
+      if (videoUrl.startsWith('data:')) {
+        const link = document.createElement('a');
+        link.href = videoUrl;
+        link.download = `generated-video-${Date.now()}.mp4`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        return;
+      }
+
+      // For external URLs, try to fetch with CORS mode
+      try {
+        const response = await fetch(videoUrl, { mode: 'cors' });
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `generated-video-${Date.now()}.mp4`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } catch (fetchError) {
+        // Fallback: open in new tab if CORS fails
+        window.open(videoUrl, '_blank');
+      }
     } catch (error) {
       console.error('Download failed:', error);
-      // Fallback to direct link
-      const link = document.createElement('a');
-      link.href = videoUrl;
-      link.download = `generated-video-${Date.now()}.mp4`;
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // Last resort: try opening in new tab
+      window.open(videoUrl, '_blank');
     }
   };
 

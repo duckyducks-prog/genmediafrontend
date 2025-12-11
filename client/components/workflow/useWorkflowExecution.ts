@@ -185,17 +185,35 @@ export function useWorkflowExecution(
           const isVideo = !!mediaData.videoUrl;
 
           if (mediaUrl) {
-            // Determine file extension
-            const extension = isVideo ? 'mp4' : 'png';
-            const fileName = `generated-${isVideo ? 'video' : 'image'}-${Date.now()}.${extension}`;
+            try {
+              // Determine file extension
+              const extension = isVideo ? 'mp4' : 'png';
+              const fileName = `generated-${isVideo ? 'video' : 'image'}-${Date.now()}.${extension}`;
 
-            // Trigger download
-            const link = document.createElement('a');
-            link.href = mediaUrl;
-            link.download = fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+              // For base64 data URIs, download directly
+              if (mediaUrl.startsWith('data:')) {
+                const link = document.createElement('a');
+                link.href = mediaUrl;
+                link.download = fileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              } else {
+                // For external URLs, open in new tab (avoid CORS issues)
+                const link = document.createElement('a');
+                link.href = mediaUrl;
+                link.download = fileName;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }
+            } catch (error) {
+              console.error('Download failed:', error);
+              // Fallback: open URL in new tab
+              window.open(mediaUrl, '_blank');
+            }
           }
 
           return { success: true, data: { downloaded: !!mediaUrl } };
