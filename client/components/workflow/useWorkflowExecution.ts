@@ -115,6 +115,7 @@ export function useWorkflowExecution(
       switch (node.type) {
         case NodeType.PromptInput: {
           const prompt = node.data.prompt || '';
+          console.log('PromptInput executing with prompt:', prompt);
           return { success: true, data: { prompt } };
         }
 
