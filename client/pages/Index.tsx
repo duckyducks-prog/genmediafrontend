@@ -111,14 +111,14 @@ export default function Index() {
   const NavLink = ({ icon: Icon, label, value }: { icon: React.ReactNode; label: string; value: string }) => (
     <button
       onClick={() => setCurrentTab(value)}
-      className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors ${
+      className={`flex items-center justify-center w-12 h-12 rounded-lg transition-colors ${
         currentTab === value
           ? "bg-primary text-primary-foreground"
           : "text-muted-foreground hover:bg-secondary"
       }`}
+      title={label}
     >
       {Icon}
-      <span className="font-medium">{label}</span>
     </button>
   );
 
