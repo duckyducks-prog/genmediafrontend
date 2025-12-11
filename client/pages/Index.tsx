@@ -201,17 +201,56 @@ export default function Index() {
           </TabsContent>
 
           <TabsContent value="video" className="space-y-6">
-            <div className="bg-card border border-border rounded-lg p-6 shadow-sm">
-              <label htmlFor="video-prompt" className="block text-sm font-medium mb-2">
-                Describe your video
-              </label>
-              <Textarea
-                id="video-prompt"
-                placeholder="A time-lapse of a bustling city transitioning from day to night..."
-                value={videoPrompt}
-                onChange={(e) => setVideoPrompt(e.target.value)}
-                className="mb-4 min-h-[100px]"
-              />
+            <div className="bg-card border border-border rounded-lg p-6 shadow-sm space-y-4">
+              <div>
+                <label htmlFor="video-prompt" className="block text-sm font-medium mb-2">
+                  Describe your video
+                </label>
+                <Textarea
+                  id="video-prompt"
+                  placeholder="A time-lapse of a bustling city transitioning from day to night..."
+                  value={videoPrompt}
+                  onChange={(e) => setVideoPrompt(e.target.value)}
+                  className="min-h-[100px]"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="first-frame" className="block text-sm font-medium mb-2">
+                  First Frame (Optional)
+                </label>
+                {firstFrame ? (
+                  <div className="relative rounded-lg overflow-hidden border border-border bg-muted">
+                    <img src={firstFrame} alt="First Frame" className="w-full h-48 object-cover" />
+                    <Button
+                      onClick={() => setFirstFrame(null)}
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <label
+                    htmlFor="first-frame"
+                    className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-border rounded-lg cursor-pointer bg-muted/30 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex flex-col items-center justify-center py-6">
+                      <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">Click to upload first frame</p>
+                    </div>
+                    <input
+                      id="first-frame"
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleFirstFrameUpload}
+                    />
+                  </label>
+                )}
+              </div>
+
               <Button
                 onClick={handleGenerateVideo}
                 disabled={!videoPrompt.trim() || isGeneratingVideo}
