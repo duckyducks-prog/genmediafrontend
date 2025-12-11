@@ -206,21 +206,73 @@ export function useWorkflowExecution(
 
             const apiData = await response.json();
 
-            if (apiData.operation_name) {
-              // Video generation is async, return operation info
-              return {
-                success: true,
-                data: {
-                  operationName: apiData.operation_name,
-                  prompt,
-                  firstFrame,
-                  lastFrame,
-                  message: 'Video generation started. Check operation: ' + apiData.operation_name
-                }
-              };
-            } else {
+            if (!apiData.operation_name) {
               return { success: false, error: 'No operation name returned from API' };
             }
+
+            // Poll for video completion
+            const operationName = apiData.operation_name;
+            const maxAttempts = 60; // 5 minutes max (60 * 5 seconds)
+            let attempts = 0;
+
+            while (attempts < maxAttempts) {
+              // Wait 5 seconds between polls
+              await new Promise(resolve => setTimeout(resolve, 5000));
+              attempts++;
+
+              try {
+                const statusResponse = await fetch(
+                  `https://veo-api-82187245577.us-central1.run.app/operations/${operationName}`,
+                  {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                  }
+                );
+
+                if (!statusResponse.ok) {
+                  console.warn(`Status check failed (attempt ${attempts}/${maxAttempts}):`, statusResponse.status);
+                  continue;
+                }
+
+                const statusData = await statusResponse.json();
+
+                // Check if video is ready
+                if (statusData.done && statusData.response?.generated_samples) {
+                  const videoUrl = statusData.response.generated_samples[0];
+
+                  return {
+                    success: true,
+                    data: {
+                      videoUrl,
+                      prompt,
+                      firstFrame,
+                      lastFrame,
+                      operationName,
+                    }
+                  };
+                }
+
+                // Check for errors
+                if (statusData.error) {
+                  return {
+                    success: false,
+                    error: `Video generation failed: ${statusData.error.message || 'Unknown error'}`
+                  };
+                }
+
+                // Still processing, continue polling
+                console.log(`Video generation in progress... (attempt ${attempts}/${maxAttempts})`);
+              } catch (pollError) {
+                console.warn(`Poll error (attempt ${attempts}/${maxAttempts}):`, pollError);
+                // Continue polling on errors
+              }
+            }
+
+            // Timeout reached
+            return {
+              success: false,
+              error: 'Video generation timed out. The operation may still be processing.'
+            };
           } catch (error) {
             return {
               success: false,
