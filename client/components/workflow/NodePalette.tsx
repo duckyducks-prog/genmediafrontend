@@ -1,63 +1,63 @@
-import { Type, Image, Video, Sparkles, Download, Upload } from 'lucide-react';
-import { NodeType } from './types';
+import { Type, Image, Video, Sparkles, Download, Upload } from "lucide-react";
+import { NodeType } from "./types";
 
 interface PaletteNode {
   type: NodeType;
   label: string;
   icon: React.ReactNode;
-  category: 'input' | 'action' | 'output';
+  category: "input" | "action" | "output";
   description: string;
 }
 
 const paletteNodes: PaletteNode[] = [
   {
     type: NodeType.PromptInput,
-    label: 'Prompt Input',
+    label: "Prompt Input",
     icon: <Type className="w-4 h-4" />,
-    category: 'input',
-    description: 'Text prompt for generation',
+    category: "input",
+    description: "Text prompt for generation",
   },
   {
     type: NodeType.ImageUpload,
-    label: 'Image Upload',
+    label: "Image Upload",
     icon: <Upload className="w-4 h-4" />,
-    category: 'input',
-    description: 'Upload reference image',
+    category: "input",
+    description: "Upload reference image",
   },
   {
     type: NodeType.GenerateImage,
-    label: 'Generate Image',
+    label: "Generate Image",
     icon: <Image className="w-4 h-4" />,
-    category: 'action',
-    description: 'Create AI image',
+    category: "action",
+    description: "Create AI image",
   },
   {
     type: NodeType.GenerateVideo,
-    label: 'Generate Video',
+    label: "Generate Video",
     icon: <Video className="w-4 h-4" />,
-    category: 'action',
-    description: 'Create AI video',
+    category: "action",
+    description: "Create AI video",
   },
   {
     type: NodeType.ImageOutput,
-    label: 'Image Output',
+    label: "Image Output",
     icon: <Image className="w-4 h-4" />,
-    category: 'output',
-    description: 'Display generated image',
+    category: "output",
+    description: "Display generated image",
   },
   {
     type: NodeType.VideoOutput,
-    label: 'Video Output',
+    label: "Video Output",
     icon: <Video className="w-4 h-4" />,
-    category: 'output',
-    description: 'Display generated video',
+    category: "output",
+    description: "Display generated video",
   },
   {
     type: NodeType.Download,
-    label: 'Download',
+    label: "Download",
     icon: <Download className="w-4 h-4" />,
-    category: 'output',
-    description: 'Download result',
+    category: "output",
+    description: "Download result",
   },
 ];
 
@@ -67,14 +67,14 @@ interface NodePaletteProps {
 
 export default function NodePalette({ onAddNode }: NodePaletteProps) {
   const categories = {
-    input: paletteNodes.filter((n) => n.category === 'input'),
-    action: paletteNodes.filter((n) => n.category === 'action'),
-    output: paletteNodes.filter((n) => n.category === 'output'),
+    input: paletteNodes.filter((n) => n.category === "input"),
+    action: paletteNodes.filter((n) => n.category === "action"),
+    output: paletteNodes.filter((n) => n.category === "output"),
   };
 
   const handleDragStart = (event: React.DragEvent, nodeType: NodeType) => {
-    event.dataTransfer.setData('application/reactflow', nodeType);
-    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData("application/reactflow", nodeType);
+    event.dataTransfer.effectAllowed = "move";
   };
 
   return (
@@ -106,7 +106,9 @@ export default function NodePalette({ onAddNode }: NodePaletteProps) {
               <div className="text-primary mt-0.5">{node.icon}</div>
               <div className="flex-1 text-left">
                 <div className="text-sm font-medium">{node.label}</div>
-                <div className="text-xs text-muted-foreground">{node.description}</div>
+                <div className="text-xs text-muted-foreground">
+                  {node.description}
+                </div>
               </div>
             </button>
           ))}
@@ -130,7 +132,9 @@ export default function NodePalette({ onAddNode }: NodePaletteProps) {
               <div className="text-primary mt-0.5">{node.icon}</div>
               <div className="flex-1 text-left">
                 <div className="text-sm font-medium">{node.label}</div>
-                <div className="text-xs text-muted-foreground">{node.description}</div>
+                <div className="text-xs text-muted-foreground">
+                  {node.description}
+                </div>
               </div>
             </button>
           ))}
@@ -154,7 +158,9 @@ export default function NodePalette({ onAddNode }: NodePaletteProps) {
               <div className="text-primary mt-0.5">{node.icon}</div>
               <div className="flex-1 text-left">
                 <div className="text-sm font-medium">{node.label}</div>
-                <div className="text-xs text-muted-foreground">{node.description}</div>
+                <div className="text-xs text-muted-foreground">
+                  {node.description}
+                </div>
               </div>
             </button>
           ))}

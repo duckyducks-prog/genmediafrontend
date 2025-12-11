@@ -1,28 +1,35 @@
-import { memo } from 'react';
-import { Handle, Position, NodeProps } from 'reactflow';
-import { Button } from '@/components/ui/button';
-import { GenerateVideoNodeData } from '../types';
-import { Sparkles, Loader2, Video as VideoIcon, CheckCircle2, AlertCircle, Download } from 'lucide-react';
+import { memo } from "react";
+import { Handle, Position, NodeProps } from "reactflow";
+import { Button } from "@/components/ui/button";
+import { GenerateVideoNodeData } from "../types";
+import {
+  Sparkles,
+  Loader2,
+  Video as VideoIcon,
+  CheckCircle2,
+  AlertCircle,
+  Download,
+} from "lucide-react";
 
 function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
-  const status = data.status || 'ready';
-  const isGenerating = status === 'executing';
-  const isCompleted = status === 'completed';
-  const isError = status === 'error';
+  const status = data.status || "ready";
+  const isGenerating = status === "executing";
+  const isCompleted = status === "completed";
+  const isError = status === "error";
   const videoUrl = (data as any).videoUrl;
 
   const getBorderColor = () => {
-    if (isGenerating) return 'border-yellow-500';
-    if (isCompleted) return 'border-green-500';
-    if (isError) return 'border-red-500';
-    return 'border-primary/50';
+    if (isGenerating) return "border-yellow-500";
+    if (isCompleted) return "border-green-500";
+    if (isError) return "border-red-500";
+    return "border-primary/50";
   };
 
   const getStatusText = () => {
-    if (isGenerating) return 'Generating...';
-    if (isCompleted) return 'Completed';
-    if (isError) return data.error || 'Error';
-    return 'Ready';
+    if (isGenerating) return "Generating...";
+    if (isCompleted) return "Completed";
+    if (isError) return data.error || "Error";
+    return "Ready";
   };
 
   const handleDownload = async () => {
@@ -30,8 +37,8 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
 
     try {
       // For base64 data URIs, download directly
-      if (videoUrl.startsWith('data:')) {
-        const link = document.createElement('a');
+      if (videoUrl.startsWith("data:")) {
+        const link = document.createElement("a");
         link.href = videoUrl;
         link.download = `generated-video-${Date.now()}.mp4`;
         document.body.appendChild(link);
@@ -42,10 +49,10 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
 
       // For external URLs, try to fetch with CORS mode
       try {
-        const response = await fetch(videoUrl, { mode: 'cors' });
+        const response = await fetch(videoUrl, { mode: "cors" });
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.href = url;
         link.download = `generated-video-${Date.now()}.mp4`;
         document.body.appendChild(link);
@@ -54,23 +61,27 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
         window.URL.revokeObjectURL(url);
       } catch (fetchError) {
         // Fallback: open in new tab if CORS fails
-        window.open(videoUrl, '_blank');
+        window.open(videoUrl, "_blank");
       }
     } catch (error) {
-      console.error('Download failed:', error);
-      window.open(videoUrl, '_blank');
+      console.error("Download failed:", error);
+      window.open(videoUrl, "_blank");
     }
   };
 
   return (
-    <div className={`bg-card border-2 rounded-lg p-4 min-w-[240px] shadow-lg transition-colors ${getBorderColor()}`}>
+    <div
+      className={`bg-card border-2 rounded-lg p-4 min-w-[240px] shadow-lg transition-colors ${getBorderColor()}`}
+    >
       {/* Node Header */}
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
         <div className="flex items-center gap-2">
           <VideoIcon className="w-4 h-4 text-primary" />
           <div className="font-semibold text-sm">Generate Video</div>
         </div>
-        {isGenerating && <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />}
+        {isGenerating && (
+          <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />
+        )}
         {isCompleted && <CheckCircle2 className="w-4 h-4 text-green-500" />}
         {isError && <AlertCircle className="w-4 h-4 text-red-500" />}
       </div>
@@ -81,21 +92,21 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
         position={Position.Left}
         id="prompt-input"
         className="!w-3 !h-3 !bg-primary !border-2 !border-background"
-        style={{ top: '25%' }}
+        style={{ top: "25%" }}
       />
       <Handle
         type="target"
         position={Position.Left}
         id="first-frame-input"
         className="!w-3 !h-3 !bg-accent !border-2 !border-background"
-        style={{ top: '50%' }}
+        style={{ top: "50%" }}
       />
       <Handle
         type="target"
         position={Position.Left}
         id="last-frame-input"
         className="!w-3 !h-3 !bg-accent !border-2 !border-background"
-        style={{ top: '75%' }}
+        style={{ top: "75%" }}
       />
 
       {/* Node Content */}
@@ -135,7 +146,7 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
         position={Position.Right}
         id="video-output"
         className="!w-3 !h-3 !bg-accent !border-2 !border-background"
-        style={{ top: '50%' }}
+        style={{ top: "50%" }}
       />
     </div>
   );

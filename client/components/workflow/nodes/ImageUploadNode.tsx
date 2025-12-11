@@ -1,8 +1,8 @@
-import { memo, useState } from 'react';
-import { Handle, Position, NodeProps, useReactFlow } from 'reactflow';
-import { Button } from '@/components/ui/button';
-import { ImageUploadNodeData } from '../types';
-import { Upload, X, Image as ImageIcon } from 'lucide-react';
+import { memo, useState } from "react";
+import { Handle, Position, NodeProps, useReactFlow } from "reactflow";
+import { Button } from "@/components/ui/button";
+import { ImageUploadNodeData } from "../types";
+import { Upload, X, Image as ImageIcon } from "lucide-react";
 
 function ImageUploadNode({ data, id }: NodeProps<ImageUploadNodeData>) {
   const [imageUrl, setImageUrl] = useState<string | null>(data.imageUrl);
@@ -15,7 +15,7 @@ function ImageUploadNode({ data, id }: NodeProps<ImageUploadNodeData>) {
       reader.onload = (event) => {
         const url = event.target?.result as string;
         setImageUrl(url);
-        
+
         // Update node data
         setNodes((nodes) =>
           nodes.map((node) =>
@@ -28,8 +28,8 @@ function ImageUploadNode({ data, id }: NodeProps<ImageUploadNodeData>) {
                     file,
                   },
                 }
-              : node
-          )
+              : node,
+          ),
         );
       };
       reader.readAsDataURL(file);
@@ -49,30 +49,36 @@ function ImageUploadNode({ data, id }: NodeProps<ImageUploadNodeData>) {
                 file: null,
               },
             }
-          : node
-      )
+          : node,
+      ),
     );
   };
 
-  const status = (data as any).status || 'ready';
-  const isExecuting = status === 'executing';
-  const isCompleted = status === 'completed';
+  const status = (data as any).status || "ready";
+  const isExecuting = status === "executing";
+  const isCompleted = status === "completed";
 
   const getBorderColor = () => {
-    if (isExecuting) return 'border-yellow-500';
-    if (isCompleted) return 'border-green-500';
-    return 'border-border';
+    if (isExecuting) return "border-yellow-500";
+    if (isCompleted) return "border-green-500";
+    return "border-border";
   };
 
   return (
-    <div className={`bg-card border-2 rounded-lg p-4 min-w-[250px] shadow-lg transition-colors ${getBorderColor()}`}>
+    <div
+      className={`bg-card border-2 rounded-lg p-4 min-w-[250px] shadow-lg transition-colors ${getBorderColor()}`}
+    >
       {/* Node Header */}
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
         <div className="flex items-center gap-2">
           <ImageIcon className="w-4 h-4 text-accent" />
-          <div className="font-semibold text-sm">{data.label || 'Image Upload'}</div>
+          <div className="font-semibold text-sm">
+            {data.label || "Image Upload"}
+          </div>
         </div>
-        {isExecuting && <span className="w-4 h-4 animate-pulse text-yellow-500">⚡</span>}
+        {isExecuting && (
+          <span className="w-4 h-4 animate-pulse text-yellow-500">⚡</span>
+        )}
         {isCompleted && <span className="text-green-500">✓</span>}
       </div>
 
@@ -80,7 +86,11 @@ function ImageUploadNode({ data, id }: NodeProps<ImageUploadNodeData>) {
       <div className="space-y-2">
         {imageUrl ? (
           <div className="relative rounded-lg overflow-hidden border border-border bg-muted">
-            <img src={imageUrl} alt="Upload preview" className="w-full h-32 object-cover" />
+            <img
+              src={imageUrl}
+              alt="Upload preview"
+              className="w-full h-32 object-cover"
+            />
             <Button
               onClick={handleRemove}
               variant="destructive"
@@ -114,7 +124,7 @@ function ImageUploadNode({ data, id }: NodeProps<ImageUploadNodeData>) {
         position={Position.Right}
         id="image-output"
         className="!w-3 !h-3 !bg-accent !border-2 !border-background"
-        style={{ top: '50%' }}
+        style={{ top: "50%" }}
       />
     </div>
   );

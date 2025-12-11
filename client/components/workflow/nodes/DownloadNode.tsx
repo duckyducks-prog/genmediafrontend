@@ -1,29 +1,35 @@
-import { memo } from 'react';
-import { Handle, Position, NodeProps } from 'reactflow';
-import { DownloadNodeData } from '../types';
-import { Download, CheckCircle2, Loader2 } from 'lucide-react';
+import { memo } from "react";
+import { Handle, Position, NodeProps } from "reactflow";
+import { DownloadNodeData } from "../types";
+import { Download, CheckCircle2, Loader2 } from "lucide-react";
 
 function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
-  const status = (data as any).status || 'ready';
-  const isExecuting = status === 'executing';
-  const isCompleted = status === 'completed';
+  const status = (data as any).status || "ready";
+  const isExecuting = status === "executing";
+  const isCompleted = status === "completed";
   const downloaded = (data as any).downloaded || false;
 
   const getBorderColor = () => {
-    if (isExecuting) return 'border-yellow-500';
-    if (isCompleted) return 'border-green-500';
-    return 'border-border';
+    if (isExecuting) return "border-yellow-500";
+    if (isCompleted) return "border-green-500";
+    return "border-border";
   };
 
   return (
-    <div className={`bg-card border-2 rounded-lg p-4 min-w-[200px] shadow-lg transition-colors ${getBorderColor()}`}>
+    <div
+      className={`bg-card border-2 rounded-lg p-4 min-w-[200px] shadow-lg transition-colors ${getBorderColor()}`}
+    >
       {/* Node Header */}
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
         <div className="flex items-center gap-2">
           <Download className="w-4 h-4 text-primary" />
-          <div className="font-semibold text-sm">{data.label || 'Download'}</div>
+          <div className="font-semibold text-sm">
+            {data.label || "Download"}
+          </div>
         </div>
-        {isExecuting && <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />}
+        {isExecuting && (
+          <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />
+        )}
         {isCompleted && <CheckCircle2 className="w-4 h-4 text-green-500" />}
       </div>
 
@@ -33,7 +39,7 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
         position={Position.Left}
         id="media-input"
         className="!w-3 !h-3 !bg-primary !border-2 !border-background"
-        style={{ top: '50%' }}
+        style={{ top: "50%" }}
       />
 
       {/* Node Content */}
@@ -57,7 +63,8 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
             <span className="text-xs">Auto-download on run</span>
           </div>
           <p className="text-[10px] text-muted-foreground leading-tight px-1">
-            Note: Browser may block auto-download. Use output node's download button if needed.
+            Note: Browser may block auto-download. Use output node's download
+            button if needed.
           </p>
         </div>
       </div>

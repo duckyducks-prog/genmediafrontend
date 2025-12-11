@@ -1,4 +1,4 @@
-import { useCallback, useState, useRef } from 'react';
+import { useCallback, useState, useRef } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -12,22 +12,22 @@ import ReactFlow, {
   ConnectionMode,
   ReactFlowProvider,
   ReactFlowInstance,
-} from 'reactflow';
-import 'reactflow/dist/style.css';
-import './workflow.css';
-import { WorkflowNode, WorkflowEdge, NodeType } from './types';
-import NodePalette from './NodePalette';
-import WorkflowToolbar from './WorkflowToolbar';
-import { useWorkflowExecution } from './useWorkflowExecution';
+} from "reactflow";
+import "reactflow/dist/style.css";
+import "./workflow.css";
+import { WorkflowNode, WorkflowEdge, NodeType } from "./types";
+import NodePalette from "./NodePalette";
+import WorkflowToolbar from "./WorkflowToolbar";
+import { useWorkflowExecution } from "./useWorkflowExecution";
 
 // Import all custom node components
-import PromptInputNode from './nodes/PromptInputNode';
-import ImageUploadNode from './nodes/ImageUploadNode';
-import GenerateImageNode from './nodes/GenerateImageNode';
-import GenerateVideoNode from './nodes/GenerateVideoNode';
-import ImageOutputNode from './nodes/ImageOutputNode';
-import VideoOutputNode from './nodes/VideoOutputNode';
-import DownloadNode from './nodes/DownloadNode';
+import PromptInputNode from "./nodes/PromptInputNode";
+import ImageUploadNode from "./nodes/ImageUploadNode";
+import GenerateImageNode from "./nodes/GenerateImageNode";
+import GenerateVideoNode from "./nodes/GenerateVideoNode";
+import ImageOutputNode from "./nodes/ImageOutputNode";
+import VideoOutputNode from "./nodes/VideoOutputNode";
+import DownloadNode from "./nodes/DownloadNode";
 
 const nodeTypes: NodeTypes = {
   [NodeType.PromptInput]: PromptInputNode,
@@ -42,7 +42,8 @@ const nodeTypes: NodeTypes = {
 function WorkflowCanvasInner() {
   const [nodes, setNodes, onNodesChange] = useNodesState<WorkflowNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<WorkflowEdge>([]);
-  const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
+  const [reactFlowInstance, setReactFlowInstance] =
+    useState<ReactFlowInstance | null>(null);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
   // Handle new connections between nodes
@@ -50,7 +51,7 @@ function WorkflowCanvasInner() {
     (params: Connection | Edge) => {
       setEdges((eds) => addEdge(params, eds));
     },
-    [setEdges]
+    [setEdges],
   );
 
   // Validate connections based on handle data types
@@ -69,28 +70,28 @@ function WorkflowCanvasInner() {
 
       // Create default data based on node type
       let data: any = {};
-      
+
       switch (type) {
         case NodeType.PromptInput:
-          data = { prompt: '', label: 'Prompt Input' };
+          data = { prompt: "", label: "Prompt Input" };
           break;
         case NodeType.ImageUpload:
-          data = { imageUrl: null, file: null, label: 'Image Upload' };
+          data = { imageUrl: null, file: null, label: "Image Upload" };
           break;
         case NodeType.GenerateImage:
-          data = { isGenerating: false, status: 'Ready' };
+          data = { isGenerating: false, status: "Ready" };
           break;
         case NodeType.GenerateVideo:
-          data = { isGenerating: false, status: 'Ready' };
+          data = { isGenerating: false, status: "Ready" };
           break;
         case NodeType.ImageOutput:
-          data = { result: null, type: 'image', label: 'Image Output' };
+          data = { result: null, type: "image", label: "Image Output" };
           break;
         case NodeType.VideoOutput:
-          data = { result: null, type: 'video', label: 'Video Output' };
+          data = { result: null, type: "video", label: "Video Output" };
           break;
         case NodeType.Download:
-          data = { inputData: null, type: 'image', label: 'Download' };
+          data = { inputData: null, type: "image", label: "Download" };
           break;
       }
 
@@ -100,16 +101,16 @@ function WorkflowCanvasInner() {
         position: nodePosition,
         data,
       };
-      
+
       setNodes((nds) => [...nds, newNode]);
     },
-    [setNodes]
+    [setNodes],
   );
 
   // Handle drag over for drop zone
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
+    event.dataTransfer.dropEffect = "move";
   }, []);
 
   // Handle drop to add node
@@ -120,7 +121,9 @@ function WorkflowCanvasInner() {
       if (!reactFlowWrapper.current || !reactFlowInstance) return;
 
       const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
-      const type = event.dataTransfer.getData('application/reactflow') as NodeType;
+      const type = event.dataTransfer.getData(
+        "application/reactflow",
+      ) as NodeType;
 
       if (!type) return;
 
@@ -131,7 +134,7 @@ function WorkflowCanvasInner() {
 
       addNode(type, position);
     },
-    [reactFlowInstance, addNode]
+    [reactFlowInstance, addNode],
   );
 
   // Clear canvas
@@ -144,7 +147,7 @@ function WorkflowCanvasInner() {
   const { executeWorkflow, resetWorkflow, isExecuting } = useWorkflowExecution(
     nodes,
     edges,
-    setNodes
+    setNodes,
   );
 
   return (

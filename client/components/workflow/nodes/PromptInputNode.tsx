@@ -1,8 +1,8 @@
-import { memo } from 'react';
-import { Handle, Position, NodeProps, useReactFlow } from 'reactflow';
-import { Textarea } from '@/components/ui/textarea';
-import { PromptInputNodeData } from '../types';
-import { Type, CheckCircle2, Loader2 } from 'lucide-react';
+import { memo } from "react";
+import { Handle, Position, NodeProps, useReactFlow } from "reactflow";
+import { Textarea } from "@/components/ui/textarea";
+import { PromptInputNodeData } from "../types";
+import { Type, CheckCircle2, Loader2 } from "lucide-react";
 
 function PromptInputNode({ data, id }: NodeProps<PromptInputNodeData>) {
   const { setNodes } = useReactFlow();
@@ -19,30 +19,36 @@ function PromptInputNode({ data, id }: NodeProps<PromptInputNodeData>) {
                 prompt: newPrompt,
               },
             }
-          : node
-      )
+          : node,
+      ),
     );
   };
 
-  const status = (data as any).status || 'ready';
-  const isExecuting = status === 'executing';
-  const isCompleted = status === 'completed';
+  const status = (data as any).status || "ready";
+  const isExecuting = status === "executing";
+  const isCompleted = status === "completed";
 
   const getBorderColor = () => {
-    if (isExecuting) return 'border-yellow-500';
-    if (isCompleted) return 'border-green-500';
-    return 'border-border';
+    if (isExecuting) return "border-yellow-500";
+    if (isCompleted) return "border-green-500";
+    return "border-border";
   };
 
   return (
-    <div className={`bg-card border-2 rounded-lg p-4 min-w-[280px] shadow-lg transition-colors ${getBorderColor()}`}>
+    <div
+      className={`bg-card border-2 rounded-lg p-4 min-w-[280px] shadow-lg transition-colors ${getBorderColor()}`}
+    >
       {/* Node Header */}
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
         <div className="flex items-center gap-2">
           <Type className="w-4 h-4 text-primary" />
-          <div className="font-semibold text-sm">{data.label || 'Prompt Input'}</div>
+          <div className="font-semibold text-sm">
+            {data.label || "Prompt Input"}
+          </div>
         </div>
-        {isExecuting && <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />}
+        {isExecuting && (
+          <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />
+        )}
         {isCompleted && <CheckCircle2 className="w-4 h-4 text-green-500" />}
       </div>
 
@@ -62,7 +68,7 @@ function PromptInputNode({ data, id }: NodeProps<PromptInputNodeData>) {
         position={Position.Right}
         id="prompt-output"
         className="!w-3 !h-3 !bg-primary !border-2 !border-background"
-        style={{ top: '50%' }}
+        style={{ top: "50%" }}
       />
     </div>
   );

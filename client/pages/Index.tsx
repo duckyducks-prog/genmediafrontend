@@ -2,7 +2,17 @@ import { useState } from "react";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Download, Loader2, Image as ImageIcon, Video as VideoIcon, Upload, X, Home, Workflow as WorkflowIcon } from "lucide-react";
+import {
+  Sparkles,
+  Download,
+  Loader2,
+  Image as ImageIcon,
+  Video as VideoIcon,
+  Upload,
+  X,
+  Home,
+  Workflow as WorkflowIcon,
+} from "lucide-react";
 import WorkflowCanvas from "@/components/workflow/WorkflowCanvas";
 import NodePalette from "@/components/workflow/NodePalette";
 import { NodeType } from "@/components/workflow/types";
@@ -19,7 +29,9 @@ export default function Index() {
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
 
-  const handleReferenceImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleReferenceImageUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -57,18 +69,21 @@ export default function Index() {
 
     setIsGeneratingImage(true);
     try {
-      const response = await fetch('https://veo-api-82187245577.us-central1.run.app/generate/image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: imagePrompt }),
-      });
+      const response = await fetch(
+        "https://veo-api-82187245577.us-central1.run.app/generate/image",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: imagePrompt }),
+        },
+      );
 
       const data = await response.json();
       if (data.images && data.images[0]) {
         setImageResult(`data:image/png;base64,${data.images[0]}`);
       }
     } catch (error) {
-      console.error('Error generating image:', error);
+      console.error("Error generating image:", error);
     } finally {
       setIsGeneratingImage(false);
     }
@@ -79,30 +94,33 @@ export default function Index() {
 
     setIsGeneratingVideo(true);
     try {
-      const response = await fetch('https://veo-api-82187245577.us-central1.run.app/generate/video', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: videoPrompt }),
-      });
+      const response = await fetch(
+        "https://veo-api-82187245577.us-central1.run.app/generate/video",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: videoPrompt }),
+        },
+      );
 
       const data = await response.json();
       const operationName = data.operation_name;
 
       let complete = false;
       while (!complete) {
-        await new Promise(resolve => setTimeout(resolve, 10000));
+        await new Promise((resolve) => setTimeout(resolve, 10000));
 
         const statusResponse = await fetch(
-          'https://veo-api-82187245577.us-central1.run.app/video/status',
+          "https://veo-api-82187245577.us-central1.run.app/video/status",
           {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ operation_name: operationName }),
-          }
+          },
         );
         const statusData = await statusResponse.json();
 
-        if (statusData.status === 'complete') {
+        if (statusData.status === "complete") {
           complete = true;
           if (statusData.video_base64) {
             setVideoResult(`data:video/mp4;base64,${statusData.video_base64}`);
@@ -110,7 +128,7 @@ export default function Index() {
         }
       }
     } catch (error) {
-      console.error('Error generating video:', error);
+      console.error("Error generating video:", error);
     } finally {
       setIsGeneratingVideo(false);
     }
@@ -132,7 +150,15 @@ export default function Index() {
     link.click();
   };
 
-  const NavLink = ({ icon: Icon, label, value }: { icon: React.ReactNode; label: string; value: string }) => (
+  const NavLink = ({
+    icon: Icon,
+    label,
+    value,
+  }: {
+    icon: React.ReactNode;
+    label: string;
+    value: string;
+  }) => (
     <button
       onClick={() => setCurrentTab(value)}
       className={`flex items-center justify-center w-12 h-12 rounded-lg transition-colors ${
@@ -165,24 +191,45 @@ export default function Index() {
 
       <div className="flex flex-1 gap-0">
         <aside className="w-20 border-r border-border px-3 py-8 hidden lg:flex flex-col gap-4 items-center">
-          <NavLink icon={<Home className="w-5 h-5" />} label="Home" value="home" />
-          <NavLink icon={<ImageIcon className="w-5 h-5" />} label="Image" value="image" />
-          <NavLink icon={<VideoIcon className="w-5 h-5" />} label="Video" value="video" />
-          <NavLink icon={<WorkflowIcon className="w-5 h-5" />} label="Workflow" value="workflow" />
+          <NavLink
+            icon={<Home className="w-5 h-5" />}
+            label="Home"
+            value="home"
+          />
+          <NavLink
+            icon={<ImageIcon className="w-5 h-5" />}
+            label="Image"
+            value="image"
+          />
+          <NavLink
+            icon={<VideoIcon className="w-5 h-5" />}
+            label="Video"
+            value="video"
+          />
+          <NavLink
+            icon={<WorkflowIcon className="w-5 h-5" />}
+            label="Workflow"
+            value="workflow"
+          />
         </aside>
 
-        {currentTab === 'workflow' && (
+        {currentTab === "workflow" && (
           <aside className="w-64 border-r border-border hidden lg:block">
             <NodePalette onAddNode={(type: NodeType) => {}} />
           </aside>
         )}
 
-        <div className={`flex-1 container mx-auto px-4 py-8 ${currentTab === 'workflow' ? 'max-w-none' : 'max-w-4xl'}`}>
+        <div
+          className={`flex-1 container mx-auto px-4 py-8 ${currentTab === "workflow" ? "max-w-none" : "max-w-4xl"}`}
+        >
           <Tabs value={currentTab} className="w-full">
             <TabsContent value="image" className="space-y-6">
               <div className="bg-card border border-border rounded-lg p-6 shadow-sm space-y-4">
                 <div>
-                  <label htmlFor="image-prompt" className="block text-sm font-medium mb-2">
+                  <label
+                    htmlFor="image-prompt"
+                    className="block text-sm font-medium mb-2"
+                  >
                     Describe your image
                   </label>
                   <Textarea
@@ -195,12 +242,19 @@ export default function Index() {
                 </div>
 
                 <div>
-                  <label htmlFor="reference-image" className="block text-sm font-medium mb-2">
+                  <label
+                    htmlFor="reference-image"
+                    className="block text-sm font-medium mb-2"
+                  >
                     Reference Image (Optional)
                   </label>
                   {referenceImage ? (
                     <div className="relative rounded-lg overflow-hidden border border-border bg-muted">
-                      <img src={referenceImage} alt="Reference" className="w-full h-48 object-cover" />
+                      <img
+                        src={referenceImage}
+                        alt="Reference"
+                        className="w-full h-48 object-cover"
+                      />
                       <Button
                         onClick={() => setReferenceImage(null)}
                         variant="destructive"
@@ -217,7 +271,9 @@ export default function Index() {
                     >
                       <div className="flex flex-col items-center justify-center py-6">
                         <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">Click to upload reference image</p>
+                        <p className="text-sm text-muted-foreground">
+                          Click to upload reference image
+                        </p>
                       </div>
                       <input
                         id="reference-image"
@@ -277,7 +333,10 @@ export default function Index() {
             <TabsContent value="video" className="space-y-6">
               <div className="bg-card border border-border rounded-lg p-6 shadow-sm space-y-4">
                 <div>
-                  <label htmlFor="video-prompt" className="block text-sm font-medium mb-2">
+                  <label
+                    htmlFor="video-prompt"
+                    className="block text-sm font-medium mb-2"
+                  >
                     Describe your video
                   </label>
                   <Textarea
@@ -290,12 +349,19 @@ export default function Index() {
                 </div>
 
                 <div>
-                  <label htmlFor="first-frame" className="block text-sm font-medium mb-2">
+                  <label
+                    htmlFor="first-frame"
+                    className="block text-sm font-medium mb-2"
+                  >
                     First Frame (Optional)
                   </label>
                   {firstFrame ? (
                     <div className="relative rounded-lg overflow-hidden border border-border bg-muted">
-                      <img src={firstFrame} alt="First Frame" className="w-full h-48 object-cover" />
+                      <img
+                        src={firstFrame}
+                        alt="First Frame"
+                        className="w-full h-48 object-cover"
+                      />
                       <Button
                         onClick={() => setFirstFrame(null)}
                         variant="destructive"
@@ -312,7 +378,9 @@ export default function Index() {
                     >
                       <div className="flex flex-col items-center justify-center py-6">
                         <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">Click to upload first frame</p>
+                        <p className="text-sm text-muted-foreground">
+                          Click to upload first frame
+                        </p>
                       </div>
                       <input
                         id="first-frame"
@@ -326,12 +394,19 @@ export default function Index() {
                 </div>
 
                 <div>
-                  <label htmlFor="last-frame" className="block text-sm font-medium mb-2">
+                  <label
+                    htmlFor="last-frame"
+                    className="block text-sm font-medium mb-2"
+                  >
                     Last Frame (Optional)
                   </label>
                   {lastFrame ? (
                     <div className="relative rounded-lg overflow-hidden border border-border bg-muted">
-                      <img src={lastFrame} alt="Last Frame" className="w-full h-48 object-cover" />
+                      <img
+                        src={lastFrame}
+                        alt="Last Frame"
+                        className="w-full h-48 object-cover"
+                      />
                       <Button
                         onClick={() => setLastFrame(null)}
                         variant="destructive"
@@ -348,7 +423,9 @@ export default function Index() {
                     >
                       <div className="flex flex-col items-center justify-center py-6">
                         <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">Click to upload last frame</p>
+                        <p className="text-sm text-muted-foreground">
+                          Click to upload last frame
+                        </p>
                       </div>
                       <input
                         id="last-frame"

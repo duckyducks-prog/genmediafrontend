@@ -1,23 +1,23 @@
-import { Node, Edge } from 'reactflow';
+import { Node, Edge } from "reactflow";
 
 // Node Types Enum
 export enum NodeType {
-  PromptInput = 'promptInput',
-  ImageUpload = 'imageUpload',
-  FirstFrame = 'firstFrame',
-  LastFrame = 'lastFrame',
-  GenerateImage = 'generateImage',
-  GenerateVideo = 'generateVideo',
-  ImageOutput = 'imageOutput',
-  VideoOutput = 'videoOutput',
-  Download = 'download',
+  PromptInput = "promptInput",
+  ImageUpload = "imageUpload",
+  FirstFrame = "firstFrame",
+  LastFrame = "lastFrame",
+  GenerateImage = "generateImage",
+  GenerateVideo = "generateVideo",
+  ImageOutput = "imageOutput",
+  VideoOutput = "videoOutput",
+  Download = "download",
 }
 
 // Data type for different handle types
 export enum HandleDataType {
-  Text = 'text',
-  Image = 'image',
-  Video = 'video',
+  Text = "text",
+  Image = "image",
+  Video = "video",
 }
 
 // Node Data Interfaces
@@ -51,13 +51,13 @@ export interface GenerateVideoNodeData {
 
 export interface OutputNodeData {
   result: string | null;
-  type: 'image' | 'video';
+  type: "image" | "video";
   label: string;
 }
 
 export interface DownloadNodeData {
   inputData: string | null;
-  type: 'image' | 'video';
+  type: "image" | "video";
   label: string;
 }
 
@@ -89,6 +89,6 @@ export interface NodePaletteItem {
   type: NodeType;
   label: string;
   icon: React.ReactNode;
-  category: 'input' | 'action' | 'output';
+  category: "input" | "action" | "output";
   description: string;
 }
