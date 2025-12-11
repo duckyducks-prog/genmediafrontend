@@ -53,8 +53,18 @@ export default function Index() {
 
     setIsGeneratingImage(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setImageResult(`https://picsum.photos/seed/${Date.now()}/800/600`);
+      const response = await fetch('https://veo-api-82187245577.us-central1.run.app/generate/image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: imagePrompt }),
+      });
+
+      const data = await response.json();
+      if (data.images && data.images[0]) {
+        setImageResult(`data:image/png;base64,${data.images[0]}`);
+      }
+    } catch (error) {
+      console.error('Error generating image:', error);
     } finally {
       setIsGeneratingImage(false);
     }
@@ -62,11 +72,21 @@ export default function Index() {
 
   const handleGenerateVideo = async () => {
     if (!videoPrompt.trim()) return;
-    
+
     setIsGeneratingVideo(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setVideoResult("https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4");
+      const response = await fetch('https://veo-api-82187245577.us-central1.run.app/generate/video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: videoPrompt }),
+      });
+
+      const data = await response.json();
+      // Video generation is async - for now just show status
+      console.log('Video generation started:', data);
+      alert('Video generation started! Operation: ' + data.operation_name);
+    } catch (error) {
+      console.error('Error generating video:', error);
     } finally {
       setIsGeneratingVideo(false);
     }
