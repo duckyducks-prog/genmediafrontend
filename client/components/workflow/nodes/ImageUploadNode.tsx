@@ -54,12 +54,26 @@ function ImageUploadNode({ data, id }: NodeProps<ImageUploadNodeData>) {
     );
   };
 
+  const status = (data as any).status || 'ready';
+  const isExecuting = status === 'executing';
+  const isCompleted = status === 'completed';
+
+  const getBorderColor = () => {
+    if (isExecuting) return 'border-yellow-500';
+    if (isCompleted) return 'border-green-500';
+    return 'border-border';
+  };
+
   return (
-    <div className="bg-card border-2 border-border rounded-lg p-4 min-w-[250px] shadow-lg">
+    <div className={`bg-card border-2 rounded-lg p-4 min-w-[250px] shadow-lg transition-colors ${getBorderColor()}`}>
       {/* Node Header */}
-      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
-        <ImageIcon className="w-4 h-4 text-accent" />
-        <div className="font-semibold text-sm">{data.label || 'Image Upload'}</div>
+      <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
+        <div className="flex items-center gap-2">
+          <ImageIcon className="w-4 h-4 text-accent" />
+          <div className="font-semibold text-sm">{data.label || 'Image Upload'}</div>
+        </div>
+        {isExecuting && <span className="w-4 h-4 animate-pulse text-yellow-500">⚡</span>}
+        {isCompleted && <span className="text-green-500">✓</span>}
       </div>
 
       {/* Node Content */}
