@@ -148,45 +148,45 @@ function WorkflowCanvasInner() {
   );
 
   return (
-    <div className="w-full h-full flex">
-      <NodePalette onAddNode={addNode} />
-
-      <div ref={reactFlowWrapper} className="flex-1 relative">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onInit={setReactFlowInstance}
-          onDrop={onDrop}
-          onDragOver={onDragOver}
-          isValidConnection={isValidConnection}
-          nodeTypes={nodeTypes}
-          connectionMode={ConnectionMode.Loose}
-          fitView
-          className="bg-background"
-        >
-          <Background className="bg-background" />
-          <Controls className="bg-card border border-border" />
-          <MiniMap
-            className="bg-card border border-border"
-            nodeColor="#F3C5DB"
-            maskColor="rgba(70, 6, 43, 0.6)"
-          />
-          <WorkflowToolbar
-            onClearCanvas={clearCanvas}
-            onExecuteWorkflow={executeWorkflow}
-            onResetWorkflow={resetWorkflow}
-            isExecuting={isExecuting}
-          />
-        </ReactFlow>
-      </div>
+    <div ref={reactFlowWrapper} className="w-full h-full relative">
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        onInit={setReactFlowInstance}
+        onDrop={onDrop}
+        onDragOver={onDragOver}
+        isValidConnection={isValidConnection}
+        nodeTypes={nodeTypes}
+        connectionMode={ConnectionMode.Loose}
+        fitView
+        className="bg-background"
+      >
+        <Background className="bg-background" />
+        <Controls className="bg-card border border-border" />
+        <MiniMap
+          className="bg-card border border-border"
+          nodeColor="#F3C5DB"
+          maskColor="rgba(70, 6, 43, 0.6)"
+        />
+        <WorkflowToolbar
+          onClearCanvas={clearCanvas}
+          onExecuteWorkflow={executeWorkflow}
+          onResetWorkflow={resetWorkflow}
+          isExecuting={isExecuting}
+        />
+      </ReactFlow>
     </div>
   );
 }
 
-export default function WorkflowCanvas() {
+interface WorkflowCanvasProps {
+  onAddNode?: (type: NodeType) => void;
+}
+
+export default function WorkflowCanvas({ onAddNode }: WorkflowCanvasProps) {
   return (
     <ReactFlowProvider>
       <WorkflowCanvasInner />
