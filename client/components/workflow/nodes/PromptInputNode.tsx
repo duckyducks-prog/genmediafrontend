@@ -2,20 +2,33 @@ import { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { Textarea } from '@/components/ui/textarea';
 import { PromptInputNodeData } from '../types';
-import { Type } from 'lucide-react';
+import { Type, CheckCircle2, Loader2 } from 'lucide-react';
 
 function PromptInputNode({ data, id }: NodeProps<PromptInputNodeData>) {
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    // Update will be handled by parent
     data.prompt = e.target.value;
   };
 
+  const status = (data as any).status || 'ready';
+  const isExecuting = status === 'executing';
+  const isCompleted = status === 'completed';
+
+  const getBorderColor = () => {
+    if (isExecuting) return 'border-yellow-500';
+    if (isCompleted) return 'border-green-500';
+    return 'border-border';
+  };
+
   return (
-    <div className="bg-card border-2 border-border rounded-lg p-4 min-w-[280px] shadow-lg">
+    <div className={`bg-card border-2 rounded-lg p-4 min-w-[280px] shadow-lg transition-colors ${getBorderColor()}`}>
       {/* Node Header */}
-      <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border">
-        <Type className="w-4 h-4 text-primary" />
-        <div className="font-semibold text-sm">{data.label || 'Prompt Input'}</div>
+      <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
+        <div className="flex items-center gap-2">
+          <Type className="w-4 h-4 text-primary" />
+          <div className="font-semibold text-sm">{data.label || 'Prompt Input'}</div>
+        </div>
+        {isExecuting && <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />}
+        {isCompleted && <CheckCircle2 className="w-4 h-4 text-green-500" />}
       </div>
 
       {/* Node Content */}
