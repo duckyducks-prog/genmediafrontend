@@ -176,10 +176,22 @@ export function useWorkflowExecution(
 
           try {
             // Call the real video generation API
+            const requestBody: any = { prompt };
+
+            // Add first frame if provided
+            if (firstFrame) {
+              requestBody.first_frame = firstFrame;
+            }
+
+            // Add last frame if provided
+            if (lastFrame) {
+              requestBody.last_frame = lastFrame;
+            }
+
             const response = await fetch('https://veo-api-82187245577.us-central1.run.app/generate/video', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ prompt }),
+              body: JSON.stringify(requestBody),
             });
 
             if (!response.ok) {
