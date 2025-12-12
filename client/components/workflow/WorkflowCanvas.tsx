@@ -15,7 +15,7 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 import "./workflow.css";
-import { WorkflowNode, WorkflowEdge, NodeType } from "./types";
+import { WorkflowNode, WorkflowEdge, NodeType, WorkflowNodeData } from "./types";
 import NodePalette from "./NodePalette";
 import WorkflowToolbar from "./WorkflowToolbar";
 import { useWorkflowExecution } from "./useWorkflowExecution";
@@ -53,8 +53,8 @@ const nodeTypes: NodeTypes = {
 };
 
 function WorkflowCanvasInner() {
-  const [nodes, setNodes, onNodesChange] = useNodesState<WorkflowNode>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<WorkflowEdge>([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<WorkflowNodeData>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [reactFlowInstance, setReactFlowInstance] =
     useState<ReactFlowInstance | null>(null);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
