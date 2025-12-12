@@ -1,7 +1,8 @@
 import { memo, useEffect } from 'react';
-import { Handle, Position, NodeProps } from 'reactflow';
-import { PromptConcatenatorNodeData, NODE_CONFIGURATIONS, NodeType } from '../types';
+import { Handle, Position, NodeProps, useReactFlow } from 'reactflow';
+import { PromptConcatenatorNodeData, NODE_CONFIGURATIONS, NodeType, WorkflowNode, WorkflowEdge } from '../types';
 import { Combine, ChevronDown } from 'lucide-react';
+import { gatherNodeInputs, executeConcatenator } from '../executionHelpers';
 
 const SEPARATORS = {
   Space: ' ',
@@ -13,6 +14,35 @@ const SEPARATORS = {
 function PromptConcatenatorNode({ data, id }: NodeProps<PromptConcatenatorNodeData>) {
   const config = NODE_CONFIGURATIONS[NodeType.PromptConcatenator];
   const status = data.status || 'ready';
+  const { getNodes, getEdges } = useReactFlow();
+
+  // Real-time execution: Update outputs whenever inputs or separator changes
+  useEffect(() => {
+    const nodes = getNodes() as WorkflowNode[];
+    const edges = getEdges() as WorkflowEdge[];
+    const currentNode = nodes.find(n => n.id === id);
+
+    if (!currentNode) return;
+
+    // Gather inputs from connected nodes
+    const inputs = gatherNodeInputs(currentNode, nodes, edges);
+
+    // Compute combined text
+    const combined = executeConcatenator(inputs, data.separator);
+
+    // Update node data with preview and outputs
+    const event = new CustomEvent('node-update', {
+      detail: {
+        id,
+        data: {
+          ...data,
+          combinedPreview: combined,
+          outputs: { combined },
+        },
+      },
+    });
+    window.dispatchEvent(event);
+  }, [id, data.separator, getNodes, getEdges]);
 
   const getBorderColor = () => {
     if (status === 'executing') return 'border-yellow-500';
