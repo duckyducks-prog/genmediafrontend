@@ -17,6 +17,7 @@ function PromptInputNode({ data, id }: NodeProps<PromptInputNodeData>) {
               data: {
                 ...node.data,
                 prompt: newPrompt,
+                outputs: { text: newPrompt }, // Store output for downstream nodes
               },
             }
           : node,
@@ -66,7 +67,7 @@ function PromptInputNode({ data, id }: NodeProps<PromptInputNodeData>) {
       <Handle
         type="source"
         position={Position.Right}
-        id="prompt-output"
+        id="text"
         className="!w-3 !h-3 !bg-primary !border-2 !border-background"
         style={{ top: "50%" }}
       />
