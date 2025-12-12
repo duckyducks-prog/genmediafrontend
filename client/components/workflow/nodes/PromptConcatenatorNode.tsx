@@ -134,7 +134,7 @@ function PromptConcatenatorNode({ data, id }: NodeProps<PromptConcatenatorNodeDa
         position={Position.Right}
         id="combined"
         className="!w-3 !h-3 !bg-primary !border-2 !border-background"
-        style={{ top: '50%' }}
+        style={{ top: '50%', transform: 'translateY(-50%)' }}
       />
     </div>
   );
