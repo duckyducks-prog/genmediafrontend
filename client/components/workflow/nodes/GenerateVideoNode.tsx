@@ -227,7 +227,8 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
         type="source"
         position={Position.Right}
         id="video"
-        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
+        data-connector-type={config.outputConnectors[0]?.type}
+        className="!w-3 !h-3 !border-2 !border-background"
         style={{ top: '50%', transform: 'translateY(-50%)' }}
       />
     </div>
