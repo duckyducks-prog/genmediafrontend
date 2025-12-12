@@ -69,9 +69,8 @@ function PromptConcatenatorNode({ data, id }: NodeProps<PromptConcatenatorNodeDa
               type="target"
               position={Position.Left}
               id={input.id}
-              className={`!w-3 !h-3 !border-2 !border-background !-left-[18px] !absolute !top-1/2 !-translate-y-1/2 ${
-                input.required ? '!bg-primary' : '!bg-muted-foreground'
-              }`}
+              data-connector-type={input.type}
+              className="!w-3 !h-3 !border-2 !border-background !-left-[18px] !absolute !top-1/2 !-translate-y-1/2"
             />
             <div className="text-xs font-medium text-muted-foreground">
               {input.label}
@@ -133,7 +132,8 @@ function PromptConcatenatorNode({ data, id }: NodeProps<PromptConcatenatorNodeDa
         type="source"
         position={Position.Right}
         id="combined"
-        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
+        data-connector-type="text"
+        className="!w-3 !h-3 !border-2 !border-background"
         style={{ top: '50%', transform: 'translateY(-50%)' }}
       />
     </div>
