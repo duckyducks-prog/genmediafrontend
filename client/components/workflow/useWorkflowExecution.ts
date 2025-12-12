@@ -402,7 +402,7 @@ export function useWorkflowExecution(
         };
       }
     },
-    [],
+    [updateNodeState],
   );
 
   // Update node visual state
@@ -474,17 +474,19 @@ export function useWorkflowExecution(
         setExecutionProgress(new Map(progress));
         updateNodeState(nodeId, "executing");
 
-        // Get inputs from previous nodes
-        const inputs = getNodeInputs(nodeId, executedData);
+        // Get inputs from connected nodes
+        const inputs = getNodeInputs(nodeId);
 
         // Execute the node
         const result = await executeNode(node, inputs);
 
         if (result.success) {
-          // Store result for downstream nodes
-          executedData.set(nodeId, result.data);
+          // Store result in node outputs for downstream nodes
           progress.set(nodeId, "completed");
-          updateNodeState(nodeId, "completed", result.data);
+          updateNodeState(nodeId, "completed", {
+            ...result.data,
+            outputs: result.data, // Store outputs separately for input gathering
+          });
         } else {
           // Handle error
           progress.set(nodeId, "error");
