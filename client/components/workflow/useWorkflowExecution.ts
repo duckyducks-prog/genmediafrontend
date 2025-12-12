@@ -109,6 +109,29 @@ export function useWorkflowExecution(
     [nodes, edges],
   );
 
+  // Update node visual state
+  const updateNodeState = useCallback(
+    (nodeId: string, status: string, data?: any) => {
+      setNodes((prevNodes) =>
+        prevNodes.map((node) => {
+          if (node.id === nodeId) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                status,
+                isGenerating: status === "executing",
+                ...data,
+              },
+            };
+          }
+          return node;
+        }),
+      );
+    },
+    [setNodes],
+  );
+
   // Execute a single node
   const executeNode = useCallback(
     async (node: WorkflowNode, inputs: any): Promise<ExecutionResult> => {
@@ -403,29 +426,6 @@ export function useWorkflowExecution(
       }
     },
     [updateNodeState],
-  );
-
-  // Update node visual state
-  const updateNodeState = useCallback(
-    (nodeId: string, status: string, data?: any) => {
-      setNodes((prevNodes) =>
-        prevNodes.map((node) => {
-          if (node.id === nodeId) {
-            return {
-              ...node,
-              data: {
-                ...node.data,
-                status,
-                isGenerating: status === "executing",
-                ...data,
-              },
-            };
-          }
-          return node;
-        }),
-      );
-    },
-    [setNodes],
   );
 
   // Main execution function
