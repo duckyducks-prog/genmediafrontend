@@ -28,12 +28,25 @@ import GenerateVideoNode from "./nodes/GenerateVideoNode";
 import ImageOutputNode from "./nodes/ImageOutputNode";
 import VideoOutputNode from "./nodes/VideoOutputNode";
 import DownloadNode from "./nodes/DownloadNode";
+import PromptConcatenatorNode from "./nodes/PromptConcatenatorNode";
+import FormatNode from "./nodes/FormatNode";
+import LLMNode from "./nodes/LLMNode";
 
 const nodeTypes: NodeTypes = {
-  [NodeType.PromptInput]: PromptInputNode,
-  [NodeType.ImageUpload]: ImageUploadNode,
+  // Input nodes
+  [NodeType.Prompt]: PromptInputNode,
+  [NodeType.ImageInput]: ImageUploadNode,
+
+  // Modifier nodes
+  [NodeType.PromptConcatenator]: PromptConcatenatorNode,
+  [NodeType.Format]: FormatNode,
+
+  // Action nodes
   [NodeType.GenerateImage]: GenerateImageNode,
   [NodeType.GenerateVideo]: GenerateVideoNode,
+  [NodeType.LLM]: LLMNode,
+
+  // Output nodes
   [NodeType.ImageOutput]: ImageOutputNode,
   [NodeType.VideoOutput]: VideoOutputNode,
   [NodeType.Download]: DownloadNode,
@@ -72,18 +85,52 @@ function WorkflowCanvasInner() {
       let data: any = {};
 
       switch (type) {
-        case NodeType.PromptInput:
-          data = { prompt: "", label: "Prompt Input" };
+        // Input nodes
+        case NodeType.Prompt:
+          data = { prompt: "", label: "Prompt", outputs: {} };
           break;
-        case NodeType.ImageUpload:
-          data = { imageUrl: null, file: null, label: "Image Upload" };
+        case NodeType.ImageInput:
+          data = { imageUrl: null, file: null, label: "Image Input", outputs: {} };
           break;
+
+        // Modifier nodes
+        case NodeType.PromptConcatenator:
+          data = {
+            separator: "Space",
+            label: "Prompt Concatenator",
+            outputs: {},
+          };
+          break;
+        case NodeType.Format:
+          data = {
+            aspectRatio: "16:9",
+            durationSeconds: 8,
+            generateAudio: true,
+            resolution: "1080p",
+            label: "Format",
+            outputs: {},
+          };
+          break;
+
+        // Action nodes
         case NodeType.GenerateImage:
-          data = { isGenerating: false, status: "Ready" };
+          data = { isGenerating: false, status: "ready", label: "Generate Image", outputs: {} };
           break;
         case NodeType.GenerateVideo:
-          data = { isGenerating: false, status: "Ready" };
+          data = { isGenerating: false, status: "ready", label: "Generate Video", outputs: {} };
           break;
+        case NodeType.LLM:
+          data = {
+            systemPrompt: "",
+            temperature: 0.7,
+            isGenerating: false,
+            status: "ready",
+            label: "LLM",
+            outputs: {},
+          };
+          break;
+
+        // Output nodes
         case NodeType.ImageOutput:
           data = { result: null, type: "image", label: "Image Output" };
           break;
