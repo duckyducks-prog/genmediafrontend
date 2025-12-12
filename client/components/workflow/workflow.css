@@ -3,6 +3,8 @@
 /* Main ReactFlow Container */
 .react-flow {
   background-color: hsl(var(--background));
+  height: 100%;
+  min-height: 500px;
 }
 
 /* Background Pattern */
