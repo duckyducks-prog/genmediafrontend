@@ -38,7 +38,8 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
         type="target"
         position={Position.Left}
         id="media-input"
-        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
+        data-connector-type="any"
+        className="!w-3 !h-3 !border-2 !border-background"
         style={{ top: "50%", transform: 'translateY(-50%)' }}
       />
 
