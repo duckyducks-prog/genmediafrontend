@@ -63,7 +63,7 @@ function FormatNode({ data, id }: NodeProps<FormatNodeData>) {
         position={Position.Left}
         id="input"
         className="!w-3 !h-3 !bg-muted-foreground !border-2 !border-background"
-        style={{ top: '30px' }}
+        style={{ top: '50%', transform: 'translateY(-50%)' }}
       />
 
       {/* Configuration Options */}
@@ -162,7 +162,7 @@ function FormatNode({ data, id }: NodeProps<FormatNodeData>) {
         position={Position.Right}
         id="format"
         className="!w-3 !h-3 !bg-primary !border-2 !border-background"
-        style={{ top: '50%' }}
+        style={{ top: '50%', transform: 'translateY(-50%)' }}
       />
     </div>
   );
