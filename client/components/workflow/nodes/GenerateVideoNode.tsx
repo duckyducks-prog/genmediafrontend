@@ -20,6 +20,16 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
   const isCompleted = status === 'completed';
   const isError = status === 'error';
   const videoUrl = (data as any).videoUrl;
+  const { getEdges } = useReactFlow();
+
+  // Check for conflicting connections (mutual exclusion)
+  const edges = getEdges() as WorkflowEdge[];
+  const hasFrameConnections = edges.some(
+    e => e.target === id && ['first_frame', 'last_frame'].includes(e.targetHandle || '')
+  );
+  const hasReferenceConnections = edges.some(
+    e => e.target === id && e.targetHandle === 'reference_images'
+  );
 
   const getBorderColor = () => {
     if (isGenerating) return 'border-yellow-500';
@@ -107,6 +117,17 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
           const isRequired = input.required;
           const isMultiple = input.acceptsMultiple;
 
+          // Check if this handle should be disabled due to mutual exclusion
+          const isDisabled =
+            (input.id === 'reference_images' && hasFrameConnections) ||
+            (['first_frame', 'last_frame'].includes(input.id) && hasReferenceConnections);
+
+          const disabledMessage = isDisabled
+            ? input.id === 'reference_images'
+              ? 'Cannot use with first/last frame'
+              : 'Cannot use with reference images'
+            : '';
+
           return (
             <div key={input.id} className="flex items-center gap-2 relative">
               <Handle
@@ -114,14 +135,22 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
                 position={Position.Left}
                 id={input.id}
                 className={`!w-3 !h-3 !border-2 !border-background ${
-                  isRequired ? '!bg-primary' : '!bg-muted-foreground'
+                  isDisabled
+                    ? 'react-flow__handle-disabled'
+                    : isRequired
+                    ? '!bg-primary'
+                    : '!bg-muted-foreground'
                 }`}
                 style={{ top: `${positions[index]}px` }}
+                title={isDisabled ? disabledMessage : ''}
               />
-              <div className="text-xs font-medium text-muted-foreground ml-2">
+              <div className={`text-xs font-medium ml-2 ${
+                isDisabled ? 'text-muted-foreground/50 line-through' : 'text-muted-foreground'
+              }`}>
                 {input.label}
-                {isRequired && <span className="text-red-500 ml-1">*</span>}
-                {isMultiple && <span className="text-blue-500 ml-1">(multi)</span>}
+                {isRequired && !isDisabled && <span className="text-red-500 ml-1">*</span>}
+                {isMultiple && !isDisabled && <span className="text-blue-500 ml-1">(multi)</span>}
+                {isDisabled && <span className="text-amber-500 ml-1 text-[10px]">⚠ {disabledMessage}</span>}
               </div>
             </div>
           );
