@@ -176,8 +176,6 @@ export async function pollVideoStatus(
   onProgress?: (attempts: number) => void
 ): Promise<{ success: boolean; videoUrl?: string; error?: string }> {
   const maxAttempts = 30; // 5 minutes (30 * 10 seconds)
-  let consecutiveErrors = 0;
-  const maxConsecutiveErrors = 3;
 
   for (let attempts = 1; attempts <= maxAttempts; attempts++) {
     // Wait 10 seconds between polls
@@ -188,39 +186,21 @@ export async function pollVideoStatus(
     }
 
     try {
-      // Add timeout to fetch request
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
       const statusResponse = await fetch(
         'https://veo-api-82187245577.us-central1.run.app/video/status',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ operation_name: operationName }),
-          signal: controller.signal,
         }
       );
 
-      clearTimeout(timeoutId);
-
       if (!statusResponse.ok) {
         console.warn(`Status check failed (attempt ${attempts}/${maxAttempts}):`, statusResponse.status);
-        consecutiveErrors++;
-
-        if (consecutiveErrors >= maxConsecutiveErrors) {
-          return {
-            success: false,
-            error: `Failed to check video status after ${maxConsecutiveErrors} consecutive errors. Last status: ${statusResponse.status}`,
-          };
-        }
         continue;
       }
 
       const statusData = await statusResponse.json();
-
-      // Reset consecutive errors on successful response
-      consecutiveErrors = 0;
 
       // Debug: log the actual response to understand the structure
       console.log(`[DEBUG] Status response (attempt ${attempts}):`, statusData);
@@ -231,11 +211,6 @@ export async function pollVideoStatus(
           return {
             success: true,
             videoUrl: `data:video/mp4;base64,${statusData.video_base64}`,
-          };
-        } else if (statusData.storage_uri) {
-          return {
-            success: false,
-            error: 'Video stored in Cloud Storage. Please download from: ' + statusData.storage_uri,
           };
         } else {
           return {
@@ -256,17 +231,7 @@ export async function pollVideoStatus(
       // Still processing, continue polling
       console.log(`Video generation in progress... (attempt ${attempts}/${maxAttempts})`);
     } catch (pollError) {
-      consecutiveErrors++;
-      console.error(`Poll error (attempt ${attempts}/${maxAttempts}):`, pollError);
-
-      // Fail fast if too many consecutive network errors
-      if (consecutiveErrors >= maxConsecutiveErrors) {
-        return {
-          success: false,
-          error: `Network error: Failed to connect to video status endpoint after ${maxConsecutiveErrors} attempts. ${pollError instanceof Error ? pollError.message : String(pollError)}`,
-        };
-      }
-
+      console.warn(`Poll error (attempt ${attempts}/${maxAttempts}):`, pollError);
       // Continue polling on errors
     }
   }
