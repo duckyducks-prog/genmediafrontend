@@ -19,7 +19,7 @@ import { WorkflowNode, WorkflowEdge, NodeType, WorkflowNodeData } from "./types"
 import NodePalette from "./NodePalette";
 import WorkflowToolbar from "./WorkflowToolbar";
 import { useWorkflowExecution } from "./useWorkflowExecution";
-import { validateConnection } from "./connectionValidation";
+import { validateConnection, getConnectorType } from "./connectionValidation";
 
 // Import all custom node components
 import PromptInputNode from "./nodes/PromptInputNode";
@@ -89,9 +89,21 @@ function WorkflowCanvasInner() {
   // Handle new connections between nodes
   const onConnect = useCallback(
     (params: Connection | Edge) => {
-      setEdges((eds) => addEdge(params, eds));
+      // Get the source node to determine connector type
+      const sourceNode = nodes.find(n => n.id === params.source);
+      if (sourceNode) {
+        const connectorType = getConnectorType(sourceNode, params.sourceHandle, true);
+        // Add connector type to edge data for styling
+        const newEdge = {
+          ...params,
+          data: { connectorType: connectorType || 'any' },
+        };
+        setEdges((eds) => addEdge(newEdge, eds));
+      } else {
+        setEdges((eds) => addEdge(params, eds));
+      }
     },
-    [setEdges],
+    [setEdges, nodes],
   );
 
   // Validate connections based on handle data types
