@@ -94,6 +94,42 @@
   background: hsl(var(--primary)) !important;
 }
 
+.react-flow__handle-invalid {
+  background: hsl(var(--destructive)) !important;
+  cursor: not-allowed;
+}
+
+/* Disabled handles (for mutual exclusion) */
+.react-flow__handle-disabled {
+  background: hsl(var(--muted)) !important;
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Required input indicator */
+.react-flow__handle-required {
+  border-color: hsl(var(--destructive)) !important;
+}
+
+/* Multi-input indicator */
+.react-flow__handle.has-multiple-connections::after {
+  content: attr(data-connection-count);
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
 /* Controls */
 .react-flow__controls {
   background: hsl(var(--card));
