@@ -272,11 +272,6 @@ function WorkflowCanvasInner() {
         >
           <Background className="bg-background" />
           <Controls className="bg-card border border-border" />
-          <MiniMap
-            className="bg-card border border-border"
-            nodeColor="#F3C5DB"
-            maskColor="rgba(70, 6, 43, 0.6)"
-          />
           <WorkflowToolbar
             onClearCanvas={clearCanvas}
             onExecuteWorkflow={executeWorkflow}
