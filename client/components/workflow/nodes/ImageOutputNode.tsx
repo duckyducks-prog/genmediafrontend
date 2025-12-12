@@ -83,7 +83,7 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
         position={Position.Left}
         id="image-input"
         className="!w-3 !h-3 !bg-accent !border-2 !border-background"
-        style={{ top: "50%" }}
+        style={{ top: "50%", transform: 'translateY(-50%)' }}
       />
 
       {/* Node Content */}
@@ -126,7 +126,7 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
         position={Position.Right}
         id="media-output"
         className="!w-3 !h-3 !bg-accent !border-2 !border-background"
-        style={{ top: "50%" }}
+        style={{ top: "50%", transform: 'translateY(-50%)' }}
       />
     </div>
   );
