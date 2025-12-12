@@ -56,7 +56,8 @@ function LLMNode({ data, id }: NodeProps<LLMNodeData>) {
             type="target"
             position={Position.Left}
             id="prompt"
-            className="!w-3 !h-3 !bg-primary !border-2 !border-background !-left-[18px] !absolute !top-1/2 !-translate-y-1/2"
+            data-connector-type="text"
+            className="!w-3 !h-3 !border-2 !border-background !-left-[18px] !absolute !top-1/2 !-translate-y-1/2"
           />
           <div className="text-xs font-medium text-muted-foreground">
             Prompt<span className="text-red-500 ml-1">*</span>
@@ -67,7 +68,8 @@ function LLMNode({ data, id }: NodeProps<LLMNodeData>) {
             type="target"
             position={Position.Left}
             id="context"
-            className="!w-3 !h-3 !bg-muted-foreground !border-2 !border-background !-left-[18px] !absolute !top-1/2 !-translate-y-1/2"
+            data-connector-type="text"
+            className="!w-3 !h-3 !border-2 !border-background !-left-[18px] !absolute !top-1/2 !-translate-y-1/2"
           />
           <div className="text-xs font-medium text-muted-foreground">
             Context
@@ -151,7 +153,8 @@ function LLMNode({ data, id }: NodeProps<LLMNodeData>) {
         type="source"
         position={Position.Right}
         id="response"
-        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
+        data-connector-type="text"
+        className="!w-3 !h-3 !border-2 !border-background"
         style={{ top: '50%', transform: 'translateY(-50%)' }}
       />
     </div>
