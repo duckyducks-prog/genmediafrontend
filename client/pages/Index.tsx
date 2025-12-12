@@ -161,7 +161,7 @@ export default function Index() {
   }) => (
     <button
       onClick={() => setCurrentTab(value)}
-      className={`flex items-center justify-center w-12 h-12 rounded-lg transition-colors ${
+      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
         currentTab === value
           ? "bg-primary text-primary-foreground"
           : "text-muted-foreground hover:bg-secondary"
@@ -169,28 +169,29 @@ export default function Index() {
       title={label}
     >
       {Icon}
+      <span className="hidden sm:inline">{label}</span>
     </button>
   );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/20 flex flex-col">
-      <header className="px-4 py-8 border-b border-border">
-        <div className="container mx-auto">
-          <div className="inline-flex items-center gap-2 mb-4">
-            <img
-              src="https://cdn.builder.io/api/v1/image/assets%2Fb1d3bf7cc0eb4f0daca65fdc5a7d5179%2F30fc0e70b75040f4858161ac143ab00c?format=webp&width=800"
-              alt="Sprocket"
-              className="w-10 h-10"
-            />
-            <h1 className="text-4xl font-bold" style={{ color: "#F8F5EE" }}>
-              HubSpot Gen Media Studio
-            </h1>
+      <header className="border-b border-border">
+        <div className="px-4 py-8 border-b border-border">
+          <div className="container mx-auto">
+            <div className="inline-flex items-center gap-2">
+              <img
+                src="https://cdn.builder.io/api/v1/image/assets%2Fb1d3bf7cc0eb4f0daca65fdc5a7d5179%2F30fc0e70b75040f4858161ac143ab00c?format=webp&width=800"
+                alt="Sprocket"
+                className="w-10 h-10"
+              />
+              <h1 className="text-4xl font-bold" style={{ color: "#F8F5EE" }}>
+                HubSpot Gen Media Studio
+              </h1>
+            </div>
           </div>
         </div>
-      </header>
 
-      <div className="flex flex-1 gap-0">
-        <aside className="w-20 border-r border-border px-3 py-8 hidden lg:flex flex-col gap-4 items-center">
+        <nav className="px-4 py-4 flex gap-2 items-center justify-start overflow-x-auto border-b border-border">
           <NavLink
             icon={<Home className="w-5 h-5" />}
             label="Home"
@@ -211,7 +212,10 @@ export default function Index() {
             label="Workflow"
             value="workflow"
           />
-        </aside>
+        </nav>
+      </header>
+
+      <div className="flex flex-1 gap-0">
 
         {currentTab === "workflow" && (
           <aside className="w-64 border-r border-border hidden lg:block">
