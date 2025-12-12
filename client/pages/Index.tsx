@@ -14,8 +14,6 @@ import {
   Workflow as WorkflowIcon,
 } from "lucide-react";
 import WorkflowCanvas from "@/components/workflow/WorkflowCanvas";
-import NodePalette from "@/components/workflow/NodePalette";
-import { NodeType } from "@/components/workflow/types";
 
 export default function Index() {
   const [currentTab, setCurrentTab] = useState("image");
@@ -215,15 +213,8 @@ export default function Index() {
       </header>
 
       <div className="flex flex-1 gap-0">
-
-        {currentTab === "workflow" && (
-          <aside className="w-64 border-r border-border hidden lg:block">
-            <NodePalette onAddNode={(type: NodeType) => {}} />
-          </aside>
-        )}
-
         <div
-          className={`flex-1 container mx-auto px-4 py-8 ${currentTab === "workflow" ? "max-w-none" : "max-w-4xl"}`}
+          className={`flex-1 container mx-auto px-4 py-8 ${currentTab === "workflow" ? "max-w-none px-0" : "max-w-4xl"}`}
         >
           <Tabs value={currentTab} className="w-full">
             <TabsContent value="image" className="space-y-6">
