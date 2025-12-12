@@ -2,7 +2,6 @@ import { useCallback, useState, useRef, useEffect } from "react";
 import ReactFlow, {
   Background,
   Controls,
-  MiniMap,
   addEdge,
   useNodesState,
   useEdgesState,
