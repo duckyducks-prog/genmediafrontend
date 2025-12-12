@@ -186,14 +186,14 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
           position={Position.Right}
           id="images"
           className="!w-3 !h-3 !bg-primary !border-2 !border-background"
-          style={{ top: '40%' }}
+          style={{ top: '40%', transform: 'translateY(-50%)' }}
         />
         <Handle
           type="source"
           position={Position.Right}
           id="image"
           className="!w-3 !h-3 !bg-primary !border-2 !border-background"
-          style={{ top: '60%' }}
+          style={{ top: '60%', transform: 'translateY(-50%)' }}
         />
       </div>
     </div>
