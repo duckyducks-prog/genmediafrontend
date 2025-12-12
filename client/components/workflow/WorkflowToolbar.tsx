@@ -31,11 +31,11 @@ export default function WorkflowToolbar({
         disabled={isExecuting}
         variant="default"
         size="sm"
-        title="Run Workflow"
+        title="Run All Nodes"
         className="bg-[#F3C5DB] hover:bg-[#D6C2D9] text-[#46062B]"
       >
         <Play className="w-4 h-4 mr-1" />
-        {isExecuting ? "Running..." : "Run"}
+        {isExecuting ? "Running..." : "Run All"}
       </Button>
 
       <Button
