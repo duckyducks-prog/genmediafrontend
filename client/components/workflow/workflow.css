@@ -29,24 +29,24 @@
 }
 
 /* Color-coded edges by connector type */
-.react-flow__edge[data-connector-type="text"] .react-flow__edge-path {
+.react-flow__edge.connector-type-text .react-flow__edge-path {
   stroke: #D6C2D9 !important;
 }
 
-.react-flow__edge[data-connector-type="image"] .react-flow__edge-path,
-.react-flow__edge[data-connector-type="images"] .react-flow__edge-path {
+.react-flow__edge.connector-type-image .react-flow__edge-path,
+.react-flow__edge.connector-type-images .react-flow__edge-path {
   stroke: #6DD3CE !important;
 }
 
-.react-flow__edge[data-connector-type="video"] .react-flow__edge-path {
+.react-flow__edge.connector-type-video .react-flow__edge-path {
   stroke: #C96DD8 !important;
 }
 
-.react-flow__edge[data-connector-type="format"] .react-flow__edge-path {
+.react-flow__edge.connector-type-format .react-flow__edge-path {
   stroke: #F3C5DB !important;
 }
 
-.react-flow__edge[data-connector-type="any"] .react-flow__edge-path {
+.react-flow__edge.connector-type-any .react-flow__edge-path {
   stroke: #B8B8B8 !important;
 }
 

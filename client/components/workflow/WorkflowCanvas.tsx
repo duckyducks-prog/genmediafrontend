@@ -93,9 +93,10 @@ function WorkflowCanvasInner() {
       const sourceNode = nodes.find(n => n.id === params.source);
       if (sourceNode) {
         const connectorType = getConnectorType(sourceNode, params.sourceHandle, true);
-        // Add connector type to edge data for styling
+        // Add connector type class and data for styling
         const newEdge = {
           ...params,
+          className: `connector-type-${connectorType || 'any'}`,
           data: { connectorType: connectorType || 'any' },
         };
         setEdges((eds) => addEdge(newEdge, eds));
