@@ -239,12 +239,11 @@ export function useWorkflowExecution(
 
                 try {
                   const statusResponse = await fetch(
-                    "https://veo-api-82187245577.us-central1.run.app/video/status",
+                    `https://veo-api-82187245577.us-central1.run.app/video/status/${encodeURIComponent(operationName)}`,
                     {
-                      method: "POST",
+                      method: "GET",
                       headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ operation_name: operationName }),
-                    },
+                    }
                   );
 
                   if (!statusResponse.ok) {
