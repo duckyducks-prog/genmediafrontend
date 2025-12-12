@@ -128,7 +128,7 @@ function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
         position={Position.Right}
         id="image"
         className="!w-3 !h-3 !bg-accent !border-2 !border-background"
-        style={{ top: "50%" }}
+        style={{ top: "50%", transform: 'translateY(-50%)' }}
       />
     </div>
   );
