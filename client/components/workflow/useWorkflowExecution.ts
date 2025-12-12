@@ -459,58 +459,110 @@ export function useWorkflowExecution(
     const executedData = new Map<string, any>();
     const progress = new Map<string, string>();
 
+    // Group nodes by execution level for parallel execution
+    const levels = groupNodesByLevel(executionOrder, nodes, edges);
+
     toast({
       title: "Workflow Started",
-      description: `Executing ${executionOrder.length} nodes...`,
+      description: `Executing ${executionOrder.length} nodes across ${levels.length} level${levels.length > 1 ? 's' : ''}...`,
     });
 
     try {
-      // Execute nodes in order
-      for (const nodeId of executionOrder) {
-        const node = nodes.find((n) => n.id === nodeId);
-        if (!node) continue;
+      let totalCompleted = 0;
+      let totalFailed = 0;
 
-        // Update status to executing
-        progress.set(nodeId, "executing");
+      // Execute each level in sequence, but nodes within a level in parallel
+      for (let levelIndex = 0; levelIndex < levels.length; levelIndex++) {
+        const levelNodes = levels[levelIndex];
+
+        toast({
+          title: `Executing Level ${levelIndex + 1}/${levels.length}`,
+          description: `Running ${levelNodes.length} node${levelNodes.length > 1 ? 's' : ''} in parallel...`,
+        });
+
+        // Update all nodes in this level to executing
+        levelNodes.forEach((node) => {
+          progress.set(node.id, "executing");
+          updateNodeState(node.id, "executing");
+        });
         setExecutionProgress(new Map(progress));
-        updateNodeState(nodeId, "executing");
 
-        // Get inputs from connected nodes
-        const inputs = getNodeInputs(nodeId);
+        // Execute all nodes in this level in parallel
+        const results = await Promise.allSettled(
+          levelNodes.map(async (node) => {
+            const inputs = getNodeInputs(node.id);
 
-        // Execute the node
-        const result = await executeNode(node, inputs);
+            // Validate inputs before execution
+            const validation = validateNodeInputs(node, inputs);
+            if (!validation.valid) {
+              return {
+                nodeId: node.id,
+                success: false,
+                error: validation.error,
+              };
+            }
 
-        if (result.success) {
-          // Store result in node outputs for downstream nodes
-          progress.set(nodeId, "completed");
-          updateNodeState(nodeId, "completed", {
-            ...result.data,
-            outputs: result.data, // Store outputs separately for input gathering
-          });
-        } else {
-          // Handle error
-          progress.set(nodeId, "error");
-          updateNodeState(nodeId, "error", { error: result.error });
+            const result = await executeNode(node, inputs);
+            return {
+              nodeId: node.id,
+              ...result,
+            };
+          })
+        );
 
-          toast({
-            title: "Node Execution Failed",
-            description: `${node.data.label || node.type}: ${result.error}`,
-            variant: "destructive",
-          });
+        // Process results for this level
+        results.forEach((result, index) => {
+          const node = levelNodes[index];
 
-          setIsExecuting(false);
-          setExecutionProgress(new Map(progress));
-          return;
-        }
+          if (result.status === 'fulfilled') {
+            if (result.value.success) {
+              progress.set(node.id, "completed");
+              updateNodeState(node.id, "completed", {
+                ...result.value.data,
+                outputs: result.value.data,
+              });
+              totalCompleted++;
+            } else {
+              progress.set(node.id, "error");
+              updateNodeState(node.id, "error", { error: result.value.error });
+              totalFailed++;
+
+              toast({
+                title: "Node Execution Failed",
+                description: `${node.data.label || node.type}: ${result.value.error}`,
+                variant: "destructive",
+              });
+            }
+          } else {
+            // Promise rejected
+            progress.set(node.id, "error");
+            updateNodeState(node.id, "error", { error: String(result.reason) });
+            totalFailed++;
+
+            toast({
+              title: "Node Execution Error",
+              description: `${node.data.label || node.type}: ${result.reason}`,
+              variant: "destructive",
+            });
+          }
+        });
 
         setExecutionProgress(new Map(progress));
       }
 
-      toast({
-        title: "Workflow Completed",
-        description: "All nodes executed successfully!",
-      });
+      // Show completion summary
+      if (totalFailed === 0) {
+        toast({
+          title: "Workflow Completed",
+          description: `All ${totalCompleted} nodes executed successfully!`,
+        });
+      } else {
+        toast({
+          title: "Workflow Completed with Errors",
+          description: `${totalCompleted} succeeded, ${totalFailed} failed`,
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       toast({
         title: "Workflow Error",
