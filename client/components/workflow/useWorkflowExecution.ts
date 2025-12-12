@@ -246,7 +246,7 @@ export function useWorkflowExecution(
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ operation_name: operationName }),
                   },
-                );
+              }
 
                   if (!statusResponse.ok) {
                     console.warn(
