@@ -16,7 +16,7 @@ export function useWorkflowExecution(
   ) => void,
 ) {
   const [isExecuting, setIsExecuting] = useState(false);
-  const [executionProgress, setExecutionProgress] = useState<
+  const [executionProgress, setExecutionProgress] = useState
     Map<string, string>
   >(new Map());
 
@@ -239,14 +239,15 @@ export function useWorkflowExecution(
                 await new Promise((resolve) => setTimeout(resolve, 10000));
                 attempts++;
 
-                const statusResponse = await fetch(
-                  `https://veo-api-82187245577.us-central1.run.app/video/status`,
-                  {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ operation_name: operationName }),
-                  },
-              }
+                try {
+                  const statusResponse = await fetch(
+                    "https://veo-api-82187245577.us-central1.run.app/video/status",
+                    {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ operation_name: operationName }),
+                    },
+                  );
 
                   if (!statusResponse.ok) {
                     console.warn(
@@ -283,10 +284,10 @@ export function useWorkflowExecution(
                   }
 
                   // Check for errors
-                  if (statusData.error) {
+                  if (statusData.status === "error") {
                     return {
                       success: false,
-                      error: `Video generation failed: ${statusData.error.message || "Unknown error"}`,
+                      error: `Video generation failed: ${statusData.error || "Unknown error"}`,
                     };
                   }
 
