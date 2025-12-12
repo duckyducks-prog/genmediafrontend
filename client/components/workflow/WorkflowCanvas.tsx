@@ -59,6 +59,32 @@ function WorkflowCanvasInner() {
     useState<ReactFlowInstance | null>(null);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
+  // Listen for node update events from node components
+  useEffect(() => {
+    const handleNodeUpdate = (event: any) => {
+      const { id, data } = event.detail;
+      setNodes((nds) =>
+        nds.map((node) => (node.id === id ? { ...node, data } : node))
+      );
+    };
+
+    window.addEventListener('node-update', handleNodeUpdate);
+    return () => window.removeEventListener('node-update', handleNodeUpdate);
+  }, [setNodes]);
+
+  // Listen for node execute events
+  useEffect(() => {
+    const handleNodeExecute = (event: any) => {
+      const { nodeId } = event.detail;
+      // Trigger execution for a single node
+      // This will be handled by the workflow execution system
+      console.log('Execute node:', nodeId);
+    };
+
+    window.addEventListener('node-execute', handleNodeExecute);
+    return () => window.removeEventListener('node-execute', handleNodeExecute);
+  }, []);
+
   // Handle new connections between nodes
   const onConnect = useCallback(
     (params: Connection | Edge) => {
