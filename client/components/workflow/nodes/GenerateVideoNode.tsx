@@ -133,12 +133,11 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
                 type="target"
                 position={Position.Left}
                 id={input.id}
+                data-connector-type={input.type}
                 className={`!w-3 !h-3 !border-2 !border-background !-left-[18px] !absolute !top-1/2 !-translate-y-1/2 ${
                   isDisabled
                     ? 'react-flow__handle-disabled'
-                    : isRequired
-                    ? '!bg-primary'
-                    : '!bg-muted-foreground'
+                    : ''
                 }`}
                 title={isDisabled ? disabledMessage : ''}
               />
