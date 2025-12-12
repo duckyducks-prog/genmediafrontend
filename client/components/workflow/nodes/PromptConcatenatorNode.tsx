@@ -64,17 +64,16 @@ function PromptConcatenatorNode({ data, id }: NodeProps<PromptConcatenatorNodeDa
       {/* Input Handles - Left side */}
       <div className="space-y-3 mb-3">
         {config.inputConnectors.map((input, index) => (
-          <div key={input.id} className="flex items-center gap-2 relative">
+          <div key={input.id} className="flex items-center gap-2 relative h-6">
             <Handle
               type="target"
               position={Position.Left}
               id={input.id}
-              className={`!w-3 !h-3 !border-2 !border-background ${
+              className={`!w-3 !h-3 !border-2 !border-background !-left-[18px] !absolute !top-1/2 !-translate-y-1/2 ${
                 input.required ? '!bg-primary' : '!bg-muted-foreground'
               }`}
-              style={{ top: `${30 + index * 35}px` }}
             />
-            <div className="text-xs font-medium text-muted-foreground ml-2">
+            <div className="text-xs font-medium text-muted-foreground">
               {input.label}
               {input.required && <span className="text-red-500 ml-1">*</span>}
             </div>
