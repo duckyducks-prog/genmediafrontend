@@ -105,10 +105,12 @@ function ImageUploadNode({ data, id }: NodeProps<ImageUploadNodeData>) {
         ) : (
           <label
             htmlFor={`file-upload-${id}`}
-            className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-border rounded-lg cursor-pointer bg-muted/30 hover:bg-muted/50 transition-colors nodrag"
+            className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-accent/10 transition-colors"
           >
-            <Upload className="w-6 h-6 mb-1 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">Click to upload</p>
+            <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+            <span className="text-xs text-muted-foreground">
+              Click to upload
+            </span>
             <input
               id={`file-upload-${id}`}
               type="file"
