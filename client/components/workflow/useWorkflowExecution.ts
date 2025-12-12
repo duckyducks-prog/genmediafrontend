@@ -239,14 +239,14 @@ export function useWorkflowExecution(
                 await new Promise((resolve) => setTimeout(resolve, 10000));
                 attempts++;
 
-                try {
-                  const statusResponse = await fetch(
-                    `https://veo-api-82187245577.us-central1.run.app/video/status/${encodeURIComponent(operationName)}`,
-                    {
-                      method: "GET",
-                      headers: { "Content-Type": "application/json" },
-                    },
-                  );
+                const statusResponse = await fetch(
+                  `https://veo-api-82187245577.us-central1.run.app/video/status`,
+                  {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ operation_name: operationName }),
+                  },
+                );
 
                   if (!statusResponse.ok) {
                     console.warn(
