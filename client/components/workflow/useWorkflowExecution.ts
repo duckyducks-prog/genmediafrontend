@@ -328,22 +328,22 @@ export function useWorkflowExecution(
           }
 
           case NodeType.ImageOutput: {
-            // Get image from input
-            const imageUrl = inputs["image-input"]?.imageUrl || null;
+            // Get image from input - support both "image" and legacy names
+            const imageUrl = inputs["image-input"] || inputs.image || null;
             return { success: true, data: { imageUrl, type: "image" } };
           }
 
           case NodeType.VideoOutput: {
-            // Get video from input
-            const videoUrl = inputs["video-input"]?.videoUrl || null;
+            // Get video from input - support both "video" and legacy names
+            const videoUrl = inputs["video-input"] || inputs.video || null;
             return { success: true, data: { videoUrl, type: "video" } };
           }
 
           case NodeType.Download: {
             // Get media from input
-            const mediaData = inputs["media-input"] || {};
-            const mediaUrl = mediaData.imageUrl || mediaData.videoUrl || null;
-            const isVideo = !!mediaData.videoUrl;
+            const mediaData = inputs["media-input"] || inputs || {};
+            const mediaUrl = mediaData.image || mediaData.video || mediaData.imageUrl || mediaData.videoUrl || null;
+            const isVideo = !!(mediaData.video || mediaData.videoUrl);
 
             if (mediaUrl) {
               try {
