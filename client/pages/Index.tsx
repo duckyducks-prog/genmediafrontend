@@ -161,7 +161,7 @@ export default function Index() {
   }) => (
     <button
       onClick={() => setCurrentTab(value)}
-      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
+      className={`flex items-center justify-center w-10 h-10 rounded-lg transition-colors ${
         currentTab === value
           ? "bg-primary text-primary-foreground"
           : "text-muted-foreground hover:bg-secondary"
@@ -169,7 +169,6 @@ export default function Index() {
       title={label}
     >
       {Icon}
-      <span className="hidden sm:inline">{label}</span>
     </button>
   );
 
