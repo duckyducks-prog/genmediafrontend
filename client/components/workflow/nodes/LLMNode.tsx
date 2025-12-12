@@ -50,28 +50,26 @@ function LLMNode({ data, id }: NodeProps<LLMNodeData>) {
       </div>
 
       {/* Input Handles - Left side */}
-      <div className="space-y-2 mb-3">
-        <div className="flex items-center gap-2 relative">
+      <div className="space-y-3 mb-4">
+        <div className="flex items-center gap-2 relative h-6">
           <Handle
             type="target"
             position={Position.Left}
             id="prompt"
-            className="!w-3 !h-3 !bg-primary !border-2 !border-background"
-            style={{ top: '50px' }}
+            className="!w-3 !h-3 !bg-primary !border-2 !border-background !-left-[18px] !absolute !top-1/2 !-translate-y-1/2"
           />
-          <div className="text-xs font-medium text-muted-foreground ml-2">
+          <div className="text-xs font-medium text-muted-foreground">
             Prompt<span className="text-red-500 ml-1">*</span>
           </div>
         </div>
-        <div className="flex items-center gap-2 relative">
+        <div className="flex items-center gap-2 relative h-6">
           <Handle
             type="target"
             position={Position.Left}
             id="context"
-            className="!w-3 !h-3 !bg-muted-foreground !border-2 !border-background"
-            style={{ top: '80px' }}
+            className="!w-3 !h-3 !bg-muted-foreground !border-2 !border-background !-left-[18px] !absolute !top-1/2 !-translate-y-1/2"
           />
-          <div className="text-xs font-medium text-muted-foreground ml-2">
+          <div className="text-xs font-medium text-muted-foreground">
             Context
           </div>
         </div>
