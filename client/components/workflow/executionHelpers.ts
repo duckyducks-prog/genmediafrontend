@@ -115,6 +115,60 @@ export function executeFormat(data: any): any {
 }
 
 /**
+ * Group nodes by execution level for parallel execution
+ * Level 0: nodes with no dependencies
+ * Level N: nodes whose all dependencies are in levels < N
+ */
+export function groupNodesByLevel(
+  executionOrder: string[],
+  nodes: WorkflowNode[],
+  edges: WorkflowEdge[]
+): WorkflowNode[][] {
+  const levels: WorkflowNode[][] = [];
+  const nodeDepth = new Map<string, number>();
+
+  // Calculate depth for each node
+  executionOrder.forEach((nodeId) => {
+    const node = nodes.find((n) => n.id === nodeId);
+    if (!node) return;
+
+    // Find all incoming edges
+    const incomingEdges = edges.filter((e) => e.target === nodeId);
+
+    if (incomingEdges.length === 0) {
+      // No dependencies - level 0
+      nodeDepth.set(nodeId, 0);
+    } else {
+      // Find max depth of all dependencies
+      let maxDepth = 0;
+      incomingEdges.forEach((edge) => {
+        const sourceDepth = nodeDepth.get(edge.source) ?? 0;
+        maxDepth = Math.max(maxDepth, sourceDepth);
+      });
+      // This node is one level deeper than its deepest dependency
+      nodeDepth.set(nodeId, maxDepth + 1);
+    }
+  });
+
+  // Group nodes by level
+  executionOrder.forEach((nodeId) => {
+    const node = nodes.find((n) => n.id === nodeId);
+    if (!node) return;
+
+    const depth = nodeDepth.get(nodeId) ?? 0;
+
+    // Ensure level array exists
+    while (levels.length <= depth) {
+      levels.push([]);
+    }
+
+    levels[depth].push(node);
+  });
+
+  return levels;
+}
+
+/**
  * Poll video status endpoint
  */
 export async function pollVideoStatus(
