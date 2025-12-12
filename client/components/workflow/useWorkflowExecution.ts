@@ -184,23 +184,26 @@ export function useWorkflowExecution(
           }
 
           case NodeType.GenerateImage: {
-            // Get prompt and optional reference image from inputs
-            const prompt = inputs["prompt-input"]?.prompt || "";
-            const referenceImage = inputs["image-input"]?.imageUrl || null;
+            const prompt = inputs.prompt;
+            const referenceImages = inputs.reference_images || null;
+            const formatData = inputs.format;
 
             if (!prompt) {
-              return { success: false, error: "No prompt provided" };
+              return { success: false, error: "No prompt connected" };
             }
 
             try {
-              // Call the real image generation API
               const response = await fetch(
                 "https://veo-api-82187245577.us-central1.run.app/generate/image",
                 {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ prompt }),
-                },
+                  body: JSON.stringify({
+                    prompt,
+                    reference_images: referenceImages,
+                    aspect_ratio: formatData?.aspect_ratio || "1:1",
+                  }),
+                }
               );
 
               if (!response.ok) {
@@ -209,15 +212,17 @@ export function useWorkflowExecution(
 
               const apiData = await response.json();
 
-              if (apiData.images && apiData.images[0]) {
-                const imageUrl = `data:image/png;base64,${apiData.images[0]}`;
-
+              if (apiData.images && apiData.images.length > 0) {
+                const images = apiData.images.map((img: string) => `data:image/png;base64,${img}`);
                 return {
                   success: true,
-                  data: { imageUrl, prompt, referenceImage },
+                  data: {
+                    images,
+                    image: images[0],
+                  },
                 };
               } else {
-                return { success: false, error: "No image returned from API" };
+                return { success: false, error: "No images returned from API" };
               }
             } catch (error) {
               return {
@@ -231,34 +236,43 @@ export function useWorkflowExecution(
           }
 
           case NodeType.GenerateVideo: {
-            // Get prompt and optional frames from inputs
-            const prompt = inputs["prompt-input"]?.prompt || "";
-            const firstFrame = inputs["first-frame-input"]?.imageUrl || null;
-            const lastFrame = inputs["last-frame-input"]?.imageUrl || null;
+            const prompt = inputs.prompt;
+            const firstFrame = inputs.first_frame || null;
+            const lastFrame = inputs.last_frame || null;
+            const referenceImages = inputs.reference_images || null;
+            const formatData = inputs.format;
 
             if (!prompt) {
-              console.log("Generate Video inputs:", inputs);
-              console.log("Prompt input data:", inputs["prompt-input"]);
               return {
                 success: false,
-                error:
-                  "No prompt connected. Connect a Prompt Input node to the top pink handle.",
+                error: "No prompt connected",
+              };
+            }
+
+            // Validate mutual exclusion
+            const validation = validateMutualExclusion(node.type, {
+              first_frame: firstFrame,
+              last_frame: lastFrame,
+              reference_images: referenceImages,
+            });
+
+            if (!validation.valid) {
+              return {
+                success: false,
+                error: validation.error,
               };
             }
 
             try {
-              // Call the real video generation API
-              const requestBody: any = { prompt };
-
-              // Add first frame if provided
-              if (firstFrame) {
-                requestBody.first_frame = firstFrame;
-              }
-
-              // Add last frame if provided
-              if (lastFrame) {
-                requestBody.last_frame = lastFrame;
-              }
+              const requestBody: any = {
+                prompt,
+                first_frame: firstFrame,
+                last_frame: lastFrame,
+                reference_images: referenceImages,
+                aspect_ratio: formatData?.aspect_ratio || "16:9",
+                duration_seconds: formatData?.duration_seconds || 8,
+                generate_audio: formatData?.generate_audio ?? true,
+              };
 
               const response = await fetch(
                 "https://veo-api-82187245577.us-central1.run.app/generate/video",
@@ -266,7 +280,7 @@ export function useWorkflowExecution(
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify(requestBody),
-                },
+                }
               );
 
               if (!response.ok) {
@@ -282,86 +296,26 @@ export function useWorkflowExecution(
                 };
               }
 
-              // Poll for video completion
-              const operationName = apiData.operation_name;
-              const maxAttempts = 30; // 5 minutes max (30 * 10 seconds)
-              let attempts = 0;
-
-              while (attempts < maxAttempts) {
-                // Wait 10 seconds between polls
-                await new Promise((resolve) => setTimeout(resolve, 10000));
-                attempts++;
-
-                try {
-                  const statusResponse = await fetch(
-                    `https://veo-api-82187245577.us-central1.run.app/video/status/${encodeURIComponent(operationName)}`,
-                    {
-                      method: "GET",
-                      headers: { "Content-Type": "application/json" },
-                    }
-                  );
-
-                  if (!statusResponse.ok) {
-                    console.warn(
-                      `Status check failed (attempt ${attempts}/${maxAttempts}):`,
-                      statusResponse.status,
-                    );
-                    continue;
-                  }
-
-                  const statusData = await statusResponse.json();
-
-                  // Check if video is ready
-                  if (statusData.status === "complete") {
-                    if (statusData.video_base64) {
-                      const videoUrl = `data:video/mp4;base64,${statusData.video_base64}`;
-
-                      return {
-                        success: true,
-                        data: {
-                          videoUrl,
-                          prompt,
-                          firstFrame,
-                          lastFrame,
-                          operationName,
-                        },
-                      };
-                    } else {
-                      return {
-                        success: false,
-                        error:
-                          "Video generation completed but no video data returned",
-                      };
-                    }
-                  }
-
-                  // Check for errors
-                  if (statusData.status === "error") {
-                    return {
-                      success: false,
-                      error: `Video generation failed: ${statusData.error || "Unknown error"}`,
-                    };
-                  }
-
-                  // Still processing, continue polling
-                  console.log(
-                    `Video generation in progress... (attempt ${attempts}/${maxAttempts})`,
-                  );
-                } catch (pollError) {
-                  console.warn(
-                    `Poll error (attempt ${attempts}/${maxAttempts}):`,
-                    pollError,
-                  );
-                  // Continue polling on errors
+              // Poll for video completion using helper
+              const result = await pollVideoStatus(
+                apiData.operation_name,
+                (attempts) => {
+                  // Update node with poll progress
+                  updateNodeState(node.id, "executing", { pollAttempts: attempts });
                 }
-              }
+              );
 
-              // Timeout reached
-              return {
-                success: false,
-                error:
-                  "Video generation timed out. The operation may still be processing.",
-              };
+              if (result.success && result.videoUrl) {
+                return {
+                  success: true,
+                  data: { video: result.videoUrl },
+                };
+              } else {
+                return {
+                  success: false,
+                  error: result.error || "Video generation failed",
+                };
+              }
             } catch (error) {
               return {
                 success: false,
