@@ -105,9 +105,8 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
                 type="target"
                 position={Position.Left}
                 id={input.id}
-                className={`!w-3 !h-3 !border-2 !border-background !-left-[18px] !absolute !top-1/2 !-translate-y-1/2 ${
-                  isRequired ? '!bg-primary' : '!bg-muted-foreground'
-                }`}
+                data-connector-type={input.type}
+                className="!w-3 !h-3 !border-2 !border-background !-left-[18px] !absolute !top-1/2 !-translate-y-1/2"
               />
               <div className="text-xs font-medium text-muted-foreground">
                 {input.label}
@@ -185,14 +184,16 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
           type="source"
           position={Position.Right}
           id="images"
-          className="!w-3 !h-3 !bg-primary !border-2 !border-background"
+          data-connector-type={config.outputConnectors[0]?.type}
+          className="!w-3 !h-3 !border-2 !border-background"
           style={{ top: '40%', transform: 'translateY(-50%)' }}
         />
         <Handle
           type="source"
           position={Position.Right}
           id="image"
-          className="!w-3 !h-3 !bg-primary !border-2 !border-background"
+          data-connector-type={config.outputConnectors[1]?.type}
+          className="!w-3 !h-3 !border-2 !border-background"
           style={{ top: '60%', transform: 'translateY(-50%)' }}
         />
       </div>
