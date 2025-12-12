@@ -1,7 +1,8 @@
-import { memo } from 'react';
+import { memo, useEffect } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { FormatNodeData, NODE_CONFIGURATIONS, NodeType } from '../types';
 import { Settings, ChevronDown } from 'lucide-react';
+import { executeFormat } from '../executionHelpers';
 
 function FormatNode({ data, id }: NodeProps<FormatNodeData>) {
   const config = NODE_CONFIGURATIONS[NodeType.Format];
@@ -15,14 +16,36 @@ function FormatNode({ data, id }: NodeProps<FormatNodeData>) {
   };
 
   const handleUpdate = (field: keyof FormatNodeData, value: any) => {
+    const updatedData = { ...data, [field]: value };
+    const formatOutput = executeFormat(updatedData);
+
     const event = new CustomEvent('node-update', {
       detail: {
         id,
-        data: { ...data, [field]: value },
+        data: {
+          ...updatedData,
+          outputs: { format: formatOutput },
+        },
       },
     });
     window.dispatchEvent(event);
   };
+
+  // Real-time execution: Update outputs whenever settings change
+  useEffect(() => {
+    const formatOutput = executeFormat(data);
+
+    const event = new CustomEvent('node-update', {
+      detail: {
+        id,
+        data: {
+          ...data,
+          outputs: { format: formatOutput },
+        },
+      },
+    });
+    window.dispatchEvent(event);
+  }, [id, data.aspectRatio, data.durationSeconds, data.generateAudio, data.resolution]);
 
   return (
     <div className={`bg-card border-2 rounded-lg p-4 min-w-[280px] shadow-lg transition-colors ${getBorderColor()}`}>
