@@ -224,46 +224,60 @@ function WorkflowCanvasInner() {
   );
 
   return (
-    <div ref={reactFlowWrapper} className="w-full h-full relative">
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onInit={setReactFlowInstance}
-        onDrop={onDrop}
-        onDragOver={onDragOver}
-        isValidConnection={isValidConnection}
-        nodeTypes={nodeTypes}
-        connectionMode={ConnectionMode.Loose}
-        fitView
-        className="bg-background"
-        proOptions={{ hideAttribution: true }}
-      >
-        <Background className="bg-background" />
-        <Controls className="bg-card border border-border" />
-        <MiniMap
-          className="bg-card border border-border"
-          nodeColor="#F3C5DB"
-          maskColor="rgba(70, 6, 43, 0.6)"
-        />
-        <WorkflowToolbar
-          onClearCanvas={clearCanvas}
-          onExecuteWorkflow={executeWorkflow}
-          onResetWorkflow={resetWorkflow}
-          isExecuting={isExecuting}
-        />
-      </ReactFlow>
+    <div className="flex w-full h-full">
+      {/* Node Palette */}
+      <div className="hidden lg:block">
+        <NodePalette onAddNode={addNode} />
+      </div>
+
+      {/* Canvas Area */}
+      <div ref={reactFlowWrapper} className="flex-1 relative">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onInit={setReactFlowInstance}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+          isValidConnection={isValidConnection}
+          nodeTypes={nodeTypes}
+          connectionMode={ConnectionMode.Loose}
+          fitView
+          className="bg-background"
+          proOptions={{ hideAttribution: true }}
+        >
+          <Background className="bg-background" />
+          <Controls className="bg-card border border-border" />
+          <MiniMap
+            className="bg-card border border-border"
+            nodeColor="#F3C5DB"
+            maskColor="rgba(70, 6, 43, 0.6)"
+          />
+          <WorkflowToolbar
+            onClearCanvas={clearCanvas}
+            onExecuteWorkflow={executeWorkflow}
+            onResetWorkflow={resetWorkflow}
+            isExecuting={isExecuting}
+          />
+        </ReactFlow>
+
+        {/* Empty state message */}
+        {nodes.length === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="text-center text-muted-foreground">
+              <p className="text-lg font-medium mb-2">Your canvas is empty</p>
+              <p className="text-sm">Drag nodes from the palette or click on a node to add it</p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-interface WorkflowCanvasProps {
-  onAddNode?: (type: NodeType) => void;
-}
-
-export default function WorkflowCanvas({ onAddNode }: WorkflowCanvasProps) {
+export default function WorkflowCanvas() {
   return (
     <ReactFlowProvider>
       <WorkflowCanvasInner />
