@@ -99,24 +99,14 @@ export function useWorkflowExecution(
     return result;
   }, [buildGraph, nodes.length]);
 
-  // Get input data for a node from connected nodes
+  // Get input data for a node from connected nodes (using new helper)
   const getNodeInputs = useCallback(
-    (nodeId: string, executedData: Map<string, any>) => {
-      const incomingEdges = edges.filter((edge) => edge.target === nodeId);
-      const inputs: any = {};
-
-      incomingEdges.forEach((edge) => {
-        const sourceData = executedData.get(edge.source);
-        if (sourceData) {
-          // Store input based on target handle
-          const handleId = edge.targetHandle || "default";
-          inputs[handleId] = sourceData;
-        }
-      });
-
-      return inputs;
+    (nodeId: string) => {
+      const node = nodes.find((n) => n.id === nodeId);
+      if (!node) return {};
+      return gatherNodeInputs(node, nodes, edges);
     },
-    [edges],
+    [nodes, edges],
   );
 
   // Execute a single node
