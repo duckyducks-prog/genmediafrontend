@@ -111,9 +111,8 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
       </div>
 
       {/* Input Handles - Left side */}
-      <div className="space-y-2 mb-3">
+      <div className="space-y-3 mb-4">
         {config.inputConnectors.map((input, index) => {
-          const positions = [30, 60, 90, 120, 150]; // Vertical positions for handles
           const isRequired = input.required;
           const isMultiple = input.acceptsMultiple;
 
@@ -129,22 +128,21 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
             : '';
 
           return (
-            <div key={input.id} className="flex items-center gap-2 relative">
+            <div key={input.id} className="flex items-center gap-2 relative h-6">
               <Handle
                 type="target"
                 position={Position.Left}
                 id={input.id}
-                className={`!w-3 !h-3 !border-2 !border-background ${
+                className={`!w-3 !h-3 !border-2 !border-background !-left-[18px] !absolute !top-1/2 !-translate-y-1/2 ${
                   isDisabled
                     ? 'react-flow__handle-disabled'
                     : isRequired
                     ? '!bg-primary'
                     : '!bg-muted-foreground'
                 }`}
-                style={{ top: `${positions[index]}px` }}
                 title={isDisabled ? disabledMessage : ''}
               />
-              <div className={`text-xs font-medium ml-2 ${
+              <div className={`text-xs font-medium ${
                 isDisabled ? 'text-muted-foreground/50 line-through' : 'text-muted-foreground'
               }`}>
                 {input.label}
