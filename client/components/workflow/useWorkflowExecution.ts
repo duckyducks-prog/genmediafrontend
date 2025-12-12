@@ -114,15 +114,73 @@ export function useWorkflowExecution(
     async (node: WorkflowNode, inputs: any): Promise<ExecutionResult> => {
       try {
         switch (node.type) {
-          case NodeType.PromptInput: {
-            const prompt = node.data.prompt || "";
-            console.log("PromptInput executing with prompt:", prompt);
-            return { success: true, data: { prompt } };
+          // INPUT NODES
+          case NodeType.Prompt: {
+            const prompt = (node.data as any).prompt || "";
+            return { success: true, data: { text: prompt } };
           }
 
-          case NodeType.ImageUpload: {
-            const imageUrl = node.data.imageUrl || null;
-            return { success: true, data: { imageUrl } };
+          case NodeType.ImageInput: {
+            const imageUrl = (node.data as any).imageUrl || null;
+            return { success: true, data: { image: imageUrl } };
+          }
+
+          // MODIFIER NODES
+          case NodeType.PromptConcatenator: {
+            const separator = (node.data as any).separator || "Space";
+            const combined = executeConcatenator(inputs, separator);
+            return { success: true, data: { combined } };
+          }
+
+          case NodeType.Format: {
+            const formatData = executeFormat(node.data);
+            return { success: true, data: { format: formatData } };
+          }
+
+          // ACTION NODES
+          case NodeType.LLM: {
+            const prompt = inputs.prompt;
+            const context = inputs.context || null;
+            const systemPrompt = (node.data as any).systemPrompt || null;
+            const temperature = (node.data as any).temperature || 0.7;
+
+            if (!prompt) {
+              return { success: false, error: "No prompt connected" };
+            }
+
+            try {
+              const response = await fetch(
+                "https://veo-api-82187245577.us-central1.run.app/generate/text",
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    prompt,
+                    system_prompt: systemPrompt,
+                    context,
+                    temperature,
+                  }),
+                }
+              );
+
+              if (!response.ok) {
+                throw new Error(`API error: ${response.status}`);
+              }
+
+              const apiData = await response.json();
+              return {
+                success: true,
+                data: { response: apiData.response },
+              };
+            } catch (error) {
+              return {
+                success: false,
+                error:
+                  error instanceof Error
+                    ? error.message
+                    : "Text generation failed",
+              };
+            }
           }
 
           case NodeType.GenerateImage: {
