@@ -68,7 +68,8 @@ function PromptInputNode({ data, id }: NodeProps<PromptNodeData>) {
         type="source"
         position={Position.Right}
         id="text"
-        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
+        data-connector-type="text"
+        className="!w-3 !h-3 !border-2 !border-background"
         style={{ top: "50%", transform: 'translateY(-50%)' }}
       />
     </div>
