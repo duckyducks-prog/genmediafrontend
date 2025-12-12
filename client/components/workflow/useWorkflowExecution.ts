@@ -16,9 +16,7 @@ export function useWorkflowExecution(
   ) => void,
 ) {
   const [isExecuting, setIsExecuting] = useState(false);
-  const [executionProgress, setExecutionProgress] = useState
-    Map<string, string>
-  >(new Map());
+  const [executionProgress, setExecutionProgress] = useState<Map<string, string>>(new Map());
 
   // Build adjacency list for the graph
   const buildGraph = useCallback(() => {
