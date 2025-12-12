@@ -19,6 +19,7 @@ import { WorkflowNode, WorkflowEdge, NodeType, WorkflowNodeData } from "./types"
 import NodePalette from "./NodePalette";
 import WorkflowToolbar from "./WorkflowToolbar";
 import { useWorkflowExecution } from "./useWorkflowExecution";
+import { validateConnection } from "./connectionValidation";
 
 // Import all custom node components
 import PromptInputNode from "./nodes/PromptInputNode";
@@ -94,10 +95,18 @@ function WorkflowCanvasInner() {
   );
 
   // Validate connections based on handle data types
-  const isValidConnection = useCallback((connection: Connection) => {
-    // Basic validation - can be extended
-    return true;
-  }, []);
+  const isValidConnection = useCallback(
+    (connection: Connection) => {
+      const validation = validateConnection(connection, nodes, edges);
+
+      if (!validation.valid) {
+        console.warn('Connection rejected:', validation.reason);
+      }
+
+      return validation.valid;
+    },
+    [nodes, edges],
+  );
 
   // Add a new node to the canvas
   const addNode = useCallback(
