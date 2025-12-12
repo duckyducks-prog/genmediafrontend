@@ -1,10 +1,10 @@
 import { memo, useState } from "react";
 import { Handle, Position, NodeProps, useReactFlow } from "reactflow";
 import { Button } from "@/components/ui/button";
-import { ImageUploadNodeData } from "../types";
+import { ImageInputNodeData } from "../types";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
 
-function ImageUploadNode({ data, id }: NodeProps<ImageUploadNodeData>) {
+function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
   const [imageUrl, setImageUrl] = useState<string | null>(data.imageUrl);
   const { setNodes } = useReactFlow();
 
