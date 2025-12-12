@@ -1,0 +1,114 @@
+import { memo, useEffect } from 'react';
+import { Handle, Position, NodeProps } from 'reactflow';
+import { PromptConcatenatorNodeData, NODE_CONFIGURATIONS, NodeType } from '../types';
+import { Combine, ChevronDown } from 'lucide-react';
+
+const SEPARATORS = {
+  Space: ' ',
+  Comma: ', ',
+  Newline: '\n',
+  Period: '. ',
+} as const;
+
+function PromptConcatenatorNode({ data, id }: NodeProps<PromptConcatenatorNodeData>) {
+  const config = NODE_CONFIGURATIONS[NodeType.PromptConcatenator];
+  const status = data.status || 'ready';
+
+  const getBorderColor = () => {
+    if (status === 'executing') return 'border-yellow-500';
+    if (status === 'completed') return 'border-green-500';
+    if (status === 'error') return 'border-red-500';
+    return 'border-border';
+  };
+
+  return (
+    <div className={`bg-card border-2 rounded-lg p-4 min-w-[280px] shadow-lg transition-colors ${getBorderColor()}`}>
+      {/* Node Header */}
+      <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
+        <div className="flex items-center gap-2">
+          <Combine className="w-4 h-4 text-primary" />
+          <div className="font-semibold text-sm">{data.label || 'Prompt Concatenator'}</div>
+        </div>
+      </div>
+
+      {/* Input Handles - Left side */}
+      <div className="space-y-3 mb-3">
+        {config.inputConnectors.map((input, index) => (
+          <div key={input.id} className="flex items-center gap-2 relative">
+            <Handle
+              type="target"
+              position={Position.Left}
+              id={input.id}
+              className={`!w-3 !h-3 !border-2 !border-background ${
+                input.required ? '!bg-primary' : '!bg-muted-foreground'
+              }`}
+              style={{ top: `${30 + index * 35}px` }}
+            />
+            <div className="text-xs font-medium text-muted-foreground ml-2">
+              {input.label}
+              {input.required && <span className="text-red-500 ml-1">*</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Separator Config */}
+      <div className="space-y-3 mb-3">
+        <div>
+          <label className="text-xs font-medium text-muted-foreground block mb-1">
+            Separator
+          </label>
+          <div className="relative">
+            <select
+              value={data.separator}
+              onChange={(e) => {
+                // This will be handled by WorkflowCanvas setNodes
+                const event = new CustomEvent('node-update', {
+                  detail: {
+                    id,
+                    data: { ...data, separator: e.target.value as any },
+                  },
+                });
+                window.dispatchEvent(event);
+              }}
+              className="w-full px-3 py-2 text-sm bg-background border border-border rounded-md appearance-none pr-8"
+            >
+              <option value="Space">Space</option>
+              <option value="Comma">Comma</option>
+              <option value="Newline">Newline</option>
+              <option value="Period">Period</option>
+            </select>
+            <ChevronDown className="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          </div>
+        </div>
+
+        {/* Preview */}
+        {data.combinedPreview && (
+          <div className="bg-muted/50 p-2 rounded border border-border">
+            <div className="text-xs text-muted-foreground mb-1">Preview:</div>
+            <div className="text-xs line-clamp-3 font-mono">
+              {data.combinedPreview}
+            </div>
+          </div>
+        )}
+
+        {data.error && (
+          <div className="text-xs text-red-500 bg-red-50 dark:bg-red-950/20 p-2 rounded">
+            {data.error}
+          </div>
+        )}
+      </div>
+
+      {/* Output Handle - Right side */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="combined"
+        className="!w-3 !h-3 !bg-primary !border-2 !border-background"
+        style={{ top: '50%' }}
+      />
+    </div>
+  );
+}
+
+export default memo(PromptConcatenatorNode);
