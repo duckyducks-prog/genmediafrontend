@@ -94,24 +94,22 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
       </div>
 
       {/* Input Handles - Left side */}
-      <div className="space-y-2 mb-3">
+      <div className="space-y-3 mb-4">
         {config.inputConnectors.map((input, index) => {
-          const positions = [40, 70, 100]; // Vertical positions
           const isRequired = input.required;
           const isMultiple = input.acceptsMultiple;
 
           return (
-            <div key={input.id} className="flex items-center gap-2 relative">
+            <div key={input.id} className="flex items-center gap-2 relative h-6">
               <Handle
                 type="target"
                 position={Position.Left}
                 id={input.id}
-                className={`!w-3 !h-3 !border-2 !border-background ${
+                className={`!w-3 !h-3 !border-2 !border-background !-left-[18px] !absolute !top-1/2 !-translate-y-1/2 ${
                   isRequired ? '!bg-primary' : '!bg-muted-foreground'
                 }`}
-                style={{ top: `${positions[index]}px` }}
               />
-              <div className="text-xs font-medium text-muted-foreground ml-2">
+              <div className="text-xs font-medium text-muted-foreground">
                 {input.label}
                 {isRequired && <span className="text-red-500 ml-1">*</span>}
                 {isMultiple && <span className="text-blue-500 ml-1">(multi)</span>}
