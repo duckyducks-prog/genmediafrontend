@@ -202,6 +202,9 @@ export async function pollVideoStatus(
 
       const statusData = await statusResponse.json();
 
+      // Debug: log the actual response to understand the structure
+      console.log(`[DEBUG] Status response (attempt ${attempts}):`, statusData);
+
       // Check if video is ready
       if (statusData.status === 'complete') {
         if (statusData.video_base64) {
