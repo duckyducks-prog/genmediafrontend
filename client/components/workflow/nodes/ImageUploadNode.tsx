@@ -26,6 +26,7 @@ function ImageUploadNode({ data, id }: NodeProps<ImageUploadNodeData>) {
                     ...node.data,
                     imageUrl: url,
                     file,
+                    outputs: { image: url },
                   },
                 }
               : node,
@@ -47,6 +48,7 @@ function ImageUploadNode({ data, id }: NodeProps<ImageUploadNodeData>) {
                 ...node.data,
                 imageUrl: null,
                 file: null,
+                outputs: {},
               },
             }
           : node,
@@ -122,7 +124,7 @@ function ImageUploadNode({ data, id }: NodeProps<ImageUploadNodeData>) {
       <Handle
         type="source"
         position={Position.Right}
-        id="image-output"
+        id="image"
         className="!w-3 !h-3 !bg-accent !border-2 !border-background"
         style={{ top: "50%" }}
       />
