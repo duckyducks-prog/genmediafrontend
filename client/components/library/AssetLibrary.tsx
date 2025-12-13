@@ -60,12 +60,21 @@ export default function AssetLibrary({ open, onOpenChange }: AssetLibraryProps) 
         ? `https://veo-api-82187245577.us-central1.run.app/library?asset_type=${assetType}`
         : "https://veo-api-82187245577.us-central1.run.app/library";
 
+      console.log('[DEBUG] Fetching assets from:', url);
       const response = await fetch(url);
+
+      console.log('[DEBUG] Library response status:', response.status);
+
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[DEBUG] Library error response:', errorText);
         throw new Error(`Failed to fetch assets: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('[DEBUG] Library data received:', data);
+      console.log('[DEBUG] Number of assets:', data.assets?.length || 0);
+
       setAssets(data.assets || []);
       setFilteredAssets(data.assets || []);
     } catch (error) {
