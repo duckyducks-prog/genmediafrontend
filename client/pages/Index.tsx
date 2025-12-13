@@ -20,7 +20,7 @@ import AssetLibrary, {
   AssetLibraryRef,
 } from "@/components/library/AssetLibrary";
 import { useAuth } from "@/lib/AuthContext";
-import { logOut } from "@/lib/firebase";
+import { logOut, auth } from "@/lib/firebase";
 import Login from "./Login";
 import { useToast } from "@/hooks/use-toast";
 
@@ -80,14 +80,28 @@ export default function Index() {
 
     setIsGeneratingImage(true);
     try {
+      const currentUser = auth.currentUser;
       const response = await fetch(
         "https://veo-api-82187245577.us-central1.run.app/generate/image",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: imagePrompt }),
+          body: JSON.stringify({
+            prompt: imagePrompt,
+            user_id: currentUser?.uid,
+            user_email: currentUser?.email,
+          }),
         },
       );
+
+      if (response.status === 403) {
+        toast({
+          title: "Access Denied",
+          description: "Access denied. Contact administrator.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       const data = await response.json();
       if (data.images && data.images[0]) {
@@ -95,6 +109,11 @@ export default function Index() {
       }
     } catch (error) {
       console.error("Error generating image:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate image",
+        variant: "destructive",
+      });
     } finally {
       setIsGeneratingImage(false);
     }
@@ -105,14 +124,28 @@ export default function Index() {
 
     setIsGeneratingVideo(true);
     try {
+      const currentUser = auth.currentUser;
       const response = await fetch(
         "https://veo-api-82187245577.us-central1.run.app/generate/video",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: videoPrompt }),
+          body: JSON.stringify({
+            prompt: videoPrompt,
+            user_id: currentUser?.uid,
+            user_email: currentUser?.email,
+          }),
         },
       );
+
+      if (response.status === 403) {
+        toast({
+          title: "Access Denied",
+          description: "Access denied. Contact administrator.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       const data = await response.json();
       const operationName = data.operation_name;
@@ -140,6 +173,11 @@ export default function Index() {
       }
     } catch (error) {
       console.error("Error generating video:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate video",
+        variant: "destructive",
+      });
     } finally {
       setIsGeneratingVideo(false);
     }
