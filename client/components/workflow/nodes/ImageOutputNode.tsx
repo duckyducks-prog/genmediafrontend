@@ -180,6 +180,10 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
                 src={imageUrl}
                 alt="Generated output"
                 className="w-full h-auto max-h-[200px] object-contain"
+                onError={(e) => {
+                  console.error('[ImageOutputNode] Image failed to load:', imageUrl?.substring(0, 100));
+                }}
+                crossOrigin={imageUrl?.startsWith('data:') ? undefined : 'anonymous'}
               />
             </div>
 
