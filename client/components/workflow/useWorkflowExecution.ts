@@ -275,9 +275,9 @@ export function useWorkflowExecution(
 
           case NodeType.GenerateVideo: {
             const prompt = inputs.prompt;
-            const firstFrame = inputs.first_frame || null;
-            const lastFrame = inputs.last_frame || null;
-            const referenceImages = inputs.reference_images || null;
+            let firstFrame = inputs.first_frame || null;
+            let lastFrame = inputs.last_frame || null;
+            let referenceImages = inputs.reference_images || null;
             const formatData = inputs.format;
 
             if (!prompt) {
@@ -285,6 +285,26 @@ export function useWorkflowExecution(
                 success: false,
                 error: "No prompt connected",
               };
+            }
+
+            // Strip data URI prefix from image inputs if present
+            if (firstFrame && typeof firstFrame === 'string' && firstFrame.startsWith('data:')) {
+              firstFrame = firstFrame.split(',')[1];
+            }
+            if (lastFrame && typeof lastFrame === 'string' && lastFrame.startsWith('data:')) {
+              lastFrame = lastFrame.split(',')[1];
+            }
+            if (referenceImages) {
+              if (Array.isArray(referenceImages)) {
+                referenceImages = referenceImages.map((img: string) => {
+                  if (typeof img === 'string' && img.startsWith('data:')) {
+                    return img.split(',')[1];
+                  }
+                  return img;
+                });
+              } else if (typeof referenceImages === 'string' && referenceImages.startsWith('data:')) {
+                referenceImages = referenceImages.split(',')[1];
+              }
             }
 
             // Validate mutual exclusion
