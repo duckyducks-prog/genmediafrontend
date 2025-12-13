@@ -84,7 +84,7 @@ function VideoOutputNode({ data, id }: NodeProps<OutputNodeData>) {
         id="video-input"
         data-connector-type="video"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: "50%", transform: 'translateY(-50%)' }}
+        style={{ top: "50%", transform: "translateY(-50%)" }}
       />
 
       {/* Node Content */}
@@ -128,7 +128,7 @@ function VideoOutputNode({ data, id }: NodeProps<OutputNodeData>) {
         id="media-output"
         data-connector-type="video"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: "50%", transform: 'translateY(-50%)' }}
+        style={{ top: "50%", transform: "translateY(-50%)" }}
       />
     </div>
   );

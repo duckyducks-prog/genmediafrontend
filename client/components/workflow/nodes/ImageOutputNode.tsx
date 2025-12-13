@@ -66,7 +66,7 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
             image: base64Image,
             upscale_factor: upscaleFactor,
           }),
-        }
+        },
       );
 
       if (!response.ok) {
@@ -86,7 +86,7 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
     } catch (error) {
       console.error("Upscale error:", error);
       setUpscaleError(
-        error instanceof Error ? error.message : "Upscale failed"
+        error instanceof Error ? error.message : "Upscale failed",
       );
     } finally {
       setIsUpscaling(false);
@@ -156,7 +156,7 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
         id="image-input"
         data-connector-type="image"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: "50%", transform: 'translateY(-50%)' }}
+        style={{ top: "50%", transform: "translateY(-50%)" }}
       />
 
       {/* Node Content */}
@@ -247,7 +247,7 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
         id="media-output"
         data-connector-type="image"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: "50%", transform: 'translateY(-50%)' }}
+        style={{ top: "50%", transform: "translateY(-50%)" }}
       />
     </div>
   );

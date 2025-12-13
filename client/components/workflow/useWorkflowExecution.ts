@@ -1,5 +1,10 @@
 import { useCallback, useState } from "react";
-import { WorkflowNode, WorkflowEdge, NodeType, validateMutualExclusion } from "./types";
+import {
+  WorkflowNode,
+  WorkflowEdge,
+  NodeType,
+  validateMutualExclusion,
+} from "./types";
 import { toast } from "@/hooks/use-toast";
 import {
   gatherNodeInputs,
@@ -24,7 +29,9 @@ export function useWorkflowExecution(
   ) => void,
 ) {
   const [isExecuting, setIsExecuting] = useState(false);
-  const [executionProgress, setExecutionProgress] = useState<Map<string, string>>(new Map());
+  const [executionProgress, setExecutionProgress] = useState<
+    Map<string, string>
+  >(new Map());
 
   // Build adjacency list for the graph
   const buildGraph = useCallback(() => {
@@ -184,7 +191,7 @@ export function useWorkflowExecution(
                     context,
                     temperature,
                   }),
-                }
+                },
               );
 
               if (!response.ok) {
@@ -220,13 +227,16 @@ export function useWorkflowExecution(
             if (referenceImages) {
               if (Array.isArray(referenceImages)) {
                 referenceImages = referenceImages.map((img: string) => {
-                  if (typeof img === 'string' && img.startsWith('data:')) {
-                    return img.split(',')[1];
+                  if (typeof img === "string" && img.startsWith("data:")) {
+                    return img.split(",")[1];
                   }
                   return img;
                 });
-              } else if (typeof referenceImages === 'string' && referenceImages.startsWith('data:')) {
-                referenceImages = referenceImages.split(',')[1];
+              } else if (
+                typeof referenceImages === "string" &&
+                referenceImages.startsWith("data:")
+              ) {
+                referenceImages = referenceImages.split(",")[1];
               }
             }
 
@@ -241,7 +251,7 @@ export function useWorkflowExecution(
                     reference_images: referenceImages,
                     aspect_ratio: formatData?.aspect_ratio || "1:1",
                   }),
-                }
+                },
               );
 
               if (!response.ok) {
@@ -251,7 +261,9 @@ export function useWorkflowExecution(
               const apiData = await response.json();
 
               if (apiData.images && apiData.images.length > 0) {
-                const images = apiData.images.map((img: string) => `data:image/png;base64,${img}`);
+                const images = apiData.images.map(
+                  (img: string) => `data:image/png;base64,${img}`,
+                );
                 return {
                   success: true,
                   data: {
@@ -288,22 +300,33 @@ export function useWorkflowExecution(
             }
 
             // Strip data URI prefix from image inputs if present
-            if (firstFrame && typeof firstFrame === 'string' && firstFrame.startsWith('data:')) {
-              firstFrame = firstFrame.split(',')[1];
+            if (
+              firstFrame &&
+              typeof firstFrame === "string" &&
+              firstFrame.startsWith("data:")
+            ) {
+              firstFrame = firstFrame.split(",")[1];
             }
-            if (lastFrame && typeof lastFrame === 'string' && lastFrame.startsWith('data:')) {
-              lastFrame = lastFrame.split(',')[1];
+            if (
+              lastFrame &&
+              typeof lastFrame === "string" &&
+              lastFrame.startsWith("data:")
+            ) {
+              lastFrame = lastFrame.split(",")[1];
             }
             if (referenceImages) {
               if (Array.isArray(referenceImages)) {
                 referenceImages = referenceImages.map((img: string) => {
-                  if (typeof img === 'string' && img.startsWith('data:')) {
-                    return img.split(',')[1];
+                  if (typeof img === "string" && img.startsWith("data:")) {
+                    return img.split(",")[1];
                   }
                   return img;
                 });
-              } else if (typeof referenceImages === 'string' && referenceImages.startsWith('data:')) {
-                referenceImages = referenceImages.split(',')[1];
+              } else if (
+                typeof referenceImages === "string" &&
+                referenceImages.startsWith("data:")
+              ) {
+                referenceImages = referenceImages.split(",")[1];
               }
             }
 
@@ -338,7 +361,7 @@ export function useWorkflowExecution(
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify(requestBody),
-                }
+                },
               );
 
               if (!response.ok) {
@@ -359,8 +382,10 @@ export function useWorkflowExecution(
                 apiData.operation_name,
                 (attempts) => {
                   // Update node with poll progress
-                  updateNodeState(node.id, "executing", { pollAttempts: attempts });
-                }
+                  updateNodeState(node.id, "executing", {
+                    pollAttempts: attempts,
+                  });
+                },
               );
 
               if (result.success && result.videoUrl) {
@@ -400,7 +425,12 @@ export function useWorkflowExecution(
           case NodeType.Download: {
             // Get media from input
             const mediaData = inputs["media-input"] || inputs || {};
-            const mediaUrl = mediaData.image || mediaData.video || mediaData.imageUrl || mediaData.videoUrl || null;
+            const mediaUrl =
+              mediaData.image ||
+              mediaData.video ||
+              mediaData.imageUrl ||
+              mediaData.videoUrl ||
+              null;
             const isVideo = !!(mediaData.video || mediaData.videoUrl);
 
             if (mediaUrl) {
@@ -498,7 +528,7 @@ export function useWorkflowExecution(
 
     toast({
       title: "Workflow Started",
-      description: `Executing ${executionOrder.length} nodes across ${levels.length} level${levels.length > 1 ? 's' : ''}...`,
+      description: `Executing ${executionOrder.length} nodes across ${levels.length} level${levels.length > 1 ? "s" : ""}...`,
     });
 
     try {
@@ -511,7 +541,7 @@ export function useWorkflowExecution(
 
         toast({
           title: `Executing Level ${levelIndex + 1}/${levels.length}`,
-          description: `Running ${levelNodes.length} node${levelNodes.length > 1 ? 's' : ''} in parallel...`,
+          description: `Running ${levelNodes.length} node${levelNodes.length > 1 ? "s" : ""} in parallel...`,
         });
 
         // Update all nodes in this level to executing
@@ -541,14 +571,14 @@ export function useWorkflowExecution(
               nodeId: node.id,
               ...result,
             };
-          })
+          }),
         );
 
         // Process results for this level
         results.forEach((result, index) => {
           const node = levelNodes[index];
 
-          if (result.status === 'fulfilled') {
+          if (result.status === "fulfilled") {
             if (result.value.success) {
               progress.set(node.id, "completed");
               updateNodeState(node.id, "completed", {

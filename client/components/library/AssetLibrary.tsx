@@ -43,7 +43,10 @@ interface AssetLibraryProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export default function AssetLibrary({ open, onOpenChange }: AssetLibraryProps) {
+export default function AssetLibrary({
+  open,
+  onOpenChange,
+}: AssetLibraryProps) {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [filteredAssets, setFilteredAssets] = useState<Asset[]>([]);
   const [filter, setFilter] = useState<"all" | "image" | "video">("all");
@@ -60,20 +63,20 @@ export default function AssetLibrary({ open, onOpenChange }: AssetLibraryProps) 
         ? `https://veo-api-82187245577.us-central1.run.app/library?asset_type=${assetType}`
         : "https://veo-api-82187245577.us-central1.run.app/library";
 
-      console.log('[DEBUG] Fetching assets from:', url);
+      console.log("[DEBUG] Fetching assets from:", url);
       const response = await fetch(url);
 
-      console.log('[DEBUG] Library response status:', response.status);
+      console.log("[DEBUG] Library response status:", response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('[DEBUG] Library error response:', errorText);
+        console.error("[DEBUG] Library error response:", errorText);
         throw new Error(`Failed to fetch assets: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('[DEBUG] Library data received:', data);
-      console.log('[DEBUG] Number of assets:', data.assets?.length || 0);
+      console.log("[DEBUG] Library data received:", data);
+      console.log("[DEBUG] Number of assets:", data.assets?.length || 0);
 
       setAssets(data.assets || []);
       setFilteredAssets(data.assets || []);
@@ -110,7 +113,7 @@ export default function AssetLibrary({ open, onOpenChange }: AssetLibraryProps) 
     try {
       const response = await fetch(
         `https://veo-api-82187245577.us-central1.run.app/library/${id}`,
-        { method: "DELETE" }
+        { method: "DELETE" },
       );
 
       if (!response.ok) {
@@ -171,7 +174,10 @@ export default function AssetLibrary({ open, onOpenChange }: AssetLibraryProps) 
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+        <SheetContent
+          side="right"
+          className="w-full sm:max-w-2xl overflow-y-auto"
+        >
           <SheetHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -186,13 +192,19 @@ export default function AssetLibrary({ open, onOpenChange }: AssetLibraryProps) 
                 onClick={() => fetchAssets()}
                 disabled={isLoading}
               >
-                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                <RefreshCw
+                  className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
+                />
               </Button>
             </div>
           </SheetHeader>
 
           {/* Filters */}
-          <Tabs value={filter} onValueChange={(v) => setFilter(v as any)} className="mt-6">
+          <Tabs
+            value={filter}
+            onValueChange={(v) => setFilter(v as any)}
+            className="mt-6"
+          >
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="image">Images</TabsTrigger>
@@ -291,8 +303,8 @@ export default function AssetLibrary({ open, onOpenChange }: AssetLibraryProps) 
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Asset?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the asset
-              from your library.
+              This action cannot be undone. This will permanently delete the
+              asset from your library.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -308,7 +320,10 @@ export default function AssetLibrary({ open, onOpenChange }: AssetLibraryProps) 
       </AlertDialog>
 
       {/* Preview Dialog */}
-      <AlertDialog open={!!previewAsset} onOpenChange={() => setPreviewAsset(null)}>
+      <AlertDialog
+        open={!!previewAsset}
+        onOpenChange={() => setPreviewAsset(null)}
+      >
         <AlertDialogContent className="max-w-4xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center justify-between">
@@ -332,7 +347,11 @@ export default function AssetLibrary({ open, onOpenChange }: AssetLibraryProps) 
                 className="w-full h-auto"
               />
             ) : (
-              <video src={previewAsset?.url} controls className="w-full h-auto" />
+              <video
+                src={previewAsset?.url}
+                controls
+                className="w-full h-auto"
+              />
             )}
           </div>
           <AlertDialogFooter>
