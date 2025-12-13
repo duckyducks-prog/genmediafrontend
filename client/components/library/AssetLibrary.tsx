@@ -105,9 +105,10 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
   // Load assets when panel opens
   useEffect(() => {
     if (open) {
+      console.log('[AssetLibrary] Panel opened, fetching assets');
       fetchAssets();
     }
-  }, [open]);
+  }, [open, fetchAssets]);
 
   // Filter assets based on selected filter
   useEffect(() => {
