@@ -488,7 +488,12 @@ export default function Index() {
             </TabsContent>
 
             <TabsContent value="workflow" className="h-[calc(100vh-200px)]">
-              <WorkflowCanvas />
+              <WorkflowCanvas
+                onAssetGenerated={() => {
+                  console.log('[Index] Asset generated, triggering library refresh');
+                  assetLibraryRef.current?.refresh();
+                }}
+              />
             </TabsContent>
           </Tabs>
         </div>
