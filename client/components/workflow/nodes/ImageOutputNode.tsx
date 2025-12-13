@@ -29,13 +29,25 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
   const isExecuting = status === "executing";
   const isCompleted = status === "completed";
 
+  // Debug logging
+  useEffect(() => {
+    console.log('[ImageOutputNode] Data update:', {
+      nodeId: id,
+      incomingImageUrl: incomingImageUrl ? `${incomingImageUrl.substring(0, 50)}...` : null,
+      currentImageUrl: currentImageUrl ? `${currentImageUrl.substring(0, 50)}...` : null,
+      status,
+      data
+    });
+  }, [data, incomingImageUrl, currentImageUrl, status, id]);
+
   // Reset to new incoming image when workflow executes
   useEffect(() => {
     if (incomingImageUrl && incomingImageUrl !== currentImageUrl) {
+      console.log('[ImageOutputNode] Resetting to new incoming image');
       setCurrentImageUrl(null); // Reset to show the new incoming image
       setUpscaleError(null); // Clear any previous errors
     }
-  }, [incomingImageUrl]);
+  }, [incomingImageUrl, currentImageUrl]);
 
   const getBorderColor = () => {
     if (isExecuting) return "border-yellow-500";
