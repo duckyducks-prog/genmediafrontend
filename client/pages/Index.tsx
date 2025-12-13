@@ -500,7 +500,11 @@ export default function Index() {
       </div>
 
       {/* Asset Library */}
-      <AssetLibrary open={isLibraryOpen} onOpenChange={setIsLibraryOpen} />
+      <AssetLibrary
+        ref={assetLibraryRef}
+        open={isLibraryOpen}
+        onOpenChange={setIsLibraryOpen}
+      />
     </div>
   );
 }
