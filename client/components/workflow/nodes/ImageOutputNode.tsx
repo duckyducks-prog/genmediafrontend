@@ -1,16 +1,29 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { OutputNodeData } from "../types";
 import {
   Image as ImageIcon,
   CheckCircle2,
   Loader2,
   Download,
+  Sparkles,
 } from "lucide-react";
 
 function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
-  const imageUrl = (data as any).imageUrl || data.result;
+  const [upscaleFactor, setUpscaleFactor] = useState<string>("x2");
+  const [isUpscaling, setIsUpscaling] = useState(false);
+  const [upscaleError, setUpscaleError] = useState<string | null>(null);
+  const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
+
+  const imageUrl = currentImageUrl || (data as any).imageUrl || data.result;
   const status = (data as any).status || "ready";
   const isExecuting = status === "executing";
   const isCompleted = status === "completed";
