@@ -57,16 +57,8 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
   const [previewAsset, setPreviewAsset] = useState<Asset | null>(null);
   const { toast } = useToast();
 
-  // Expose refresh function to parent
-  useImperativeHandle(ref, () => ({
-    refresh: () => {
-      console.log('[AssetLibrary] External refresh triggered');
-      fetchAssets();
-    },
-  }));
-
   // Fetch assets from API
-  const fetchAssets = async (assetType?: "image" | "video") => {
+  const fetchAssets = useCallback(async (assetType?: "image" | "video") => {
     setIsLoading(true);
     try {
       const url = assetType
@@ -100,7 +92,15 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
+
+  // Expose refresh function to parent
+  useImperativeHandle(ref, () => ({
+    refresh: () => {
+      console.log('[AssetLibrary] External refresh triggered');
+      fetchAssets();
+    },
+  }), [fetchAssets]);
 
   // Load assets when panel opens
   useEffect(() => {
