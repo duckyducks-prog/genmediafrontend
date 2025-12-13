@@ -238,14 +238,12 @@ export function useWorkflowExecution(
 
               if (apiData.images && apiData.images.length > 0) {
                 const images = apiData.images.map((img: string) => `data:image/png;base64,${img}`);
-                const outputData = {
-                  images,
-                  image: images[0],
-                };
-                console.log('[DEBUG] Generate Image - output data:', outputData);
                 return {
                   success: true,
-                  data: outputData,
+                  data: {
+                    images,
+                    image: images[0],
+                  },
                 };
               } else {
                 return { success: false, error: "No images returned from API" };
@@ -356,8 +354,6 @@ export function useWorkflowExecution(
           case NodeType.ImageOutput: {
             // Get image from input - support both "image" and legacy names
             const imageUrl = inputs["image-input"] || inputs.image || null;
-            console.log('[DEBUG] Image Output - inputs:', inputs);
-            console.log('[DEBUG] Image Output - imageUrl:', imageUrl);
             return { success: true, data: { imageUrl, type: "image" } };
           }
 
@@ -521,12 +517,10 @@ export function useWorkflowExecution(
           if (result.status === 'fulfilled') {
             if (result.value.success) {
               progress.set(node.id, "completed");
-              const nodeData = {
+              updateNodeState(node.id, "completed", {
                 ...result.value.data,
                 outputs: result.value.data,
-              };
-              console.log(`[DEBUG] Updating node ${node.id} (${node.type}) with data:`, nodeData);
-              updateNodeState(node.id, "completed", nodeData);
+              });
               totalCompleted++;
             } else {
               progress.set(node.id, "error");

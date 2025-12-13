@@ -16,18 +16,13 @@ export function gatherNodeInputs(
 
   incomingEdges.forEach((edge) => {
     const sourceNode = allNodes.find((n) => n.id === edge.source);
-    if (!sourceNode || !sourceNode.data.outputs) {
-      console.log(`[DEBUG] gatherNodeInputs - No source node or outputs for edge:`, edge);
-      return;
-    }
+    if (!sourceNode || !sourceNode.data.outputs) return;
 
     const targetHandle = edge.targetHandle || 'default';
     const sourceHandle = edge.sourceHandle || 'default';
 
     // Get the output value from the source node
     const outputValue = sourceNode.data.outputs[sourceHandle];
-
-    console.log(`[DEBUG] gatherNodeInputs - Edge from ${sourceNode.type}[${sourceHandle}] to ${node.type}[${targetHandle}]:`, outputValue);
 
     if (outputValue !== undefined) {
       // Check if this input accepts multiple connections
@@ -46,7 +41,6 @@ export function gatherNodeInputs(
     }
   });
 
-  console.log(`[DEBUG] gatherNodeInputs - Final inputs for ${node.type}:`, inputs);
   return inputs;
 }
 
@@ -207,9 +201,6 @@ export async function pollVideoStatus(
       }
 
       const statusData = await statusResponse.json();
-
-      // Debug: log the actual response to understand the structure
-      console.log(`[DEBUG] Status response (attempt ${attempts}):`, statusData);
 
       // Check if video is ready
       if (statusData.status === 'complete') {

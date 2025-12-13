@@ -29,14 +29,6 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
   const isExecuting = status === "executing";
   const isCompleted = status === "completed";
 
-  // Debug logging
-  useEffect(() => {
-    console.log('[DEBUG] ImageOutputNode - data:', data);
-    console.log('[DEBUG] ImageOutputNode - incomingImageUrl:', incomingImageUrl);
-    console.log('[DEBUG] ImageOutputNode - currentImageUrl:', currentImageUrl);
-    console.log('[DEBUG] ImageOutputNode - final imageUrl:', imageUrl);
-  }, [data, incomingImageUrl, currentImageUrl, imageUrl]);
-
   // Reset to new incoming image when workflow executes
   useEffect(() => {
     if (incomingImageUrl && incomingImageUrl !== currentImageUrl) {
