@@ -97,6 +97,59 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
     }
   };
 
+  const handleSaveToLibrary = async () => {
+    if (!imageUrl || isSaving) return;
+
+    setIsSaving(true);
+
+    try {
+      // Extract base64 from data URI or use as-is
+      let base64Data = imageUrl;
+      if (imageUrl.startsWith("data:")) {
+        base64Data = imageUrl.split(",")[1];
+      }
+
+      // Try to get the prompt from connected nodes (if available)
+      const prompt = (data as any).prompt || "Generated image";
+
+      const response = await fetch(
+        "https://veo-api-82187245577.us-central1.run.app/library/save",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            data: base64Data,
+            asset_type: "image",
+            prompt: prompt,
+            mime_type: "image/png",
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to save: ${response.status} ${errorText}`);
+      }
+
+      const result = await response.json();
+
+      toast({
+        title: "Saved to Library",
+        description: "Image has been saved to your library",
+      });
+    } catch (error) {
+      console.error("Save to library error:", error);
+      toast({
+        title: "Failed to save",
+        description:
+          error instanceof Error ? error.message : "Could not save to library",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleDownload = async () => {
     if (!imageUrl) return;
 
