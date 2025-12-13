@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useImperativeHandle, forwardRef } from "react";
 import {
   Sheet,
   SheetContent,
@@ -43,10 +43,12 @@ interface AssetLibraryProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export default function AssetLibrary({
-  open,
-  onOpenChange,
-}: AssetLibraryProps) {
+export interface AssetLibraryRef {
+  refresh: () => void;
+}
+
+const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
+  ({ open, onOpenChange }, ref) => {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [filteredAssets, setFilteredAssets] = useState<Asset[]>([]);
   const [filter, setFilter] = useState<"all" | "image" | "video">("all");
@@ -54,6 +56,14 @@ export default function AssetLibrary({
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [previewAsset, setPreviewAsset] = useState<Asset | null>(null);
   const { toast } = useToast();
+
+  // Expose refresh function to parent
+  useImperativeHandle(ref, () => ({
+    refresh: () => {
+      console.log('[AssetLibrary] External refresh triggered');
+      fetchAssets();
+    },
+  }));
 
   // Fetch assets from API
   const fetchAssets = async (assetType?: "image" | "video") => {
@@ -370,4 +380,8 @@ export default function AssetLibrary({
       </AlertDialog>
     </>
   );
-}
+});
+
+AssetLibrary.displayName = 'AssetLibrary';
+
+export default AssetLibrary;
