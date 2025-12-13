@@ -1,14 +1,14 @@
 # Firebase Authentication Usage Guide
 
 ## Overview
-The app now uses Firebase Authentication with Google Sign-in. Users must be authenticated to access the main application.
+The app now uses Firebase Authentication with Email/Password sign-in. Users must be authenticated to access the main application.
 
 ## Key Files
 
 ### 1. `client/lib/firebase.ts`
 Firebase configuration and auth utilities:
 - `auth` - Firebase Auth instance
-- `signInWithGoogle()` - Sign in with Google popup
+- `signIn(email, password)` - Sign in with email and password
 - `logOut()` - Sign out current user
 - `onAuthStateChanged()` - Listen to auth state changes
 
@@ -18,7 +18,7 @@ React Context that provides auth state throughout the app:
 - `AuthProvider` - Wraps the app to provide auth state
 
 ### 3. `client/pages/Login.tsx`
-Login page with Google Sign-in button. Shown when user is not authenticated.
+Login page with email/password form. Shown when user is not authenticated.
 
 ### 4. `client/hooks/use-user-id.ts`
 Convenience hook to get the current user's ID for API calls.
