@@ -298,7 +298,7 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
   );
 }
 
-export default function WorkflowCanvas({ onAssetGenerated }: WorkflowCanvasProps = {}) {
+export default function WorkflowCanvas({ onAssetGenerated }: WorkflowCanvasProps) {
   return (
     <ReactFlowProvider>
       <WorkflowCanvasInner onAssetGenerated={onAssetGenerated} />
