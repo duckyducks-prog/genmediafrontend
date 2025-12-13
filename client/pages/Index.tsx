@@ -181,11 +181,26 @@ export default function Index() {
     </button>
   );
 
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/20 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Show login page if not authenticated
+  if (!user) {
+    return <Login />;
+  }
+
+  // Show main app if authenticated
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/20 flex flex-col">
       <header className="border-b border-border">
         <div className="px-4 py-8 border-b border-border">
-          <div className="container mx-auto">
+          <div className="container mx-auto flex items-center justify-between">
             <div className="inline-flex items-center gap-2">
               <img
                 src="https://cdn.builder.io/api/v1/image/assets%2Fb1d3bf7cc0eb4f0daca65fdc5a7d5179%2F30fc0e70b75040f4858161ac143ab00c?format=webp&width=800"
@@ -196,6 +211,37 @@ export default function Index() {
                 HubSpot Gen Media Studio
               </h1>
             </div>
+
+            {/* User Info & Sign Out */}
+            {user && (
+              <div className="flex items-center gap-4">
+                <div className="text-sm text-muted-foreground">
+                  {user.email}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      await logOut();
+                      toast({
+                        title: "Signed out",
+                        description: "You have been signed out successfully",
+                      });
+                    } catch (error) {
+                      toast({
+                        title: "Sign out failed",
+                        description: error instanceof Error ? error.message : "Unknown error",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
