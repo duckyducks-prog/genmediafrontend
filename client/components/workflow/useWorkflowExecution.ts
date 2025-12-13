@@ -27,6 +27,7 @@ export function useWorkflowExecution(
   setNodes: (
     nodes: WorkflowNode[] | ((nodes: WorkflowNode[]) => WorkflowNode[]),
   ) => void,
+  onAssetGenerated?: () => void,
 ) {
   const [isExecuting, setIsExecuting] = useState(false);
   const [executionProgress, setExecutionProgress] = useState<
@@ -264,6 +265,13 @@ export function useWorkflowExecution(
                 const images = apiData.images.map(
                   (img: string) => `data:image/png;base64,${img}`,
                 );
+
+                // Notify that an asset was generated
+                if (onAssetGenerated) {
+                  console.log('[useWorkflowExecution] Image generated, triggering asset refresh');
+                  onAssetGenerated();
+                }
+
                 return {
                   success: true,
                   data: {
@@ -389,6 +397,12 @@ export function useWorkflowExecution(
               );
 
               if (result.success && result.videoUrl) {
+                // Notify that an asset was generated
+                if (onAssetGenerated) {
+                  console.log('[useWorkflowExecution] Video generated, triggering asset refresh');
+                  onAssetGenerated();
+                }
+
                 return {
                   success: true,
                   data: { video: result.videoUrl },
