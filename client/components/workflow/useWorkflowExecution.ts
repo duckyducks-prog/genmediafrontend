@@ -209,11 +209,25 @@ export function useWorkflowExecution(
 
           case NodeType.GenerateImage: {
             const prompt = inputs.prompt;
-            const referenceImages = inputs.reference_images || null;
+            let referenceImages = inputs.reference_images || null;
             const formatData = inputs.format;
 
             if (!prompt) {
               return { success: false, error: "No prompt connected" };
+            }
+
+            // Strip data URI prefix from reference images if present
+            if (referenceImages) {
+              if (Array.isArray(referenceImages)) {
+                referenceImages = referenceImages.map((img: string) => {
+                  if (typeof img === 'string' && img.startsWith('data:')) {
+                    return img.split(',')[1];
+                  }
+                  return img;
+                });
+              } else if (typeof referenceImages === 'string' && referenceImages.startsWith('data:')) {
+                referenceImages = referenceImages.split(',')[1];
+              }
             }
 
             try {
