@@ -179,31 +179,33 @@ export default function AssetLibrary({
           className="w-full sm:max-w-2xl overflow-y-auto"
         >
           <SheetHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <SheetTitle>Asset Library</SheetTitle>
-                <SheetDescription>
-                  View, download, and manage your generated images and videos
-                </SheetDescription>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fetchAssets()}
-                disabled={isLoading}
-              >
-                <RefreshCw
-                  className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
-                />
-              </Button>
-            </div>
+            <SheetTitle>Asset Library</SheetTitle>
+            <SheetDescription>
+              View, download, and manage your generated images and videos
+            </SheetDescription>
           </SheetHeader>
+
+          {/* Refresh Button */}
+          <div className="mt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fetchAssets()}
+              disabled={isLoading}
+              className="w-full"
+            >
+              <RefreshCw
+                className={`w-4 h-4 mr-2 ${isLoading ? "animate-spin" : ""}`}
+              />
+              Refresh Library
+            </Button>
+          </div>
 
           {/* Filters */}
           <Tabs
             value={filter}
             onValueChange={(v) => setFilter(v as any)}
-            className="mt-6"
+            className="mt-4"
           >
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="all">All</TabsTrigger>
