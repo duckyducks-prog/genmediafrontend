@@ -25,6 +25,7 @@ import {
   Video as VideoIcon,
   Loader2,
   X,
+  RefreshCw,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -163,10 +164,22 @@ export default function AssetLibrary({ open, onOpenChange }: AssetLibraryProps) 
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>Asset Library</SheetTitle>
-            <SheetDescription>
-              View, download, and manage your generated images and videos
-            </SheetDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <SheetTitle>Asset Library</SheetTitle>
+                <SheetDescription>
+                  View, download, and manage your generated images and videos
+                </SheetDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchAssets()}
+                disabled={isLoading}
+              >
+                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
           </SheetHeader>
 
           {/* Filters */}
