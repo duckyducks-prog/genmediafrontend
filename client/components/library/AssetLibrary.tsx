@@ -254,11 +254,20 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
                             src={asset.url}
                             alt={asset.prompt}
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.error('[AssetLibrary] Image failed to load:', asset.url);
+                              e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext x="50" y="50" text-anchor="middle" fill="%23999" font-family="monospace" font-size="12"%3EError%3C/text%3E%3C/svg%3E';
+                            }}
+                            crossOrigin="anonymous"
                           />
                         ) : (
                           <video
                             src={asset.url}
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.error('[AssetLibrary] Video failed to load:', asset.url);
+                            }}
+                            crossOrigin="anonymous"
                           />
                         )}
                         {/* Type Badge */}
@@ -357,12 +366,20 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
                 src={previewAsset.url}
                 alt={previewAsset.prompt}
                 className="w-full h-auto"
+                onError={(e) => {
+                  console.error('[AssetLibrary] Preview image failed to load:', previewAsset.url);
+                }}
+                crossOrigin="anonymous"
               />
             ) : (
               <video
                 src={previewAsset?.url}
                 controls
                 className="w-full h-auto"
+                onError={(e) => {
+                  console.error('[AssetLibrary] Preview video failed to load:', previewAsset?.url);
+                }}
+                crossOrigin="anonymous"
               />
             )}
           </div>
