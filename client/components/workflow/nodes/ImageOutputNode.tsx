@@ -24,6 +24,7 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
   const [isUpscaling, setIsUpscaling] = useState(false);
   const [upscaleError, setUpscaleError] = useState<string | null>(null);
   const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const incomingImageUrl = (data as any).imageUrl || data.result;
   const imageUrl = currentImageUrl || incomingImageUrl;
@@ -75,6 +76,7 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
         base64Image = imageUrl.split(",")[1];
       }
 
+      const user = auth.currentUser;
       const response = await fetch(
         "https://veo-api-82187245577.us-central1.run.app/upscale/image",
         {
@@ -83,9 +85,21 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
           body: JSON.stringify({
             image: base64Image,
             upscale_factor: upscaleFactor,
+            user_id: user?.uid,
+            user_email: user?.email,
           }),
         },
       );
+
+      if (response.status === 403) {
+        toast({
+          title: "Access Denied",
+          description: "Access denied. Contact administrator.",
+          variant: "destructive",
+        });
+        setUpscaleError("Access denied. Contact administrator.");
+        return;
+      }
 
       if (!response.ok) {
         const errorText = await response.text();
