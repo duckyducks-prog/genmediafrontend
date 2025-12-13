@@ -110,11 +110,19 @@ function GenerateImageNode() {
 3. **Backend Validation**: Backend should validate the user ID against Firebase tokens if needed
 4. **CORS**: Firebase Auth handles CORS automatically for auth operations
 
+## Creating User Accounts
+
+Users must be created in the Firebase Console:
+1. Go to [Firebase Console](https://console.firebase.google.com/) → Authentication
+2. Click "Users" tab → "Add user"
+3. Enter email and password
+4. Users can then sign in with these credentials
+
 ## Testing
 
 To test authentication:
-1. Run the app
-2. You'll see the login page
-3. Click "Sign in with Google"
+1. Create a test user in Firebase Console (see above)
+2. Run the app - you'll see the login page
+3. Enter email and password, then click "Sign In"
 4. After signing in, you'll see the main app
 5. Click "Sign Out" in the header to return to login
