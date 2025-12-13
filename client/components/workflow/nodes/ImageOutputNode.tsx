@@ -34,6 +34,56 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
     return "border-border";
   };
 
+  const handleUpscale = async () => {
+    if (!imageUrl || isUpscaling) return;
+
+    setIsUpscaling(true);
+    setUpscaleError(null);
+
+    try {
+      // Extract base64 from data URI or use as-is
+      let base64Image = imageUrl;
+      if (imageUrl.startsWith("data:")) {
+        // Remove data:image/png;base64, prefix
+        base64Image = imageUrl.split(",")[1];
+      }
+
+      const response = await fetch(
+        "https://veo-api-82187245577.us-central1.run.app/upscale/image",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            image: base64Image,
+            upscale_factor: upscaleFactor,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Upscale failed: ${response.status} ${errorText}`);
+      }
+
+      const result = await response.json();
+
+      if (result.image) {
+        // Update to upscaled image
+        const mimeType = result.mime_type || "image/png";
+        setCurrentImageUrl(`data:${mimeType};base64,${result.image}`);
+      } else {
+        throw new Error("No image returned from upscale API");
+      }
+    } catch (error) {
+      console.error("Upscale error:", error);
+      setUpscaleError(
+        error instanceof Error ? error.message : "Upscale failed"
+      );
+    } finally {
+      setIsUpscaling(false);
+    }
+  };
+
   const handleDownload = async () => {
     if (!imageUrl) return;
 
