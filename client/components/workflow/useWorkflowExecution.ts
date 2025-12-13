@@ -238,12 +238,14 @@ export function useWorkflowExecution(
 
               if (apiData.images && apiData.images.length > 0) {
                 const images = apiData.images.map((img: string) => `data:image/png;base64,${img}`);
+                const outputData = {
+                  images,
+                  image: images[0],
+                };
+                console.log('[DEBUG] Generate Image - output data:', outputData);
                 return {
                   success: true,
-                  data: {
-                    images,
-                    image: images[0],
-                  },
+                  data: outputData,
                 };
               } else {
                 return { success: false, error: "No images returned from API" };
