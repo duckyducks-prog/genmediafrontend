@@ -15,17 +15,13 @@ import {
   Loader2,
   Download,
   Sparkles,
-  Save,
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 
 function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
   const [upscaleFactor, setUpscaleFactor] = useState<string>("x2");
   const [isUpscaling, setIsUpscaling] = useState(false);
   const [upscaleError, setUpscaleError] = useState<string | null>(null);
   const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const { toast } = useToast();
 
   const incomingImageUrl = (data as any).imageUrl || data.result;
   const imageUrl = currentImageUrl || incomingImageUrl;
@@ -94,69 +90,6 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
       );
     } finally {
       setIsUpscaling(false);
-    }
-  };
-
-  const handleSaveToLibrary = async () => {
-    if (!imageUrl || isSaving) return;
-
-    setIsSaving(true);
-
-    try {
-      // Extract base64 from data URI or use as-is
-      let base64Data = imageUrl;
-      if (imageUrl.startsWith("data:")) {
-        base64Data = imageUrl.split(",")[1];
-      }
-
-      // Try to get the prompt from connected nodes (if available)
-      const prompt = (data as any).prompt || "Generated image";
-
-      console.log('[DEBUG] Saving to library:', {
-        promptLength: base64Data.length,
-        prompt,
-        hasImage: !!base64Data,
-      });
-
-      const response = await fetch(
-        "https://veo-api-82187245577.us-central1.run.app/library/save",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            data: base64Data,
-            asset_type: "image",
-            prompt: prompt,
-            mime_type: "image/png",
-          }),
-        }
-      );
-
-      console.log('[DEBUG] Save response status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[DEBUG] Save error response:', errorText);
-        throw new Error(`Failed to save: ${response.status} ${errorText}`);
-      }
-
-      const result = await response.json();
-      console.log('[DEBUG] Save result:', result);
-
-      toast({
-        title: "Saved to Library",
-        description: "Image has been saved to your library",
-      });
-    } catch (error) {
-      console.error("Save to library error:", error);
-      toast({
-        title: "Failed to save",
-        description:
-          error instanceof Error ? error.message : "Could not save to library",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -283,37 +216,16 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
               </div>
             )}
 
-            {/* Action Buttons */}
-            <div className="flex gap-2">
-              <Button
-                onClick={handleSaveToLibrary}
-                disabled={isSaving}
-                variant="default"
-                size="sm"
-                className="flex-1"
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-3 h-3 mr-1" />
-                    Save
-                  </>
-                )}
-              </Button>
-              <Button
-                onClick={handleDownload}
-                variant="outline"
-                size="sm"
-                className="flex-1"
-              >
-                <Download className="w-3 h-3 mr-1" />
-                Download
-              </Button>
-            </div>
+            {/* Download Button */}
+            <Button
+              onClick={handleDownload}
+              variant="outline"
+              size="sm"
+              className="w-full"
+            >
+              <Download className="w-3 h-3 mr-1" />
+              Download Image
+            </Button>
           </>
         ) : (
           <div className="flex flex-col items-center justify-center h-[150px] border-2 border-dashed border-border rounded-lg bg-muted/30">
