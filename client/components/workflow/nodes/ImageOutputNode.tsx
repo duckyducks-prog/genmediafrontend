@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useState, useEffect } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,10 +23,19 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
   const [upscaleError, setUpscaleError] = useState<string | null>(null);
   const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
 
-  const imageUrl = currentImageUrl || (data as any).imageUrl || data.result;
+  const incomingImageUrl = (data as any).imageUrl || data.result;
+  const imageUrl = currentImageUrl || incomingImageUrl;
   const status = (data as any).status || "ready";
   const isExecuting = status === "executing";
   const isCompleted = status === "completed";
+
+  // Reset to new incoming image when workflow executes
+  useEffect(() => {
+    if (incomingImageUrl && incomingImageUrl !== currentImageUrl) {
+      setCurrentImageUrl(null); // Reset to show the new incoming image
+      setUpscaleError(null); // Clear any previous errors
+    }
+  }, [incomingImageUrl]);
 
   const getBorderColor = () => {
     if (isExecuting) return "border-yellow-500";
