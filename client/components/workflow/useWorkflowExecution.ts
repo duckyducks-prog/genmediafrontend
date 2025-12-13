@@ -504,7 +504,7 @@ export function useWorkflowExecution(
         };
       }
     },
-    [updateNodeState],
+    [updateNodeState, onAssetGenerated],
   );
 
   // Main execution function
