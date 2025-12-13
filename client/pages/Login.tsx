@@ -1,32 +1,17 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { signIn } from "@/lib/firebase";
+import { signInWithGoogle } from "@/lib/firebase";
 import { Loader2 } from "lucide-react";
-import { useState, FormEvent } from "react";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const { toast } = useToast();
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-
-    if (!email || !password) {
-      toast({
-        title: "Missing credentials",
-        description: "Please enter both email and password",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleSignIn = async () => {
     setIsLoading(true);
     try {
-      await signIn(email, password);
+      await signInWithGoogle();
       toast({
         title: "Signed in successfully",
         description: "Welcome to Gen Media Studio!",
@@ -35,8 +20,7 @@ export default function Login() {
       console.error("Sign in error:", error);
       toast({
         title: "Sign in failed",
-        description:
-          error instanceof Error ? error.message : "Invalid email or password",
+        description: error instanceof Error ? error.message : "Unknown error",
         variant: "destructive",
       });
     } finally {

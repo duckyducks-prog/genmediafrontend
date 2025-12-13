@@ -1,9 +1,10 @@
 import { initializeApp } from "firebase/app";
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
+import { 
+  getAuth, 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  signOut, 
+  onAuthStateChanged 
 } from "firebase/auth";
 
 const firebaseConfig = {
@@ -13,15 +14,13 @@ const firebaseConfig = {
   storageBucket: "genmediastudio.firebasestorage.app",
   messagingSenderId: "856765593724",
   appId: "1:856765593724:web:2d56922818e4dd876ff1f9",
-  measurementId: "G-M4801D5V62",
+  measurementId: "G-M4801D5V62"
 };
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+export const googleProvider = new GoogleAuthProvider();
 
-// Email/password sign in
-export const signIn = (email: string, password: string) =>
-  signInWithEmailAndPassword(auth, email, password);
-
+export const signInWithGoogle = () => signInWithPopup(auth, googleProvider);
 export const logOut = () => signOut(auth);
 export { onAuthStateChanged };
