@@ -31,19 +31,23 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
 
   // Debug logging
   useEffect(() => {
-    console.log('[ImageOutputNode] Data update:', {
+    console.log("[ImageOutputNode] Data update:", {
       nodeId: id,
-      incomingImageUrl: incomingImageUrl ? `${incomingImageUrl.substring(0, 50)}...` : null,
-      currentImageUrl: currentImageUrl ? `${currentImageUrl.substring(0, 50)}...` : null,
+      incomingImageUrl: incomingImageUrl
+        ? `${incomingImageUrl.substring(0, 50)}...`
+        : null,
+      currentImageUrl: currentImageUrl
+        ? `${currentImageUrl.substring(0, 50)}...`
+        : null,
       status,
-      data
+      data,
     });
   }, [data, incomingImageUrl, currentImageUrl, status, id]);
 
   // Reset to new incoming image when workflow executes
   useEffect(() => {
     if (incomingImageUrl && incomingImageUrl !== currentImageUrl) {
-      console.log('[ImageOutputNode] Resetting to new incoming image');
+      console.log("[ImageOutputNode] Resetting to new incoming image");
       setCurrentImageUrl(null); // Reset to show the new incoming image
       setUpscaleError(null); // Clear any previous errors
     }
@@ -181,9 +185,14 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
                 alt="Generated output"
                 className="w-full h-auto max-h-[200px] object-contain"
                 onError={(e) => {
-                  console.error('[ImageOutputNode] Image failed to load:', imageUrl?.substring(0, 100));
+                  console.error(
+                    "[ImageOutputNode] Image failed to load:",
+                    imageUrl?.substring(0, 100),
+                  );
                 }}
-                crossOrigin={imageUrl?.startsWith('data:') ? undefined : 'anonymous'}
+                crossOrigin={
+                  imageUrl?.startsWith("data:") ? undefined : "anonymous"
+                }
               />
             </div>
 

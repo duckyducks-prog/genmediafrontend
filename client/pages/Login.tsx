@@ -35,7 +35,8 @@ export default function Login() {
       console.error("Sign in error:", error);
       toast({
         title: "Sign in failed",
-        description: error instanceof Error ? error.message : "Invalid email or password",
+        description:
+          error instanceof Error ? error.message : "Invalid email or password",
         variant: "destructive",
       });
     } finally {

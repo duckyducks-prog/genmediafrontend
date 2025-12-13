@@ -14,7 +14,12 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 import "./workflow.css";
-import { WorkflowNode, WorkflowEdge, NodeType, WorkflowNodeData } from "./types";
+import {
+  WorkflowNode,
+  WorkflowEdge,
+  NodeType,
+  WorkflowNodeData,
+} from "./types";
 import NodePalette from "./NodePalette";
 import WorkflowToolbar from "./WorkflowToolbar";
 import { useWorkflowExecution } from "./useWorkflowExecution";
@@ -68,12 +73,12 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
     const handleNodeUpdate = (event: any) => {
       const { id, data } = event.detail;
       setNodes((nds) =>
-        nds.map((node) => (node.id === id ? { ...node, data } : node))
+        nds.map((node) => (node.id === id ? { ...node, data } : node)),
       );
     };
 
-    window.addEventListener('node-update', handleNodeUpdate);
-    return () => window.removeEventListener('node-update', handleNodeUpdate);
+    window.addEventListener("node-update", handleNodeUpdate);
+    return () => window.removeEventListener("node-update", handleNodeUpdate);
   }, [setNodes]);
 
   // Listen for node execute events
@@ -82,25 +87,29 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
       const { nodeId } = event.detail;
       // Trigger execution for a single node
       // This will be handled by the workflow execution system
-      console.log('Execute node:', nodeId);
+      console.log("Execute node:", nodeId);
     };
 
-    window.addEventListener('node-execute', handleNodeExecute);
-    return () => window.removeEventListener('node-execute', handleNodeExecute);
+    window.addEventListener("node-execute", handleNodeExecute);
+    return () => window.removeEventListener("node-execute", handleNodeExecute);
   }, []);
 
   // Handle new connections between nodes
   const onConnect = useCallback(
     (params: Connection | Edge) => {
       // Get the source node to determine connector type
-      const sourceNode = nodes.find(n => n.id === params.source);
+      const sourceNode = nodes.find((n) => n.id === params.source);
       if (sourceNode) {
-        const connectorType = getConnectorType(sourceNode, params.sourceHandle, true);
+        const connectorType = getConnectorType(
+          sourceNode,
+          params.sourceHandle,
+          true,
+        );
         // Add connector type class and data for styling
         const newEdge = {
           ...params,
-          className: `connector-type-${connectorType || 'any'}`,
-          data: { connectorType: connectorType || 'any' },
+          className: `connector-type-${connectorType || "any"}`,
+          data: { connectorType: connectorType || "any" },
         };
         setEdges((eds) => addEdge(newEdge, eds));
       } else {
@@ -116,7 +125,7 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
       const validation = validateConnection(connection, nodes, edges);
 
       if (!validation.valid) {
-        console.warn('Connection rejected:', validation.reason);
+        console.warn("Connection rejected:", validation.reason);
       }
 
       return validation.valid;
@@ -141,7 +150,12 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
           data = { prompt: "", label: "Prompt", outputs: {} };
           break;
         case NodeType.ImageInput:
-          data = { imageUrl: null, file: null, label: "Image Input", outputs: {} };
+          data = {
+            imageUrl: null,
+            file: null,
+            label: "Image Input",
+            outputs: {},
+          };
           break;
 
         // Modifier nodes
@@ -165,10 +179,20 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
 
         // Action nodes
         case NodeType.GenerateImage:
-          data = { isGenerating: false, status: "ready", label: "Generate Image", outputs: {} };
+          data = {
+            isGenerating: false,
+            status: "ready",
+            label: "Generate Image",
+            outputs: {},
+          };
           break;
         case NodeType.GenerateVideo:
-          data = { isGenerating: false, status: "ready", label: "Generate Video", outputs: {} };
+          data = {
+            isGenerating: false,
+            status: "ready",
+            label: "Generate Video",
+            outputs: {},
+          };
           break;
         case NodeType.LLM:
           data = {
@@ -289,7 +313,9 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="text-center text-muted-foreground">
               <p className="text-lg font-medium mb-2">Your canvas is empty</p>
-              <p className="text-sm">Drag nodes from the palette or click on a node to add it</p>
+              <p className="text-sm">
+                Drag nodes from the palette or click on a node to add it
+              </p>
             </div>
           </div>
         )}
@@ -298,7 +324,9 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
   );
 }
 
-export default function WorkflowCanvas({ onAssetGenerated }: WorkflowCanvasProps) {
+export default function WorkflowCanvas({
+  onAssetGenerated,
+}: WorkflowCanvasProps) {
   return (
     <ReactFlowProvider>
       <WorkflowCanvasInner onAssetGenerated={onAssetGenerated} />

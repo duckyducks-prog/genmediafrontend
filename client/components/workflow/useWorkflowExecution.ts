@@ -268,7 +268,9 @@ export function useWorkflowExecution(
 
                 // Notify that an asset was generated
                 if (onAssetGenerated) {
-                  console.log('[useWorkflowExecution] Image generated, triggering asset refresh');
+                  console.log(
+                    "[useWorkflowExecution] Image generated, triggering asset refresh",
+                  );
                   onAssetGenerated();
                 }
 
@@ -399,7 +401,9 @@ export function useWorkflowExecution(
               if (result.success && result.videoUrl) {
                 // Notify that an asset was generated
                 if (onAssetGenerated) {
-                  console.log('[useWorkflowExecution] Video generated, triggering asset refresh');
+                  console.log(
+                    "[useWorkflowExecution] Video generated, triggering asset refresh",
+                  );
                   onAssetGenerated();
                 }
 

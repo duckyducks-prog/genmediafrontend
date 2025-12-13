@@ -16,7 +16,9 @@ import {
   LogOut,
 } from "lucide-react";
 import WorkflowCanvas from "@/components/workflow/WorkflowCanvas";
-import AssetLibrary, { AssetLibraryRef } from "@/components/library/AssetLibrary";
+import AssetLibrary, {
+  AssetLibraryRef,
+} from "@/components/library/AssetLibrary";
 import { useAuth } from "@/lib/AuthContext";
 import { logOut } from "@/lib/firebase";
 import Login from "./Login";
@@ -231,7 +233,10 @@ export default function Index() {
                     } catch (error) {
                       toast({
                         title: "Sign out failed",
-                        description: error instanceof Error ? error.message : "Unknown error",
+                        description:
+                          error instanceof Error
+                            ? error.message
+                            : "Unknown error",
                         variant: "destructive",
                       });
                     }
@@ -543,13 +548,18 @@ export default function Index() {
             <TabsContent value="workflow" className="h-[calc(100vh-200px)]">
               <WorkflowCanvas
                 onAssetGenerated={() => {
-                  console.log('[Index] Asset generated callback triggered');
-                  console.log('[Index] AssetLibrary ref:', assetLibraryRef.current);
+                  console.log("[Index] Asset generated callback triggered");
+                  console.log(
+                    "[Index] AssetLibrary ref:",
+                    assetLibraryRef.current,
+                  );
                   if (assetLibraryRef.current) {
-                    console.log('[Index] Calling refresh on asset library');
+                    console.log("[Index] Calling refresh on asset library");
                     assetLibraryRef.current.refresh();
                   } else {
-                    console.warn('[Index] AssetLibrary ref is null, cannot refresh');
+                    console.warn(
+                      "[Index] AssetLibrary ref is null, cannot refresh",
+                    );
                   }
                 }}
               />

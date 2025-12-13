@@ -3,7 +3,7 @@ import {
   getAuth,
   signInWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
 } from "firebase/auth";
 
 const firebaseConfig = {
@@ -13,7 +13,7 @@ const firebaseConfig = {
   storageBucket: "genmediastudio.firebasestorage.app",
   messagingSenderId: "856765593724",
   appId: "1:856765593724:web:2d56922818e4dd876ff1f9",
-  measurementId: "G-M4801D5V62"
+  measurementId: "G-M4801D5V62",
 };
 
 const app = initializeApp(firebaseConfig);
