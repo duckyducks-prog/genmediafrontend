@@ -14,6 +14,7 @@ import {
   pollVideoStatus,
   groupNodesByLevel,
 } from "./executionHelpers";
+import { auth } from "@/lib/firebase";
 
 interface ExecutionResult {
   success: boolean;
@@ -181,6 +182,7 @@ export function useWorkflowExecution(
             }
 
             try {
+              const user = auth.currentUser;
               const response = await fetch(
                 "https://veo-api-82187245577.us-central1.run.app/generate/text",
                 {
@@ -191,9 +193,18 @@ export function useWorkflowExecution(
                     system_prompt: systemPrompt,
                     context,
                     temperature,
+                    user_id: user?.uid,
+                    user_email: user?.email,
                   }),
                 },
               );
+
+              if (response.status === 403) {
+                return {
+                  success: false,
+                  error: "Access denied. Contact administrator.",
+                };
+              }
 
               if (!response.ok) {
                 throw new Error(`API error: ${response.status}`);
@@ -242,6 +253,7 @@ export function useWorkflowExecution(
             }
 
             try {
+              const user = auth.currentUser;
               const response = await fetch(
                 "https://veo-api-82187245577.us-central1.run.app/generate/image",
                 {
@@ -251,9 +263,18 @@ export function useWorkflowExecution(
                     prompt,
                     reference_images: referenceImages,
                     aspect_ratio: formatData?.aspect_ratio || "1:1",
+                    user_id: user?.uid,
+                    user_email: user?.email,
                   }),
                 },
               );
+
+              if (response.status === 403) {
+                return {
+                  success: false,
+                  error: "Access denied. Contact administrator.",
+                };
+              }
 
               if (!response.ok) {
                 throw new Error(`API error: ${response.status}`);
@@ -355,6 +376,7 @@ export function useWorkflowExecution(
             }
 
             try {
+              const user = auth.currentUser;
               const requestBody: any = {
                 prompt,
                 first_frame: firstFrame,
@@ -363,6 +385,8 @@ export function useWorkflowExecution(
                 aspect_ratio: formatData?.aspect_ratio || "16:9",
                 duration_seconds: formatData?.duration_seconds || 8,
                 generate_audio: formatData?.generate_audio ?? true,
+                user_id: user?.uid,
+                user_email: user?.email,
               };
 
               const response = await fetch(
@@ -373,6 +397,13 @@ export function useWorkflowExecution(
                   body: JSON.stringify(requestBody),
                 },
               );
+
+              if (response.status === 403) {
+                return {
+                  success: false,
+                  error: "Access denied. Contact administrator.",
+                };
+              }
 
               if (!response.ok) {
                 throw new Error(`API error: ${response.status}`);
