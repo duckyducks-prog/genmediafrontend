@@ -12,8 +12,10 @@ import {
   X,
   Home,
   Workflow as WorkflowIcon,
+  FolderOpen,
 } from "lucide-react";
 import WorkflowCanvas from "@/components/workflow/WorkflowCanvas";
+import AssetLibrary from "@/components/library/AssetLibrary";
 
 export default function Index() {
   const [currentTab, setCurrentTab] = useState("image");
@@ -26,6 +28,7 @@ export default function Index() {
   const [videoResult, setVideoResult] = useState<string | null>(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
+  const [isLibraryOpen, setIsLibraryOpen] = useState(false);
 
   const handleReferenceImageUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
