@@ -354,6 +354,8 @@ export function useWorkflowExecution(
           case NodeType.ImageOutput: {
             // Get image from input - support both "image" and legacy names
             const imageUrl = inputs["image-input"] || inputs.image || null;
+            console.log('[DEBUG] Image Output - inputs:', inputs);
+            console.log('[DEBUG] Image Output - imageUrl:', imageUrl);
             return { success: true, data: { imageUrl, type: "image" } };
           }
 
