@@ -490,8 +490,14 @@ export default function Index() {
             <TabsContent value="workflow" className="h-[calc(100vh-200px)]">
               <WorkflowCanvas
                 onAssetGenerated={() => {
-                  console.log('[Index] Asset generated, triggering library refresh');
-                  assetLibraryRef.current?.refresh();
+                  console.log('[Index] Asset generated callback triggered');
+                  console.log('[Index] AssetLibrary ref:', assetLibraryRef.current);
+                  if (assetLibraryRef.current) {
+                    console.log('[Index] Calling refresh on asset library');
+                    assetLibraryRef.current.refresh();
+                  } else {
+                    console.warn('[Index] AssetLibrary ref is null, cannot refresh');
+                  }
                 }}
               />
             </TabsContent>
