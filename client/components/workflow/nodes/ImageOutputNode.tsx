@@ -16,6 +16,8 @@ import {
   Download,
   Sparkles,
 } from "lucide-react";
+import { auth } from "@/lib/firebase";
+import { useToast } from "@/hooks/use-toast";
 
 function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
   const [upscaleFactor, setUpscaleFactor] = useState<string>("x2");
