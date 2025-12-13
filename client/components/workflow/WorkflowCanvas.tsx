@@ -52,7 +52,11 @@ const nodeTypes: NodeTypes = {
   [NodeType.Download]: DownloadNode,
 };
 
-function WorkflowCanvasInner() {
+interface WorkflowCanvasProps {
+  onAssetGenerated?: () => void;
+}
+
+function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<WorkflowNodeData>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [reactFlowInstance, setReactFlowInstance] =
@@ -242,6 +246,7 @@ function WorkflowCanvasInner() {
     nodes,
     edges,
     setNodes,
+    onAssetGenerated,
   );
 
   return (
@@ -293,10 +298,10 @@ function WorkflowCanvasInner() {
   );
 }
 
-export default function WorkflowCanvas() {
+export default function WorkflowCanvas({ onAssetGenerated }: WorkflowCanvasProps = {}) {
   return (
     <ReactFlowProvider>
-      <WorkflowCanvasInner />
+      <WorkflowCanvasInner onAssetGenerated={onAssetGenerated} />
     </ReactFlowProvider>
   );
 }
