@@ -112,6 +112,12 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
       // Try to get the prompt from connected nodes (if available)
       const prompt = (data as any).prompt || "Generated image";
 
+      console.log('[DEBUG] Saving to library:', {
+        promptLength: base64Data.length,
+        prompt,
+        hasImage: !!base64Data,
+      });
+
       const response = await fetch(
         "https://veo-api-82187245577.us-central1.run.app/library/save",
         {
@@ -126,12 +132,16 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
         }
       );
 
+      console.log('[DEBUG] Save response status:', response.status);
+
       if (!response.ok) {
         const errorText = await response.text();
+        console.error('[DEBUG] Save error response:', errorText);
         throw new Error(`Failed to save: ${response.status} ${errorText}`);
       }
 
       const result = await response.json();
+      console.log('[DEBUG] Save result:', result);
 
       toast({
         title: "Saved to Library",
