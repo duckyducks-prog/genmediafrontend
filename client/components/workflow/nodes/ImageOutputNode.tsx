@@ -15,13 +15,17 @@ import {
   Loader2,
   Download,
   Sparkles,
+  Save,
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
   const [upscaleFactor, setUpscaleFactor] = useState<string>("x2");
   const [isUpscaling, setIsUpscaling] = useState(false);
   const [upscaleError, setUpscaleError] = useState<string | null>(null);
   const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
 
   const incomingImageUrl = (data as any).imageUrl || data.result;
   const imageUrl = currentImageUrl || incomingImageUrl;
