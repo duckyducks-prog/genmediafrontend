@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -15,9 +15,10 @@ import {
   FolderOpen,
 } from "lucide-react";
 import WorkflowCanvas from "@/components/workflow/WorkflowCanvas";
-import AssetLibrary from "@/components/library/AssetLibrary";
+import AssetLibrary, { AssetLibraryRef } from "@/components/library/AssetLibrary";
 
 export default function Index() {
+  const assetLibraryRef = useRef<AssetLibraryRef>(null);
   const [currentTab, setCurrentTab] = useState("image");
   const [imagePrompt, setImagePrompt] = useState("");
   const [videoPrompt, setVideoPrompt] = useState("");
