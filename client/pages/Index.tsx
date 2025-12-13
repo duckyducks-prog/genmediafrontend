@@ -13,11 +13,18 @@ import {
   Home,
   Workflow as WorkflowIcon,
   FolderOpen,
+  LogOut,
 } from "lucide-react";
 import WorkflowCanvas from "@/components/workflow/WorkflowCanvas";
 import AssetLibrary, { AssetLibraryRef } from "@/components/library/AssetLibrary";
+import { useAuth } from "@/lib/AuthContext";
+import { logOut } from "@/lib/firebase";
+import Login from "./Login";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Index() {
+  const { user, loading } = useAuth();
+  const { toast } = useToast();
   const assetLibraryRef = useRef<AssetLibraryRef>(null);
   const [currentTab, setCurrentTab] = useState("image");
   const [imagePrompt, setImagePrompt] = useState("");
