@@ -161,6 +161,53 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
                 className="w-full h-auto max-h-[200px] object-contain"
               />
             </div>
+
+            {/* Upscale Controls */}
+            <div className="flex gap-2 items-center">
+              <Select
+                value={upscaleFactor}
+                onValueChange={setUpscaleFactor}
+                disabled={isUpscaling}
+              >
+                <SelectTrigger className="w-20 h-8">
+                  <SelectValue placeholder="x2" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="x2">x2</SelectItem>
+                  <SelectItem value="x3">x3</SelectItem>
+                  <SelectItem value="x4">x4</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Button
+                onClick={handleUpscale}
+                disabled={isUpscaling}
+                variant="secondary"
+                size="sm"
+                className="flex-1"
+              >
+                {isUpscaling ? (
+                  <>
+                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                    Upscaling...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    Upscale
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Error Message */}
+            {upscaleError && (
+              <div className="text-xs text-red-500 bg-red-50 dark:bg-red-950/20 p-2 rounded">
+                {upscaleError}
+              </div>
+            )}
+
+            {/* Download Button */}
             <Button
               onClick={handleDownload}
               variant="outline"
