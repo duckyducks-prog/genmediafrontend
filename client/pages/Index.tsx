@@ -492,6 +492,9 @@ export default function Index() {
           </Tabs>
         </div>
       </div>
+
+      {/* Asset Library */}
+      <AssetLibrary open={isLibraryOpen} onOpenChange={setIsLibraryOpen} />
     </div>
   );
 }
