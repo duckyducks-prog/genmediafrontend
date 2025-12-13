@@ -6,10 +6,12 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleSignIn = async () => {
     setIsLoading(true);
+    setError(null);
     try {
       await signInWithGoogle();
       toast({
@@ -18,9 +20,11 @@ export default function Login() {
       });
     } catch (error) {
       console.error("Sign in error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      setError(errorMessage);
       toast({
         title: "Sign in failed",
-        description: error instanceof Error ? error.message : "Unknown error",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -83,6 +87,12 @@ export default function Login() {
               </>
             )}
           </Button>
+
+          {error && (
+            <p className="text-destructive text-sm text-center mt-4 font-medium">
+              {error}
+            </p>
+          )}
 
           <p className="text-xs text-muted-foreground text-center mt-6">
             By signing in, you agree to our Terms of Service and Privacy Policy

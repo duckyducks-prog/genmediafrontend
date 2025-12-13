@@ -21,6 +21,27 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
-export const signInWithGoogle = () => signInWithPopup(auth, googleProvider);
+// Allowed emails list
+const ALLOWED_EMAILS = [
+  "ldebortolialves@hubspot.com"
+];
+
+export const signInWithGoogle = async () => {
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    const email = result.user.email?.toLowerCase();
+
+    // Check if email is allowed
+    if (!email || !ALLOWED_EMAILS.includes(email)) {
+      await signOut(auth);
+      throw new Error("Access denied. Your email is not authorized.");
+    }
+
+    return result;
+  } catch (error) {
+    throw error;
+  }
+};
+
 export const logOut = () => signOut(auth);
 export { onAuthStateChanged };
