@@ -3,14 +3,25 @@
 ## Overview
 The app now uses Firebase Authentication with Google Sign-in. Users must be authenticated to access the main application.
 
+**Email Whitelisting**: After successful Google sign-in, the user's email is checked against a whitelist. If the email is not authorized, the user is immediately signed out and shown an error message.
+
 ## Key Files
 
 ### 1. `client/lib/firebase.ts`
 Firebase configuration and auth utilities:
 - `auth` - Firebase Auth instance
-- `signInWithGoogle()` - Sign in with Google popup
+- `signInWithGoogle()` - Sign in with Google popup (includes email whitelisting)
 - `logOut()` - Sign out current user
 - `onAuthStateChanged()` - Listen to auth state changes
+- `ALLOWED_EMAILS` - Array of authorized email addresses
+
+**Email Whitelisting**: To add new authorized users, update the `ALLOWED_EMAILS` array in this file:
+```typescript
+const ALLOWED_EMAILS = [
+  "ldebortolialves@hubspot.com",
+  "newuser@example.com"  // Add new emails here
+];
+```
 
 ### 2. `client/lib/AuthContext.tsx`
 React Context that provides auth state throughout the app:
@@ -82,6 +93,37 @@ const user = auth.currentUser;
 const userId = user?.uid;
 const userEmail = user?.email;
 ```
+
+## Email Whitelisting
+
+### Frontend Whitelisting
+The frontend checks the user's email immediately after Google sign-in:
+
+1. User clicks "Sign in with Google"
+2. Google authentication succeeds
+3. Email is checked against `ALLOWED_EMAILS` in `client/lib/firebase.ts`
+4. If email is NOT in the list:
+   - User is immediately signed out
+   - Error message is displayed: "Access denied. Your email is not authorized."
+   - Both toast notification and inline error are shown
+
+### Adding New Users
+To authorize a new user:
+1. Open `client/lib/firebase.ts`
+2. Add their email (lowercase) to the `ALLOWED_EMAILS` array
+3. Save the file - changes take effect immediately
+
+```typescript
+const ALLOWED_EMAILS = [
+  "ldebortolialves@hubspot.com",
+  "newuser@company.com"
+];
+```
+
+### Error Handling
+The Login page displays errors in two ways:
+1. **Toast notification** - Temporary notification at the top
+2. **Inline error message** - Red text below the sign-in button
 
 ## Protected Routes
 The main Index page (`client/pages/Index.tsx`) is automatically protected:
