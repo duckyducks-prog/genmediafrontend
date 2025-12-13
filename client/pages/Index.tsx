@@ -212,6 +212,13 @@ export default function Index() {
             label="Workflow"
             value="workflow"
           />
+          <button
+            onClick={() => setIsLibraryOpen(true)}
+            className="flex items-center justify-center w-10 h-10 rounded-lg transition-colors text-muted-foreground hover:bg-secondary"
+            title="Library"
+          >
+            <FolderOpen className="w-5 h-5" />
+          </button>
         </nav>
       </header>
 
