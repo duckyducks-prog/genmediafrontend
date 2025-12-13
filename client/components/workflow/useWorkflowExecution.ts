@@ -521,10 +521,12 @@ export function useWorkflowExecution(
           if (result.status === 'fulfilled') {
             if (result.value.success) {
               progress.set(node.id, "completed");
-              updateNodeState(node.id, "completed", {
+              const nodeData = {
                 ...result.value.data,
                 outputs: result.value.data,
-              });
+              };
+              console.log(`[DEBUG] Updating node ${node.id} (${node.type}) with data:`, nodeData);
+              updateNodeState(node.id, "completed", nodeData);
               totalCompleted++;
             } else {
               progress.set(node.id, "error");
