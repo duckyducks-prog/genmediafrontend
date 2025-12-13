@@ -273,16 +273,37 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
               </div>
             )}
 
-            {/* Download Button */}
-            <Button
-              onClick={handleDownload}
-              variant="outline"
-              size="sm"
-              className="w-full"
-            >
-              <Download className="w-3 h-3 mr-1" />
-              Download Image
-            </Button>
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              <Button
+                onClick={handleSaveToLibrary}
+                disabled={isSaving}
+                variant="default"
+                size="sm"
+                className="flex-1"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3 h-3 mr-1" />
+                    Save
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={handleDownload}
+                variant="outline"
+                size="sm"
+                className="flex-1"
+              >
+                <Download className="w-3 h-3 mr-1" />
+                Download
+              </Button>
+            </div>
           </>
         ) : (
           <div className="flex flex-col items-center justify-center h-[150px] border-2 border-dashed border-border rounded-lg bg-muted/30">
