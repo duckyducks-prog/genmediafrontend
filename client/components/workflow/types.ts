@@ -118,6 +118,13 @@ export interface LLMNodeData extends BaseNodeData {
   responsePreview?: string;
 }
 
+// PREVIEW node
+export interface PreviewNodeData extends BaseNodeData {
+  imageUrl?: string;
+  videoUrl?: string;
+  textContent?: string;
+}
+
 // OUTPUT nodes
 export interface OutputNodeData extends BaseNodeData {
   result: string | null;
