@@ -151,11 +151,42 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
           data: { connectorType: connectorType || "any" },
         };
         setEdges((eds) => addEdge(newEdge, eds));
+
+        // Immediately propagate data through the new connection
+        if (sourceNode.data?.outputs) {
+          const sourceHandle = params.sourceHandle || 'default';
+          const targetHandle = params.targetHandle || 'default';
+          const outputValue = sourceNode.data.outputs[sourceHandle];
+
+          if (outputValue !== undefined && params.target) {
+            // Update target node with the source's output
+            setNodes((nds) =>
+              nds.map((node) =>
+                node.id === params.target
+                  ? {
+                      ...node,
+                      data: {
+                        ...node.data,
+                        [targetHandle]: outputValue,
+                      },
+                    }
+                  : node,
+              ),
+            );
+
+            console.log('[WorkflowCanvas] Initial data propagation on connect:', {
+              from: params.source,
+              to: params.target,
+              handle: targetHandle,
+              valuePreview: typeof outputValue === 'string' ? outputValue.substring(0, 50) + '...' : outputValue,
+            });
+          }
+        }
       } else {
         setEdges((eds) => addEdge(params, eds));
       }
     },
-    [setEdges, nodes],
+    [setEdges, setNodes, nodes],
   );
 
   // Validate connections based on handle data types
