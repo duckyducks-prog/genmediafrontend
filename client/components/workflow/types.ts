@@ -396,6 +396,54 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
     ],
   },
 
+  [NodeType.Preview]: {
+    type: NodeType.Preview,
+    label: "Preview",
+    category: "action",
+    description: "Preview images, videos, or text",
+    inputConnectors: [
+      {
+        id: "image",
+        label: "Image",
+        type: ConnectorType.Image,
+        required: false,
+        acceptsMultiple: false,
+      },
+      {
+        id: "video",
+        label: "Video",
+        type: ConnectorType.Video,
+        required: false,
+        acceptsMultiple: false,
+      },
+      {
+        id: "text",
+        label: "Text",
+        type: ConnectorType.Text,
+        required: false,
+        acceptsMultiple: false,
+      },
+    ],
+    outputConnectors: [],
+  },
+
+  [NodeType.Download]: {
+    type: NodeType.Download,
+    label: "Download",
+    category: "action",
+    description: "Download media result",
+    inputConnectors: [
+      {
+        id: "media-input",
+        label: "Media",
+        type: ConnectorType.Any,
+        required: false,
+        acceptsMultiple: false,
+      },
+    ],
+    outputConnectors: [],
+  },
+
   // ========== OUTPUT/UTILITY NODES ==========
   [NodeType.ImageOutput]: {
     type: NodeType.ImageOutput,
