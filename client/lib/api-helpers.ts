@@ -43,7 +43,7 @@ export async function saveToLibrary(params: SaveToLibraryParams) {
         'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
-        image_data: base64Data,
+        data: base64Data,
         prompt: params.prompt,
         asset_type: params.assetType,
         mime_type: mimeType
