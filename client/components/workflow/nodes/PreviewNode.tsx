@@ -92,7 +92,15 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
         id="image"
         data-connector-type="image"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: "30%", transform: "translateY(-50%)" }}
+        style={{ top: "25%", transform: "translateY(-50%)" }}
+      />
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="filters"
+        data-connector-type="any"
+        className="!w-3 !h-3 !border-2 !border-background"
+        style={{ top: "40%", transform: "translateY(-50%)" }}
       />
       <Handle
         type="target"
@@ -100,7 +108,7 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
         id="video"
         data-connector-type="video"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: "50%", transform: "translateY(-50%)" }}
+        style={{ top: "60%", transform: "translateY(-50%)" }}
       />
       <Handle
         type="target"
@@ -108,7 +116,7 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
         id="text"
         data-connector-type="text"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: "70%", transform: "translateY(-50%)" }}
+        style={{ top: "75%", transform: "translateY(-50%)" }}
       />
 
       {/* Node Content */}
