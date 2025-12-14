@@ -77,16 +77,19 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
       }
 
       const user = auth.currentUser;
+      const token = await user?.getIdToken();
+
       const response = await fetch(
         "https://veo-api-82187245577.us-central1.run.app/upscale/image",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
           body: JSON.stringify({
             image: base64Image,
             upscale_factor: upscaleFactor,
-            user_id: user?.uid,
-            user_email: user?.email,
           }),
         },
       );
