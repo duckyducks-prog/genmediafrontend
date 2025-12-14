@@ -152,28 +152,30 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
         };
         setEdges((eds) => addEdge(newEdge, eds));
 
-        // Immediately propagate data through the new connection
-        if (sourceNode.data?.outputs) {
-          const sourceHandle = params.sourceHandle || 'default';
-          const targetHandle = params.targetHandle || 'default';
-          const outputValue = sourceNode.data.outputs[sourceHandle];
+        // Immediately propagate ALL outputs through the new connection
+        if (sourceNode.data?.outputs && params.target) {
+          const allOutputs = sourceNode.data.outputs;
 
-          if (outputValue !== undefined && params.target) {
-            // Update target node with the source's output
-            setNodes((nds) =>
-              nds.map((node) =>
-                node.id === params.target
-                  ? {
-                      ...node,
-                      data: {
-                        ...node.data,
-                        [targetHandle]: outputValue,
-                      },
-                    }
-                  : node,
-              ),
-            );
-          }
+          console.log('[WorkflowCanvas] Initial propagation on connect:', {
+            from: params.source,
+            to: params.target,
+            outputKeys: Object.keys(allOutputs),
+          });
+
+          // Update target node with ALL source outputs
+          setNodes((nds) =>
+            nds.map((node) =>
+              node.id === params.target
+                ? {
+                    ...node,
+                    data: {
+                      ...node.data,
+                      ...allOutputs, // Merge all outputs
+                    },
+                  }
+                : node,
+            ),
+          );
         }
       } else {
         setEdges((eds) => addEdge(params, eds));
