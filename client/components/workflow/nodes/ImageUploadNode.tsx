@@ -34,7 +34,7 @@ function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
         );
 
         // Trigger data propagation to downstream nodes
-        const event = new CustomEvent('node-update', {
+        const updateEvent = new CustomEvent('node-update', {
           detail: {
             id,
             data: {
@@ -45,7 +45,7 @@ function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
             },
           },
         });
-        window.dispatchEvent(event);
+        window.dispatchEvent(updateEvent);
       };
       reader.readAsDataURL(file);
     }
@@ -70,7 +70,7 @@ function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
     );
 
     // Trigger data propagation to downstream nodes
-    const event = new CustomEvent('node-update', {
+    const updateEvent = new CustomEvent('node-update', {
       detail: {
         id,
         data: {
@@ -81,7 +81,7 @@ function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
         },
       },
     });
-    window.dispatchEvent(event);
+    window.dispatchEvent(updateEvent);
   };
 
   const status = (data as any).status || "ready";
