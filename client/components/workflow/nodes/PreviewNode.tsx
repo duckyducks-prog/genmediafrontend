@@ -1,4 +1,4 @@
-import { memo, useState, useEffect } from "react";
+import { memo, useState, useEffect, useRef } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { CheckCircle2, Loader2, Eye } from "lucide-react";
 import { renderWithPixi } from "@/lib/pixi-renderer";
@@ -20,6 +20,9 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
     content: string;
   }>({ type: "none", content: "" });
   const [isRendering, setIsRendering] = useState(false);
+
+  // Request sequencing to prevent race conditions
+  const renderRequestId = useRef(0);
 
   const status = (data as any).status || "ready";
   const isExecuting = status === "executing" || isRendering;
@@ -44,21 +47,35 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
     if (imageInput) {
       if (filters.length > 0) {
         // Layer 2: Render with PixiJS filter chain
-        console.log('[PreviewNode] Starting PixiJS render with', filters.length, 'filters');
+        // Increment request ID to track this render
+        const currentRequestId = ++renderRequestId.current;
+
+        console.log('[PreviewNode] Starting PixiJS render with', filters.length, 'filters (request #' + currentRequestId + ')');
         setIsRendering(true);
 
         renderWithPixi(imageInput, filters)
           .then(rendered => {
-            console.log('[PreviewNode] Render completed successfully');
-            setDisplayContent({ type: "image", content: rendered });
+            // Only update if this is still the latest request
+            if (currentRequestId === renderRequestId.current) {
+              console.log('[PreviewNode] Render completed successfully (request #' + currentRequestId + ')');
+              setDisplayContent({ type: "image", content: rendered });
+            } else {
+              console.log('[PreviewNode] Discarding stale render result (request #' + currentRequestId + ', current is #' + renderRequestId.current + ')');
+            }
           })
           .catch(error => {
-            console.error("[PreviewNode] Render failed:", error);
-            // Fallback to original image
-            setDisplayContent({ type: "image", content: imageInput });
+            // Only handle error if this is still the latest request
+            if (currentRequestId === renderRequestId.current) {
+              console.error("[PreviewNode] Render failed (request #" + currentRequestId + "):", error);
+              // Fallback to original image
+              setDisplayContent({ type: "image", content: imageInput });
+            }
           })
           .finally(() => {
-            setIsRendering(false);
+            // Only clear rendering flag if this is still the latest request
+            if (currentRequestId === renderRequestId.current) {
+              setIsRendering(false);
+            }
           });
       } else {
         // No filters, show original

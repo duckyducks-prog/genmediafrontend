@@ -1,4 +1,4 @@
-import { memo, useEffect, useCallback, useState } from 'react';
+import { memo, useEffect, useCallback, useState, useRef } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { BrightnessContrastNodeData } from '../types';
 import { Slider } from '@/components/ui/slider';
@@ -19,6 +19,9 @@ function useDebounce<T>(value: T, delay: number): T {
 function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeData>) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isRendering, setIsRendering] = useState(false);
+
+  // Request sequencing to prevent race conditions
+  const renderRequestId = useRef(0);
 
   // Get incoming data
   const imageInput = (data as any).image || (data as any).imageInput;
@@ -86,17 +89,32 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
     const thisConfig = createConfig(debouncedBrightness, debouncedContrast);
     const allFilters = [...upstreamFilters, thisConfig];
 
+    // Increment request ID to track this render
+    const currentRequestId = ++renderRequestId.current;
+
+    console.log('[BrightnessContrastNode] Starting inline preview render (request #' + currentRequestId + ')');
     setIsRendering(true);
+
     renderWithPixi(imageInput, allFilters)
       .then(rendered => {
-        setPreviewUrl(rendered);
+        // Only update if this is still the latest request
+        if (currentRequestId === renderRequestId.current) {
+          console.log('[BrightnessContrastNode] Preview render completed (request #' + currentRequestId + ')');
+          setPreviewUrl(rendered);
+        } else {
+          console.log('[BrightnessContrastNode] Discarding stale preview (request #' + currentRequestId + ')');
+        }
       })
       .catch(error => {
-        console.error('[BrightnessContrastNode] Preview failed:', error);
-        setPreviewUrl(null);
+        if (currentRequestId === renderRequestId.current) {
+          console.error('[BrightnessContrastNode] Preview failed (request #' + currentRequestId + '):', error);
+          setPreviewUrl(null);
+        }
       })
       .finally(() => {
-        setIsRendering(false);
+        if (currentRequestId === renderRequestId.current) {
+          setIsRendering(false);
+        }
       });
   }, [imageInput, debouncedBrightness, debouncedContrast, upstreamFilters, createConfig]);
 
