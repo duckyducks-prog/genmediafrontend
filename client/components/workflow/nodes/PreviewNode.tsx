@@ -31,13 +31,25 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
     const textInput = (data as any).text || (data as any).textContent;
     const filters: FilterConfig[] = (data as any).filters || [];
 
+    console.log('[PreviewNode] Data update:', {
+      nodeId: id,
+      hasImage: !!imageInput,
+      hasVideo: !!videoInput,
+      hasText: !!textInput,
+      filterCount: filters.length,
+      filters: filters.map(f => ({ type: f.type, params: f.params })),
+    });
+
     // Handle image with possible filters
     if (imageInput) {
       if (filters.length > 0) {
         // Layer 2: Render with PixiJS filter chain
+        console.log('[PreviewNode] Starting PixiJS render with', filters.length, 'filters');
         setIsRendering(true);
+
         renderWithPixi(imageInput, filters)
           .then(rendered => {
+            console.log('[PreviewNode] Render completed successfully');
             setDisplayContent({ type: "image", content: rendered });
           })
           .catch(error => {
@@ -50,6 +62,7 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
           });
       } else {
         // No filters, show original
+        console.log('[PreviewNode] Showing original image (no filters)');
         setDisplayContent({ type: "image", content: imageInput });
       }
     } else if (videoInput) {

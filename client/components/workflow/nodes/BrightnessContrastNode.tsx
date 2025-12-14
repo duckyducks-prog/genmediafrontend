@@ -43,6 +43,15 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
       const thisConfig = createConfig(brightness, contrast);
       const updatedFilters = [...upstreamFilters, thisConfig];
 
+      console.log('[BrightnessContrastNode] Dispatching node-update:', {
+        nodeId: id,
+        brightness,
+        contrast,
+        hasImage: !!imageInput,
+        upstreamFilterCount: upstreamFilters.length,
+        totalFilterCount: updatedFilters.length,
+      });
+
       const updateEvent = new CustomEvent('node-update', {
         detail: {
           id,

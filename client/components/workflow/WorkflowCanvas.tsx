@@ -86,6 +86,13 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
   useEffect(() => {
     const handleNodeUpdate = (event: any) => {
       const { id, data } = event.detail;
+
+      console.log('[WorkflowCanvas] node-update received:', {
+        nodeId: id,
+        hasOutputs: !!data?.outputs,
+        outputs: data?.outputs,
+      });
+
       setNodes((nds) => {
         // Update the source node
         const updatedNodes = nds.map((node) =>
@@ -98,6 +105,8 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
           // Find all edges going OUT from this node
           const outgoingEdges = edges.filter(e => e.source === id);
 
+          console.log('[WorkflowCanvas] Propagating to', outgoingEdges.length, 'downstream nodes');
+
           outgoingEdges.forEach(edge => {
             const targetNodeIndex = updatedNodes.findIndex(n => n.id === edge.target);
             if (targetNodeIndex !== -1) {
@@ -106,6 +115,15 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
               // For modifier nodes, propagate ALL outputs, not just the connected handle
               // This ensures both 'image' and 'filters' are passed to downstream nodes
               const allOutputs = sourceNode.data.outputs;
+
+              console.log('[WorkflowCanvas] Propagating to node:', {
+                targetId: edge.target,
+                targetType: targetNode.type,
+                propagatedData: {
+                  hasImage: !!allOutputs.image,
+                  filterCount: allOutputs.filters?.length || 0,
+                },
+              });
 
               // Update the target node's data with ALL outputs
               updatedNodes[targetNodeIndex] = {
