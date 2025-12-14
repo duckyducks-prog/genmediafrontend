@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Download,
+  Play,
 } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
