@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Download,
-  Play,
   AlertTriangle,
 } from 'lucide-react';
 
