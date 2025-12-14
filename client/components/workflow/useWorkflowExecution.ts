@@ -278,12 +278,25 @@ export function useWorkflowExecution(
               if (response.status === 403) {
                 return {
                   success: false,
-                  error: "Access denied. Contact administrator.",
+                  error: "Access denied. Your email may not be whitelisted.",
+                };
+              }
+
+              if (response.status === 401) {
+                return {
+                  success: false,
+                  error: "Unauthorized. Please sign out and sign in again.",
                 };
               }
 
               if (!response.ok) {
-                throw new Error(`API error: ${response.status}`);
+                const errorText = await response.text();
+                console.error('[GenerateImage] API Error:', {
+                  status: response.status,
+                  statusText: response.statusText,
+                  body: errorText
+                });
+                throw new Error(`API error: ${response.status} - ${errorText}`);
               }
 
               const apiData = await response.json();
