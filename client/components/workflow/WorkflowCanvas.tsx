@@ -266,7 +266,7 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
   }, [setNodes, setEdges]);
 
   // Workflow execution
-  const { executeWorkflow, resetWorkflow, isExecuting } = useWorkflowExecution(
+  const { executeWorkflow, resetWorkflow, executeSingleNode, isExecuting } = useWorkflowExecution(
     nodes,
     edges,
     setNodes,
