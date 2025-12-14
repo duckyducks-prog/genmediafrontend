@@ -97,11 +97,14 @@ export interface GenerateVideoNodeData extends BaseNodeData {
   isGenerating: boolean;
   operationName?: string;
   pollAttempts?: number;
+  videoUrl?: string;
 }
 
 // GENERATE IMAGE node
 export interface GenerateImageNodeData extends BaseNodeData {
   isGenerating: boolean;
+  imageUrl?: string;
+  images?: string[];
 }
 
 // LLM node
