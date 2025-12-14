@@ -57,9 +57,38 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
     if (incomingImageUrl && incomingImageUrl !== currentImageUrl) {
       console.log("[ImageOutputNode] Resetting to new incoming image");
       setCurrentImageUrl(null); // Reset to show the new incoming image
+      setRenderedImageUrl(null); // Reset rendered image
       setUpscaleError(null); // Clear any previous errors
     }
   }, [incomingImageUrl, currentImageUrl]);
+
+  // Render with PixiJS filters if present
+  useEffect(() => {
+    if (!incomingImageUrl) {
+      setRenderedImageUrl(null);
+      return;
+    }
+
+    if (filters.length > 0) {
+      // Layer 2: Render with PixiJS filter chain
+      setIsRendering(true);
+      renderWithPixi(incomingImageUrl, filters)
+        .then(rendered => {
+          setRenderedImageUrl(rendered);
+        })
+        .catch(error => {
+          console.error("[ImageOutputNode] Render failed:", error);
+          // Fallback to original image
+          setRenderedImageUrl(null);
+        })
+        .finally(() => {
+          setIsRendering(false);
+        });
+    } else {
+      // No filters, clear rendered URL
+      setRenderedImageUrl(null);
+    }
+  }, [incomingImageUrl, filters]);
 
   const getBorderColor = () => {
     if (isExecuting) return "border-yellow-500";
