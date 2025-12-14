@@ -130,6 +130,35 @@ export interface LLMNodeData extends BaseNodeData {
   responsePreview?: string;
 }
 
+// IMAGE MODIFIER nodes (PixiJS filters)
+export interface BrightnessContrastNodeData extends BaseNodeData {
+  brightness: number;
+  contrast: number;
+}
+
+export interface BlurNodeData extends BaseNodeData {
+  strength: number;
+  quality: number;
+}
+
+export interface HueSaturationNodeData extends BaseNodeData {
+  hue: number;
+  saturation: number;
+}
+
+export interface NoiseNodeData extends BaseNodeData {
+  noise: number;
+}
+
+export interface SharpenNodeData extends BaseNodeData {
+  gamma: number;
+}
+
+export interface VignetteNodeData extends BaseNodeData {
+  size: number;
+  amount: number;
+}
+
 // PREVIEW node
 export interface PreviewNodeData extends BaseNodeData {
   imageUrl?: string;
