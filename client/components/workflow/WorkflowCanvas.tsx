@@ -107,6 +107,20 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
               const outputValue = sourceNode.data.outputs[sourceHandle];
 
               if (outputValue !== undefined) {
+                console.log('[WorkflowCanvas] Propagating:', {
+                  from: edge.source,
+                  to: edge.target,
+                  sourceHandle,
+                  targetHandle,
+                  valueType: typeof outputValue,
+                  isArray: Array.isArray(outputValue),
+                  valuePreview: Array.isArray(outputValue)
+                    ? `Array(${outputValue.length})`
+                    : typeof outputValue === 'string'
+                      ? outputValue.substring(0, 30) + '...'
+                      : outputValue,
+                });
+
                 // Update the target node's data with the incoming value
                 updatedNodes[targetNodeIndex] = {
                   ...targetNode,
