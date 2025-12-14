@@ -103,8 +103,12 @@ export async function renderWithPixi(
     app.renderer.render(app.stage);
 
     // 6. Extract as base64 (Layer 3 logic)
-    const canvas = app.renderer.extract.canvas(sprite);
+    const renderTexture = app.renderer.generateTexture(sprite);
+    const canvas = app.renderer.extract.canvas(renderTexture);
     const dataURL = canvas.toDataURL('image/png');
+
+    // Clean up render texture
+    renderTexture.destroy(true);
 
     return dataURL;
   } finally {
