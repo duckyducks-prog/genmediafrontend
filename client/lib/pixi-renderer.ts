@@ -208,7 +208,7 @@ async function performRender(
   }
 
   // Destroy sprite and its children (but preserve texture for proper cleanup)
-  sprite.destroy({ children: true, texture: false, baseTexture: false });
+  sprite.destroy({ children: true, texture: false });
 
   // Destroy texture and its base texture to free GPU memory
   texture.destroy(true);
