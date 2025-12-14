@@ -478,23 +478,6 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
     ],
     outputConnectors: [],
   },
-
-  [NodeType.Download]: {
-    type: NodeType.Download,
-    label: "Download",
-    category: "output",
-    description: "Download media result",
-    inputConnectors: [
-      {
-        id: "media-input",
-        label: "Media",
-        type: ConnectorType.Any,
-        required: false,
-        acceptsMultiple: false,
-      },
-    ],
-    outputConnectors: [],
-  },
 };
 
 // ============================================================================
