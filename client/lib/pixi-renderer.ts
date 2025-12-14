@@ -100,20 +100,22 @@ export async function renderWithPixi(
     const height = img.height || 1024;
     app.renderer.resize(width, height);
 
-    // 3. Create sprite from texture
+    // 4. Create sprite from texture
     const sprite = new Sprite(texture);
+    sprite.width = width;
+    sprite.height = height;
 
-    // 4. Build filter array from configs (Layer 2 logic)
+    // 5. Build filter array from configs (Layer 2 logic)
     if (filterConfigs.length > 0) {
       const filters = filterConfigs.map(config => createFilterFromConfig(config));
       sprite.filters = filters; // PixiJS applies all filters on GPU
     }
 
-    // 5. Add to stage and render
+    // 6. Add to stage and render
     app.stage.addChild(sprite);
     app.renderer.render(app.stage);
 
-    // 6. Extract as base64 (Layer 3 logic)
+    // 7. Extract as base64 (Layer 3 logic)
     // In PixiJS v8, the canvas is accessed via app.canvas
     const canvas = app.canvas as HTMLCanvasElement;
     if (!canvas) {
@@ -121,10 +123,13 @@ export async function renderWithPixi(
     }
     const dataURL = canvas.toDataURL('image/png');
 
+    // Cleanup texture (but not the source image)
+    texture.destroy(false);
+
     return dataURL;
   } finally {
-    // 7. Cleanup to prevent memory leaks
-    app.destroy(true, { children: true, texture: true, textureSource: true });
+    // 8. Cleanup to prevent memory leaks
+    app.destroy(true, { children: true });
   }
 }
 
