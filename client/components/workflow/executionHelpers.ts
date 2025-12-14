@@ -189,6 +189,9 @@ export async function pollVideoStatus(
 ): Promise<{ success: boolean; videoUrl?: string; error?: string }> {
   const maxAttempts = 30; // 5 minutes (30 * 10 seconds)
 
+  // Import auth dynamically to avoid circular dependencies
+  const { auth } = await import("@/lib/firebase");
+
   for (let attempts = 1; attempts <= maxAttempts; attempts++) {
     // Wait 10 seconds between polls
     await new Promise((resolve) => setTimeout(resolve, 10000));
@@ -198,11 +201,17 @@ export async function pollVideoStatus(
     }
 
     try {
+      const user = auth.currentUser;
+      const token = await user?.getIdToken();
+
       const statusResponse = await fetch(
         "https://veo-api-82187245577.us-central1.run.app/video/status",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
           body: JSON.stringify({ operation_name: operationName }),
         },
       );
