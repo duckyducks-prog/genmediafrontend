@@ -32,6 +32,20 @@ function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
               : node,
           ),
         );
+
+        // Trigger data propagation to downstream nodes
+        const event = new CustomEvent('node-update', {
+          detail: {
+            id,
+            data: {
+              ...data,
+              imageUrl: url,
+              file,
+              outputs: { image: url },
+            },
+          },
+        });
+        window.dispatchEvent(event);
       };
       reader.readAsDataURL(file);
     }
@@ -54,6 +68,20 @@ function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
           : node,
       ),
     );
+
+    // Trigger data propagation to downstream nodes
+    const event = new CustomEvent('node-update', {
+      detail: {
+        id,
+        data: {
+          ...data,
+          imageUrl: null,
+          file: null,
+          outputs: {},
+        },
+      },
+    });
+    window.dispatchEvent(event);
   };
 
   const status = (data as any).status || "ready";
