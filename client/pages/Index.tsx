@@ -160,11 +160,15 @@ export default function Index() {
       while (!complete) {
         await new Promise((resolve) => setTimeout(resolve, 10000));
 
+        const statusToken = await currentUser?.getIdToken();
         const statusResponse = await fetch(
           "https://veo-api-82187245577.us-central1.run.app/video/status",
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${statusToken}`
+            },
             body: JSON.stringify({ operation_name: operationName }),
           },
         );
