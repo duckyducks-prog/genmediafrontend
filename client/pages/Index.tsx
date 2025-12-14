@@ -186,6 +186,14 @@ export default function Index() {
           complete = true;
           if (statusData.video_base64) {
             setVideoResult(`data:video/mp4;base64,${statusData.video_base64}`);
+
+            // Refresh library after a short delay to allow backend to save
+            setTimeout(() => {
+              console.log("[Index] Refreshing library after video generation");
+              if (assetLibraryRef.current) {
+                assetLibraryRef.current.refresh();
+              }
+            }, 2000);
           }
         }
       }
