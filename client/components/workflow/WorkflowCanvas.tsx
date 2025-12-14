@@ -102,34 +102,25 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
             const targetNodeIndex = updatedNodes.findIndex(n => n.id === edge.target);
             if (targetNodeIndex !== -1) {
               const targetNode = updatedNodes[targetNodeIndex];
-              const sourceHandle = edge.sourceHandle || 'default';
-              const targetHandle = edge.targetHandle || 'default';
-              const outputValue = sourceNode.data.outputs[sourceHandle];
 
-              if (outputValue !== undefined) {
-                console.log('[WorkflowCanvas] Propagating:', {
-                  from: edge.source,
-                  to: edge.target,
-                  sourceHandle,
-                  targetHandle,
-                  valueType: typeof outputValue,
-                  isArray: Array.isArray(outputValue),
-                  valuePreview: Array.isArray(outputValue)
-                    ? `Array(${outputValue.length})`
-                    : typeof outputValue === 'string'
-                      ? outputValue.substring(0, 30) + '...'
-                      : outputValue,
-                });
+              // For modifier nodes, propagate ALL outputs, not just the connected handle
+              // This ensures both 'image' and 'filters' are passed to downstream nodes
+              const allOutputs = sourceNode.data.outputs;
 
-                // Update the target node's data with the incoming value
-                updatedNodes[targetNodeIndex] = {
-                  ...targetNode,
-                  data: {
-                    ...targetNode.data,
-                    [targetHandle]: outputValue,
-                  },
-                };
-              }
+              console.log('[WorkflowCanvas] Propagating all outputs:', {
+                from: edge.source,
+                to: edge.target,
+                outputKeys: Object.keys(allOutputs),
+              });
+
+              // Update the target node's data with ALL outputs
+              updatedNodes[targetNodeIndex] = {
+                ...targetNode,
+                data: {
+                  ...targetNode.data,
+                  ...allOutputs, // Merge all outputs into target node data
+                },
+              };
             }
           });
         }
