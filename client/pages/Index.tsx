@@ -187,7 +187,7 @@ export default function Index() {
 
         const statusToken = await currentUser?.getIdToken();
         const statusResponse = await fetch(
-          "https://veo-api-82187245577.us-central1.run.app/video/status",
+          "https://veo-api-82187245577.us-central1.run.app/generate/video/status",
           {
             method: "POST",
             headers: {
