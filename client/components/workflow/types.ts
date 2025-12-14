@@ -1,4 +1,5 @@
 import { Node, Edge } from "reactflow";
+import { FilterConfig } from "@/lib/pixi-filter-configs";
 
 // ============================================================================
 // NODE TYPES
@@ -13,6 +14,14 @@ export enum NodeType {
   PromptConcatenator = "promptConcatenator",
   Format = "format",
 
+  // IMAGE MODIFIER nodes (PixiJS filters)
+  BrightnessContrast = "brightnessContrast",
+  Blur = "blur",
+  Sharpen = "sharpen",
+  HueSaturation = "hueSaturation",
+  Noise = "noise",
+  Vignette = "vignette",
+
   // ACTION nodes (inputs and outputs)
   GenerateVideo = "generateVideo",
   GenerateImage = "generateImage",
@@ -26,6 +35,9 @@ export enum NodeType {
   ImageOutput = "imageOutput",
   VideoOutput = "videoOutput",
 }
+
+// Re-export FilterConfig for convenience
+export type { FilterConfig };
 
 // ============================================================================
 // CONNECTOR DATA TYPES
