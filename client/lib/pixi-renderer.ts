@@ -149,7 +149,11 @@ async function performRender(
 
   // 2. Load image into HTMLImageElement with timeout (prevent hanging)
   const img = new Image();
-  img.crossOrigin = 'anonymous';
+
+  // Only set crossOrigin for remote URLs (not data: URIs)
+  if (!imageSource.startsWith('data:')) {
+    img.crossOrigin = 'anonymous';
+  }
 
   await Promise.race([
     new Promise<void>((resolve, reject) => {
@@ -193,13 +197,27 @@ async function performRender(
   app.stage.addChild(sprite);
   app.renderer.render(app.stage);
 
-  // 8. Extract as base64 (Layer 3 logic)
-  const canvas = app.canvas as HTMLCanvasElement;
-  if (!canvas) {
-    throw new Error('Failed to get canvas from app');
-  }
+  // 8. Extract as base64 using PixiJS extract API (Layer 3 logic)
+  // Using renderer.extract is more reliable than canvas.toDataURL for WebGL
+  let dataURL: string;
 
-  const dataURL = canvas.toDataURL('image/png');
+  try {
+    // PixiJS extract API handles WebGL readback properly
+    dataURL = await app.renderer.extract.base64(app.stage, 'image/png');
+    console.log('[PixiJS] Successfully extracted rendered image');
+  } catch (extractError) {
+    // Handle CORS/SecurityError specifically
+    if (extractError instanceof DOMException && extractError.name === 'SecurityError') {
+      throw new Error(
+        'Canvas extraction blocked by CORS policy. ' +
+        'The image server must send Access-Control-Allow-Origin header, ' +
+        'or use a proxied/local image. Error: ' + extractError.message
+      );
+    }
+
+    // Re-throw other errors
+    throw new Error(`Failed to extract canvas: ${extractError instanceof Error ? extractError.message : 'Unknown error'}`);
+  }
 
   // 9. Cleanup resources (keep the app/context alive)
   // Destroy filters explicitly to free GPU resources (shaders, uniforms, buffers)
