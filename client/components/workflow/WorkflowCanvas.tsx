@@ -98,11 +98,6 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
           // Find all edges going OUT from this node
           const outgoingEdges = edges.filter(e => e.source === id);
 
-          console.log('[WorkflowCanvas] Propagating from node:', id, {
-            outputKeys: Object.keys(sourceNode.data.outputs),
-            outgoingEdgeCount: outgoingEdges.length,
-          });
-
           outgoingEdges.forEach(edge => {
             const targetNodeIndex = updatedNodes.findIndex(n => n.id === edge.target);
             if (targetNodeIndex !== -1) {
@@ -173,13 +168,6 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
                   : node,
               ),
             );
-
-            console.log('[WorkflowCanvas] Initial data propagation on connect:', {
-              from: params.source,
-              to: params.target,
-              handle: targetHandle,
-              valuePreview: typeof outputValue === 'string' ? outputValue.substring(0, 50) + '...' : outputValue,
-            });
           }
         }
       } else {
