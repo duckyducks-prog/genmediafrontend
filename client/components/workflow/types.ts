@@ -148,6 +148,7 @@ export type WorkflowNodeData =
   | GenerateVideoNodeData
   | GenerateImageNodeData
   | LLMNodeData
+  | PreviewNodeData
   | OutputNodeData
   | DownloadNodeData;
 
