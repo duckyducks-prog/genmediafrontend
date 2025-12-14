@@ -26,6 +26,13 @@ async function getSharedApp(): Promise<Application> {
   // Start new initialization with error recovery
   sharedAppInitPromise = (async () => {
     try {
+      // Check WebGL support before attempting to create app
+      if (!isPixiSupported()) {
+        throw new Error('WebGL is not supported in this browser - PixiJS requires WebGL');
+      }
+
+      // Use constructor directly (app.init() doesn't exist in PixiJS v8)
+      // preserveDrawingBuffer is CRITICAL for canvas readback (toDataURL/extract)
       const app = new Application();
       await app.init({
         backgroundAlpha: 0,
@@ -33,13 +40,15 @@ async function getSharedApp(): Promise<Application> {
         autoStart: false,
         width: 1024,
         height: 1024,
-        preference: 'webgl',
+        preserveDrawingBuffer: true, // Essential for extract/toDataURL to work
       });
 
+      console.log('[PixiJS] Shared application initialized successfully');
       sharedApp = app;
       sharedAppInitPromise = null; // Clear promise after success
       return app;
     } catch (error) {
+      console.error('[PixiJS] Initialization failed:', error);
       sharedAppInitPromise = null; // Clear promise to allow retry
       throw new Error(`Failed to initialize PixiJS: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
