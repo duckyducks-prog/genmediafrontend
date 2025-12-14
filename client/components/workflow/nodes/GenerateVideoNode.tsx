@@ -164,34 +164,16 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
           </div>
         )}
 
-        {/* Generate Button */}
-        <Button
-          onClick={handleGenerate}
-          disabled={isGenerating}
-          className="w-full"
-          size="sm"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <Play className="w-3 h-3 mr-1" />
-              Generate Video
-            </>
-          )}
-        </Button>
-
         {/* Video Preview */}
         {isCompleted && videoUrl && (
           <div className="space-y-2">
-            <video
-              src={videoUrl}
-              controls
-              className="w-full h-auto max-h-[180px] rounded border border-border"
-            />
+            <div className="relative rounded-lg overflow-hidden bg-muted border border-border">
+              <video
+                src={videoUrl}
+                controls
+                className="w-full h-auto max-h-[200px]"
+              />
+            </div>
             <Button
               onClick={handleDownload}
               variant="outline"
@@ -199,8 +181,21 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
               className="w-full"
             >
               <Download className="w-3 h-3 mr-1" />
-              Download
+              Download Video
             </Button>
+          </div>
+        )}
+
+        {/* No Video Yet */}
+        {!isCompleted && !videoUrl && (
+          <div className="flex flex-col items-center justify-center h-[150px] border-2 border-dashed border-border rounded-lg bg-muted/30">
+            <VideoIcon className="w-8 h-8 text-muted-foreground mb-2" />
+            <p className="text-xs text-muted-foreground">
+              {isGenerating ? 'Generating...' : 'No video yet'}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {!isGenerating && 'Run workflow to generate'}
+            </p>
           </div>
         )}
 
