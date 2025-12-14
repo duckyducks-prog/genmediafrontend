@@ -17,6 +17,8 @@ import {
 } from "./executionHelpers";
 import { auth } from "@/lib/firebase";
 import { saveToLibrary } from "@/lib/api-helpers";
+import { renderWithPixi } from "@/lib/pixi-renderer";
+import { FilterConfig } from "@/lib/pixi-filter-configs";
 
 interface ExecutionResult {
   success: boolean;
