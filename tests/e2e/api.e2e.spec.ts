@@ -25,7 +25,7 @@
  * - /generate/video/status → { status: "complete|pending|failed", video_base64: "..." }
  * - /generate/text → { response: "generated text..." }
  * - /library (GET) → array of assets or { assets: [...] }
- * - /library (POST) → { id: "..." } or { asset_id: "..." }
+ * - /library/save (POST) → { id: "..." } or { asset_id: "..." }
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
@@ -480,7 +480,7 @@ describe('API E2E Tests', () => {
       const imageBase64 = genData.images[0]; // API returns images array
 
       // Save to library
-      const response = await apiRequest('/library', {
+      const response = await apiRequest('/library/save', {
         method: 'POST',
         body: JSON.stringify({
           image_data: imageBase64,
@@ -642,7 +642,7 @@ describe('API E2E Tests', () => {
 
       // Step 3: Save to library
       console.log('Step 3: Saving to library...');
-      const saveResponse = await apiRequest('/library', {
+      const saveResponse = await apiRequest('/library/save', {
         method: 'POST',
         body: JSON.stringify({
           image_data: upscaledImage,
