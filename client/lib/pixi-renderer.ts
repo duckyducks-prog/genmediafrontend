@@ -43,51 +43,14 @@ function createFilterFromConfig(config: FilterConfig): Filter {
 
 /**
  * Custom vignette filter implementation
+ * Uses ColorMatrixFilter as a simple approximation
  */
 function createVignetteFilter(params: Record<string, number>): Filter {
-  // Simple vignette using Filter.from() with custom shader
-  const fragment = `
-    precision mediump float;
-    varying vec2 vTextureCoord;
-    uniform sampler2D uSampler;
-    uniform float uSize;
-    uniform float uAmount;
-    
-    void main() {
-      vec4 color = texture2D(uSampler, vTextureCoord);
-      vec2 center = vec2(0.5, 0.5);
-      float dist = distance(vTextureCoord, center);
-      float vignette = smoothstep(uSize, uSize - 0.5, dist);
-      color.rgb *= mix(1.0, vignette, uAmount);
-      gl_FragColor = color;
-    }
-  `;
-  
-  const vertex = `
-    attribute vec2 aPosition;
-    varying vec2 vTextureCoord;
-    
-    uniform vec4 uInputSize;
-    uniform vec4 uOutputFrame;
-    uniform vec4 uOutputTexture;
-    
-    void main() {
-      gl_Position = vec4((aPosition * 2.0) - 1.0, 0.0, 1.0);
-      vTextureCoord = aPosition;
-    }
-  `;
-  
-  return new Filter({
-    glProgram: {
-      fragment,
-    },
-    resources: {
-      vignetteUniforms: {
-        uSize: { value: params.size || 0.5, type: 'f32' },
-        uAmount: { value: params.amount || 0.5, type: 'f32' },
-      },
-    },
-  });
+  // Use brightness reduction as a simple vignette approximation
+  const filter = new ColorMatrixFilter();
+  const amount = params.amount || 0.5;
+  filter.brightness(1 - (amount * 0.3), false);
+  return filter;
 }
 
 /**
