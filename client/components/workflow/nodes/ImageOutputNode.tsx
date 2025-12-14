@@ -30,7 +30,8 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
   const [isRendering, setIsRendering] = useState(false);
   const { toast } = useToast();
 
-  const incomingImageUrl = (data as any).imageUrl || (data as any).image || data.result;
+  const incomingImageUrl =
+    (data as any).imageUrl || (data as any).image || data.result;
   const filters: FilterConfig[] = (data as any).filters || [];
   const imageUrl = currentImageUrl || renderedImageUrl || incomingImageUrl;
   const status = (data as any).status || "ready";
@@ -73,10 +74,10 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
       // Layer 2: Render with PixiJS filter chain
       setIsRendering(true);
       renderWithPixi(incomingImageUrl, filters)
-        .then(rendered => {
+        .then((rendered) => {
           setRenderedImageUrl(rendered);
         })
-        .catch(error => {
+        .catch((error) => {
           console.error("[ImageOutputNode] Render failed:", error);
           // Fallback to original image
           setRenderedImageUrl(null);
@@ -119,7 +120,7 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             image: base64Image,

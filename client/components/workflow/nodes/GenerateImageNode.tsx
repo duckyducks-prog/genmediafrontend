@@ -1,14 +1,14 @@
-import { memo, useState, useEffect } from 'react';
-import { Handle, Position, NodeProps } from 'reactflow';
-import { Button } from '@/components/ui/button';
+import { memo, useState, useEffect } from "react";
+import { Handle, Position, NodeProps } from "reactflow";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { GenerateImageNodeData, NODE_CONFIGURATIONS, NodeType } from '../types';
+} from "@/components/ui/select";
+import { GenerateImageNodeData, NODE_CONFIGURATIONS, NodeType } from "../types";
 import {
   Sparkles,
   Loader2,
@@ -17,20 +17,20 @@ import {
   AlertCircle,
   Download,
   Play,
-} from 'lucide-react';
-import { auth } from '@/lib/firebase';
-import { useToast } from '@/hooks/use-toast';
+} from "lucide-react";
+import { auth } from "@/lib/firebase";
+import { useToast } from "@/hooks/use-toast";
 
 function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
   const config = NODE_CONFIGURATIONS[NodeType.GenerateImage];
-  const status = data.status || 'ready';
-  const isGenerating = data.isGenerating || status === 'executing';
-  const isCompleted = status === 'completed';
-  const isError = status === 'error';
+  const status = data.status || "ready";
+  const isGenerating = data.isGenerating || status === "executing";
+  const isCompleted = status === "completed";
+  const isError = status === "error";
   const incomingImageUrl = data.imageUrl;
   const images = data.images || [];
 
-  const [upscaleFactor, setUpscaleFactor] = useState<string>('x2');
+  const [upscaleFactor, setUpscaleFactor] = useState<string>("x2");
   const [isUpscaling, setIsUpscaling] = useState(false);
   const [upscaleError, setUpscaleError] = useState<string | null>(null);
   const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
@@ -47,17 +47,17 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
   }, [incomingImageUrl, currentImageUrl]);
 
   const getBorderColor = () => {
-    if (isGenerating) return 'border-yellow-500';
-    if (isCompleted) return 'border-green-500';
-    if (isError) return 'border-red-500';
-    return 'border-border';
+    if (isGenerating) return "border-yellow-500";
+    if (isCompleted) return "border-green-500";
+    if (isError) return "border-red-500";
+    return "border-border";
   };
 
   const getStatusText = () => {
-    if (isGenerating) return 'Generating...';
-    if (isCompleted) return 'Completed';
-    if (isError) return 'Error';
-    return 'Ready';
+    if (isGenerating) return "Generating...";
+    if (isCompleted) return "Completed";
+    if (isError) return "Error";
+    return "Ready";
   };
 
   const handleUpscale = async () => {
@@ -68,20 +68,20 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
 
     try {
       let base64Image = imageUrl;
-      if (imageUrl.startsWith('data:')) {
-        base64Image = imageUrl.split(',')[1];
+      if (imageUrl.startsWith("data:")) {
+        base64Image = imageUrl.split(",")[1];
       }
 
       const user = auth.currentUser;
       const token = await user?.getIdToken();
 
       const response = await fetch(
-        'https://veo-api-82187245577.us-central1.run.app/generate/upscale',
+        "https://veo-api-82187245577.us-central1.run.app/generate/upscale",
         {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             image: base64Image,
@@ -92,11 +92,11 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
 
       if (response.status === 403) {
         toast({
-          title: 'Access Denied',
-          description: 'Access denied. Contact administrator.',
-          variant: 'destructive',
+          title: "Access Denied",
+          description: "Access denied. Contact administrator.",
+          variant: "destructive",
         });
-        setUpscaleError('Access denied. Contact administrator.');
+        setUpscaleError("Access denied. Contact administrator.");
         return;
       }
 
@@ -108,15 +108,15 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
       const result = await response.json();
 
       if (result.image) {
-        const mimeType = result.mime_type || 'image/png';
+        const mimeType = result.mime_type || "image/png";
         setCurrentImageUrl(`data:${mimeType};base64,${result.image}`);
       } else {
-        throw new Error('No image returned from upscale API');
+        throw new Error("No image returned from upscale API");
       }
     } catch (error) {
-      console.error('Upscale error:', error);
+      console.error("Upscale error:", error);
       setUpscaleError(
-        error instanceof Error ? error.message : 'Upscale failed',
+        error instanceof Error ? error.message : "Upscale failed",
       );
     } finally {
       setIsUpscaling(false);
@@ -127,8 +127,8 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
     if (!imageUrl) return;
 
     try {
-      if (imageUrl.startsWith('data:')) {
-        const link = document.createElement('a');
+      if (imageUrl.startsWith("data:")) {
+        const link = document.createElement("a");
         link.href = imageUrl;
         link.download = `generated-image-${Date.now()}.png`;
         document.body.appendChild(link);
@@ -138,10 +138,10 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
       }
 
       try {
-        const response = await fetch(imageUrl, { mode: 'cors' });
+        const response = await fetch(imageUrl, { mode: "cors" });
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.href = url;
         link.download = `generated-image-${Date.now()}.png`;
         document.body.appendChild(link);
@@ -149,11 +149,11 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
       } catch (fetchError) {
-        window.open(imageUrl, '_blank');
+        window.open(imageUrl, "_blank");
       }
     } catch (error) {
-      console.error('Download failed:', error);
-      window.open(imageUrl, '_blank');
+      console.error("Download failed:", error);
+      window.open(imageUrl, "_blank");
     }
   };
 
@@ -165,10 +165,14 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
         <div className="flex items-center gap-2">
           <ImageIcon className="w-4 h-4 text-primary" />
-          <div className="font-semibold text-sm">{data.label || 'Generate Image'}</div>
+          <div className="font-semibold text-sm">
+            {data.label || "Generate Image"}
+          </div>
         </div>
         <div className="flex items-center gap-1">
-          {isGenerating && <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />}
+          {isGenerating && (
+            <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />
+          )}
           {isCompleted && <CheckCircle2 className="w-4 h-4 text-green-500" />}
           {isError && <AlertCircle className="w-4 h-4 text-red-500" />}
         </div>
@@ -181,7 +185,10 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
           const isMultiple = input.acceptsMultiple;
 
           return (
-            <div key={input.id} className="flex items-center gap-2 relative h-6">
+            <div
+              key={input.id}
+              className="flex items-center gap-2 relative h-6"
+            >
               <Handle
                 type="target"
                 position={Position.Left}
@@ -192,7 +199,9 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
               <div className="text-xs font-medium text-muted-foreground">
                 {input.label}
                 {isRequired && <span className="text-red-500 ml-1">*</span>}
-                {isMultiple && <span className="text-blue-500 ml-1">(multi)</span>}
+                {isMultiple && (
+                  <span className="text-blue-500 ml-1">(multi)</span>
+                )}
               </div>
             </div>
           );
@@ -219,7 +228,9 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
                 src={imageUrl}
                 alt="Generated"
                 className="w-full h-auto max-h-[200px] object-contain"
-                crossOrigin={imageUrl?.startsWith('data:') ? undefined : 'anonymous'}
+                crossOrigin={
+                  imageUrl?.startsWith("data:") ? undefined : "anonymous"
+                }
               />
             </div>
 
@@ -282,7 +293,7 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
             {/* Run Node Button */}
             <Button
               onClick={() => {
-                const event = new CustomEvent('node-execute', {
+                const event = new CustomEvent("node-execute", {
                   detail: { nodeId: id },
                 });
                 window.dispatchEvent(event);
@@ -313,17 +324,17 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
             <div className="flex flex-col items-center justify-center h-[150px] border-2 border-dashed border-border rounded-lg bg-muted/30">
               <ImageIcon className="w-8 h-8 text-muted-foreground mb-2" />
               <p className="text-xs text-muted-foreground">
-                {isGenerating ? 'Generating...' : 'No image yet'}
+                {isGenerating ? "Generating..." : "No image yet"}
               </p>
               <p className="text-xs text-muted-foreground">
-                {!isGenerating && 'Run workflow to generate'}
+                {!isGenerating && "Run workflow to generate"}
               </p>
             </div>
 
             {/* Run Node Button */}
             <Button
               onClick={() => {
-                const event = new CustomEvent('node-execute', {
+                const event = new CustomEvent("node-execute", {
                   detail: { nodeId: id },
                 });
                 window.dispatchEvent(event);
@@ -364,7 +375,7 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
           id="images"
           data-connector-type={config.outputConnectors[0]?.type}
           className="!w-3 !h-3 !border-2 !border-background"
-          style={{ top: '40%', transform: 'translateY(-50%)' }}
+          style={{ top: "40%", transform: "translateY(-50%)" }}
         />
         <Handle
           type="source"
@@ -372,7 +383,7 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
           id="image"
           data-connector-type={config.outputConnectors[1]?.type}
           className="!w-3 !h-3 !border-2 !border-background"
-          style={{ top: '60%', transform: 'translateY(-50%)' }}
+          style={{ top: "60%", transform: "translateY(-50%)" }}
         />
       </div>
     </div>

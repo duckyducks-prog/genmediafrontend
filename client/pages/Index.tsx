@@ -90,7 +90,7 @@ export default function Index() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             prompt: imagePrompt,
@@ -117,7 +117,7 @@ export default function Index() {
           await saveToLibrary({
             imageUrl: dataUri,
             prompt: imagePrompt,
-            assetType: 'image'
+            assetType: "image",
           });
 
           console.log("[Index] Image saved to library successfully");
@@ -161,7 +161,7 @@ export default function Index() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             prompt: videoPrompt,
@@ -192,7 +192,7 @@ export default function Index() {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "Authorization": `Bearer ${statusToken}`
+              Authorization: `Bearer ${statusToken}`,
             },
             body: JSON.stringify({ operation_name: operationName }),
           },
@@ -210,7 +210,7 @@ export default function Index() {
               await saveToLibrary({
                 imageUrl: dataUri,
                 prompt: videoPrompt,
-                assetType: 'video'
+                assetType: "video",
               });
 
               console.log("[Index] Video saved to library successfully");

@@ -1,6 +1,7 @@
 # Firebase Authentication Usage Guide
 
 ## Overview
+
 The app now uses Firebase Authentication with Google Sign-in. Users must be authenticated to access the main application.
 
 **Email Whitelisting**: After successful Google sign-in, the user's email is checked against a whitelist. If the email is not authorized, the user is immediately signed out and shown an error message.
@@ -8,7 +9,9 @@ The app now uses Firebase Authentication with Google Sign-in. Users must be auth
 ## Key Files
 
 ### 1. `client/lib/firebase.ts`
+
 Firebase configuration and auth utilities:
+
 - `auth` - Firebase Auth instance
 - `signInWithGoogle()` - Sign in with Google popup (includes email whitelisting)
 - `logOut()` - Sign out current user
@@ -16,36 +19,42 @@ Firebase configuration and auth utilities:
 - `ALLOWED_EMAILS` - Array of authorized email addresses
 
 **Email Whitelisting**: To add new authorized users, update the `ALLOWED_EMAILS` array in this file:
+
 ```typescript
 const ALLOWED_EMAILS = [
   "ldebortolialves@hubspot.com",
-  "newuser@example.com"  // Add new emails here
+  "newuser@example.com", // Add new emails here
 ];
 ```
 
 ### 2. `client/lib/AuthContext.tsx`
+
 React Context that provides auth state throughout the app:
+
 - `useAuth()` hook - Returns `{ user, loading }`
 - `AuthProvider` - Wraps the app to provide auth state
 
 ### 3. `client/pages/Login.tsx`
+
 Login page with Google sign-in button. Shown when user is not authenticated.
 
 ### 4. `client/hooks/use-user-id.ts`
+
 Convenience hook to get the current user's ID for API calls.
 
 ## How to Use in Components
 
 ### Get Current User
+
 ```typescript
 import { useAuth } from "@/lib/AuthContext";
 
 function MyComponent() {
   const { user, loading } = useAuth();
-  
+
   if (loading) return <div>Loading...</div>;
   if (!user) return <div>Not authenticated</div>;
-  
+
   return <div>Hello {user.email}</div>;
 }
 ```
@@ -62,16 +71,16 @@ function MyComponent() {
     const user = auth.currentUser;
     const token = await user?.getIdToken();
 
-    const response = await fetch('/api/generate', {
-      method: 'POST',
+    const response = await fetch("/api/generate", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-        prompt: "A beautiful sunset"
+        prompt: "A beautiful sunset",
         // No longer need user_id or user_email
-      })
+      }),
     });
 
     // Handle 403 - User not whitelisted
@@ -88,6 +97,7 @@ function MyComponent() {
 ```
 
 ### Direct Access to Auth
+
 ```typescript
 import { auth } from "@/lib/firebase";
 
@@ -99,6 +109,7 @@ const token = await user?.getIdToken();
 ## Email Whitelisting
 
 ### Frontend Whitelisting
+
 The frontend checks the user's email immediately after Google sign-in:
 
 1. User clicks "Sign in with Google"
@@ -110,31 +121,36 @@ The frontend checks the user's email immediately after Google sign-in:
    - Both toast notification and inline error are shown
 
 ### Adding New Users
+
 To authorize a new user:
+
 1. Open `client/lib/firebase.ts`
 2. Add their email (lowercase) to the `ALLOWED_EMAILS` array
 3. Save the file - changes take effect immediately
 
 ```typescript
-const ALLOWED_EMAILS = [
-  "ldebortolialves@hubspot.com",
-  "newuser@company.com"
-];
+const ALLOWED_EMAILS = ["ldebortolialves@hubspot.com", "newuser@company.com"];
 ```
 
 ### Error Handling
+
 The Login page displays errors in two ways:
+
 1. **Toast notification** - Temporary notification at the top
 2. **Inline error message** - Red text below the sign-in button
 
 ## Protected Routes
+
 The main Index page (`client/pages/Index.tsx`) is automatically protected:
+
 - Shows loading spinner while checking auth state
 - Shows Login page if not authenticated
 - Shows main app if authenticated
 
 ## Sign Out
+
 The header includes a "Sign Out" button that:
+
 1. Calls `logOut()` from firebase.ts
 2. Shows a success toast
 3. Automatically redirects to login page
@@ -144,6 +160,7 @@ The header includes a "Sign Out" button that:
 ### All Generation Endpoints Require Authorization Header
 
 These endpoints require `Authorization: Bearer <token>` header:
+
 - `/generate/image` - Image generation
 - `/generate/video` - Video generation
 - `/generate/text` - Text generation (LLM)
@@ -160,6 +177,7 @@ These endpoints require `Authorization: Bearer <token>` header:
 5. If the email is not whitelisted, the API returns HTTP 403 (Forbidden)
 
 **Benefits:**
+
 - More secure: tokens are cryptographically signed and time-limited
 - No need to send user_id or user_email in request body
 - Backend extracts user info from verified token
@@ -193,17 +211,20 @@ function GenerateImageComponent() {
     const token = await user?.getIdToken();
 
     try {
-      const response = await fetch('https://veo-api-82187245577.us-central1.run.app/generate/image', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+      const response = await fetch(
+        "https://veo-api-82187245577.us-central1.run.app/generate/image",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            prompt: prompt,
+            aspect_ratio: "1:1",
+          }),
         },
-        body: JSON.stringify({
-          prompt: prompt,
-          aspect_ratio: "1:1"
-        })
-      });
+      );
 
       if (response.status === 403) {
         toast({
@@ -220,7 +241,6 @@ function GenerateImageComponent() {
 
       const data = await response.json();
       // Handle success
-
     } catch (error) {
       toast({
         title: "Error",
@@ -243,6 +263,7 @@ function GenerateImageComponent() {
 ## Creating User Accounts
 
 Users must be created in the Firebase Console:
+
 1. Go to [Firebase Console](https://console.firebase.google.com/) → Authentication
 2. Click "Users" tab → "Add user"
 3. Enter email and password
@@ -251,6 +272,7 @@ Users must be created in the Firebase Console:
 ## Testing
 
 To test authentication:
+
 1. Create a test user in Firebase Console (see above)
 2. Run the app - you'll see the login page
 3. Enter email and password, then click "Sign In"
