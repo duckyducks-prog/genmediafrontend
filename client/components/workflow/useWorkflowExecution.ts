@@ -15,6 +15,7 @@ import {
   groupNodesByLevel,
 } from "./executionHelpers";
 import { auth } from "@/lib/firebase";
+import { saveToLibrary } from "@/lib/api-helpers";
 
 interface ExecutionResult {
   success: boolean;
