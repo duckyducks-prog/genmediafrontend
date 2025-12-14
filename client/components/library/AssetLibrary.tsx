@@ -34,6 +34,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { auth } from "@/lib/firebase";
 
 interface Asset {
   id: string;
@@ -73,7 +74,15 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
             : "https://veo-api-82187245577.us-central1.run.app/library";
 
           console.log("[DEBUG] Fetching assets from:", url);
-          const response = await fetch(url);
+
+          const user = auth.currentUser;
+          const token = await user?.getIdToken();
+
+          const response = await fetch(url, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
 
           console.log("[DEBUG] Library response status:", response.status);
 
@@ -138,9 +147,17 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
     // Delete asset
     const handleDelete = async (id: string) => {
       try {
+        const user = auth.currentUser;
+        const token = await user?.getIdToken();
+
         const response = await fetch(
           `https://veo-api-82187245577.us-central1.run.app/library/${id}`,
-          { method: "DELETE" },
+          {
+            method: "DELETE",
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          },
         );
 
         if (!response.ok) {
