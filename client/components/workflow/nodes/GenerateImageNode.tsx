@@ -1,6 +1,13 @@
-import { memo } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { GenerateImageNodeData, NODE_CONFIGURATIONS, NodeType } from '../types';
 import {
   Sparkles,
@@ -9,8 +16,9 @@ import {
   CheckCircle2,
   AlertCircle,
   Download,
-  Play,
 } from 'lucide-react';
+import { auth } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
   const config = NODE_CONFIGURATIONS[NodeType.GenerateImage];
