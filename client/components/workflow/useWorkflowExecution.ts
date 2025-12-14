@@ -306,11 +306,12 @@ export function useWorkflowExecution(
                 const images = apiData.images.map(
                   (img: string) => `data:image/png;base64,${img}`,
                 );
+                const firstImage = images[0];
 
                 // Save first image to library
                 try {
                   await saveToLibrary({
-                    imageUrl: images[0],
+                    imageUrl: firstImage,
                     prompt: prompt,
                     assetType: 'image'
                   });
@@ -332,8 +333,8 @@ export function useWorkflowExecution(
                   success: true,
                   data: {
                     images,
-                    image: images[0],
-                    imageUrl: images[0],
+                    image: firstImage,
+                    imageUrl: firstImage,
                   },
                 };
               } else {
