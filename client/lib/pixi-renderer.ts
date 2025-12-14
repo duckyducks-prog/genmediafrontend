@@ -117,14 +117,16 @@ function createVignetteFilter(params: Record<string, number>): Filter {
 }
 
 /**
- * Renders an image with PixiJS filter chain
- * THIS is Layer 2 from backend spec
- * 
- * @param imageSource - Base64 data URI or URL
- * @param filterConfigs - Array of filter configs (from modifier nodes)
- * @returns Promise<string> - Base64 data URI of rendered result
+ * Render queue to serialize concurrent render operations.
+ * Prevents multiple renders from modifying the shared app simultaneously.
  */
-export async function renderWithPixi(
+let renderQueue = Promise.resolve();
+
+/**
+ * Internal function that performs the actual rendering.
+ * Should only be called through the render queue to prevent concurrent access.
+ */
+async function performRender(
   imageSource: string,
   filterConfigs: FilterConfig[]
 ): Promise<string> {
@@ -185,6 +187,29 @@ export async function renderWithPixi(
   texture.destroy(false);
 
   return dataURL;
+}
+
+/**
+ * Renders an image with PixiJS filter chain (PUBLIC API).
+ * Uses a queue to serialize renders and prevent concurrent access to shared app.
+ *
+ * THIS is Layer 2 from backend spec
+ *
+ * @param imageSource - Base64 data URI or URL
+ * @param filterConfigs - Array of filter configs (from modifier nodes)
+ * @returns Promise<string> - Base64 data URI of rendered result
+ */
+export async function renderWithPixi(
+  imageSource: string,
+  filterConfigs: FilterConfig[]
+): Promise<string> {
+  // Enqueue this render to prevent concurrent modification of shared app
+  return new Promise<string>((resolve, reject) => {
+    renderQueue = renderQueue
+      .then(() => performRender(imageSource, filterConfigs))
+      .then(resolve)
+      .catch(reject);
+  });
 }
 
 /**
