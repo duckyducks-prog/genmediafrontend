@@ -36,6 +36,7 @@ import DownloadNode from "./nodes/DownloadNode";
 import PromptConcatenatorNode from "./nodes/PromptConcatenatorNode";
 import FormatNode from "./nodes/FormatNode";
 import LLMNode from "./nodes/LLMNode";
+import PreviewNode from "./nodes/PreviewNode";
 
 const nodeTypes: NodeTypes = {
   // Input nodes
