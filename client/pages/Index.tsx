@@ -21,6 +21,7 @@ import AssetLibrary, {
 } from "@/components/library/AssetLibrary";
 import { useAuth } from "@/lib/AuthContext";
 import { logOut, auth } from "@/lib/firebase";
+import { saveToLibrary } from "@/lib/api-helpers";
 import Login from "./Login";
 import { useToast } from "@/hooks/use-toast";
 
