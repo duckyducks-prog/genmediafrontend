@@ -341,16 +341,16 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
 
       if (!reactFlowWrapper.current || !reactFlowInstance) return;
 
-      const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
       const type = event.dataTransfer.getData(
         "application/reactflow",
       ) as NodeType;
 
       if (!type) return;
 
-      const position = reactFlowInstance.project({
-        x: event.clientX - reactFlowBounds.left,
-        y: event.clientY - reactFlowBounds.top,
+      // Use screenToFlowPosition (replaces deprecated project method)
+      const position = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
       });
 
       addNode(type, position);
