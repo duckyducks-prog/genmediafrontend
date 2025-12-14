@@ -96,6 +96,13 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
           console.log("[DEBUG] Library data received:", data);
           console.log("[DEBUG] Number of assets:", data.assets?.length || 0);
 
+          if (data.assets && data.assets.length > 0) {
+            console.log("[DEBUG] First asset:", data.assets[0]);
+            console.log("[DEBUG] Asset IDs:", data.assets.map((a: any) => a.id));
+          } else {
+            console.log("[DEBUG] No assets returned - backend may not be saving generated images");
+          }
+
           setAssets(data.assets || []);
           setFilteredAssets(data.assets || []);
         } catch (error) {
