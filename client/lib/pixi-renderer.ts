@@ -27,7 +27,7 @@ function createFilterFromConfig(config: FilterConfig): Filter {
     }
     
     case 'NoiseFilter':
-      return new NoiseFilter(config.params.noise);
+      return new NoiseFilter({ noise: config.params.noise });
     
     case 'Custom':
       // Handle custom filters like vignette
@@ -77,12 +77,15 @@ function createVignetteFilter(params: Record<string, number>): Filter {
     }
   `;
   
-  return Filter.from({
-    vertex,
-    fragment,
-    uniforms: {
-      uSize: params.size || 0.5,
-      uAmount: params.amount || 0.5,
+  return new Filter({
+    glProgram: {
+      fragment,
+    },
+    resources: {
+      vignetteUniforms: {
+        uSize: { value: params.size || 0.5, type: 'f32' },
+        uAmount: { value: params.amount || 0.5, type: 'f32' },
+      },
     },
   });
 }
@@ -111,9 +114,7 @@ export async function renderWithPixi(
 
   try {
     // 2. Load image as PixiJS texture
-    const texture = await Texture.from(imageSource, {
-      resourceOptions: { crossOrigin: 'anonymous' },
-    });
+    const texture = await Texture.from(imageSource);
 
     // Resize app to match image dimensions
     app.renderer.resize(texture.width, texture.height);
