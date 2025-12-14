@@ -29,6 +29,19 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
   const imageInput = (data as any).image || (data as any).imageInput;
   const upstreamFilters: FilterConfig[] = (data as any).filters || [];
 
+  // Debug logging
+  useEffect(() => {
+    console.log('[BrightnessContrastNode] Data update:', {
+      nodeId: id,
+      hasImage: !!imageInput,
+      imagePreview: imageInput ? imageInput.substring(0, 50) + '...' : null,
+      filterCount: upstreamFilters.length,
+      brightness: data.brightness,
+      contrast: data.contrast,
+      fullData: data,
+    });
+  }, [id, imageInput, upstreamFilters, data]);
+
   // Debounce params for preview rendering
   const debouncedBrightness = useDebounce(data.brightness, 150);
   const debouncedContrast = useDebounce(data.contrast, 150);
