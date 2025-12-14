@@ -241,6 +241,13 @@ describe('API E2E Tests', () => {
 
       const data = await response.json();
       testImageBase64 = data.images[0]; // API returns images array
+
+      // Validate we got valid base64 data
+      if (!testImageBase64 || testImageBase64.length < 100) {
+        console.error('Invalid test image data:', testImageBase64?.substring(0, 100));
+        throw new Error('Failed to generate valid test image for upscaling tests');
+      }
+      console.log('✓ Generated test image for upscaling, size:', testImageBase64.length, 'chars');
     }, TEST_TIMEOUT);
 
     it('should upscale an image', async () => {
@@ -500,6 +507,12 @@ describe('API E2E Tests', () => {
 
       const genData = await genResponse.json();
       const imageBase64 = genData.images[0]; // API returns images array
+
+      // Validate we got valid image data
+      if (!imageBase64 || imageBase64.length < 100) {
+        console.error('Invalid image data from generation:', imageBase64?.substring(0, 100));
+        throw new Error('Failed to generate valid image for library save test');
+      }
 
       // Ensure we're sending plain base64 (remove data URI prefix if present)
       let base64Image = imageBase64;
