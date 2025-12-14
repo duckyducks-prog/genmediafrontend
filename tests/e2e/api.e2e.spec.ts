@@ -163,14 +163,16 @@ describe('API E2E Tests', () => {
       });
 
       expect(response.status).toBe(200);
-      
+
       const data = await response.json();
       expect(data).toBeDefined();
-      expect(data.image_base64).toBeDefined();
-      expect(typeof data.image_base64).toBe('string');
-      expect(data.image_base64.length).toBeGreaterThan(100); // Should have substantial base64 data
-      
-      console.log('✓ Generated image, size:', data.image_base64.length, 'chars');
+      expect(data.images).toBeDefined();
+      expect(Array.isArray(data.images)).toBe(true);
+      expect(data.images.length).toBeGreaterThan(0);
+      expect(typeof data.images[0]).toBe('string');
+      expect(data.images[0].length).toBeGreaterThan(100); // Should have substantial base64 data
+
+      console.log('✓ Generated image, size:', data.images[0].length, 'chars');
     }, TEST_TIMEOUT);
 
     it('should reject requests without auth token', async () => {
@@ -205,8 +207,9 @@ describe('API E2E Tests', () => {
 
         expect(response.status).toBe(200);
         const data = await response.json();
-        expect(data.image_base64).toBeDefined();
-        
+        expect(data.images).toBeDefined();
+        expect(data.images[0]).toBeDefined();
+
         console.log(`✓ Generated ${ratio} image`);
       }
     }, TEST_TIMEOUT);
@@ -228,7 +231,7 @@ describe('API E2E Tests', () => {
       });
 
       const data = await response.json();
-      testImageBase64 = data.image_base64;
+      testImageBase64 = data.images[0]; // API returns images array
     }, TEST_TIMEOUT);
 
     it('should upscale an image', async () => {
@@ -243,12 +246,13 @@ describe('API E2E Tests', () => {
       });
 
       expect(response.status).toBe(200);
-      
+
       const data = await response.json();
-      expect(data.upscaled_image_base64).toBeDefined();
-      expect(data.upscaled_image_base64.length).toBeGreaterThan(testImageBase64.length);
-      
-      console.log('✓ Upscaled image from', testImageBase64.length, 'to', data.upscaled_image_base64.length, 'chars');
+      expect(data.image).toBeDefined();
+      expect(typeof data.image).toBe('string');
+      expect(data.image.length).toBeGreaterThan(testImageBase64.length);
+
+      console.log('✓ Upscaled image from', testImageBase64.length, 'to', data.image.length, 'chars');
     }, TEST_TIMEOUT);
 
     it('should handle different upscale factors', async () => {
@@ -280,20 +284,15 @@ describe('API E2E Tests', () => {
         }),
       });
 
-      // Video generation typically returns operation name
+      // Video generation returns operation name for polling
       expect(response.status).toBe(200);
-      
+
       const data = await response.json();
       expect(data).toBeDefined();
-      
-      // Could return video directly or operation_name for polling
-      if (data.operation_name) {
-        expect(typeof data.operation_name).toBe('string');
-        console.log('✓ Video generation started, operation:', data.operation_name);
-      } else if (data.video_base64) {
-        expect(typeof data.video_base64).toBe('string');
-        console.log('✓ Video generated directly');
-      }
+      expect(data.operation_name).toBeDefined();
+      expect(typeof data.operation_name).toBe('string');
+
+      console.log('✓ Video generation started, operation:', data.operation_name);
     }, TEST_TIMEOUT);
   });
 
@@ -420,7 +419,7 @@ describe('API E2E Tests', () => {
       });
 
       const genData = await genResponse.json();
-      const imageBase64 = genData.image_base64;
+      const imageBase64 = genData.images[0]; // API returns images array
 
       // Save to library
       const response = await apiRequest('/library', {
@@ -434,11 +433,11 @@ describe('API E2E Tests', () => {
       });
 
       expect(response.status).toBe(200);
-      
+
       const data = await response.json();
-      expect(data.id || data.asset_id).toBeDefined();
-      
-      savedAssetId = data.id || data.asset_id;
+      // Backend might return different field names
+      savedAssetId = data.id || data.asset_id || data.assetId;
+      expect(savedAssetId).toBeDefined();
       testAssets.push({ id: savedAssetId!, type: 'image' });
       
       console.log('✓ Saved asset to library, ID:', savedAssetId);
@@ -566,7 +565,7 @@ describe('API E2E Tests', () => {
       });
       expect(genResponse.status).toBe(200);
       const genData = await genResponse.json();
-      const originalImage = genData.image_base64;
+      const originalImage = genData.images[0]; // API returns images array
       console.log('✓ Image generated');
 
       // Step 2: Upscale image
@@ -580,7 +579,7 @@ describe('API E2E Tests', () => {
       });
       expect(upscaleResponse.status).toBe(200);
       const upscaleData = await upscaleResponse.json();
-      const upscaledImage = upscaleData.upscaled_image_base64;
+      const upscaledImage = upscaleData.image; // API returns { image: "...", mime_type: "..." }
       console.log('✓ Image upscaled');
 
       // Step 3: Save to library
@@ -596,7 +595,8 @@ describe('API E2E Tests', () => {
       });
       expect(saveResponse.status).toBe(200);
       const saveData = await saveResponse.json();
-      const assetId = saveData.id || saveData.asset_id;
+      const assetId = saveData.id || saveData.asset_id || saveData.assetId;
+      expect(assetId).toBeDefined();
       testAssets.push({ id: assetId, type: 'image' });
       console.log('✓ Saved to library, ID:', assetId);
 
