@@ -67,20 +67,6 @@ const paletteNodes: PaletteNode[] = [
 
   // OUTPUT NODES
   {
-    type: NodeType.ImageOutput,
-    label: "Image Output",
-    icon: <Image className="w-4 h-4" />,
-    category: "output",
-    description: "Display generated image",
-  },
-  {
-    type: NodeType.VideoOutput,
-    label: "Video Output",
-    icon: <Video className="w-4 h-4" />,
-    category: "output",
-    description: "Display generated video",
-  },
-  {
     type: NodeType.Download,
     label: "Download",
     icon: <Download className="w-4 h-4" />,
