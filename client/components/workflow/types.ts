@@ -186,6 +186,12 @@ export type WorkflowNodeData =
   | PromptNodeData
   | PromptConcatenatorNodeData
   | FormatNodeData
+  | BrightnessContrastNodeData
+  | BlurNodeData
+  | SharpenNodeData
+  | HueSaturationNodeData
+  | NoiseNodeData
+  | VignetteNodeData
   | GenerateVideoNodeData
   | GenerateImageNodeData
   | LLMNodeData
