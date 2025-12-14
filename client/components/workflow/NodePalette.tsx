@@ -1,4 +1,4 @@
-import { Type, Image, Sparkles, Settings, Combine, Brain, Upload, Video, Download } from "lucide-react";
+import { Type, Image, Sparkles, Settings, Combine, Brain, Upload, Video, Download, Eye } from "lucide-react";
 import { NodeType, NODE_CONFIGURATIONS } from "./types";
 
 interface PaletteNode {
