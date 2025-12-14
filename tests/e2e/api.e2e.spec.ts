@@ -62,7 +62,7 @@ async function apiRequest(
   options: RequestInit = {}
 ): Promise<Response> {
   const url = `${API_BASE_URL}${endpoint}`;
-  
+
   return fetch(url, {
     ...options,
     headers: {
@@ -70,6 +70,26 @@ async function apiRequest(
       ...options.headers,
     },
   });
+}
+
+/**
+ * Helper to clean and extract base64 from various formats
+ */
+function cleanBase64(data: string): string {
+  let cleaned = data;
+
+  // Remove data URI prefix if present
+  if (cleaned.startsWith('data:')) {
+    const parts = cleaned.split(',');
+    if (parts.length > 1) {
+      cleaned = parts[1];
+    }
+  }
+
+  // Remove any whitespace
+  cleaned = cleaned.replace(/\s/g, '');
+
+  return cleaned;
 }
 
 /**
