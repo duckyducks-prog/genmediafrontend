@@ -183,18 +183,21 @@ export function useWorkflowExecution(
 
             try {
               const user = auth.currentUser;
+              const token = await user?.getIdToken();
+
               const response = await fetch(
                 "https://veo-api-82187245577.us-central1.run.app/generate/text",
                 {
                   method: "POST",
-                  headers: { "Content-Type": "application/json" },
+                  headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                  },
                   body: JSON.stringify({
                     prompt,
                     system_prompt: systemPrompt,
                     context,
                     temperature,
-                    user_id: user?.uid,
-                    user_email: user?.email,
                   }),
                 },
               );
@@ -254,17 +257,20 @@ export function useWorkflowExecution(
 
             try {
               const user = auth.currentUser;
+              const token = await user?.getIdToken();
+
               const response = await fetch(
                 "https://veo-api-82187245577.us-central1.run.app/generate/image",
                 {
                   method: "POST",
-                  headers: { "Content-Type": "application/json" },
+                  headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                  },
                   body: JSON.stringify({
                     prompt,
                     reference_images: referenceImages,
                     aspect_ratio: formatData?.aspect_ratio || "1:1",
-                    user_id: user?.uid,
-                    user_email: user?.email,
                   }),
                 },
               );
@@ -377,6 +383,8 @@ export function useWorkflowExecution(
 
             try {
               const user = auth.currentUser;
+              const token = await user?.getIdToken();
+
               const requestBody: any = {
                 prompt,
                 first_frame: firstFrame,
@@ -385,15 +393,16 @@ export function useWorkflowExecution(
                 aspect_ratio: formatData?.aspect_ratio || "16:9",
                 duration_seconds: formatData?.duration_seconds || 8,
                 generate_audio: formatData?.generate_audio ?? true,
-                user_id: user?.uid,
-                user_email: user?.email,
               };
 
               const response = await fetch(
                 "https://veo-api-82187245577.us-central1.run.app/generate/video",
                 {
                   method: "POST",
-                  headers: { "Content-Type": "application/json" },
+                  headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                  },
                   body: JSON.stringify(requestBody),
                 },
               );
