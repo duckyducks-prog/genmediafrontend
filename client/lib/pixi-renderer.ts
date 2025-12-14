@@ -43,6 +43,21 @@ async function getSharedApp(): Promise<Application> {
         preserveDrawingBuffer: true, // Essential for extract/toDataURL to work
       });
 
+      // Add WebGL context loss/restore event listeners for better recovery
+      const canvas = app.canvas as HTMLCanvasElement;
+      if (canvas) {
+        canvas.addEventListener('webglcontextlost', (event) => {
+          console.error('[PixiJS] WebGL context lost! Preventing default to allow recovery.');
+          event.preventDefault(); // Prevent browser from giving up on context
+        });
+
+        canvas.addEventListener('webglcontextrestored', () => {
+          console.log('[PixiJS] WebGL context restored! Disposing and allowing re-initialization.');
+          // Dispose the app so next render will create a fresh one
+          disposeSharedPixiApp();
+        });
+      }
+
       console.log('[PixiJS] Shared application initialized successfully');
       sharedApp = app;
       sharedAppInitPromise = null; // Clear promise after success
@@ -144,7 +159,13 @@ async function performRender(
 
   // Check for WebGL context loss before attempting render
   if ((app.renderer as any).gl?.isContextLost?.()) {
-    throw new Error('WebGL context lost - please refresh the page to recover');
+    // Automatically dispose the app to allow fresh initialization on next call
+    disposeSharedPixiApp();
+    throw new Error(
+      'WebGL context was lost (GPU reset or too many contexts). ' +
+      'The app will automatically recover on the next render attempt. ' +
+      'If this persists, try refreshing the page.'
+    );
   }
 
   // 2. Load image into HTMLImageElement with timeout (prevent hanging)
