@@ -109,15 +109,31 @@ export default function Index() {
 
       const data = await response.json();
       if (data.images && data.images[0]) {
-        setImageResult(`data:image/png;base64,${data.images[0]}`);
+        const dataUri = `data:image/png;base64,${data.images[0]}`;
+        setImageResult(dataUri);
 
-        // Refresh library after a short delay to allow backend to save
-        setTimeout(() => {
-          console.log("[Index] Refreshing library after image generation");
+        // Save to library
+        try {
+          await saveToLibrary({
+            imageUrl: dataUri,
+            prompt: imagePrompt,
+            assetType: 'image'
+          });
+
+          console.log("[Index] Image saved to library successfully");
+
+          // Refresh library to show the newly saved image
           if (assetLibraryRef.current) {
             assetLibraryRef.current.refresh();
           }
-        }, 2000);
+        } catch (error) {
+          console.error("[Index] Failed to save image to library:", error);
+          toast({
+            title: "Warning",
+            description: "Image generated but failed to save to library",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       console.error("Error generating image:", error);
