@@ -246,15 +246,16 @@ describe('API E2E Tests', () => {
     it('should upscale an image', async () => {
       if (!authToken || !testImageBase64) return;
 
-      // Wrap base64 in data URI if not already formatted
-      const imageData = testImageBase64.startsWith('data:')
-        ? testImageBase64
-        : `data:image/png;base64,${testImageBase64}`;
+      // Ensure we're sending plain base64 (remove data URI prefix if present)
+      let base64Image = testImageBase64;
+      if (testImageBase64.startsWith('data:')) {
+        base64Image = testImageBase64.split(',')[1];
+      }
 
       const response = await apiRequest('/generate/upscale', {
         method: 'POST',
         body: JSON.stringify({
-          image: imageData,
+          image: base64Image,
           upscale_factor: 2,
         }),
       });
@@ -262,6 +263,8 @@ describe('API E2E Tests', () => {
       if (response.status !== 200) {
         const errorBody = await response.text();
         console.error('Upscale error:', response.status, errorBody);
+        console.error('Image data length:', base64Image.length);
+        console.error('Image data preview:', base64Image.substring(0, 100));
       }
       expect(response.status).toBe(200);
 
@@ -277,15 +280,16 @@ describe('API E2E Tests', () => {
       if (!authToken || !testImageBase64) return;
 
       for (const factor of [2, 4]) {
-        // Wrap base64 in data URI if not already formatted
-        const imageData = testImageBase64.startsWith('data:')
-          ? testImageBase64
-          : `data:image/png;base64,${testImageBase64}`;
+        // Ensure we're sending plain base64 (remove data URI prefix if present)
+        let base64Image = testImageBase64;
+        if (testImageBase64.startsWith('data:')) {
+          base64Image = testImageBase64.split(',')[1];
+        }
 
         const response = await apiRequest('/generate/upscale', {
           method: 'POST',
           body: JSON.stringify({
-            image: imageData,
+            image: base64Image,
             upscale_factor: factor,
           }),
         });
@@ -497,16 +501,17 @@ describe('API E2E Tests', () => {
       const genData = await genResponse.json();
       const imageBase64 = genData.images[0]; // API returns images array
 
-      // Wrap base64 in data URI if not already formatted
-      const imageData = imageBase64.startsWith('data:')
-        ? imageBase64
-        : `data:image/png;base64,${imageBase64}`;
+      // Ensure we're sending plain base64 (remove data URI prefix if present)
+      let base64Image = imageBase64;
+      if (imageBase64.startsWith('data:')) {
+        base64Image = imageBase64.split(',')[1];
+      }
 
       // Save to library
       const response = await apiRequest('/library/save', {
         method: 'POST',
         body: JSON.stringify({
-          image_data: imageData,
+          image_data: base64Image,
           prompt: 'Test library asset - colorful abstract pattern',
           asset_type: 'image',
           mime_type: 'image/png',
