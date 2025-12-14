@@ -26,7 +26,7 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
   const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const incomingImageUrl = (data as any).imageUrl || data.result;
+  const incomingImageUrl = (data as any).imageUrl || (data as any).image || data.result;
   const imageUrl = currentImageUrl || incomingImageUrl;
   const status = (data as any).status || "ready";
   const isExecuting = status === "executing";
