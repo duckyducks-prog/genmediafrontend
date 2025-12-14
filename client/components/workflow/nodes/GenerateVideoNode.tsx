@@ -49,18 +49,10 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
     return 'Ready';
   };
 
-  const handleGenerate = () => {
-    const event = new CustomEvent('node-execute', {
-      detail: { nodeId: id },
-    });
-    window.dispatchEvent(event);
-  };
-
   const handleDownload = async () => {
     if (!videoUrl) return;
 
     try {
-      // For base64 data URIs, download directly
       if (videoUrl.startsWith('data:')) {
         const link = document.createElement('a');
         link.href = videoUrl;
@@ -71,7 +63,6 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
         return;
       }
 
-      // For external URLs, try to fetch with CORS mode
       try {
         const response = await fetch(videoUrl, { mode: 'cors' });
         const blob = await response.blob();
