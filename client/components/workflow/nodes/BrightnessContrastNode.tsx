@@ -1,50 +1,14 @@
-import { memo, useEffect, useState, useCallback, useRef } from 'react';
+import { memo, useEffect, useCallback } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { BrightnessContrastNodeData } from '../types';
 import { Slider } from '@/components/ui/slider';
-import { Sun, Loader2 } from 'lucide-react';
-import { renderWithPixi } from '@/lib/pixi-renderer';
+import { Sun } from 'lucide-react';
 import { FilterConfig, FILTER_DEFINITIONS } from '@/lib/pixi-filter-configs';
 
-// Debounce hook
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => clearTimeout(handler);
-  }, [value, delay]);
-
-  return debouncedValue;
-}
-
 function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeData>) {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isRendering, setIsRendering] = useState(false);
-
   // Get incoming data
   const imageInput = (data as any).image || (data as any).imageInput;
   const upstreamFilters: FilterConfig[] = (data as any).filters || [];
-
-  // Debug logging
-  useEffect(() => {
-    console.log('[BrightnessContrastNode] Data update:', {
-      nodeId: id,
-      hasImage: !!imageInput,
-      imagePreview: imageInput ? imageInput.substring(0, 50) + '...' : null,
-      filterCount: upstreamFilters.length,
-      brightness: data.brightness,
-      contrast: data.contrast,
-      fullData: data,
-    });
-  }, [id, imageInput, upstreamFilters, data]);
-
-  // Debounce params for preview rendering
-  const debouncedBrightness = useDebounce(data.brightness, 150);
-  const debouncedContrast = useDebounce(data.contrast, 150);
 
   // Create this node's filter config (lightweight, no PixiJS instance)
   const createConfig = useCallback(
@@ -61,7 +25,7 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
       const thisConfig = createConfig(brightness, contrast);
       const updatedFilters = [...upstreamFilters, thisConfig];
 
-      const event = new CustomEvent('node-update', {
+      const updateEvent = new CustomEvent('node-update', {
         detail: {
           id,
           data: {
@@ -75,32 +39,10 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
           },
         },
       });
-      window.dispatchEvent(event);
+      window.dispatchEvent(updateEvent);
     },
     [id, data, imageInput, upstreamFilters, createConfig]
   );
-
-  // Generate inline preview
-  useEffect(() => {
-    if (!imageInput) {
-      setPreviewUrl(null);
-      return;
-    }
-
-    const thisConfig = createConfig(debouncedBrightness, debouncedContrast);
-    const allFilters = [...upstreamFilters, thisConfig];
-
-    setIsRendering(true);
-    renderWithPixi(imageInput, allFilters)
-      .then(rendered => {
-        setPreviewUrl(rendered);
-        setIsRendering(false);
-      })
-      .catch(error => {
-        console.error('[BrightnessContrastNode] Preview render failed:', error);
-        setIsRendering(false);
-      });
-  }, [imageInput, debouncedBrightness, debouncedContrast, upstreamFilters, createConfig]);
 
   // Update outputs whenever brightness, contrast, or inputs change
   useEffect(() => {
@@ -125,7 +67,6 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
           <Sun className="w-4 h-4 text-primary" />
           <span className="font-semibold text-sm">{def.label}</span>
         </div>
-        {isRendering && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
       </div>
 
       {/* Input Handles */}
@@ -183,25 +124,6 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
             className="w-full"
           />
         </div>
-
-        {/* Inline Preview */}
-        {imageInput && (
-          <div className="relative border border-border rounded overflow-hidden bg-muted/30">
-            {previewUrl ? (
-              <img
-                src={previewUrl}
-                alt="Preview"
-                className="w-full h-20 object-cover"
-              />
-            ) : (
-              <div className="w-full h-20 flex items-center justify-center">
-                <span className="text-xs text-muted-foreground">
-                  {isRendering ? 'Rendering...' : 'No preview'}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Output Handles */}
