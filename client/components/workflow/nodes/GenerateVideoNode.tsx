@@ -157,6 +157,32 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
           <span>Veo 3.1</span>
         </div>
 
+        {/* Run This Node Button */}
+        <Button
+          onClick={() => {
+            const event = new CustomEvent('node-execute', {
+              detail: { nodeId: id },
+            });
+            window.dispatchEvent(event);
+          }}
+          disabled={isGenerating}
+          className="w-full"
+          size="sm"
+          variant="default"
+        >
+          {isGenerating ? (
+            <>
+              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+              Generating...
+            </>
+          ) : (
+            <>
+              <Play className="w-3 h-3 mr-1" />
+              Run This Node
+            </>
+          )}
+        </Button>
+
         {/* Mutual Exclusion Warning */}
         {data.error?.includes('mutual exclusion') && (
           <div className="flex items-start gap-2 text-xs text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-950/20 p-2 rounded">
