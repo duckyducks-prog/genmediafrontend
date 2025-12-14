@@ -18,18 +18,23 @@ import {
 } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
+import { renderWithPixi } from "@/lib/pixi-renderer";
+import { FilterConfig } from "@/lib/pixi-filter-configs";
 
 function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
   const [upscaleFactor, setUpscaleFactor] = useState<string>("x2");
   const [isUpscaling, setIsUpscaling] = useState(false);
   const [upscaleError, setUpscaleError] = useState<string | null>(null);
   const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
+  const [renderedImageUrl, setRenderedImageUrl] = useState<string | null>(null);
+  const [isRendering, setIsRendering] = useState(false);
   const { toast } = useToast();
 
   const incomingImageUrl = (data as any).imageUrl || (data as any).image || data.result;
-  const imageUrl = currentImageUrl || incomingImageUrl;
+  const filters: FilterConfig[] = (data as any).filters || [];
+  const imageUrl = currentImageUrl || renderedImageUrl || incomingImageUrl;
   const status = (data as any).status || "ready";
-  const isExecuting = status === "executing";
+  const isExecuting = status === "executing" || isRendering;
   const isCompleted = status === "completed";
 
   // Debug logging
