@@ -133,22 +133,32 @@ async function performRender(
   // 1. Get shared PixiJS application (reuses WebGL context)
   const app = await getSharedApp();
 
-  // 2. Load image into HTMLImageElement first (for base64 data URIs)
+  // Check for WebGL context loss before attempting render
+  if ((app.renderer as any).gl?.isContextLost?.()) {
+    throw new Error('WebGL context lost - please refresh the page to recover');
+  }
+
+  // 2. Load image into HTMLImageElement with timeout (prevent hanging)
   const img = new Image();
   img.crossOrigin = 'anonymous';
 
-  await new Promise<void>((resolve, reject) => {
-    img.onload = () => resolve();
-    img.onerror = () => reject(new Error('Failed to load image'));
-    img.src = imageSource;
-  });
+  await Promise.race([
+    new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error('Failed to load image - check image source or CORS policy'));
+      img.src = imageSource;
+    }),
+    new Promise<void>((_, reject) =>
+      setTimeout(() => reject(new Error('Image load timeout (10s) - image may be too large or network is slow')), 10000)
+    )
+  ]);
 
   // 3. Create texture from the loaded image
   const texture = Texture.from(img);
 
   // Ensure texture is valid
   if (!texture || !texture.source) {
-    throw new Error('Failed to create texture from image');
+    throw new Error('Failed to create texture from image - texture or source is invalid');
   }
 
   // Resize app to match image dimensions
