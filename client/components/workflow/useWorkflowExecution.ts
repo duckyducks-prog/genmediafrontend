@@ -491,7 +491,10 @@ export function useWorkflowExecution(
 
                 return {
                   success: true,
-                  data: { video: result.videoUrl },
+                  data: {
+                    video: result.videoUrl,
+                    videoUrl: result.videoUrl,
+                  },
                 };
               } else {
                 return {
