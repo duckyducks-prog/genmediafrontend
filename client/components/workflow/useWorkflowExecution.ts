@@ -384,12 +384,47 @@ export function useWorkflowExecution(
             let lastFrame = inputs.last_frame || null;
             let referenceImages = inputs.reference_images || null;
             const formatData = inputs.format;
+            const filters: FilterConfig[] = inputs.filters || [];
 
             if (!prompt) {
               return {
                 success: false,
                 error: "No prompt connected",
               };
+            }
+
+            // NEW: Apply filters before sending to API (Layer 3 integration)
+            if (filters.length > 0) {
+              console.log('[GenerateVideo] Applying', filters.length, 'filters before API call');
+
+              try {
+                // Process first_frame if filters exist
+                if (firstFrame && typeof firstFrame === "string") {
+                  firstFrame = await renderWithPixi(firstFrame, filters);
+                }
+
+                // Process last_frame if filters exist
+                if (lastFrame && typeof lastFrame === "string") {
+                  lastFrame = await renderWithPixi(lastFrame, filters);
+                }
+
+                // Process reference_images if filters exist
+                if (referenceImages) {
+                  if (Array.isArray(referenceImages)) {
+                    referenceImages = await Promise.all(
+                      referenceImages.map(img => renderWithPixi(img, filters))
+                    );
+                  } else if (typeof referenceImages === "string") {
+                    referenceImages = await renderWithPixi(referenceImages, filters);
+                  }
+                }
+              } catch (error) {
+                console.error('[GenerateVideo] Filter rendering failed:', error);
+                return {
+                  success: false,
+                  error: "Failed to apply image filters: " + (error instanceof Error ? error.message : "Unknown error"),
+                };
+              }
             }
 
             // Strip data URI prefix from image inputs if present
