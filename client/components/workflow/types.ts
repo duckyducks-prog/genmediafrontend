@@ -319,6 +319,217 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
     ],
   },
 
+  // ========== IMAGE MODIFIER NODES (PixiJS filters) ==========
+  [NodeType.BrightnessContrast]: {
+    type: NodeType.BrightnessContrast,
+    label: "Brightness/Contrast",
+    category: "modifier",
+    description: "Adjust brightness and contrast",
+    inputConnectors: [
+      {
+        id: "image",
+        label: "Image",
+        type: ConnectorType.Image,
+        required: true,
+        acceptsMultiple: false,
+      },
+      {
+        id: "filters",
+        label: "Filters",
+        type: ConnectorType.Any, // Array of FilterConfig
+        required: false,
+        acceptsMultiple: false,
+      }
+    ],
+    outputConnectors: [
+      {
+        id: "image",
+        label: "Image",
+        type: ConnectorType.Image, // Pass-through original
+      },
+      {
+        id: "filters",
+        label: "Filters",
+        type: ConnectorType.Any, // Updated filter config array
+      }
+    ],
+  },
+
+  [NodeType.Blur]: {
+    type: NodeType.Blur,
+    label: "Blur",
+    category: "modifier",
+    description: "Apply Gaussian blur",
+    inputConnectors: [
+      {
+        id: "image",
+        label: "Image",
+        type: ConnectorType.Image,
+        required: true,
+        acceptsMultiple: false,
+      },
+      {
+        id: "filters",
+        label: "Filters",
+        type: ConnectorType.Any,
+        required: false,
+        acceptsMultiple: false,
+      }
+    ],
+    outputConnectors: [
+      {
+        id: "image",
+        label: "Image",
+        type: ConnectorType.Image,
+      },
+      {
+        id: "filters",
+        label: "Filters",
+        type: ConnectorType.Any,
+      }
+    ],
+  },
+
+  [NodeType.Sharpen]: {
+    type: NodeType.Sharpen,
+    label: "Sharpen",
+    category: "modifier",
+    description: "Sharpen image details",
+    inputConnectors: [
+      {
+        id: "image",
+        label: "Image",
+        type: ConnectorType.Image,
+        required: true,
+        acceptsMultiple: false,
+      },
+      {
+        id: "filters",
+        label: "Filters",
+        type: ConnectorType.Any,
+        required: false,
+        acceptsMultiple: false,
+      }
+    ],
+    outputConnectors: [
+      {
+        id: "image",
+        label: "Image",
+        type: ConnectorType.Image,
+      },
+      {
+        id: "filters",
+        label: "Filters",
+        type: ConnectorType.Any,
+      }
+    ],
+  },
+
+  [NodeType.HueSaturation]: {
+    type: NodeType.HueSaturation,
+    label: "Hue/Saturation",
+    category: "modifier",
+    description: "Adjust hue and saturation",
+    inputConnectors: [
+      {
+        id: "image",
+        label: "Image",
+        type: ConnectorType.Image,
+        required: true,
+        acceptsMultiple: false,
+      },
+      {
+        id: "filters",
+        label: "Filters",
+        type: ConnectorType.Any,
+        required: false,
+        acceptsMultiple: false,
+      }
+    ],
+    outputConnectors: [
+      {
+        id: "image",
+        label: "Image",
+        type: ConnectorType.Image,
+      },
+      {
+        id: "filters",
+        label: "Filters",
+        type: ConnectorType.Any,
+      }
+    ],
+  },
+
+  [NodeType.Noise]: {
+    type: NodeType.Noise,
+    label: "Noise",
+    category: "modifier",
+    description: "Add grain/noise texture",
+    inputConnectors: [
+      {
+        id: "image",
+        label: "Image",
+        type: ConnectorType.Image,
+        required: true,
+        acceptsMultiple: false,
+      },
+      {
+        id: "filters",
+        label: "Filters",
+        type: ConnectorType.Any,
+        required: false,
+        acceptsMultiple: false,
+      }
+    ],
+    outputConnectors: [
+      {
+        id: "image",
+        label: "Image",
+        type: ConnectorType.Image,
+      },
+      {
+        id: "filters",
+        label: "Filters",
+        type: ConnectorType.Any,
+      }
+    ],
+  },
+
+  [NodeType.Vignette]: {
+    type: NodeType.Vignette,
+    label: "Vignette",
+    category: "modifier",
+    description: "Add vignette effect",
+    inputConnectors: [
+      {
+        id: "image",
+        label: "Image",
+        type: ConnectorType.Image,
+        required: true,
+        acceptsMultiple: false,
+      },
+      {
+        id: "filters",
+        label: "Filters",
+        type: ConnectorType.Any,
+        required: false,
+        acceptsMultiple: false,
+      }
+    ],
+    outputConnectors: [
+      {
+        id: "image",
+        label: "Image",
+        type: ConnectorType.Image,
+      },
+      {
+        id: "filters",
+        label: "Filters",
+        type: ConnectorType.Any,
+      }
+    ],
+  },
+
   // ========== ACTION NODES ==========
   [NodeType.GenerateVideo]: {
     type: NodeType.GenerateVideo,
