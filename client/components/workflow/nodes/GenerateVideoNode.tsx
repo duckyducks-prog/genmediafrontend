@@ -157,32 +157,6 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
           <span>Veo 3.1</span>
         </div>
 
-        {/* Run This Node Button */}
-        <Button
-          onClick={() => {
-            const event = new CustomEvent('node-execute', {
-              detail: { nodeId: id },
-            });
-            window.dispatchEvent(event);
-          }}
-          disabled={isGenerating}
-          className="w-full"
-          size="sm"
-          variant="default"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <Play className="w-3 h-3 mr-1" />
-              Run This Node
-            </>
-          )}
-        </Button>
-
         {/* Mutual Exclusion Warning */}
         {data.error?.includes('mutual exclusion') && (
           <div className="flex items-start gap-2 text-xs text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-950/20 p-2 rounded">
@@ -210,19 +184,73 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
               <Download className="w-3 h-3 mr-1" />
               Download Video
             </Button>
+
+            {/* Run Node Button */}
+            <Button
+              onClick={() => {
+                const event = new CustomEvent('node-execute', {
+                  detail: { nodeId: id },
+                });
+                window.dispatchEvent(event);
+              }}
+              disabled={isGenerating}
+              variant="ghost"
+              size="sm"
+              className="w-full text-xs"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Play className="w-3 h-3 mr-1" />
+                  Run Node
+                </>
+              )}
+            </Button>
           </div>
         )}
 
         {/* No Video Yet */}
         {!isCompleted && !videoUrl && (
-          <div className="flex flex-col items-center justify-center h-[150px] border-2 border-dashed border-border rounded-lg bg-muted/30">
-            <VideoIcon className="w-8 h-8 text-muted-foreground mb-2" />
-            <p className="text-xs text-muted-foreground">
-              {isGenerating ? 'Generating...' : 'No video yet'}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {!isGenerating && 'Run workflow to generate'}
-            </p>
+          <div className="space-y-2">
+            <div className="flex flex-col items-center justify-center h-[150px] border-2 border-dashed border-border rounded-lg bg-muted/30">
+              <VideoIcon className="w-8 h-8 text-muted-foreground mb-2" />
+              <p className="text-xs text-muted-foreground">
+                {isGenerating ? 'Generating...' : 'No video yet'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {!isGenerating && 'Run workflow to generate'}
+              </p>
+            </div>
+
+            {/* Run Node Button */}
+            <Button
+              onClick={() => {
+                const event = new CustomEvent('node-execute', {
+                  detail: { nodeId: id },
+                });
+                window.dispatchEvent(event);
+              }}
+              disabled={isGenerating}
+              variant="ghost"
+              size="sm"
+              className="w-full text-xs"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Play className="w-3 h-3 mr-1" />
+                  Run Node
+                </>
+              )}
+            </Button>
           </div>
         )}
 
