@@ -218,14 +218,22 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
         {isCompleted && <CheckCircle2 className="w-4 h-4 text-green-500" />}
       </div>
 
-      {/* Input Handle */}
+      {/* Input Handles */}
       <Handle
         type="target"
         position={Position.Left}
         id="image-input"
         data-connector-type="image"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: "50%", transform: "translateY(-50%)" }}
+        style={{ top: "40%", transform: "translateY(-50%)" }}
+      />
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="filters"
+        data-connector-type="any"
+        className="!w-3 !h-3 !border-2 !border-background"
+        style={{ top: "60%", transform: "translateY(-50%)" }}
       />
 
       {/* Node Content */}
