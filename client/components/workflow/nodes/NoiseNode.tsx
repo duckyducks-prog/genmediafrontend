@@ -78,7 +78,7 @@ function NoiseNode({ data, id }: NodeProps<NoiseNodeData>) {
 
   useEffect(() => {
     updateOutputs(data.noise);
-  }, []);
+  }, [data.noise, imageInput, upstreamFilters, updateOutputs]);
 
   const def = FILTER_DEFINITIONS.noise;
 

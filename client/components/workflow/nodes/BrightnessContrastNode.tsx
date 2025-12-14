@@ -89,10 +89,10 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
       });
   }, [imageInput, debouncedBrightness, debouncedContrast, upstreamFilters, createConfig]);
 
-  // Initialize outputs on mount
+  // Update outputs whenever brightness, contrast, or inputs change
   useEffect(() => {
     updateOutputs(data.brightness, data.contrast);
-  }, []); // Only on mount
+  }, [data.brightness, data.contrast, imageInput, upstreamFilters, updateOutputs]);
 
   const handleBrightnessChange = (value: number) => {
     updateOutputs(value, data.contrast);

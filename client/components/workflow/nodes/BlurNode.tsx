@@ -80,7 +80,7 @@ function BlurNode({ data, id }: NodeProps<BlurNodeData>) {
 
   useEffect(() => {
     updateOutputs(data.strength, data.quality);
-  }, []);
+  }, [data.strength, data.quality, imageInput, upstreamFilters, updateOutputs]);
 
   const def = FILTER_DEFINITIONS.blur;
 

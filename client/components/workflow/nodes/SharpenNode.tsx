@@ -78,7 +78,7 @@ function SharpenNode({ data, id }: NodeProps<SharpenNodeData>) {
 
   useEffect(() => {
     updateOutputs(data.gamma);
-  }, []);
+  }, [data.gamma, imageInput, upstreamFilters, updateOutputs]);
 
   const def = FILTER_DEFINITIONS.sharpen;
 
