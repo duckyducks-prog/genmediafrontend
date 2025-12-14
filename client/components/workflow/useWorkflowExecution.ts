@@ -237,9 +237,33 @@ export function useWorkflowExecution(
             const prompt = inputs.prompt;
             let referenceImages = inputs.reference_images || null;
             const formatData = inputs.format;
+            const filters: FilterConfig[] = inputs.filters || [];
 
             if (!prompt) {
               return { success: false, error: "No prompt connected" };
+            }
+
+            // NEW: Apply filters before sending to API (Layer 3 integration)
+            if (referenceImages && filters.length > 0) {
+              console.log('[GenerateImage] Applying', filters.length, 'filters before API call');
+
+              try {
+                if (Array.isArray(referenceImages)) {
+                  // Process each reference image
+                  referenceImages = await Promise.all(
+                    referenceImages.map(img => renderWithPixi(img, filters))
+                  );
+                } else {
+                  // Single image
+                  referenceImages = await renderWithPixi(referenceImages, filters);
+                }
+              } catch (error) {
+                console.error('[GenerateImage] Filter rendering failed:', error);
+                return {
+                  success: false,
+                  error: "Failed to apply image filters: " + (error instanceof Error ? error.message : "Unknown error"),
+                };
+              }
             }
 
             // Strip data URI prefix from reference images if present
