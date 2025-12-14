@@ -174,9 +174,18 @@ async function performRender(
     throw new Error('Failed to create texture from image - texture or source is invalid');
   }
 
-  // Resize app to match image dimensions
-  const width = img.width || 1024;
-  const height = img.height || 1024;
+  // Resize app to match image dimensions (with max limits to prevent GPU OOM)
+  const MAX_DIMENSION = 4096; // Reasonable limit for most GPUs
+  let width = img.width || 1024;
+  let height = img.height || 1024;
+
+  if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+    const scale = Math.min(MAX_DIMENSION / width, MAX_DIMENSION / height);
+    width = Math.floor(width * scale);
+    height = Math.floor(height * scale);
+    console.warn(`[PixiJS] Image dimensions exceed ${MAX_DIMENSION}px, scaling down to ${width}x${height}`);
+  }
+
   app.renderer.resize(width, height);
 
   // 4. Clear the stage from previous renders
