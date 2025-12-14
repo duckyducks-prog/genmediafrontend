@@ -1,6 +1,8 @@
 import { memo, useState, useEffect } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { CheckCircle2, Loader2, Eye } from "lucide-react";
+import { renderWithPixi } from "@/lib/pixi-renderer";
+import { FilterConfig } from "@/lib/pixi-filter-configs";
 
 export interface PreviewNodeData {
   label: string;
@@ -17,23 +19,47 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
     type: "image" | "video" | "text" | "none";
     content: string;
   }>({ type: "none", content: "" });
+  const [isRendering, setIsRendering] = useState(false);
 
   const status = (data as any).status || "ready";
-  const isExecuting = status === "executing";
+  const isExecuting = status === "executing" || isRendering;
   const isCompleted = status === "completed";
 
   useEffect(() => {
-    // Determine what content to display based on available data
-    if ((data as any).imageUrl) {
-      setDisplayContent({ type: "image", content: (data as any).imageUrl });
-    } else if ((data as any).videoUrl) {
-      setDisplayContent({ type: "video", content: (data as any).videoUrl });
-    } else if ((data as any).textContent) {
-      setDisplayContent({ type: "text", content: (data as any).textContent });
+    const imageInput = (data as any).image || (data as any).imageUrl;
+    const videoInput = (data as any).video || (data as any).videoUrl;
+    const textInput = (data as any).text || (data as any).textContent;
+    const filters: FilterConfig[] = (data as any).filters || [];
+
+    // Handle image with possible filters
+    if (imageInput) {
+      if (filters.length > 0) {
+        // Layer 2: Render with PixiJS filter chain
+        setIsRendering(true);
+        renderWithPixi(imageInput, filters)
+          .then(rendered => {
+            setDisplayContent({ type: "image", content: rendered });
+          })
+          .catch(error => {
+            console.error("[PreviewNode] Render failed:", error);
+            // Fallback to original image
+            setDisplayContent({ type: "image", content: imageInput });
+          })
+          .finally(() => {
+            setIsRendering(false);
+          });
+      } else {
+        // No filters, show original
+        setDisplayContent({ type: "image", content: imageInput });
+      }
+    } else if (videoInput) {
+      setDisplayContent({ type: "video", content: videoInput });
+    } else if (textInput) {
+      setDisplayContent({ type: "text", content: textInput });
     } else {
       setDisplayContent({ type: "none", content: "" });
     }
-  }, [(data as any).imageUrl, (data as any).videoUrl, (data as any).textContent]);
+  }, [(data as any).image, (data as any).imageUrl, (data as any).video, (data as any).videoUrl, (data as any).text, (data as any).textContent, (data as any).filters]);
 
   const getBorderColor = () => {
     if (isExecuting) return "border-yellow-500";
