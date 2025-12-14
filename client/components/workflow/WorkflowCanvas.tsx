@@ -51,11 +51,12 @@ const nodeTypes: NodeTypes = {
   [NodeType.GenerateImage]: GenerateImageNode,
   [NodeType.GenerateVideo]: GenerateVideoNode,
   [NodeType.LLM]: LLMNode,
+  [NodeType.Preview]: PreviewNode,
+  [NodeType.Download]: DownloadNode,
 
   // Output nodes
   [NodeType.ImageOutput]: ImageOutputNode,
   [NodeType.VideoOutput]: VideoOutputNode,
-  [NodeType.Download]: DownloadNode,
 };
 
 interface WorkflowCanvasProps {
