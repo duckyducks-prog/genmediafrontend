@@ -260,6 +260,19 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
     onAssetGenerated,
   );
 
+  // Listen for node execute events
+  useEffect(() => {
+    const handleNodeExecute = (event: any) => {
+      const { nodeId } = event.detail;
+      console.log("Execute node:", nodeId);
+      // Call the single node execution function
+      executeSingleNode(nodeId);
+    };
+
+    window.addEventListener("node-execute", handleNodeExecute);
+    return () => window.removeEventListener("node-execute", handleNodeExecute);
+  }, [executeSingleNode]);
+
   return (
     <div className="flex w-full h-full">
       {/* Node Palette */}
