@@ -38,6 +38,11 @@ import FormatNode from "./nodes/FormatNode";
 import LLMNode from "./nodes/LLMNode";
 import PreviewNode from "./nodes/PreviewNode";
 import BrightnessContrastNode from "./nodes/BrightnessContrastNode";
+import BlurNode from "./nodes/BlurNode";
+import SharpenNode from "./nodes/SharpenNode";
+import HueSaturationNode from "./nodes/HueSaturationNode";
+import NoiseNode from "./nodes/NoiseNode";
+import VignetteNode from "./nodes/VignetteNode";
 
 const nodeTypes: NodeTypes = {
   // Input nodes
@@ -48,6 +53,11 @@ const nodeTypes: NodeTypes = {
   [NodeType.PromptConcatenator]: PromptConcatenatorNode,
   [NodeType.Format]: FormatNode,
   [NodeType.BrightnessContrast]: BrightnessContrastNode,
+  [NodeType.Blur]: BlurNode,
+  [NodeType.Sharpen]: SharpenNode,
+  [NodeType.HueSaturation]: HueSaturationNode,
+  [NodeType.Noise]: NoiseNode,
+  [NodeType.Vignette]: VignetteNode,
 
   // Action nodes
   [NodeType.GenerateImage]: GenerateImageNode,

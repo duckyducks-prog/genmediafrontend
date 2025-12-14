@@ -1,4 +1,4 @@
-import { Type, Image, Sparkles, Settings, Combine, Brain, Upload, Video, Download, Eye, Sun } from "lucide-react";
+import { Type, Image, Sparkles, Settings, Combine, Brain, Upload, Video, Download, Eye, Sun, Blend, Focus, Palette, Radio, Circle } from "lucide-react";
 import { NodeType, NODE_CONFIGURATIONS } from "./types";
 
 interface PaletteNode {
@@ -47,6 +47,41 @@ const paletteNodes: PaletteNode[] = [
     icon: <Sun className="w-4 h-4" />,
     category: "modifier",
     description: "Adjust brightness and contrast",
+  },
+  {
+    type: NodeType.Blur,
+    label: "Blur",
+    icon: <Blend className="w-4 h-4" />,
+    category: "modifier",
+    description: "Add blur effect to images",
+  },
+  {
+    type: NodeType.Sharpen,
+    label: "Sharpen",
+    icon: <Focus className="w-4 h-4" />,
+    category: "modifier",
+    description: "Sharpen image details",
+  },
+  {
+    type: NodeType.HueSaturation,
+    label: "Hue/Saturation",
+    icon: <Palette className="w-4 h-4" />,
+    category: "modifier",
+    description: "Adjust hue and saturation",
+  },
+  {
+    type: NodeType.Noise,
+    label: "Noise",
+    icon: <Radio className="w-4 h-4" />,
+    category: "modifier",
+    description: "Add noise texture",
+  },
+  {
+    type: NodeType.Vignette,
+    label: "Vignette",
+    icon: <Circle className="w-4 h-4" />,
+    category: "modifier",
+    description: "Add vignette effect",
   },
 
   // ACTION NODES
