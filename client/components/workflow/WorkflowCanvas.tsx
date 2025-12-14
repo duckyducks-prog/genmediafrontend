@@ -86,14 +86,47 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
   useEffect(() => {
     const handleNodeUpdate = (event: any) => {
       const { id, data } = event.detail;
-      setNodes((nds) =>
-        nds.map((node) => (node.id === id ? { ...node, data } : node)),
-      );
+      setNodes((nds) => {
+        // Update the source node
+        const updatedNodes = nds.map((node) =>
+          node.id === id ? { ...node, data } : node
+        );
+
+        // Propagate outputs to downstream nodes
+        const sourceNode = updatedNodes.find(n => n.id === id);
+        if (sourceNode?.data?.outputs) {
+          // Find all edges going OUT from this node
+          const outgoingEdges = edges.filter(e => e.source === id);
+
+          outgoingEdges.forEach(edge => {
+            const targetNodeIndex = updatedNodes.findIndex(n => n.id === edge.target);
+            if (targetNodeIndex !== -1) {
+              const targetNode = updatedNodes[targetNodeIndex];
+              const sourceHandle = edge.sourceHandle || 'default';
+              const targetHandle = edge.targetHandle || 'default';
+              const outputValue = sourceNode.data.outputs[sourceHandle];
+
+              if (outputValue !== undefined) {
+                // Update the target node's data with the incoming value
+                updatedNodes[targetNodeIndex] = {
+                  ...targetNode,
+                  data: {
+                    ...targetNode.data,
+                    [targetHandle]: outputValue,
+                  },
+                };
+              }
+            }
+          });
+        }
+
+        return updatedNodes;
+      });
     };
 
     window.addEventListener("node-update", handleNodeUpdate);
     return () => window.removeEventListener("node-update", handleNodeUpdate);
-  }, [setNodes]);
+  }, [setNodes, edges]);
 
   // Handle new connections between nodes
   const onConnect = useCallback(
