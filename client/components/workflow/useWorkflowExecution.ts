@@ -307,6 +307,19 @@ export function useWorkflowExecution(
                   (img: string) => `data:image/png;base64,${img}`,
                 );
 
+                // Save first image to library
+                try {
+                  await saveToLibrary({
+                    imageUrl: images[0],
+                    prompt: prompt,
+                    assetType: 'image'
+                  });
+                  console.log("[useWorkflowExecution] Image saved to library");
+                } catch (error) {
+                  console.error("[useWorkflowExecution] Failed to save image to library:", error);
+                  // Don't fail the workflow if save fails, just log it
+                }
+
                 // Notify that an asset was generated
                 if (onAssetGenerated) {
                   console.log(
