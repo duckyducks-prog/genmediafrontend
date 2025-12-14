@@ -211,6 +211,32 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
           <span>Gemini 3 Pro</span>
         </div>
 
+        {/* Run This Node Button */}
+        <Button
+          onClick={() => {
+            const event = new CustomEvent('node-execute', {
+              detail: { nodeId: id },
+            });
+            window.dispatchEvent(event);
+          }}
+          disabled={isGenerating}
+          className="w-full"
+          size="sm"
+          variant="default"
+        >
+          {isGenerating ? (
+            <>
+              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+              Generating...
+            </>
+          ) : (
+            <>
+              <Play className="w-3 h-3 mr-1" />
+              Run This Node
+            </>
+          )}
+        </Button>
+
         {/* Image Preview */}
         {isCompleted && imageUrl && (
           <div className="space-y-2">
