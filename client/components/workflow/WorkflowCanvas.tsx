@@ -85,14 +85,14 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
   useEffect(() => {
     const handleNodeExecute = (event: any) => {
       const { nodeId } = event.detail;
-      // Trigger execution for a single node
-      // This will be handled by the workflow execution system
       console.log("Execute node:", nodeId);
+      // Call the single node execution function
+      executeSingleNode(nodeId);
     };
 
     window.addEventListener("node-execute", handleNodeExecute);
     return () => window.removeEventListener("node-execute", handleNodeExecute);
-  }, []);
+  }, [executeSingleNode]);
 
   // Handle new connections between nodes
   const onConnect = useCallback(
