@@ -107,12 +107,6 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
               // This ensures both 'image' and 'filters' are passed to downstream nodes
               const allOutputs = sourceNode.data.outputs;
 
-              console.log('[WorkflowCanvas] Propagating all outputs:', {
-                from: edge.source,
-                to: edge.target,
-                outputKeys: Object.keys(allOutputs),
-              });
-
               // Update the target node's data with ALL outputs
               updatedNodes[targetNodeIndex] = {
                 ...targetNode,
@@ -155,12 +149,6 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
         // Immediately propagate ALL outputs through the new connection
         if (sourceNode.data?.outputs && params.target) {
           const allOutputs = sourceNode.data.outputs;
-
-          console.log('[WorkflowCanvas] Initial propagation on connect:', {
-            from: params.source,
-            to: params.target,
-            outputKeys: Object.keys(allOutputs),
-          });
 
           // Update target node with ALL source outputs
           setNodes((nds) =>
