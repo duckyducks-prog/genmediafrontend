@@ -31,6 +31,15 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
     const textInput = (data as any).text || (data as any).textContent;
     const filters: FilterConfig[] = (data as any).filters || [];
 
+    console.log('[PreviewNode] Data received:', {
+      nodeId: id,
+      hasImage: !!imageInput,
+      imagePreview: imageInput ? imageInput.substring(0, 50) + '...' : null,
+      filterCount: filters.length,
+      filters: filters,
+      allData: data,
+    });
+
     // Handle image with possible filters
     if (imageInput) {
       if (filters.length > 0) {
