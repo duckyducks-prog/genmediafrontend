@@ -13,6 +13,7 @@ import {
   executeFormat,
   pollVideoStatus,
   groupNodesByLevel,
+  findUpstreamDependencies,
 } from "./executionHelpers";
 import { auth } from "@/lib/firebase";
 import { saveToLibrary } from "@/lib/api-helpers";
