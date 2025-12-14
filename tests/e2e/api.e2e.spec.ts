@@ -254,6 +254,10 @@ describe('API E2E Tests', () => {
         }),
       });
 
+      if (response.status !== 200) {
+        const errorBody = await response.text();
+        console.error('Upscale error:', response.status, errorBody);
+      }
       expect(response.status).toBe(200);
 
       const data = await response.json();
@@ -276,6 +280,10 @@ describe('API E2E Tests', () => {
           }),
         });
 
+        if (response.status !== 200) {
+          const errorBody = await response.text();
+          console.error(`Upscale error (factor ${factor}):`, response.status, errorBody);
+        }
         expect(response.status).toBe(200);
         console.log(`✓ Upscaled image with factor ${factor}`);
       }
@@ -490,6 +498,10 @@ describe('API E2E Tests', () => {
         }),
       });
 
+      if (response.status !== 200) {
+        const errorBody = await response.text();
+        console.error('Library save error:', response.status, errorBody);
+      }
       expect(response.status).toBe(200);
 
       const data = await response.json();
