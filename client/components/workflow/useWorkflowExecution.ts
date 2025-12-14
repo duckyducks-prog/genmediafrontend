@@ -590,13 +590,29 @@ export function useWorkflowExecution(
           case NodeType.Download: {
             // Get media from input
             const mediaData = inputs["media-input"] || inputs || {};
-            const mediaUrl =
+            let mediaUrl =
               mediaData.image ||
               mediaData.video ||
               mediaData.imageUrl ||
               mediaData.videoUrl ||
               null;
             const isVideo = !!(mediaData.video || mediaData.videoUrl);
+            const filters: FilterConfig[] = inputs.filters || mediaData.filters || [];
+
+            // Apply filters to images before downloading (Layer 3 integration)
+            if (mediaUrl && !isVideo && filters.length > 0) {
+              console.log('[Download] Applying', filters.length, 'filters before download');
+              try {
+                mediaUrl = await renderWithPixi(mediaUrl, filters);
+              } catch (error) {
+                console.error('[Download] Filter rendering failed:', error);
+                toast({
+                  title: "Filter Error",
+                  description: "Failed to apply filters. Downloading original image.",
+                  variant: "destructive",
+                });
+              }
+            }
 
             if (mediaUrl) {
               try {
