@@ -68,7 +68,7 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
     } else {
       setDisplayContent({ type: "none", content: "" });
     }
-  }, [(data as any).image, (data as any).imageUrl, (data as any).video, (data as any).videoUrl, (data as any).text, (data as any).textContent, (data as any).filters]);
+  }, [data, id]); // React to any data changes
 
   const getBorderColor = () => {
     if (isExecuting) return "border-yellow-500";
