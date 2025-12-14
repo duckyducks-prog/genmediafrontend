@@ -241,7 +241,7 @@ describe('API E2E Tests', () => {
 
         console.log(`✓ Generated ${ratio} image`);
       }
-    }, TEST_TIMEOUT);
+    }, TEST_TIMEOUT * 2); // 4 minutes - generating 3 images sequentially
   });
 
   describe('Image Upscaling', () => {
