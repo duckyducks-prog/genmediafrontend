@@ -147,9 +147,9 @@ These endpoints require `Authorization: Bearer <token>` header:
 - `/generate/image` - Image generation
 - `/generate/video` - Video generation
 - `/generate/text` - Text generation (LLM)
-- `/upscale/image` - Image upscaling
+- `/generate/upscale` - Image upscaling
 - `/library` - Asset library (GET and DELETE)
-- `/video/status` - Video generation status polling
+- `/generate/video/status` - Video generation status polling
 
 ### How Authorization Works
 
