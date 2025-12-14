@@ -177,6 +177,52 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
             outputs: {},
           };
           break;
+        case NodeType.BrightnessContrast:
+          data = {
+            brightness: 0,
+            contrast: 0,
+            label: "Brightness/Contrast",
+            outputs: {},
+          };
+          break;
+        case NodeType.Blur:
+          data = {
+            strength: 8,
+            quality: 4,
+            label: "Blur",
+            outputs: {},
+          };
+          break;
+        case NodeType.Sharpen:
+          data = {
+            gamma: 1.0,
+            label: "Sharpen",
+            outputs: {},
+          };
+          break;
+        case NodeType.HueSaturation:
+          data = {
+            hue: 0,
+            saturation: 0,
+            label: "Hue/Saturation",
+            outputs: {},
+          };
+          break;
+        case NodeType.Noise:
+          data = {
+            noise: 0.5,
+            label: "Noise",
+            outputs: {},
+          };
+          break;
+        case NodeType.Vignette:
+          data = {
+            size: 0.5,
+            amount: 0.5,
+            label: "Vignette",
+            outputs: {},
+          };
+          break;
 
         // Action nodes
         case NodeType.GenerateImage:
