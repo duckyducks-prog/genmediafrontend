@@ -50,9 +50,9 @@ function MyComponent() {
 }
 ```
 
-### Get User ID and Email for API Calls
+### Get Authorization Token for API Calls
 
-**IMPORTANT:** All API calls MUST include both `user_id` and `user_email`.
+**IMPORTANT:** All API calls MUST include an `Authorization` header with the Firebase ID token.
 
 ```typescript
 import { auth } from "@/lib/firebase";
@@ -60,17 +60,20 @@ import { auth } from "@/lib/firebase";
 function MyComponent() {
   const handleGenerate = async () => {
     const user = auth.currentUser;
-    
+    const token = await user?.getIdToken();
+
     const response = await fetch('/api/generate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify({
-        prompt: "A beautiful sunset",
-        user_id: user?.uid,      // User ID
-        user_email: user?.email   // User Email (required for whitelist)
+        prompt: "A beautiful sunset"
+        // No longer need user_id or user_email
       })
     });
-    
+
     // Handle 403 - User not whitelisted
     if (response.status === 403) {
       toast({
@@ -88,10 +91,9 @@ function MyComponent() {
 ```typescript
 import { auth } from "@/lib/firebase";
 
-// Get current user synchronously
+// Get current user and token
 const user = auth.currentUser;
-const userId = user?.uid;
-const userEmail = user?.email;
+const token = await user?.getIdToken();
 ```
 
 ## Email Whitelisting
@@ -139,17 +141,28 @@ The header includes a "Sign Out" button that:
 
 ## API Requirements
 
-### All Generation Endpoints Require User Info
+### All Generation Endpoints Require Authorization Header
 
-These endpoints require `user_id` and `user_email` in the request body:
+These endpoints require `Authorization: Bearer <token>` header:
 - `/generate/image` - Image generation
 - `/generate/video` - Video generation
 - `/generate/text` - Text generation (LLM)
 - `/upscale/image` - Image upscaling
+- `/library` - Asset library (GET and DELETE)
+- `/video/status` - Video generation status polling
 
-### Why user_email is Required
+### How Authorization Works
 
-The backend uses `user_email` to check if the user is whitelisted. If the email is not in the whitelist, the API returns HTTP 403 (Forbidden).
+1. The frontend obtains a Firebase ID token using `auth.currentUser?.getIdToken()`
+2. The token is sent in the `Authorization` header as `Bearer <token>`
+3. The backend verifies the token and extracts user information (uid, email)
+4. The backend checks if the user's email is whitelisted
+5. If the email is not whitelisted, the API returns HTTP 403 (Forbidden)
+
+**Benefits:**
+- More secure: tokens are cryptographically signed and time-limited
+- No need to send user_id or user_email in request body
+- Backend extracts user info from verified token
 
 ### Handling 403 Errors
 
@@ -174,22 +187,24 @@ import { useToast } from "@/hooks/use-toast";
 
 function GenerateImageComponent() {
   const { toast } = useToast();
-  
+
   const generateImage = async (prompt: string) => {
     const user = auth.currentUser;
-    
+    const token = await user?.getIdToken();
+
     try {
       const response = await fetch('https://veo-api-82187245577.us-central1.run.app/generate/image', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           prompt: prompt,
-          user_id: user?.uid,
-          user_email: user?.email,
           aspect_ratio: "1:1"
         })
       });
-      
+
       if (response.status === 403) {
         toast({
           title: "Access Denied",
@@ -198,14 +213,14 @@ function GenerateImageComponent() {
         });
         return;
       }
-      
+
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
       }
-      
+
       const data = await response.json();
       // Handle success
-      
+
     } catch (error) {
       toast({
         title: "Error",
