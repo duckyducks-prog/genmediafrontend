@@ -319,6 +319,7 @@ export function useWorkflowExecution(
                   data: {
                     images,
                     image: images[0],
+                    imageUrl: images[0],
                   },
                 };
               } else {
