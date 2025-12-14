@@ -26,8 +26,24 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
   const isGenerating = data.isGenerating || status === 'executing';
   const isCompleted = status === 'completed';
   const isError = status === 'error';
-  const imageUrl = (data as any).imageUrl;
-  const images = (data as any).images || [];
+  const incomingImageUrl = data.imageUrl;
+  const images = data.images || [];
+
+  const [upscaleFactor, setUpscaleFactor] = useState<string>('x2');
+  const [isUpscaling, setIsUpscaling] = useState(false);
+  const [upscaleError, setUpscaleError] = useState<string | null>(null);
+  const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const imageUrl = currentImageUrl || incomingImageUrl;
+
+  // Reset to new incoming image when workflow executes
+  useEffect(() => {
+    if (incomingImageUrl && incomingImageUrl !== currentImageUrl) {
+      setCurrentImageUrl(null);
+      setUpscaleError(null);
+    }
+  }, [incomingImageUrl, currentImageUrl]);
 
   const getBorderColor = () => {
     if (isGenerating) return 'border-yellow-500';
@@ -43,11 +59,67 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
     return 'Ready';
   };
 
-  const handleGenerate = () => {
-    const event = new CustomEvent('node-execute', {
-      detail: { nodeId: id },
-    });
-    window.dispatchEvent(event);
+  const handleUpscale = async () => {
+    if (!imageUrl || isUpscaling) return;
+
+    setIsUpscaling(true);
+    setUpscaleError(null);
+
+    try {
+      let base64Image = imageUrl;
+      if (imageUrl.startsWith('data:')) {
+        base64Image = imageUrl.split(',')[1];
+      }
+
+      const user = auth.currentUser;
+      const token = await user?.getIdToken();
+
+      const response = await fetch(
+        'https://veo-api-82187245577.us-central1.run.app/upscale/image',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            image: base64Image,
+            upscale_factor: upscaleFactor,
+          }),
+        },
+      );
+
+      if (response.status === 403) {
+        toast({
+          title: 'Access Denied',
+          description: 'Access denied. Contact administrator.',
+          variant: 'destructive',
+        });
+        setUpscaleError('Access denied. Contact administrator.');
+        return;
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Upscale failed: ${response.status} ${errorText}`);
+      }
+
+      const result = await response.json();
+
+      if (result.image) {
+        const mimeType = result.mime_type || 'image/png';
+        setCurrentImageUrl(`data:${mimeType};base64,${result.image}`);
+      } else {
+        throw new Error('No image returned from upscale API');
+      }
+    } catch (error) {
+      console.error('Upscale error:', error);
+      setUpscaleError(
+        error instanceof Error ? error.message : 'Upscale failed',
+      );
+    } finally {
+      setIsUpscaling(false);
+    }
   };
 
   const handleDownload = async () => {
