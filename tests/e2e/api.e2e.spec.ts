@@ -246,10 +246,15 @@ describe('API E2E Tests', () => {
     it('should upscale an image', async () => {
       if (!authToken || !testImageBase64) return;
 
+      // Wrap base64 in data URI if not already formatted
+      const imageData = testImageBase64.startsWith('data:')
+        ? testImageBase64
+        : `data:image/png;base64,${testImageBase64}`;
+
       const response = await apiRequest('/generate/upscale', {
         method: 'POST',
         body: JSON.stringify({
-          image: testImageBase64,
+          image: imageData,
           upscale_factor: 2,
         }),
       });
@@ -272,10 +277,15 @@ describe('API E2E Tests', () => {
       if (!authToken || !testImageBase64) return;
 
       for (const factor of [2, 4]) {
+        // Wrap base64 in data URI if not already formatted
+        const imageData = testImageBase64.startsWith('data:')
+          ? testImageBase64
+          : `data:image/png;base64,${testImageBase64}`;
+
         const response = await apiRequest('/generate/upscale', {
           method: 'POST',
           body: JSON.stringify({
-            image: testImageBase64,
+            image: imageData,
             upscale_factor: factor,
           }),
         });
@@ -487,11 +497,16 @@ describe('API E2E Tests', () => {
       const genData = await genResponse.json();
       const imageBase64 = genData.images[0]; // API returns images array
 
+      // Wrap base64 in data URI if not already formatted
+      const imageData = imageBase64.startsWith('data:')
+        ? imageBase64
+        : `data:image/png;base64,${imageBase64}`;
+
       // Save to library
       const response = await apiRequest('/library/save', {
         method: 'POST',
         body: JSON.stringify({
-          image_data: imageBase64,
+          image_data: imageData,
           prompt: 'Test library asset - colorful abstract pattern',
           asset_type: 'image',
           mime_type: 'image/png',
@@ -652,10 +667,15 @@ describe('API E2E Tests', () => {
 
       // Step 2: Upscale image
       console.log('Step 2: Upscaling image...');
+      // Wrap base64 in data URI if not already formatted
+      const imageDataForUpscale = originalImage.startsWith('data:')
+        ? originalImage
+        : `data:image/png;base64,${originalImage}`;
+
       const upscaleResponse = await apiRequest('/generate/upscale', {
         method: 'POST',
         body: JSON.stringify({
-          image: originalImage,
+          image: imageDataForUpscale,
           upscale_factor: 2,
         }),
       });
@@ -666,10 +686,15 @@ describe('API E2E Tests', () => {
 
       // Step 3: Save to library
       console.log('Step 3: Saving to library...');
+      // Wrap base64 in data URI if not already formatted
+      const imageDataForSave = upscaledImage.startsWith('data:')
+        ? upscaledImage
+        : `data:image/png;base64,${upscaledImage}`;
+
       const saveResponse = await apiRequest('/library/save', {
         method: 'POST',
         body: JSON.stringify({
-          image_data: upscaledImage,
+          image_data: imageDataForSave,
           prompt: 'Workflow test - simple geometric shapes (upscaled)',
           asset_type: 'image',
           mime_type: 'image/png',
