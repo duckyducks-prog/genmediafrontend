@@ -10,6 +10,7 @@ import {
   AlertCircle,
   Download,
   AlertTriangle,
+  Play,
 } from 'lucide-react';
 
 function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
