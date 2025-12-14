@@ -1,4 +1,4 @@
-import { Type, Image, Sparkles, Settings, Combine, Brain, Upload, Video, Download, Eye } from "lucide-react";
+import { Type, Image, Sparkles, Settings, Combine, Brain, Upload, Video, Download, Eye, Sun } from "lucide-react";
 import { NodeType, NODE_CONFIGURATIONS } from "./types";
 
 interface PaletteNode {
@@ -40,6 +40,13 @@ const paletteNodes: PaletteNode[] = [
     icon: <Settings className="w-4 h-4" />,
     category: "modifier",
     description: "Configure generation settings",
+  },
+  {
+    type: NodeType.BrightnessContrast,
+    label: "Brightness/Contrast",
+    icon: <Sun className="w-4 h-4" />,
+    category: "modifier",
+    description: "Adjust brightness and contrast",
   },
 
   // ACTION NODES
