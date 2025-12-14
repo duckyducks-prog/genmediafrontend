@@ -2,6 +2,8 @@ import { memo } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { DownloadNodeData } from "../types";
 import { Download, CheckCircle2, Loader2 } from "lucide-react";
+import { renderWithPixi } from "@/lib/pixi-renderer";
+import { FilterConfig } from "@/lib/pixi-filter-configs";
 
 function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
   const status = (data as any).status || "ready";

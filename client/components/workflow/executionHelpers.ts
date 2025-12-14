@@ -215,6 +215,58 @@ export function groupNodesByLevel(
 }
 
 /**
+ * Collect all FilterConfig objects from upstream nodes recursively
+ */
+export function collectFilterConfigs(
+  nodeId: string,
+  nodes: WorkflowNode[],
+  edges: WorkflowEdge[],
+): any[] {
+  const filters: any[] = [];
+  const visited = new Set<string>();
+
+  function traverse(currentNodeId: string) {
+    if (visited.has(currentNodeId)) return;
+    visited.add(currentNodeId);
+
+    const currentNode = nodes.find((n) => n.id === currentNodeId);
+    if (!currentNode) return;
+
+    // Find incoming edges
+    const incomingEdges = edges.filter((e) => e.target === currentNodeId);
+
+    // Recursively collect from source nodes
+    incomingEdges.forEach((edge) => {
+      traverse(edge.source);
+
+      // Check if this edge carries filters
+      const sourceNode = nodes.find((n) => n.id === edge.source);
+      if (sourceNode?.data?.outputs?.filters) {
+        const sourceFilters = sourceNode.data.outputs.filters;
+        if (Array.isArray(sourceFilters)) {
+          filters.push(...sourceFilters);
+        }
+      }
+    });
+  }
+
+  traverse(nodeId);
+  return filters;
+}
+
+/**
+ * Check if a node has upstream modifier nodes
+ */
+export function hasUpstreamModifiers(
+  nodeId: string,
+  nodes: WorkflowNode[],
+  edges: WorkflowEdge[],
+): boolean {
+  const filters = collectFilterConfigs(nodeId, nodes, edges);
+  return filters.length > 0;
+}
+
+/**
  * Poll video status endpoint
  */
 export async function pollVideoStatus(
