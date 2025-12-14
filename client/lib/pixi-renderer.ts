@@ -182,9 +182,26 @@ async function performRender(
 
   const dataURL = canvas.toDataURL('image/png');
 
-  // 9. Cleanup texture and sprite (keep the app/context alive)
-  sprite.destroy({ children: true });
-  texture.destroy(false);
+  // 9. Cleanup resources (keep the app/context alive)
+  // Destroy filters explicitly to free GPU resources (shaders, uniforms, buffers)
+  if (sprite.filters && Array.isArray(sprite.filters)) {
+    sprite.filters.forEach(filter => {
+      if (filter && typeof filter.destroy === 'function') {
+        try {
+          filter.destroy();
+        } catch (error) {
+          console.warn('Failed to destroy filter:', error);
+        }
+      }
+    });
+    sprite.filters = null;
+  }
+
+  // Destroy sprite and its children (but preserve texture for proper cleanup)
+  sprite.destroy({ children: true, texture: false, baseTexture: false });
+
+  // Destroy texture and its base texture to free GPU memory
+  texture.destroy(true);
 
   return dataURL;
 }
