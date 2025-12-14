@@ -668,6 +668,13 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         acceptsMultiple: false,
       },
       {
+        id: "filters",
+        label: "Filters",
+        type: ConnectorType.Any, // Array of FilterConfig
+        required: false,
+        acceptsMultiple: false,
+      },
+      {
         id: "video",
         label: "Video",
         type: ConnectorType.Video,
