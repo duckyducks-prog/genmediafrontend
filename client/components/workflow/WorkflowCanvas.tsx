@@ -37,6 +37,7 @@ import PromptConcatenatorNode from "./nodes/PromptConcatenatorNode";
 import FormatNode from "./nodes/FormatNode";
 import LLMNode from "./nodes/LLMNode";
 import PreviewNode from "./nodes/PreviewNode";
+import BrightnessContrastNode from "./nodes/BrightnessContrastNode";
 
 const nodeTypes: NodeTypes = {
   // Input nodes
@@ -46,6 +47,7 @@ const nodeTypes: NodeTypes = {
   // Modifier nodes
   [NodeType.PromptConcatenator]: PromptConcatenatorNode,
   [NodeType.Format]: FormatNode,
+  [NodeType.BrightnessContrast]: BrightnessContrastNode,
 
   // Action nodes
   [NodeType.GenerateImage]: GenerateImageNode,
