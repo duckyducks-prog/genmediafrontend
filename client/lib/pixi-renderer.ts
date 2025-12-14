@@ -5,22 +5,64 @@ import { FilterConfig, FILTER_DEFINITIONS } from './pixi-filter-configs';
 /**
  * Singleton PixiJS Application to avoid WebGL context exhaustion
  * Browsers limit the number of active WebGL contexts (typically 8-16)
+ *
+ * Uses promise-based initialization to prevent race conditions where
+ * multiple concurrent calls could create multiple Application instances.
  */
 let sharedApp: Application | null = null;
+let sharedAppInitPromise: Promise<Application> | null = null;
 
 async function getSharedApp(): Promise<Application> {
-  if (!sharedApp) {
-    sharedApp = new Application();
-    await sharedApp.init({
-      backgroundAlpha: 0,
-      antialias: true,
-      autoStart: false,
-      width: 1024,
-      height: 1024,
-      preference: 'webgl',
-    });
+  // Return existing app if already initialized
+  if (sharedApp) {
+    return sharedApp;
   }
-  return sharedApp;
+
+  // Return in-flight initialization promise if already starting
+  if (sharedAppInitPromise) {
+    return sharedAppInitPromise;
+  }
+
+  // Start new initialization with error recovery
+  sharedAppInitPromise = (async () => {
+    try {
+      const app = new Application();
+      await app.init({
+        backgroundAlpha: 0,
+        antialias: true,
+        autoStart: false,
+        width: 1024,
+        height: 1024,
+        preference: 'webgl',
+      });
+
+      sharedApp = app;
+      sharedAppInitPromise = null; // Clear promise after success
+      return app;
+    } catch (error) {
+      sharedAppInitPromise = null; // Clear promise to allow retry
+      throw new Error(`Failed to initialize PixiJS: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  })();
+
+  return sharedAppInitPromise;
+}
+
+/**
+ * Disposes the shared PixiJS application and clears all references.
+ * Call this to force cleanup of WebGL context (e.g., on page unload or reset).
+ * After calling this, the next render will create a new Application.
+ */
+export function disposeSharedPixiApp(): void {
+  if (sharedApp) {
+    try {
+      sharedApp.destroy(true, { children: true, texture: true, textureSource: true });
+    } catch (error) {
+      console.error('Error disposing PixiJS app:', error);
+    }
+    sharedApp = null;
+  }
+  sharedAppInitPromise = null;
 }
 
 /**
