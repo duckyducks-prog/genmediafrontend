@@ -80,7 +80,7 @@ function HueSaturationNode({ data, id }: NodeProps<HueSaturationNodeData>) {
 
   useEffect(() => {
     updateOutputs(data.hue, data.saturation);
-  }, []);
+  }, [data.hue, data.saturation, imageInput, upstreamFilters, updateOutputs]);
 
   const def = FILTER_DEFINITIONS.hueSaturation;
 

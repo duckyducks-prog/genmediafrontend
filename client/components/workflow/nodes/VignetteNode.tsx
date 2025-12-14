@@ -80,7 +80,7 @@ function VignetteNode({ data, id }: NodeProps<VignetteNodeData>) {
 
   useEffect(() => {
     updateOutputs(data.size, data.amount);
-  }, []);
+  }, [data.size, data.amount, imageInput, upstreamFilters, updateOutputs]);
 
   const def = FILTER_DEFINITIONS.vignette;
 
