@@ -765,9 +765,114 @@ export function useWorkflowExecution(
     );
   }, [setNodes]);
 
+  // Execute a single node with automatic dependency resolution
+  const executeSingleNode = useCallback(
+    async (nodeId: string) => {
+      const targetNode = nodes.find((n) => n.id === nodeId);
+
+      if (!targetNode) {
+        toast({
+          title: "Node Not Found",
+          description: "The selected node could not be found.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Executing Node",
+        description: `Running ${targetNode.data.label || targetNode.type}...`,
+      });
+
+      try {
+        // Find upstream dependencies
+        const dependencies = findUpstreamDependencies(nodeId, nodes, edges);
+
+        console.log(
+          `[Single Node Execution] Target: ${nodeId}, Dependencies: ${dependencies.join(", ") || "none"}`,
+        );
+
+        // Execute dependencies first
+        for (const depNodeId of dependencies) {
+          const depNode = nodes.find((n) => n.id === depNodeId);
+          if (!depNode) continue;
+
+          updateNodeState(depNodeId, "executing");
+
+          const inputs = getNodeInputs(depNodeId);
+          const validation = validateNodeInputs(depNode, inputs);
+
+          if (!validation.valid) {
+            updateNodeState(depNodeId, "error", { error: validation.error });
+            throw new Error(`Dependency failed: ${validation.error}`);
+          }
+
+          const result = await executeNode(depNode, inputs);
+
+          if (!result.success) {
+            updateNodeState(depNodeId, "error", { error: result.error });
+            throw new Error(`Dependency failed: ${result.error}`);
+          }
+
+          updateNodeState(depNodeId, "completed", {
+            ...result.data,
+            outputs: result.data,
+          });
+        }
+
+        // Execute target node
+        updateNodeState(nodeId, "executing");
+
+        const inputs = getNodeInputs(nodeId);
+        const validation = validateNodeInputs(targetNode, inputs);
+
+        if (!validation.valid) {
+          updateNodeState(nodeId, "error", { error: validation.error });
+          toast({
+            title: "Validation Error",
+            description: validation.error,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const result = await executeNode(targetNode, inputs);
+
+        if (!result.success) {
+          updateNodeState(nodeId, "error", { error: result.error });
+          toast({
+            title: "Execution Failed",
+            description: result.error,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        updateNodeState(nodeId, "completed", {
+          ...result.data,
+          outputs: result.data,
+        });
+
+        toast({
+          title: "Success",
+          description: `${targetNode.data.label || targetNode.type} executed successfully!`,
+        });
+      } catch (error) {
+        console.error("[Single Node Execution] Error:", error);
+        toast({
+          title: "Execution Error",
+          description: error instanceof Error ? error.message : "Unknown error",
+          variant: "destructive",
+        });
+      }
+    },
+    [nodes, edges, getNodeInputs, executeNode, updateNodeState],
+  );
+
   return {
     executeWorkflow,
     resetWorkflow,
+    executeSingleNode,
     isExecuting,
     executionProgress,
   };
