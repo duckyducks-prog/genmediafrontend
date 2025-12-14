@@ -79,8 +79,15 @@ export async function renderWithPixi(
     // 2. Load image as PixiJS texture
     const texture = await Texture.from(imageSource);
 
+    // Ensure texture is valid
+    if (!texture || !texture.source) {
+      throw new Error('Failed to load texture from image source');
+    }
+
     // Resize app to match image dimensions
-    app.renderer.resize(texture.width, texture.height);
+    const width = texture.source.width || texture.width || 1024;
+    const height = texture.source.height || texture.height || 1024;
+    app.renderer.resize(width, height);
 
     // 3. Create sprite from texture
     const sprite = new Sprite(texture);
