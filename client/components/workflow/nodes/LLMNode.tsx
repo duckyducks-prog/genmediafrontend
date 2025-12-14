@@ -113,26 +113,6 @@ function LLMNode({ data, id }: NodeProps<LLMNodeData>) {
           </div>
         </div>
 
-        {/* Run Button */}
-        <Button
-          onClick={handleRun}
-          disabled={isGenerating}
-          className="w-full"
-          size="sm"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <Play className="w-3 h-3 mr-1" />
-              Run
-            </>
-          )}
-        </Button>
-
         {/* Response Preview */}
         {data.responsePreview && (
           <div className="bg-muted/50 p-3 rounded border border-border max-h-[120px] overflow-y-auto">
@@ -146,6 +126,27 @@ function LLMNode({ data, id }: NodeProps<LLMNodeData>) {
             {data.error}
           </div>
         )}
+
+        {/* Run Node Button */}
+        <Button
+          onClick={handleRun}
+          disabled={isGenerating}
+          variant="ghost"
+          size="sm"
+          className="w-full text-xs"
+        >
+          {isGenerating ? (
+            <>
+              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+              Generating...
+            </>
+          ) : (
+            <>
+              <Play className="w-3 h-3 mr-1" />
+              Run Node
+            </>
+          )}
+        </Button>
       </div>
 
       {/* Output Handle - Right side */}
