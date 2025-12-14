@@ -3,6 +3,27 @@ import { AdjustmentFilter } from 'pixi-filters';
 import { FilterConfig, FILTER_DEFINITIONS } from './pixi-filter-configs';
 
 /**
+ * Singleton PixiJS Application to avoid WebGL context exhaustion
+ * Browsers limit the number of active WebGL contexts (typically 8-16)
+ */
+let sharedApp: Application | null = null;
+
+async function getSharedApp(): Promise<Application> {
+  if (!sharedApp) {
+    sharedApp = new Application();
+    await sharedApp.init({
+      backgroundAlpha: 0,
+      antialias: true,
+      autoStart: false,
+      width: 1024,
+      height: 1024,
+      preference: 'webgl',
+    });
+  }
+  return sharedApp;
+}
+
+/**
  * Creates a PixiJS Filter instance from a FilterConfig
  * This is the ONLY place where Filter instances are created
  */
@@ -65,72 +86,63 @@ export async function renderWithPixi(
   imageSource: string,
   filterConfigs: FilterConfig[]
 ): Promise<string> {
-  // 1. Create off-screen PixiJS application (headless)
-  const app = new Application();
-  await app.init({
-    backgroundAlpha: 0,
-    antialias: true,
-    autoStart: false,
-    width: 1024, // Will be adjusted to image size
-    height: 1024,
-    preference: 'webgl', // Force WebGL for better compatibility
+  // 1. Get shared PixiJS application (reuses WebGL context)
+  const app = await getSharedApp();
+
+  // 2. Load image into HTMLImageElement first (for base64 data URIs)
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+
+  await new Promise<void>((resolve, reject) => {
+    img.onload = () => resolve();
+    img.onerror = () => reject(new Error('Failed to load image'));
+    img.src = imageSource;
   });
 
-  try {
-    // 2. Load image into HTMLImageElement first (for base64 data URIs)
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
+  // 3. Create texture from the loaded image
+  const texture = Texture.from(img);
 
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error('Failed to load image'));
-      img.src = imageSource;
-    });
-
-    // 3. Create texture from the loaded image
-    const texture = Texture.from(img);
-
-    // Ensure texture is valid
-    if (!texture || !texture.source) {
-      throw new Error('Failed to create texture from image');
-    }
-
-    // Resize app to match image dimensions
-    const width = img.width || 1024;
-    const height = img.height || 1024;
-    app.renderer.resize(width, height);
-
-    // 4. Create sprite from texture
-    const sprite = new Sprite(texture);
-    sprite.width = width;
-    sprite.height = height;
-
-    // 5. Build filter array from configs (Layer 2 logic)
-    if (filterConfigs.length > 0) {
-      const filters = filterConfigs.map(config => createFilterFromConfig(config));
-      sprite.filters = filters; // PixiJS applies all filters on GPU
-    }
-
-    // 6. Add to stage and render
-    app.stage.addChild(sprite);
-    app.renderer.render(app.stage);
-
-    // 7. Extract as base64 (Layer 3 logic)
-    // In PixiJS v8, the canvas is accessed via app.canvas
-    const canvas = app.canvas as HTMLCanvasElement;
-    if (!canvas) {
-      throw new Error('Failed to get canvas from app');
-    }
-    const dataURL = canvas.toDataURL('image/png');
-
-    // Cleanup texture (but not the source image)
-    texture.destroy(false);
-
-    return dataURL;
-  } finally {
-    // 8. Cleanup to prevent memory leaks
-    app.destroy(true, { children: true });
+  // Ensure texture is valid
+  if (!texture || !texture.source) {
+    throw new Error('Failed to create texture from image');
   }
+
+  // Resize app to match image dimensions
+  const width = img.width || 1024;
+  const height = img.height || 1024;
+  app.renderer.resize(width, height);
+
+  // 4. Clear the stage from previous renders
+  app.stage.removeChildren();
+
+  // 5. Create sprite from texture
+  const sprite = new Sprite(texture);
+  sprite.width = width;
+  sprite.height = height;
+
+  // 6. Build filter array from configs (Layer 2 logic)
+  if (filterConfigs.length > 0) {
+    const filters = filterConfigs.map(config => createFilterFromConfig(config));
+    sprite.filters = filters; // PixiJS applies all filters on GPU
+  }
+
+  // 7. Add to stage and render
+  app.stage.addChild(sprite);
+  app.renderer.render(app.stage);
+
+  // 8. Extract as base64 (Layer 3 logic)
+  const canvas = app.canvas as HTMLCanvasElement;
+  if (!canvas) {
+    throw new Error('Failed to get canvas from app');
+  }
+
+  const dataURL = canvas.toDataURL('image/png');
+
+  // 9. Cleanup texture and sprite (keep the app/context alive)
+  sprite.destroy({ children: true });
+  texture.destroy(false);
+
+  return dataURL;
 }
 
 /**
