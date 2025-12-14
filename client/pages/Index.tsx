@@ -109,6 +109,14 @@ export default function Index() {
       const data = await response.json();
       if (data.images && data.images[0]) {
         setImageResult(`data:image/png;base64,${data.images[0]}`);
+
+        // Refresh library after a short delay to allow backend to save
+        setTimeout(() => {
+          console.log("[Index] Refreshing library after image generation");
+          if (assetLibraryRef.current) {
+            assetLibraryRef.current.refresh();
+          }
+        }, 2000);
       }
     } catch (error) {
       console.error("Error generating image:", error);
