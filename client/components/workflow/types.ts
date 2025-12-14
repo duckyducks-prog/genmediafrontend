@@ -8,20 +8,23 @@ export enum NodeType {
   // INPUT nodes (no input connectors, only outputs)
   ImageInput = "imageInput",
   Prompt = "prompt",
-  
+
   // MODIFIER nodes (both input and output connectors)
   PromptConcatenator = "promptConcatenator",
   Format = "format",
-  
+
   // ACTION nodes (inputs and outputs)
   GenerateVideo = "generateVideo",
   GenerateImage = "generateImage",
   LLM = "llm",
-  
+
+  // ACTION/OUTPUT nodes
+  Preview = "preview",
+  Download = "download",
+
   // Legacy/utility nodes
   ImageOutput = "imageOutput",
   VideoOutput = "videoOutput",
-  Download = "download",
 }
 
 // ============================================================================
