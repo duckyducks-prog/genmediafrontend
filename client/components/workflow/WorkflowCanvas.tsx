@@ -81,19 +81,6 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
     return () => window.removeEventListener("node-update", handleNodeUpdate);
   }, [setNodes]);
 
-  // Listen for node execute events
-  useEffect(() => {
-    const handleNodeExecute = (event: any) => {
-      const { nodeId } = event.detail;
-      console.log("Execute node:", nodeId);
-      // Call the single node execution function
-      executeSingleNode(nodeId);
-    };
-
-    window.addEventListener("node-execute", handleNodeExecute);
-    return () => window.removeEventListener("node-execute", handleNodeExecute);
-  }, [executeSingleNode]);
-
   // Handle new connections between nodes
   const onConnect = useCallback(
     (params: Connection | Edge) => {
