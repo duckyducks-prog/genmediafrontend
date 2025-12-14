@@ -540,7 +540,7 @@ describe('API E2E Tests', () => {
       const response = await apiRequest('/library/save', {
         method: 'POST',
         body: JSON.stringify({
-          image_data: base64Image,
+          data: base64Image,
           prompt: 'Test library asset - colorful abstract pattern',
           asset_type: 'image',
           mime_type: 'image/png',
@@ -558,7 +558,7 @@ describe('API E2E Tests', () => {
             prompt: 'Test library asset - colorful abstract pattern',
             asset_type: 'image',
             mime_type: 'image/png',
-            image_data_preview: base64Image.substring(0, 100) + '...'
+            data_preview: base64Image.substring(0, 100) + '...'
           }
         });
       }
@@ -733,7 +733,7 @@ describe('API E2E Tests', () => {
       const saveResponse = await apiRequest('/library/save', {
         method: 'POST',
         body: JSON.stringify({
-          image_data: base64ForSave,
+          data: base64ForSave,
           prompt: 'Workflow test - simple geometric shapes (upscaled)',
           asset_type: 'image',
           mime_type: 'image/png',
