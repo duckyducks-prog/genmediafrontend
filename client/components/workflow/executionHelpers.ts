@@ -90,6 +90,40 @@ export function validateNodeInputs(
 }
 
 /**
+ * Find all upstream dependencies for a node (recursive)
+ * Returns array of node IDs in execution order (topologically sorted)
+ */
+export function findUpstreamDependencies(
+  nodeId: string,
+  nodes: WorkflowNode[],
+  edges: WorkflowEdge[],
+): string[] {
+  const visited = new Set<string>();
+  const dependencies: string[] = [];
+
+  function traverse(currentNodeId: string) {
+    if (visited.has(currentNodeId)) return;
+    visited.add(currentNodeId);
+
+    // Find all edges that connect TO this node
+    const incomingEdges = edges.filter((edge) => edge.target === currentNodeId);
+
+    // Recursively visit source nodes
+    incomingEdges.forEach((edge) => {
+      traverse(edge.source);
+    });
+
+    // Add current node AFTER its dependencies (post-order traversal)
+    if (currentNodeId !== nodeId) {
+      dependencies.push(currentNodeId);
+    }
+  }
+
+  traverse(nodeId);
+  return dependencies;
+}
+
+/**
  * Execute prompt concatenator logic (frontend only, no API call)
  */
 export function executeConcatenator(
