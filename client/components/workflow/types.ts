@@ -566,6 +566,13 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         acceptsMultiple: true, // Can accept multiple Image Input connections
       },
       {
+        id: "filters",
+        label: "Filters",
+        type: ConnectorType.Any, // Array of FilterConfig
+        required: false,
+        acceptsMultiple: false,
+      },
+      {
         id: "format",
         label: "Format",
         type: ConnectorType.Format,
