@@ -273,11 +273,7 @@ describe('API E2E Tests', () => {
     it('should upscale an image', async () => {
       if (!authToken || !testImageBase64) return;
 
-      // Ensure we're sending plain base64 (remove data URI prefix if present)
-      let base64Image = testImageBase64;
-      if (testImageBase64.startsWith('data:')) {
-        base64Image = testImageBase64.split(',')[1];
-      }
+      const base64Image = cleanBase64(testImageBase64);
 
       const response = await apiRequest('/generate/upscale', {
         method: 'POST',
@@ -289,9 +285,13 @@ describe('API E2E Tests', () => {
 
       if (response.status !== 200) {
         const errorBody = await response.text();
-        console.error('Upscale error:', response.status, errorBody);
-        console.error('Image data length:', base64Image.length);
-        console.error('Image data preview:', base64Image.substring(0, 100));
+        console.error('Upscale error response:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorBody,
+          imageLength: base64Image.length,
+          imagePreview: base64Image.substring(0, 100) + '...'
+        });
       }
       expect(response.status).toBe(200);
 
@@ -307,11 +307,7 @@ describe('API E2E Tests', () => {
       if (!authToken || !testImageBase64) return;
 
       for (const factor of [2, 4]) {
-        // Ensure we're sending plain base64 (remove data URI prefix if present)
-        let base64Image = testImageBase64;
-        if (testImageBase64.startsWith('data:')) {
-          base64Image = testImageBase64.split(',')[1];
-        }
+        const base64Image = cleanBase64(testImageBase64);
 
         const response = await apiRequest('/generate/upscale', {
           method: 'POST',
@@ -323,7 +319,11 @@ describe('API E2E Tests', () => {
 
         if (response.status !== 200) {
           const errorBody = await response.text();
-          console.error(`Upscale error (factor ${factor}):`, response.status, errorBody);
+          console.error(`Upscale error (factor ${factor}):`, {
+            status: response.status,
+            statusText: response.statusText,
+            body: errorBody
+          });
         }
         expect(response.status).toBe(200);
         console.log(`✓ Upscaled image with factor ${factor}`);
@@ -534,11 +534,7 @@ describe('API E2E Tests', () => {
         throw new Error('Failed to generate valid image for library save test');
       }
 
-      // Ensure we're sending plain base64 (remove data URI prefix if present)
-      let base64Image = imageBase64;
-      if (imageBase64.startsWith('data:')) {
-        base64Image = imageBase64.split(',')[1];
-      }
+      const base64Image = cleanBase64(imageBase64);
 
       // Save to library
       const response = await apiRequest('/library/save', {
@@ -553,7 +549,18 @@ describe('API E2E Tests', () => {
 
       if (response.status !== 200) {
         const errorBody = await response.text();
-        console.error('Library save error:', response.status, errorBody);
+        console.error('Library save error:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorBody,
+          imageLength: base64Image.length,
+          requestPayload: {
+            prompt: 'Test library asset - colorful abstract pattern',
+            asset_type: 'image',
+            mime_type: 'image/png',
+            image_data_preview: base64Image.substring(0, 100) + '...'
+          }
+        });
       }
       expect(response.status).toBe(200);
 
@@ -705,11 +712,7 @@ describe('API E2E Tests', () => {
 
       // Step 2: Upscale image
       console.log('Step 2: Upscaling image...');
-      // Ensure we're sending plain base64
-      let base64ForUpscale = originalImage;
-      if (originalImage.startsWith('data:')) {
-        base64ForUpscale = originalImage.split(',')[1];
-      }
+      const base64ForUpscale = cleanBase64(originalImage);
 
       const upscaleResponse = await apiRequest('/generate/upscale', {
         method: 'POST',
@@ -725,11 +728,7 @@ describe('API E2E Tests', () => {
 
       // Step 3: Save to library
       console.log('Step 3: Saving to library...');
-      // Ensure we're sending plain base64
-      let base64ForSave = upscaledImage;
-      if (upscaledImage.startsWith('data:')) {
-        base64ForSave = upscaledImage.split(',')[1];
-      }
+      const base64ForSave = cleanBase64(upscaledImage);
 
       const saveResponse = await apiRequest('/library/save', {
         method: 'POST',
