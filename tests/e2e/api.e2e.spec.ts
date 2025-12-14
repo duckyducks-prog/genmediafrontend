@@ -279,7 +279,7 @@ describe('API E2E Tests', () => {
         method: 'POST',
         body: JSON.stringify({
           image: base64Image,
-          upscale_factor: 2,
+          upscale_factor: 'x2',
         }),
       });
 
@@ -306,7 +306,7 @@ describe('API E2E Tests', () => {
     it('should handle different upscale factors', async () => {
       if (!authToken || !testImageBase64) return;
 
-      for (const factor of [2, 4]) {
+      for (const factor of ['x2', 'x4']) {
         const base64Image = cleanBase64(testImageBase64);
 
         const response = await apiRequest('/generate/upscale', {
@@ -718,7 +718,7 @@ describe('API E2E Tests', () => {
         method: 'POST',
         body: JSON.stringify({
           image: base64ForUpscale,
-          upscale_factor: 2,
+          upscale_factor: 'x2',
         }),
       });
       expect(upscaleResponse.status).toBe(200);
