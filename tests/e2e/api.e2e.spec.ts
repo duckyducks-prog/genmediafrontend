@@ -1,8 +1,8 @@
 /**
  * End-to-End API Tests
- * 
+ *
  * These tests hit the real backend API to verify all functionality works correctly.
- * 
+ *
  * Setup:
  * 1. Set environment variable: FIREBASE_TEST_TOKEN=<your-firebase-id-token>
  *    To get a token:
@@ -10,13 +10,22 @@
  *    - Open DevTools Console
  *    - Run: await firebase.auth().currentUser.getIdToken()
  *    - Copy the token and set it as an env var
- * 
+ *
  * 2. Or use FIREBASE_TEST_EMAIL and FIREBASE_TEST_PASSWORD for automated login
- * 
+ *
  * Run tests:
  * - All tests: npm test tests/e2e/api.e2e.spec.ts
  * - Single test: npm test tests/e2e/api.e2e.spec.ts -t "generate image"
  * - Watch mode: npm test tests/e2e/api.e2e.spec.ts --watch
+ *
+ * API Response Formats (as of current backend implementation):
+ * - /generate/image → { images: ["base64..."] } - array of base64 images
+ * - /generate/upscale → { image: "base64...", mime_type: "image/png" }
+ * - /generate/video → { operation_name: "operations/..." }
+ * - /generate/video/status → { status: "complete|pending|failed", video_base64: "..." }
+ * - /generate/text → { response: "generated text..." }
+ * - /library (GET) → array of assets or { assets: [...] }
+ * - /library (POST) → { id: "..." } or { asset_id: "..." }
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
