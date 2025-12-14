@@ -737,6 +737,13 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         required: false,
         acceptsMultiple: false,
       },
+      {
+        id: "filters",
+        label: "Filters",
+        type: ConnectorType.Any, // Array of FilterConfig
+        required: false,
+        acceptsMultiple: false,
+      },
     ],
     outputConnectors: [],
   },
