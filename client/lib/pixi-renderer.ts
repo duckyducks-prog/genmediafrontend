@@ -73,20 +73,31 @@ export async function renderWithPixi(
     autoStart: false,
     width: 1024, // Will be adjusted to image size
     height: 1024,
+    preference: 'webgl', // Force WebGL for better compatibility
   });
 
   try {
-    // 2. Load image as PixiJS texture
-    const texture = await Texture.from(imageSource);
+    // 2. Load image into HTMLImageElement first (for base64 data URIs)
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = imageSource;
+    });
+
+    // 3. Create texture from the loaded image
+    const texture = Texture.from(img);
 
     // Ensure texture is valid
     if (!texture || !texture.source) {
-      throw new Error('Failed to load texture from image source');
+      throw new Error('Failed to create texture from image');
     }
 
     // Resize app to match image dimensions
-    const width = texture.source.width || texture.width || 1024;
-    const height = texture.source.height || texture.height || 1024;
+    const width = img.width || 1024;
+    const height = img.height || 1024;
     app.renderer.resize(width, height);
 
     // 3. Create sprite from texture
