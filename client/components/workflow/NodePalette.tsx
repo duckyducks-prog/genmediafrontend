@@ -64,13 +64,18 @@ const paletteNodes: PaletteNode[] = [
     category: "action",
     description: "Text generation and enhancement",
   },
-
-  // OUTPUT NODES
+  {
+    type: NodeType.Preview,
+    label: "Preview",
+    icon: <Eye className="w-4 h-4" />,
+    category: "action",
+    description: "Preview images, videos, or text",
+  },
   {
     type: NodeType.Download,
     label: "Download",
     icon: <Download className="w-4 h-4" />,
-    category: "output",
+    category: "action",
     description: "Download media result",
   },
 ];
