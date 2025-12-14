@@ -81,15 +81,18 @@ export default function Index() {
     setIsGeneratingImage(true);
     try {
       const currentUser = auth.currentUser;
+      const token = await currentUser?.getIdToken();
+
       const response = await fetch(
         "https://veo-api-82187245577.us-central1.run.app/generate/image",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
           body: JSON.stringify({
             prompt: imagePrompt,
-            user_id: currentUser?.uid,
-            user_email: currentUser?.email,
           }),
         },
       );
@@ -125,15 +128,18 @@ export default function Index() {
     setIsGeneratingVideo(true);
     try {
       const currentUser = auth.currentUser;
+      const token = await currentUser?.getIdToken();
+
       const response = await fetch(
         "https://veo-api-82187245577.us-central1.run.app/generate/video",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
           body: JSON.stringify({
             prompt: videoPrompt,
-            user_id: currentUser?.uid,
-            user_email: currentUser?.email,
           }),
         },
       );
