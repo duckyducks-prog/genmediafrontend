@@ -672,15 +672,16 @@ describe('API E2E Tests', () => {
 
       // Step 2: Upscale image
       console.log('Step 2: Upscaling image...');
-      // Wrap base64 in data URI if not already formatted
-      const imageDataForUpscale = originalImage.startsWith('data:')
-        ? originalImage
-        : `data:image/png;base64,${originalImage}`;
+      // Ensure we're sending plain base64
+      let base64ForUpscale = originalImage;
+      if (originalImage.startsWith('data:')) {
+        base64ForUpscale = originalImage.split(',')[1];
+      }
 
       const upscaleResponse = await apiRequest('/generate/upscale', {
         method: 'POST',
         body: JSON.stringify({
-          image: imageDataForUpscale,
+          image: base64ForUpscale,
           upscale_factor: 2,
         }),
       });
@@ -691,15 +692,16 @@ describe('API E2E Tests', () => {
 
       // Step 3: Save to library
       console.log('Step 3: Saving to library...');
-      // Wrap base64 in data URI if not already formatted
-      const imageDataForSave = upscaledImage.startsWith('data:')
-        ? upscaledImage
-        : `data:image/png;base64,${upscaledImage}`;
+      // Ensure we're sending plain base64
+      let base64ForSave = upscaledImage;
+      if (upscaledImage.startsWith('data:')) {
+        base64ForSave = upscaledImage.split(',')[1];
+      }
 
       const saveResponse = await apiRequest('/library/save', {
         method: 'POST',
         body: JSON.stringify({
-          image_data: imageDataForSave,
+          image_data: base64ForSave,
           prompt: 'Workflow test - simple geometric shapes (upscaled)',
           asset_type: 'image',
           mime_type: 'image/png',
