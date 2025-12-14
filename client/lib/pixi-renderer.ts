@@ -103,10 +103,10 @@ export async function renderWithPixi(
     app.renderer.render(app.stage);
 
     // 6. Extract as base64 (Layer 3 logic)
-    // In PixiJS v8, get the canvas from the renderer's view
-    const canvas = app.renderer.view.canvas;
+    // In PixiJS v8, the canvas is accessed via app.canvas
+    const canvas = app.canvas as HTMLCanvasElement;
     if (!canvas) {
-      throw new Error('Failed to get canvas from renderer');
+      throw new Error('Failed to get canvas from app');
     }
     const dataURL = canvas.toDataURL('image/png');
 
