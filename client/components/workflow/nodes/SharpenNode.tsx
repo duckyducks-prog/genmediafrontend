@@ -1,4 +1,4 @@
-import { memo, useEffect, useCallback, useMemo } from 'react';
+import { memo, useEffect, useCallback, useRef } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { SharpenNodeData } from '../types';
 import { Slider } from '@/components/ui/slider';
@@ -6,9 +6,14 @@ import { Focus } from 'lucide-react';
 import { FilterConfig, FILTER_DEFINITIONS } from '@/lib/pixi-filter-configs';
 
 function SharpenNode({ data, id }: NodeProps<SharpenNodeData>) {
-  // Get incoming data (memoized for stable identity in effect dependencies)
-  const imageInput = useMemo(() => (data as any).image || (data as any).imageInput, [data]);
-  const upstreamFilters: FilterConfig[] = useMemo(() => (data as any).filters || [], [data]);
+  // Get incoming data
+  const imageInput = (data as any).image || (data as any).imageInput;
+  const upstreamFiltersRaw = (data as any).filters || [];
+
+  const upstreamFiltersKey = JSON.stringify(upstreamFiltersRaw.map((f: FilterConfig) => ({
+    type: f.type,
+    params: f.params
+  })));
 
   const createConfig = useCallback(
     (gamma: number): FilterConfig => ({
@@ -18,10 +23,12 @@ function SharpenNode({ data, id }: NodeProps<SharpenNodeData>) {
     []
   );
 
-  const updateOutputs = useCallback(
-    (gamma: number) => {
+  const updateOutputsRef = useRef((gamma: number) => {});
+
+  useEffect(() => {
+    updateOutputsRef.current = (gamma: number) => {
       const thisConfig = createConfig(gamma);
-      const updatedFilters = [...upstreamFilters, thisConfig];
+      const updatedFilters = [...upstreamFiltersRaw, thisConfig];
 
       const updateEvent = new CustomEvent('node-update', {
         detail: {
@@ -37,13 +44,12 @@ function SharpenNode({ data, id }: NodeProps<SharpenNodeData>) {
         },
       });
       window.dispatchEvent(updateEvent);
-    },
-    [id, data, imageInput, upstreamFilters, createConfig]
-  );
+    };
+  });
 
   useEffect(() => {
-    updateOutputs(data.gamma);
-  }, [data.gamma, imageInput, upstreamFilters, updateOutputs]);
+    updateOutputsRef.current(data.gamma);
+  }, [data.gamma, imageInput, upstreamFiltersKey]);
 
   const def = FILTER_DEFINITIONS.sharpen;
 

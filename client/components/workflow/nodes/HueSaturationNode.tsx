@@ -1,4 +1,4 @@
-import { memo, useEffect, useCallback, useMemo } from 'react';
+import { memo, useEffect, useCallback, useRef } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { HueSaturationNodeData } from '../types';
 import { Slider } from '@/components/ui/slider';
@@ -6,9 +6,14 @@ import { Palette } from 'lucide-react';
 import { FilterConfig, FILTER_DEFINITIONS } from '@/lib/pixi-filter-configs';
 
 function HueSaturationNode({ data, id }: NodeProps<HueSaturationNodeData>) {
-  // Get incoming data (memoized for stable identity in effect dependencies)
-  const imageInput = useMemo(() => (data as any).image || (data as any).imageInput, [data]);
-  const upstreamFilters: FilterConfig[] = useMemo(() => (data as any).filters || [], [data]);
+  // Get incoming data
+  const imageInput = (data as any).image || (data as any).imageInput;
+  const upstreamFiltersRaw = (data as any).filters || [];
+
+  const upstreamFiltersKey = JSON.stringify(upstreamFiltersRaw.map((f: FilterConfig) => ({
+    type: f.type,
+    params: f.params
+  })));
 
   const createConfig = useCallback(
     (hue: number, saturation: number): FilterConfig => ({
@@ -18,10 +23,12 @@ function HueSaturationNode({ data, id }: NodeProps<HueSaturationNodeData>) {
     []
   );
 
-  const updateOutputs = useCallback(
-    (hue: number, saturation: number) => {
+  const updateOutputsRef = useRef((hue: number, saturation: number) => {});
+
+  useEffect(() => {
+    updateOutputsRef.current = (hue: number, saturation: number) => {
       const thisConfig = createConfig(hue, saturation);
-      const updatedFilters = [...upstreamFilters, thisConfig];
+      const updatedFilters = [...upstreamFiltersRaw, thisConfig];
 
       const updateEvent = new CustomEvent('node-update', {
         detail: {
@@ -38,13 +45,12 @@ function HueSaturationNode({ data, id }: NodeProps<HueSaturationNodeData>) {
         },
       });
       window.dispatchEvent(updateEvent);
-    },
-    [id, data, imageInput, upstreamFilters, createConfig]
-  );
+    };
+  });
 
   useEffect(() => {
-    updateOutputs(data.hue, data.saturation);
-  }, [data.hue, data.saturation, imageInput, upstreamFilters, updateOutputs]);
+    updateOutputsRef.current(data.hue, data.saturation);
+  }, [data.hue, data.saturation, imageInput, upstreamFiltersKey]);
 
   const def = FILTER_DEFINITIONS.hueSaturation;
 
