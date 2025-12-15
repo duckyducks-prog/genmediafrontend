@@ -159,9 +159,20 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
     if (aspectRatio !== "custom" && imageDimensions) {
       const aspectConfig = ASPECT_RATIOS[aspectRatio];
 
+      console.log("[CropNode DEBUG] Aspect ratio selected:", {
+        aspectRatio,
+        aspectConfig,
+        imageDimensions,
+      });
+
       // Start with standard dimensions
       let newWidth = aspectConfig.width;
       let newHeight = aspectConfig.height;
+
+      console.log("[CropNode DEBUG] Standard dimensions:", {
+        newWidth,
+        newHeight,
+      });
 
       // Check if standard dimensions fit within the image
       if (newWidth > imageDimensions.width || newHeight > imageDimensions.height) {
