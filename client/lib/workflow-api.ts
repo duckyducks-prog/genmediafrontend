@@ -127,6 +127,71 @@ export async function testWorkflowAPI(): Promise<APITestResult> {
 }
 
 /**
+ * Validate workflow data before sending to API
+ */
+function validateWorkflowData(workflow: SavedWorkflow): { valid: boolean; error?: string } {
+  // Validate name
+  if (!workflow.name || typeof workflow.name !== 'string') {
+    return { valid: false, error: 'Workflow name is required and must be a string' };
+  }
+
+  const trimmedName = workflow.name.trim();
+  if (trimmedName.length === 0) {
+    return { valid: false, error: 'Workflow name cannot be empty' };
+  }
+
+  if (trimmedName.length > 100) {
+    return { valid: false, error: 'Workflow name cannot exceed 100 characters' };
+  }
+
+  // Validate description
+  if (workflow.description !== undefined && typeof workflow.description !== 'string') {
+    return { valid: false, error: 'Workflow description must be a string' };
+  }
+
+  // Validate is_public
+  if (typeof workflow.is_public !== 'boolean') {
+    return { valid: false, error: 'is_public must be a boolean' };
+  }
+
+  // Validate nodes
+  if (!Array.isArray(workflow.nodes)) {
+    return { valid: false, error: 'Nodes must be an array' };
+  }
+
+  if (workflow.nodes.length === 0) {
+    return { valid: false, error: 'Workflow must have at least one node' };
+  }
+
+  if (workflow.nodes.length > 100) {
+    return { valid: false, error: 'Workflow cannot exceed 100 nodes' };
+  }
+
+  // Validate each node has required properties
+  for (let i = 0; i < workflow.nodes.length; i++) {
+    const node = workflow.nodes[i];
+    if (!node.id || !node.type || !node.position || !node.data) {
+      return { valid: false, error: `Node at index ${i} is missing required properties (id, type, position, data)` };
+    }
+  }
+
+  // Validate edges
+  if (!Array.isArray(workflow.edges)) {
+    return { valid: false, error: 'Edges must be an array' };
+  }
+
+  // Validate each edge has required properties
+  for (let i = 0; i < workflow.edges.length; i++) {
+    const edge = workflow.edges[i];
+    if (!edge.source || !edge.target) {
+      return { valid: false, error: `Edge at index ${i} is missing required properties (source, target)` };
+    }
+  }
+
+  return { valid: true };
+}
+
+/**
  * Save a workflow to the backend
  */
 export async function saveWorkflow(
