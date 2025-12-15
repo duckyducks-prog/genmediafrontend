@@ -399,6 +399,12 @@ export function useWorkflowExecution(
                   imageUrlLength: resultData.imageUrl?.length || 0,
                 });
 
+                // Show success notification
+                toast({
+                  title: "Image Generated ✓",
+                  description: `Data URL: ${resultData.imageUrl.length} chars. Check console for details.`,
+                });
+
                 return {
                   success: true,
                   data: resultData,
