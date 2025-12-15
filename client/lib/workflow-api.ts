@@ -3,6 +3,17 @@ import { WorkflowNode, WorkflowEdge } from "@/components/workflow/types";
 
 const API_BASE = "https://veo-api-82187245577.us-central1.run.app";
 
+export interface APITestResult {
+  available: boolean;
+  endpoints: {
+    save?: boolean;
+    list?: boolean;
+    get?: boolean;
+  };
+  error?: string;
+  details?: string;
+}
+
 export interface WorkflowMetadata {
   id?: string;
   name: string;
@@ -18,6 +29,101 @@ export interface WorkflowMetadata {
 export interface SavedWorkflow extends WorkflowMetadata {
   nodes: WorkflowNode[];
   edges: WorkflowEdge[];
+}
+
+/**
+ * Test if workflow API is accessible and which endpoints are working
+ */
+export async function testWorkflowAPI(): Promise<APITestResult> {
+  const user = auth.currentUser;
+
+  if (!user) {
+    return {
+      available: false,
+      endpoints: {},
+      error: 'Not authenticated',
+      details: 'User must be signed in to test API',
+    };
+  }
+
+  const token = await user.getIdToken();
+  const results: APITestResult = {
+    available: false,
+    endpoints: {},
+  };
+
+  console.log('[testWorkflowAPI] Starting API connectivity test...');
+
+  // Test 1: List public workflows (GET /workflows?scope=public)
+  try {
+    const url = `${API_BASE}/workflows?scope=public`;
+    console.log('[testWorkflowAPI] Testing:', url);
+
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(10000), // 10 second timeout
+    });
+
+    console.log('[testWorkflowAPI] List endpoint response:', {
+      status: response.status,
+      ok: response.ok,
+    });
+
+    results.endpoints.list = response.ok;
+
+    if (!response.ok) {
+      const body = await response.text();
+      console.log('[testWorkflowAPI] List endpoint error body:', body);
+
+      if (response.status === 404) {
+        results.details = '404 Not Found - Endpoint may not be deployed or router not mounted at /workflows';
+      } else if (response.status === 401) {
+        results.details = '401 Unauthorized - Firebase token may be invalid';
+      } else if (response.status === 403) {
+        results.details = '403 Forbidden - User may not have access';
+      } else if (response.status >= 500) {
+        results.details = `${response.status} Server Error - Backend may be experiencing issues`;
+      } else {
+        results.details = `${response.status} ${response.statusText}`;
+      }
+    }
+  } catch (error) {
+    results.endpoints.list = false;
+
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        results.error = 'Request timeout - Backend not responding';
+        results.details = 'The API did not respond within 10 seconds';
+      } else if (error.message.includes('Failed to fetch')) {
+        results.error = 'Network error - Cannot reach backend';
+        results.details = 'CORS error, network failure, or backend is down';
+      } else {
+        results.error = error.message;
+      }
+    }
+    console.error('[testWorkflowAPI] List endpoint test failed:', error);
+  }
+
+  // Test 2: Try to list my workflows (GET /workflows?scope=my)
+  try {
+    const url = `${API_BASE}/workflows?scope=my`;
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: AbortSignal.timeout(10000),
+    });
+
+    if (response.ok) {
+      results.endpoints.list = true;
+    }
+  } catch (error) {
+    // Already logged above
+  }
+
+  // Determine overall availability
+  results.available = Object.values(results.endpoints).some(v => v === true);
+
+  console.log('[testWorkflowAPI] Test complete:', results);
+  return results;
 }
 
 /**
