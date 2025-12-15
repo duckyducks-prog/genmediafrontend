@@ -265,8 +265,9 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               imageUrl: null,
               file: null,
               label: "Image Input",
-              outputs: {},
+              outputs: {}, // Ensure outputs is always initialized
             };
+            console.log('[addNode] Created ImageInput node with data:', data);
             break;
 
           // Modifier nodes
