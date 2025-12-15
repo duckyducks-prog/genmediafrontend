@@ -253,7 +253,8 @@ async function performRender(
 
   try {
     // PixiJS extract API handles WebGL readback properly
-    dataURL = await app.renderer.extract.base64(app.stage, 'image/png');
+    // In Pixi v8, base64() takes only the target parameter (format is PNG by default)
+    dataURL = await app.renderer.extract.base64(app.stage);
     console.log('[PixiJS] Successfully extracted rendered image');
   } catch (extractError) {
     // Handle CORS/SecurityError specifically
