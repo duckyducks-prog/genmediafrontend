@@ -716,28 +716,32 @@ export function useWorkflowExecution(
       let totalCompleted = 0;
       let totalFailed = 0;
 
-      // Execute each level in sequence, but nodes within a level in parallel
+      // Execute each level in sequence
       for (let levelIndex = 0; levelIndex < levels.length; levelIndex++) {
         const levelNodes = levels[levelIndex];
 
+        // Separate API-calling nodes from others for sequential execution
+        const apiNodes = levelNodes.filter((node) =>
+          [NodeType.GenerateImage, NodeType.GenerateVideo, NodeType.LLM].includes(node.type)
+        );
+        const otherNodes = levelNodes.filter(
+          (node) => !apiNodes.includes(node)
+        );
+
         toast({
           title: `Executing Level ${levelIndex + 1}/${levels.length}`,
-          description: `Running ${levelNodes.length} node${levelNodes.length > 1 ? "s" : ""} in parallel...`,
+          description: apiNodes.length > 0
+            ? `Running ${apiNodes.length} API node${apiNodes.length > 1 ? "s" : ""} sequentially (rate limiting)...`
+            : `Running ${levelNodes.length} node${levelNodes.length > 1 ? "s" : ""}...`,
         });
 
-        // Update all nodes in this level to executing
-        levelNodes.forEach((node) => {
-          progress.set(node.id, "executing");
-          updateNodeState(node.id, "executing");
-        });
-        setExecutionProgress(new Map(progress));
+        // Execute non-API nodes in parallel (they're fast)
+        const otherResults = await Promise.allSettled(
+          otherNodes.map(async (node) => {
+            progress.set(node.id, "executing");
+            updateNodeState(node.id, "executing");
 
-        // Execute all nodes in this level in parallel
-        const results = await Promise.allSettled(
-          levelNodes.map(async (node) => {
             const inputs = getNodeInputs(node.id);
-
-            // Validate inputs before execution
             const validation = validateNodeInputs(node, inputs);
             if (!validation.valid) {
               return {
@@ -754,6 +758,66 @@ export function useWorkflowExecution(
             };
           }),
         );
+
+        // Execute API nodes sequentially with delays
+        const apiResults = [];
+        for (let i = 0; i < apiNodes.length; i++) {
+          const node = apiNodes[i];
+
+          progress.set(node.id, "executing");
+          updateNodeState(node.id, "executing");
+          setExecutionProgress(new Map(progress));
+
+          toast({
+            title: `API Call ${i + 1}/${apiNodes.length}`,
+            description: `Executing ${node.data.label || node.type}...`,
+          });
+
+          const inputs = getNodeInputs(node.id);
+          const validation = validateNodeInputs(node, inputs);
+
+          let result;
+          if (!validation.valid) {
+            result = {
+              status: "fulfilled" as const,
+              value: {
+                nodeId: node.id,
+                success: false,
+                error: validation.error,
+              },
+            };
+          } else {
+            try {
+              const execResult = await executeNode(node, inputs);
+              result = {
+                status: "fulfilled" as const,
+                value: {
+                  nodeId: node.id,
+                  ...execResult,
+                },
+              };
+            } catch (error) {
+              result = {
+                status: "rejected" as const,
+                reason: error,
+              };
+            }
+          }
+
+          apiResults.push(result);
+
+          // Add delay between API calls to avoid quota exhaustion
+          if (i < apiNodes.length - 1) {
+            toast({
+              title: "Rate limiting",
+              description: "Waiting 3 seconds before next API call...",
+            });
+            await new Promise((resolve) => setTimeout(resolve, 3000));
+          }
+        }
+
+        // Combine results
+        const results = [...otherResults, ...apiResults];
 
         // Process results for this level
         results.forEach((result, index) => {
