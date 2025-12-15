@@ -173,32 +173,45 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
     window.dispatchEvent(updateEvent);
 
     // Calculate new dimensions based on aspect ratio
-    // Always use full height of original image
+    // Use fixed standard dimensions, scale down if needed to fit
     if (aspectRatio !== "custom" && imageDimensions) {
-      const ratio = ASPECT_RATIOS[aspectRatio];
+      const aspectConfig = ASPECT_RATIOS[aspectRatio];
 
       console.log("[CropNode] Aspect ratio change:", {
         aspectRatio,
-        ratio,
+        standardDimensions: { width: aspectConfig.width, height: aspectConfig.height },
         imageDimensions,
-        dataOriginalWidth: data.originalWidth,
-        dataOriginalHeight: data.originalHeight,
       });
 
-      // Height is always the full original image height
-      const newHeight = imageDimensions.height;
+      // Start with standard dimensions
+      let newWidth = aspectConfig.width;
+      let newHeight = aspectConfig.height;
 
-      // Width is calculated based on aspect ratio
-      const newWidth = Math.round(newHeight * ratio);
+      // Check if standard dimensions fit within the image
+      if (newWidth > imageDimensions.width || newHeight > imageDimensions.height) {
+        // Scale down proportionally to fit
+        const scaleX = imageDimensions.width / newWidth;
+        const scaleY = imageDimensions.height / newHeight;
+        const scale = Math.min(scaleX, scaleY);
 
-      console.log("[CropNode] Calculated dimensions:", {
+        newWidth = Math.round(newWidth * scale);
+        newHeight = Math.round(newHeight * scale);
+
+        console.log("[CropNode] Scaled down to fit:", {
+          scale,
+          newWidth,
+          newHeight,
+        });
+      }
+
+      console.log("[CropNode] Final dimensions:", {
         newWidth,
         newHeight,
       });
 
-      // Center the crop area horizontally, Y is 0 (full height)
+      // Center the crop area both horizontally and vertically
       const newX = Math.floor((imageDimensions.width - newWidth) / 2);
-      const newY = 0;
+      const newY = Math.floor((imageDimensions.height - newHeight) / 2);
 
       const dimensionUpdateEvent = new CustomEvent("node-update", {
         detail: {
