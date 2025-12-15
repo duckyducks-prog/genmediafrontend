@@ -466,7 +466,7 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
               {/* Crop box */}
               <div
                 ref={cropOverlayRef}
-                className={`absolute border-2 border-primary bg-transparent ${
+                className={`absolute border-2 border-primary bg-transparent select-none ${
                   isDragging ? "cursor-grabbing" : "cursor-grab"
                 }`}
                 style={getCropOverlayStyle()}
