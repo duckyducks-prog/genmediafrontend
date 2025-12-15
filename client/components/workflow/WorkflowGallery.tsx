@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -42,7 +42,7 @@ export default function WorkflowGallery({ onLoadWorkflow }: WorkflowGalleryProps
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const fetchWorkflows = async () => {
+  const fetchWorkflows = useCallback(async () => {
     setIsLoading(true);
     try {
       const [myWf, publicWf] = await Promise.all([
@@ -70,11 +70,11 @@ export default function WorkflowGallery({ onLoadWorkflow }: WorkflowGalleryProps
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchWorkflows();
-  }, []);
+  }, [fetchWorkflows]);
 
   const handleDelete = async (id: string) => {
     try {
