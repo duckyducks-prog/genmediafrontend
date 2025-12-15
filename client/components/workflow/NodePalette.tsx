@@ -1,4 +1,4 @@
-import { Type, Image, Sparkles, Settings, Combine, Brain, Upload, Video, Download, Eye, Sun, Blend, Focus, Palette, Radio, Circle } from "lucide-react";
+import { Type, Image, Sparkles, Settings, Combine, Brain, Upload, Video, Download, Eye, Sun, Blend, Focus, Palette, Radio, Circle, Crop } from "lucide-react";
 import { NodeType, NODE_CONFIGURATIONS } from "./types";
 
 interface PaletteNode {
@@ -82,6 +82,13 @@ const paletteNodes: PaletteNode[] = [
     icon: <Circle className="w-4 h-4" />,
     category: "modifier",
     description: "Add vignette effect",
+  },
+  {
+    type: NodeType.Crop,
+    label: "Crop",
+    icon: <Crop className="w-4 h-4" />,
+    category: "modifier",
+    description: "Crop image to aspect ratio",
   },
 
   // ACTION NODES

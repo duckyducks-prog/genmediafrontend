@@ -53,6 +53,7 @@ import SharpenNode from "./nodes/SharpenNode";
 import HueSaturationNode from "./nodes/HueSaturationNode";
 import NoiseNode from "./nodes/NoiseNode";
 import VignetteNode from "./nodes/VignetteNode";
+import CropNode from "./nodes/CropNode";
 
 const nodeTypes: NodeTypes = {
   // Input nodes
@@ -68,6 +69,7 @@ const nodeTypes: NodeTypes = {
   [NodeType.HueSaturation]: HueSaturationNode,
   [NodeType.Noise]: NoiseNode,
   [NodeType.Vignette]: VignetteNode,
+  [NodeType.Crop]: CropNode,
 
   // Action nodes
   [NodeType.GenerateImage]: GenerateImageNode,
@@ -328,6 +330,15 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               size: 0.5,
               amount: 0.5,
               label: "Vignette",
+              outputs: {},
+            };
+            break;
+          case NodeType.Crop:
+            data = {
+              aspectRatio: "custom",
+              width: 1024,
+              height: 1024,
+              label: "Crop",
               outputs: {},
             };
             break;
