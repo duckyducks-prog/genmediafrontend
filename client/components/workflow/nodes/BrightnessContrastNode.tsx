@@ -86,19 +86,23 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
   // Update outputs whenever brightness, contrast, or inputs change
   useEffect(() => {
     updateOutputsRef.current(data.brightness, data.contrast);
-  }, [data.brightness, data.contrast, imageInput, upstreamFilters]);
+  }, [data.brightness, data.contrast, imageInput, upstreamFiltersKey]);
 
   // Generate inline preview with debouncing
   // Use ref to track if a render is in progress to prevent cascading renders
   const isRenderingRef = useRef(false);
 
   useEffect(() => {
+    // Reconstruct filters from the stable key
+    const upstreamFilters = upstreamFiltersRaw;
+
     console.log('[BrightnessContrastNode] Preview effect triggered:', {
       hasImageInput: !!imageInput,
       brightness: debouncedBrightness,
       contrast: debouncedContrast,
       upstreamFilterCount: upstreamFilters.length,
       isRenderingInProgress: isRenderingRef.current,
+      filtersKey: upstreamFiltersKey.substring(0, 50),
     });
 
     if (!imageInput) {
@@ -148,7 +152,7 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
         }
         isRenderingRef.current = false; // Always clear the in-progress flag
       });
-  }, [imageInput, debouncedBrightness, debouncedContrast, upstreamFilters]);
+  }, [imageInput, debouncedBrightness, debouncedContrast, upstreamFiltersKey, upstreamFiltersRaw, createConfig]);
 
   const handleBrightnessChange = (value: number) => {
     updateOutputsRef.current(value, data.contrast);
