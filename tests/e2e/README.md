@@ -216,6 +216,34 @@ The test suite automatically cleans up after itself:
 - Deletes them from the library in `afterAll` hook
 - Ensures no test data pollution
 
+## Debugging Video Generation
+
+If video generation is polling but not returning data, use the specialized debug test:
+
+```bash
+npm test tests/e2e/video-debug.spec.ts
+```
+
+This test will:
+- Start a video generation request
+- Poll every 10 seconds for up to 10 minutes
+- **Log ALL API responses** in complete detail
+- Show exactly what status values the backend is returning
+- Identify missing or misnamed fields in the response
+
+**To manually check a specific operation:**
+
+```bash
+export MANUAL_OPERATION_NAME="operations/your-operation-id"
+npm test tests/e2e/video-debug.spec.ts -t "manual"
+```
+
+This helps diagnose issues like:
+- Backend returning different status values (e.g., "processing" vs "complete")
+- Video data field named differently (e.g., "video" vs "video_base64")
+- Backend timing out or failing silently
+- Polling logic expecting wrong response format
+
 ## Troubleshooting
 
 ### "No FIREBASE_TEST_TOKEN found"
