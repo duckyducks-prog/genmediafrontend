@@ -126,17 +126,36 @@ export function useWorkflowExecution(
   // Update node visual state
   const updateNodeState = useCallback(
     (nodeId: string, status: string, data?: any) => {
+      console.log('[updateNodeState] Updating node:', {
+        nodeId,
+        status,
+        dataKeys: data ? Object.keys(data) : [],
+        hasImageUrl: !!data?.imageUrl,
+        imageUrlLength: data?.imageUrl?.length || 0,
+      });
+
       setNodes((prevNodes) =>
         prevNodes.map((node) => {
           if (node.id === nodeId) {
+            const updatedData = {
+              ...node.data,
+              status,
+              isGenerating: status === "executing",
+              ...data,
+            };
+
+            console.log('[updateNodeState] Updated node data:', {
+              nodeId,
+              nodeType: node.type,
+              oldDataKeys: Object.keys(node.data),
+              newDataKeys: Object.keys(updatedData),
+              hasImageUrl: !!updatedData.imageUrl,
+              imageUrlPreview: updatedData.imageUrl ? updatedData.imageUrl.substring(0, 50) : 'none',
+            });
+
             return {
               ...node,
-              data: {
-                ...node.data,
-                status,
-                isGenerating: status === "executing",
-                ...data,
-              },
+              data: updatedData,
             };
           }
           return node;
