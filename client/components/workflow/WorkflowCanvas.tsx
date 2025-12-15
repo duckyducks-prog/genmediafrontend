@@ -106,6 +106,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
     const [copiedNodes, setCopiedNodes] = useState<WorkflowNode[]>([]);
     const [copiedEdges, setCopiedEdges] = useState<WorkflowEdge[]>([]);
     const hasInitialized = useRef(false);
+    const { toast } = useToast();
 
     // Listen for node update events from node components
     useEffect(() => {
@@ -560,8 +561,6 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
       },
       [reactFlowInstance, addNode, setNodes, toast, validateImageFile, readFileAsDataURL],
     );
-
-    const { toast } = useToast();
 
     // Clear canvas
     const clearCanvas = useCallback(() => {
