@@ -1,4 +1,4 @@
-import { memo, useEffect, useCallback } from 'react';
+import { memo, useEffect, useCallback, useMemo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { NoiseNodeData } from '../types';
 import { Slider } from '@/components/ui/slider';
@@ -6,8 +6,9 @@ import { Radio } from 'lucide-react';
 import { FilterConfig, FILTER_DEFINITIONS } from '@/lib/pixi-filter-configs';
 
 function NoiseNode({ data, id }: NodeProps<NoiseNodeData>) {
-  const imageInput = (data as any).image || (data as any).imageInput;
-  const upstreamFilters: FilterConfig[] = (data as any).filters || [];
+  // Get incoming data (memoized for stable identity in effect dependencies)
+  const imageInput = useMemo(() => (data as any).image || (data as any).imageInput, [data]);
+  const upstreamFilters: FilterConfig[] = useMemo(() => (data as any).filters || [], [data]);
 
   const createConfig = useCallback(
     (noise: number): FilterConfig => ({
