@@ -441,12 +441,32 @@ export function useWorkflowExecution(
           }
 
           case NodeType.GenerateVideo: {
+            console.log('[GenerateVideo] Starting execution with inputs:', {
+              inputKeys: Object.keys(inputs),
+              hasPrompt: !!inputs.prompt,
+              hasFirstFrame: !!inputs.first_frame,
+              hasLastFrame: !!inputs.last_frame,
+              hasReferenceImages: !!inputs.reference_images,
+              hasFormat: !!inputs.format,
+              hasFilters: !!inputs.filters,
+              firstFrameType: typeof inputs.first_frame,
+              firstFrameLength: inputs.first_frame?.length || 0,
+              firstFramePreview: typeof inputs.first_frame === 'string' ? inputs.first_frame.substring(0, 50) + '...' : inputs.first_frame,
+            });
+
             const prompt = inputs.prompt;
             let firstFrame = inputs.first_frame || null;
             let lastFrame = inputs.last_frame || null;
             let referenceImages = inputs.reference_images || null;
             const formatData = inputs.format;
             const filters: FilterConfig[] = inputs.filters || [];
+
+            console.log('[GenerateVideo] After variable assignment:', {
+              hasFirstFrame: !!firstFrame,
+              hasLastFrame: !!lastFrame,
+              hasReferenceImages: !!referenceImages,
+              firstFrameLength: firstFrame?.length || 0,
+            });
 
             if (!prompt) {
               return {
