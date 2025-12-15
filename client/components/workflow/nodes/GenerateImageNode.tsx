@@ -229,6 +229,15 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
           Status: <span className="font-medium">{getStatusText()}</span>
         </div>
 
+        {/* Debug Info - Shows data state */}
+        <div className="text-xs bg-muted/50 p-2 rounded space-y-1">
+          <div>Has imageUrl: {incomingImageUrl ? '✓' : '✗'}</div>
+          <div>Has images: {images.length > 0 ? `✓ (${images.length})` : '✗'}</div>
+          {incomingImageUrl && (
+            <div className="truncate">URL: {incomingImageUrl.substring(0, 30)}...</div>
+          )}
+        </div>
+
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Sparkles className="w-3 h-3" />
           <span>Gemini 3 Pro</span>
