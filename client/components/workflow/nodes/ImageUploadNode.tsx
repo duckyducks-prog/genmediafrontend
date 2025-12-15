@@ -14,35 +14,50 @@ function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
       const reader = new FileReader();
       reader.onload = (event) => {
         const url = event.target?.result as string;
+
+        console.log('[ImageUploadNode] Image loaded:', {
+          nodeId: id,
+          urlLength: url.length,
+          urlPreview: url.substring(0, 50) + '...',
+          fileType: file.type,
+          fileSize: file.size,
+        });
+
         setImageUrl(url);
 
-        // Update node data
+        // Create new data object with outputs
+        const newData = {
+          ...data,
+          imageUrl: url,
+          file,
+          outputs: { image: url }, // Ensure outputs is set with the image
+        };
+
+        console.log('[ImageUploadNode] Updating node with data:', {
+          nodeId: id,
+          hasOutputs: !!newData.outputs,
+          outputKeys: Object.keys(newData.outputs),
+          imageLength: newData.outputs.image?.length || 0,
+        });
+
+        // Update node data first
         setNodes((nodes) =>
           nodes.map((node) =>
             node.id === id
               ? {
                   ...node,
-                  data: {
-                    ...node.data,
-                    imageUrl: url,
-                    file,
-                    outputs: { image: url },
-                  },
+                  data: newData,
                 }
               : node,
           ),
         );
 
-        // Trigger data propagation to downstream nodes
+        // Then trigger propagation with the same data
+        console.log('[ImageUploadNode] Dispatching node-update event');
         const updateEvent = new CustomEvent('node-update', {
           detail: {
             id,
-            data: {
-              ...data,
-              imageUrl: url,
-              file,
-              outputs: { image: url },
-            },
+            data: newData,
           },
         });
         window.dispatchEvent(updateEvent);
