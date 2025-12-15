@@ -1,4 +1,4 @@
-import { memo, useEffect, useCallback, useState, useRef } from 'react';
+import { memo, useEffect, useCallback, useState, useRef, useMemo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { BrightnessContrastNodeData } from '../types';
 import { Slider } from '@/components/ui/slider';
@@ -23,9 +23,9 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
   // Request sequencing to prevent race conditions
   const renderRequestId = useRef(0);
 
-  // Get incoming data
-  const imageInput = (data as any).image || (data as any).imageInput;
-  const upstreamFilters: FilterConfig[] = (data as any).filters || [];
+  // Get incoming data (memoized for stable identity in effect dependencies)
+  const imageInput = useMemo(() => (data as any).image || (data as any).imageInput, [data]);
+  const upstreamFilters: FilterConfig[] = useMemo(() => (data as any).filters || [], [data]);
 
   // Debounce for preview (500ms for better performance)
   const debouncedBrightness = useDebounce(data.brightness, 500);
