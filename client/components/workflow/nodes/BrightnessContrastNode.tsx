@@ -25,7 +25,20 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
 
   // Get incoming data (memoized for stable identity in effect dependencies)
   const imageInput = useMemo(() => (data as any).image || (data as any).imageInput, [data]);
-  const upstreamFilters: FilterConfig[] = useMemo(() => (data as any).filters || [], [data]);
+
+  // Use JSON comparison for filters to prevent re-renders when filter values haven't actually changed
+  const upstreamFiltersJson = useMemo(() => {
+    const filters = (data as any).filters || [];
+    return JSON.stringify(filters);
+  }, [data]);
+
+  const upstreamFilters: FilterConfig[] = useMemo(() => {
+    try {
+      return JSON.parse(upstreamFiltersJson);
+    } catch {
+      return [];
+    }
+  }, [upstreamFiltersJson]);
 
   // Debounce for preview (500ms for better performance)
   const debouncedBrightness = useDebounce(data.brightness, 500);
