@@ -54,14 +54,14 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
   useEffect(() => {
     updateOutputsRef.current = (brightness: number, contrast: number) => {
       const thisConfig = createConfig(brightness, contrast);
-      const updatedFilters = [...upstreamFilters, thisConfig];
+      const updatedFilters = [...upstreamFiltersRaw, thisConfig];
 
       console.log('[BrightnessContrastNode] Dispatching node-update:', {
         nodeId: id,
         brightness,
         contrast,
         hasImage: !!imageInput,
-        upstreamFilterCount: upstreamFilters.length,
+        upstreamFilterCount: upstreamFiltersRaw.length,
         totalFilterCount: updatedFilters.length,
       });
 
