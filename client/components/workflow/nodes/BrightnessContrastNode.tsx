@@ -41,8 +41,11 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
   );
 
   // Update node outputs (Layer 1: store ONLY config)
-  const updateOutputs = useCallback(
-    (brightness: number, contrast: number) => {
+  // Use useRef to avoid recreating this function and causing re-render loops
+  const updateOutputsRef = useRef((brightness: number, contrast: number) => {});
+
+  useEffect(() => {
+    updateOutputsRef.current = (brightness: number, contrast: number) => {
       const thisConfig = createConfig(brightness, contrast);
       const updatedFilters = [...upstreamFilters, thisConfig];
 
@@ -70,14 +73,13 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
         },
       });
       window.dispatchEvent(updateEvent);
-    },
-    [id, data, imageInput, upstreamFilters, createConfig]
-  );
+    };
+  });
 
   // Update outputs whenever brightness, contrast, or inputs change
   useEffect(() => {
-    updateOutputs(data.brightness, data.contrast);
-  }, [data.brightness, data.contrast, imageInput, upstreamFilters, updateOutputs]);
+    updateOutputsRef.current(data.brightness, data.contrast);
+  }, [data.brightness, data.contrast, imageInput, upstreamFilters]);
 
   // Generate inline preview with debouncing
   useEffect(() => {
