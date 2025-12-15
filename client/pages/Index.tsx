@@ -15,10 +15,13 @@ import {
   FolderOpen,
   LogOut,
 } from "lucide-react";
-import WorkflowCanvas from "@/components/workflow/WorkflowCanvas";
+import WorkflowCanvas, {
+  WorkflowCanvasRef,
+} from "@/components/workflow/WorkflowCanvas";
 import AssetLibrary, {
   AssetLibraryRef,
 } from "@/components/library/AssetLibrary";
+import WorkflowGallery from "@/components/workflow/WorkflowGallery";
 import { useAuth } from "@/lib/AuthContext";
 import { logOut, auth } from "@/lib/firebase";
 import { saveToLibrary } from "@/lib/api-helpers";
@@ -29,7 +32,8 @@ export default function Index() {
   const { user, loading } = useAuth();
   const { toast } = useToast();
   const assetLibraryRef = useRef<AssetLibraryRef>(null);
-  const [currentTab, setCurrentTab] = useState("image");
+  const workflowCanvasRef = useRef<WorkflowCanvasRef>(null);
+  const [currentTab, setCurrentTab] = useState("home");
   const [imagePrompt, setImagePrompt] = useState("");
   const [videoPrompt, setVideoPrompt] = useState("");
   const [referenceImage, setReferenceImage] = useState<string | null>(null);
@@ -383,6 +387,15 @@ export default function Index() {
           className={`flex-1 container mx-auto px-4 py-8 ${currentTab === "workflow" ? "max-w-none px-0" : "max-w-4xl"}`}
         >
           <Tabs value={currentTab} className="w-full">
+            <TabsContent value="home" className="space-y-6">
+              <WorkflowGallery
+                onLoadWorkflow={(workflow) => {
+                  workflowCanvasRef.current?.loadWorkflow(workflow);
+                  setCurrentTab("workflow");
+                }}
+              />
+            </TabsContent>
+
             <TabsContent value="image" className="space-y-6">
               <div className="bg-card border border-border rounded-lg p-6 shadow-sm space-y-4">
                 <div>
@@ -644,6 +657,7 @@ export default function Index() {
 
             <TabsContent value="workflow" className="h-[calc(100vh-200px)]">
               <WorkflowCanvas
+                ref={workflowCanvasRef}
                 onAssetGenerated={() => {
                   console.log("[Index] Asset generated callback triggered");
                   console.log(
