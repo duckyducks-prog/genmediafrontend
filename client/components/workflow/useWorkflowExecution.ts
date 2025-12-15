@@ -572,6 +572,15 @@ export function useWorkflowExecution(
               const user = auth.currentUser;
               const token = await user?.getIdToken();
 
+              console.log('[GenerateVideo] Preparing request body:', {
+                hasPrompt: !!prompt,
+                hasFirstFrame: !!firstFrame,
+                hasLastFrame: !!lastFrame,
+                hasReferenceImages: !!referenceImages,
+                firstFrameLength: typeof firstFrame === 'string' ? firstFrame.length : 0,
+                lastFrameLength: typeof lastFrame === 'string' ? lastFrame.length : 0,
+              });
+
               const requestBody: any = {
                 prompt,
                 first_frame: firstFrame,
@@ -581,6 +590,16 @@ export function useWorkflowExecution(
                 duration_seconds: formatData?.duration_seconds || 8,
                 generate_audio: formatData?.generate_audio ?? true,
               };
+
+              console.log('[GenerateVideo] Full request body (truncated):', {
+                prompt: requestBody.prompt?.substring(0, 50),
+                first_frame: requestBody.first_frame ? `${typeof requestBody.first_frame} (${requestBody.first_frame.length} chars)` : null,
+                last_frame: requestBody.last_frame ? `${typeof requestBody.last_frame} (${requestBody.last_frame.length} chars)` : null,
+                reference_images: requestBody.reference_images ? `${typeof requestBody.reference_images}` : null,
+                aspect_ratio: requestBody.aspect_ratio,
+                duration_seconds: requestBody.duration_seconds,
+                generate_audio: requestBody.generate_audio,
+              });
 
               const response = await fetch(
                 "https://veo-api-82187245577.us-central1.run.app/generate/video",
