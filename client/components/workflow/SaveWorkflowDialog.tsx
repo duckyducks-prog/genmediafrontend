@@ -14,7 +14,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Loader2, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { saveWorkflow, updateWorkflow, WorkflowMetadata } from "@/lib/workflow-api";
+import {
+  saveWorkflow,
+  updateWorkflow,
+  WorkflowMetadata,
+} from "@/lib/workflow-api";
 import { WorkflowNode, WorkflowEdge } from "./types";
 
 interface SaveWorkflowDialogProps {

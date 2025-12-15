@@ -126,7 +126,7 @@ export function useWorkflowExecution(
   // Update node visual state
   const updateNodeState = useCallback(
     (nodeId: string, status: string, data?: any) => {
-      console.log('[updateNodeState] Updating node:', {
+      console.log("[updateNodeState] Updating node:", {
         nodeId,
         status,
         dataKeys: data ? Object.keys(data) : [],
@@ -144,13 +144,15 @@ export function useWorkflowExecution(
               ...data,
             };
 
-            console.log('[updateNodeState] Updated node data:', {
+            console.log("[updateNodeState] Updated node data:", {
               nodeId,
               nodeType: node.type,
               oldDataKeys: Object.keys(node.data),
               newDataKeys: Object.keys(updatedData),
               hasImageUrl: !!updatedData.imageUrl,
-              imageUrlPreview: updatedData.imageUrl ? updatedData.imageUrl.substring(0, 50) : 'none',
+              imageUrlPreview: updatedData.imageUrl
+                ? updatedData.imageUrl.substring(0, 50)
+                : "none",
             });
 
             return {
@@ -214,7 +216,7 @@ export function useWorkflowExecution(
                   method: "POST",
                   headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
+                    Authorization: `Bearer ${token}`,
                   },
                   body: JSON.stringify({
                     prompt,
@@ -264,23 +266,35 @@ export function useWorkflowExecution(
 
             // NEW: Apply filters before sending to API (Layer 3 integration)
             if (referenceImages && filters.length > 0) {
-              console.log('[GenerateImage] Applying', filters.length, 'filters before API call');
+              console.log(
+                "[GenerateImage] Applying",
+                filters.length,
+                "filters before API call",
+              );
 
               try {
                 if (Array.isArray(referenceImages)) {
                   // Process each reference image
                   referenceImages = await Promise.all(
-                    referenceImages.map(img => renderWithPixi(img, filters))
+                    referenceImages.map((img) => renderWithPixi(img, filters)),
                   );
                 } else {
                   // Single image
-                  referenceImages = await renderWithPixi(referenceImages, filters);
+                  referenceImages = await renderWithPixi(
+                    referenceImages,
+                    filters,
+                  );
                 }
               } catch (error) {
-                console.error('[GenerateImage] Filter rendering failed:', error);
+                console.error(
+                  "[GenerateImage] Filter rendering failed:",
+                  error,
+                );
                 return {
                   success: false,
-                  error: "Failed to apply image filters: " + (error instanceof Error ? error.message : "Unknown error"),
+                  error:
+                    "Failed to apply image filters: " +
+                    (error instanceof Error ? error.message : "Unknown error"),
                 };
               }
             }
@@ -312,7 +326,7 @@ export function useWorkflowExecution(
                   method: "POST",
                   headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
+                    Authorization: `Bearer ${token}`,
                   },
                   body: JSON.stringify({
                     prompt,
@@ -338,17 +352,17 @@ export function useWorkflowExecution(
 
               if (!response.ok) {
                 const errorText = await response.text();
-                console.error('[GenerateImage] API Error:', {
+                console.error("[GenerateImage] API Error:", {
                   status: response.status,
                   statusText: response.statusText,
-                  body: errorText
+                  body: errorText,
                 });
                 throw new Error(`API error: ${response.status} - ${errorText}`);
               }
 
               const apiData = await response.json();
 
-              console.log('[GenerateImage] API Response:', {
+              console.log("[GenerateImage] API Response:", {
                 hasImages: !!apiData.images,
                 imageCount: apiData.images?.length || 0,
               });
@@ -359,7 +373,7 @@ export function useWorkflowExecution(
                 );
                 const firstImage = images[0];
 
-                console.log('[GenerateImage] Generated images:', {
+                console.log("[GenerateImage] Generated images:", {
                   imageCount: images.length,
                   firstImageLength: firstImage.length,
                   firstImagePreview: firstImage.substring(0, 50),
@@ -370,11 +384,14 @@ export function useWorkflowExecution(
                   await saveToLibrary({
                     imageUrl: firstImage,
                     prompt: prompt,
-                    assetType: 'image'
+                    assetType: "image",
                   });
                   console.log("[useWorkflowExecution] Image saved to library");
                 } catch (error) {
-                  console.error("[useWorkflowExecution] Failed to save image to library:", error);
+                  console.error(
+                    "[useWorkflowExecution] Failed to save image to library:",
+                    error,
+                  );
                   // Don't fail the workflow if save fails, just log it
                 }
 
@@ -392,7 +409,7 @@ export function useWorkflowExecution(
                   imageUrl: firstImage,
                 };
 
-                console.log('[GenerateImage] Returning result data:', {
+                console.log("[GenerateImage] Returning result data:", {
                   hasImages: !!resultData.images,
                   hasImage: !!resultData.image,
                   hasImageUrl: !!resultData.imageUrl,
@@ -440,7 +457,11 @@ export function useWorkflowExecution(
 
             // NEW: Apply filters before sending to API (Layer 3 integration)
             if (filters.length > 0) {
-              console.log('[GenerateVideo] Applying', filters.length, 'filters before API call');
+              console.log(
+                "[GenerateVideo] Applying",
+                filters.length,
+                "filters before API call",
+              );
 
               try {
                 // Process first_frame if filters exist
@@ -457,17 +478,27 @@ export function useWorkflowExecution(
                 if (referenceImages) {
                   if (Array.isArray(referenceImages)) {
                     referenceImages = await Promise.all(
-                      referenceImages.map(img => renderWithPixi(img, filters))
+                      referenceImages.map((img) =>
+                        renderWithPixi(img, filters),
+                      ),
                     );
                   } else if (typeof referenceImages === "string") {
-                    referenceImages = await renderWithPixi(referenceImages, filters);
+                    referenceImages = await renderWithPixi(
+                      referenceImages,
+                      filters,
+                    );
                   }
                 }
               } catch (error) {
-                console.error('[GenerateVideo] Filter rendering failed:', error);
+                console.error(
+                  "[GenerateVideo] Filter rendering failed:",
+                  error,
+                );
                 return {
                   success: false,
-                  error: "Failed to apply image filters: " + (error instanceof Error ? error.message : "Unknown error"),
+                  error:
+                    "Failed to apply image filters: " +
+                    (error instanceof Error ? error.message : "Unknown error"),
                 };
               }
             }
@@ -537,7 +568,7 @@ export function useWorkflowExecution(
                   method: "POST",
                   headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
+                    Authorization: `Bearer ${token}`,
                   },
                   body: JSON.stringify(requestBody),
                 },
@@ -580,11 +611,14 @@ export function useWorkflowExecution(
                   await saveToLibrary({
                     imageUrl: result.videoUrl,
                     prompt: prompt,
-                    assetType: 'video'
+                    assetType: "video",
                   });
                   console.log("[useWorkflowExecution] Video saved to library");
                 } catch (error) {
-                  console.error("[useWorkflowExecution] Failed to save video to library:", error);
+                  console.error(
+                    "[useWorkflowExecution] Failed to save video to library:",
+                    error,
+                  );
                   // Don't fail the workflow if save fails, just log it
                 }
 
@@ -642,18 +676,24 @@ export function useWorkflowExecution(
               mediaData.videoUrl ||
               null;
             const isVideo = !!(mediaData.video || mediaData.videoUrl);
-            const filters: FilterConfig[] = inputs.filters || mediaData.filters || [];
+            const filters: FilterConfig[] =
+              inputs.filters || mediaData.filters || [];
 
             // Apply filters to images before downloading (Layer 3 integration)
             if (mediaUrl && !isVideo && filters.length > 0) {
-              console.log('[Download] Applying', filters.length, 'filters before download');
+              console.log(
+                "[Download] Applying",
+                filters.length,
+                "filters before download",
+              );
               try {
                 mediaUrl = await renderWithPixi(mediaUrl, filters);
               } catch (error) {
-                console.error('[Download] Filter rendering failed:', error);
+                console.error("[Download] Filter rendering failed:", error);
                 toast({
                   title: "Filter Error",
-                  description: "Failed to apply filters. Downloading original image.",
+                  description:
+                    "Failed to apply filters. Downloading original image.",
                   variant: "destructive",
                 });
               }
@@ -767,17 +807,22 @@ export function useWorkflowExecution(
 
         // Separate API-calling nodes from others for sequential execution
         const apiNodes = levelNodes.filter((node) =>
-          [NodeType.GenerateImage, NodeType.GenerateVideo, NodeType.LLM].includes(node.type)
+          [
+            NodeType.GenerateImage,
+            NodeType.GenerateVideo,
+            NodeType.LLM,
+          ].includes(node.type),
         );
         const otherNodes = levelNodes.filter(
-          (node) => !apiNodes.includes(node)
+          (node) => !apiNodes.includes(node),
         );
 
         toast({
           title: `Executing Level ${levelIndex + 1}/${levels.length}`,
-          description: apiNodes.length > 0
-            ? `Running ${apiNodes.length} API node${apiNodes.length > 1 ? "s" : ""} sequentially (rate limiting)...`
-            : `Running ${levelNodes.length} node${levelNodes.length > 1 ? "s" : ""}...`,
+          description:
+            apiNodes.length > 0
+              ? `Running ${apiNodes.length} API node${apiNodes.length > 1 ? "s" : ""} sequentially (rate limiting)...`
+              : `Running ${levelNodes.length} node${levelNodes.length > 1 ? "s" : ""}...`,
         });
 
         // Execute non-API nodes in parallel (they're fast)
@@ -863,8 +908,14 @@ export function useWorkflowExecution(
 
         // Process results from both parallel and sequential execution
         const allResults = [
-          ...otherResults.map((result, index) => ({ result, node: otherNodes[index] })),
-          ...apiResults.map((result, index) => ({ result, node: apiNodes[index] })),
+          ...otherResults.map((result, index) => ({
+            result,
+            node: otherNodes[index],
+          })),
+          ...apiResults.map((result, index) => ({
+            result,
+            node: apiNodes[index],
+          })),
         ];
 
         allResults.forEach(({ result, node }) => {
@@ -877,7 +928,7 @@ export function useWorkflowExecution(
                 outputs: result.value.data,
               };
 
-              console.log('[Workflow] Updating node state:', {
+              console.log("[Workflow] Updating node state:", {
                 nodeId: node.id,
                 nodeType: node.type,
                 updateData: {

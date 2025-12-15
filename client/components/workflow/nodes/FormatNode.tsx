@@ -1,25 +1,25 @@
-import { memo, useEffect } from 'react';
-import { Handle, Position, NodeProps } from 'reactflow';
-import { FormatNodeData, NODE_CONFIGURATIONS, NodeType } from '../types';
-import { Settings, ChevronDown } from 'lucide-react';
-import { executeFormat } from '../executionHelpers';
+import { memo, useEffect } from "react";
+import { Handle, Position, NodeProps } from "reactflow";
+import { FormatNodeData, NODE_CONFIGURATIONS, NodeType } from "../types";
+import { Settings, ChevronDown } from "lucide-react";
+import { executeFormat } from "../executionHelpers";
 
 function FormatNode({ data, id }: NodeProps<FormatNodeData>) {
   const config = NODE_CONFIGURATIONS[NodeType.Format];
-  const status = data.status || 'ready';
+  const status = data.status || "ready";
 
   const getBorderColor = () => {
-    if (status === 'executing') return 'border-yellow-500';
-    if (status === 'completed') return 'border-green-500';
-    if (status === 'error') return 'border-red-500';
-    return 'border-border';
+    if (status === "executing") return "border-yellow-500";
+    if (status === "completed") return "border-green-500";
+    if (status === "error") return "border-red-500";
+    return "border-border";
   };
 
   const handleUpdate = (field: keyof FormatNodeData, value: any) => {
     const updatedData = { ...data, [field]: value };
     const formatOutput = executeFormat(updatedData);
 
-    const event = new CustomEvent('node-update', {
+    const event = new CustomEvent("node-update", {
       detail: {
         id,
         data: {
@@ -35,7 +35,7 @@ function FormatNode({ data, id }: NodeProps<FormatNodeData>) {
   useEffect(() => {
     const formatOutput = executeFormat(data);
 
-    const event = new CustomEvent('node-update', {
+    const event = new CustomEvent("node-update", {
       detail: {
         id,
         data: {
@@ -45,15 +45,23 @@ function FormatNode({ data, id }: NodeProps<FormatNodeData>) {
       },
     });
     window.dispatchEvent(event);
-  }, [id, data.aspectRatio, data.durationSeconds, data.generateAudio, data.resolution]);
+  }, [
+    id,
+    data.aspectRatio,
+    data.durationSeconds,
+    data.generateAudio,
+    data.resolution,
+  ]);
 
   return (
-    <div className={`bg-card border-2 rounded-lg p-4 min-w-[280px] shadow-lg transition-colors ${getBorderColor()}`}>
+    <div
+      className={`bg-card border-2 rounded-lg p-4 min-w-[280px] shadow-lg transition-colors ${getBorderColor()}`}
+    >
       {/* Node Header */}
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
         <div className="flex items-center gap-2">
           <Settings className="w-4 h-4 text-primary" />
-          <div className="font-semibold text-sm">{data.label || 'Format'}</div>
+          <div className="font-semibold text-sm">{data.label || "Format"}</div>
         </div>
       </div>
 
@@ -64,7 +72,7 @@ function FormatNode({ data, id }: NodeProps<FormatNodeData>) {
         id="input"
         data-connector-type="any"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: '50%', transform: 'translateY(-50%)' }}
+        style={{ top: "50%", transform: "translateY(-50%)" }}
       />
 
       {/* Configuration Options */}
@@ -77,7 +85,7 @@ function FormatNode({ data, id }: NodeProps<FormatNodeData>) {
           <div className="relative">
             <select
               value={data.aspectRatio}
-              onChange={(e) => handleUpdate('aspectRatio', e.target.value)}
+              onChange={(e) => handleUpdate("aspectRatio", e.target.value)}
               className="w-full px-3 py-2 text-sm bg-background border border-border rounded-md appearance-none pr-8"
             >
               <option value="16:9">16:9 (Landscape)</option>
@@ -96,7 +104,9 @@ function FormatNode({ data, id }: NodeProps<FormatNodeData>) {
           <div className="relative">
             <select
               value={data.durationSeconds}
-              onChange={(e) => handleUpdate('durationSeconds', parseInt(e.target.value))}
+              onChange={(e) =>
+                handleUpdate("durationSeconds", parseInt(e.target.value))
+              }
               className="w-full px-3 py-2 text-sm bg-background border border-border rounded-md appearance-none pr-8"
             >
               <option value="4">4 seconds</option>
@@ -113,7 +123,7 @@ function FormatNode({ data, id }: NodeProps<FormatNodeData>) {
             <input
               type="checkbox"
               checked={data.generateAudio}
-              onChange={(e) => handleUpdate('generateAudio', e.target.checked)}
+              onChange={(e) => handleUpdate("generateAudio", e.target.checked)}
               className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
             />
             <span className="text-xs font-medium text-muted-foreground">
@@ -130,7 +140,7 @@ function FormatNode({ data, id }: NodeProps<FormatNodeData>) {
           <div className="relative">
             <select
               value={data.resolution}
-              onChange={(e) => handleUpdate('resolution', e.target.value)}
+              onChange={(e) => handleUpdate("resolution", e.target.value)}
               className="w-full px-3 py-2 text-sm bg-background border border-border rounded-md appearance-none pr-8"
             >
               <option value="1080p">1080p (Full HD)</option>
@@ -144,8 +154,12 @@ function FormatNode({ data, id }: NodeProps<FormatNodeData>) {
         <div className="bg-muted/50 p-2 rounded border border-border mt-3">
           <div className="text-xs text-muted-foreground mb-1">Settings:</div>
           <div className="text-xs space-y-0.5">
-            <div>• {data.aspectRatio} • {data.durationSeconds}s</div>
-            <div>• Audio: {data.generateAudio ? 'On' : 'Off'} • {data.resolution}</div>
+            <div>
+              • {data.aspectRatio} • {data.durationSeconds}s
+            </div>
+            <div>
+              • Audio: {data.generateAudio ? "On" : "Off"} • {data.resolution}
+            </div>
           </div>
         </div>
 
@@ -163,7 +177,7 @@ function FormatNode({ data, id }: NodeProps<FormatNodeData>) {
         id="format"
         data-connector-type="format"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: '50%', transform: 'translateY(-50%)' }}
+        style={{ top: "50%", transform: "translateY(-50%)" }}
       />
     </div>
   );

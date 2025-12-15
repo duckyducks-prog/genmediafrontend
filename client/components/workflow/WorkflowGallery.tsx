@@ -1,6 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
@@ -35,7 +41,9 @@ interface WorkflowGalleryProps {
   onLoadWorkflow: (workflow: SavedWorkflow) => void;
 }
 
-export default function WorkflowGallery({ onLoadWorkflow }: WorkflowGalleryProps) {
+export default function WorkflowGallery({
+  onLoadWorkflow,
+}: WorkflowGalleryProps) {
   const [myWorkflows, setMyWorkflows] = useState<SavedWorkflow[]>([]);
   const [publicWorkflows, setPublicWorkflows] = useState<SavedWorkflow[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -54,7 +62,9 @@ export default function WorkflowGallery({ onLoadWorkflow }: WorkflowGalleryProps
 
       // Use mock templates as fallback when API is not available
       if (publicWf.length === 0) {
-        console.log("[WorkflowGallery] Using mock templates (API not available)");
+        console.log(
+          "[WorkflowGallery] Using mock templates (API not available)",
+        );
         setPublicWorkflows(MOCK_WORKFLOW_TEMPLATES);
       } else {
         setPublicWorkflows(publicWf);
@@ -65,7 +75,8 @@ export default function WorkflowGallery({ onLoadWorkflow }: WorkflowGalleryProps
       setPublicWorkflows(MOCK_WORKFLOW_TEMPLATES);
       toast({
         title: "Using example templates",
-        description: "Backend workflow API is not available yet. Showing example templates.",
+        description:
+          "Backend workflow API is not available yet. Showing example templates.",
       });
     } finally {
       setIsLoading(false);
@@ -141,9 +152,15 @@ export default function WorkflowGallery({ onLoadWorkflow }: WorkflowGalleryProps
             <CardTitle className="text-lg flex items-center gap-2">
               {workflow.name}
               {workflow.is_public ? (
-                <Globe className="w-4 h-4 text-primary" title="Public template" />
+                <Globe
+                  className="w-4 h-4 text-primary"
+                  title="Public template"
+                />
               ) : (
-                <Lock className="w-4 h-4 text-muted-foreground" title="Private" />
+                <Lock
+                  className="w-4 h-4 text-muted-foreground"
+                  title="Private"
+                />
               )}
             </CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
@@ -171,10 +188,13 @@ export default function WorkflowGallery({ onLoadWorkflow }: WorkflowGalleryProps
             <span className="block">By {workflow.user_email}</span>
           )}
           {workflow.created_at && (
-            <span className="block">Created {formatDate(workflow.created_at)}</span>
+            <span className="block">
+              Created {formatDate(workflow.created_at)}
+            </span>
           )}
           <span className="block">
-            {workflow.nodes?.length || 0} nodes, {workflow.edges?.length || 0} connections
+            {workflow.nodes?.length || 0} nodes, {workflow.edges?.length || 0}{" "}
+            connections
           </span>
         </div>
 
@@ -260,7 +280,9 @@ export default function WorkflowGallery({ onLoadWorkflow }: WorkflowGalleryProps
             <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
               <WorkflowIcon className="w-16 h-16 mb-4 opacity-50" />
               <p className="text-lg font-medium">No workflow templates yet</p>
-              <p className="text-sm">Check back later for community templates</p>
+              <p className="text-sm">
+                Check back later for community templates
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

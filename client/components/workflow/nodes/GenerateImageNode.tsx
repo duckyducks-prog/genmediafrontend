@@ -32,13 +32,15 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
 
   // Debug logging
   useEffect(() => {
-    console.log('[GenerateImageNode] Data updated:', {
+    console.log("[GenerateImageNode] Data updated:", {
       nodeId: id,
       status,
       isCompleted,
       hasImageUrl: !!incomingImageUrl,
       hasImages: images.length > 0,
-      imageUrlPreview: incomingImageUrl ? incomingImageUrl.substring(0, 50) : 'null',
+      imageUrlPreview: incomingImageUrl
+        ? incomingImageUrl.substring(0, 50)
+        : "null",
       imageCount: images.length,
       allDataKeys: Object.keys(data),
     });
@@ -231,10 +233,14 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
 
         {/* Debug Info - Shows data state */}
         <div className="text-xs bg-muted/50 p-2 rounded space-y-1">
-          <div>Has imageUrl: {incomingImageUrl ? '✓' : '✗'}</div>
-          <div>Has images: {images.length > 0 ? `✓ (${images.length})` : '✗'}</div>
+          <div>Has imageUrl: {incomingImageUrl ? "✓" : "✗"}</div>
+          <div>
+            Has images: {images.length > 0 ? `✓ (${images.length})` : "✗"}
+          </div>
           {incomingImageUrl && (
-            <div className="truncate">URL: {incomingImageUrl.substring(0, 30)}...</div>
+            <div className="truncate">
+              URL: {incomingImageUrl.substring(0, 30)}...
+            </div>
           )}
         </div>
 

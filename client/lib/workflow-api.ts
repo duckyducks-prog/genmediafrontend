@@ -24,7 +24,7 @@ export interface SavedWorkflow extends WorkflowMetadata {
  * Save a workflow to the backend
  */
 export async function saveWorkflow(
-  workflow: SavedWorkflow
+  workflow: SavedWorkflow,
 ): Promise<{ id: string }> {
   const user = auth.currentUser;
   if (!user) {
@@ -61,7 +61,7 @@ export async function saveWorkflow(
  */
 export async function updateWorkflow(
   workflowId: string,
-  workflow: SavedWorkflow
+  workflow: SavedWorkflow,
 ): Promise<void> {
   const user = auth.currentUser;
   if (!user) {
@@ -184,7 +184,9 @@ export async function deleteWorkflow(workflowId: string): Promise<void> {
 /**
  * Clone a workflow (creates a copy for the current user)
  */
-export async function cloneWorkflow(workflowId: string): Promise<{ id: string }> {
+export async function cloneWorkflow(
+  workflowId: string,
+): Promise<{ id: string }> {
   const user = auth.currentUser;
   if (!user) {
     throw new Error("User not authenticated");

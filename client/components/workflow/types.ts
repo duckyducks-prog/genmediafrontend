@@ -44,12 +44,12 @@ export type { FilterConfig };
 // ============================================================================
 
 export enum ConnectorType {
-  Text = "text",           // String data (prompts, responses)
-  Image = "image",         // Single base64 image
-  Images = "images",       // Array of base64 images
-  Video = "video",         // Base64 video
-  Format = "format",       // Format configuration object
-  Any = "any",            // Pass-through for any data
+  Text = "text", // String data (prompts, responses)
+  Image = "image", // Single base64 image
+  Images = "images", // Array of base64 images
+  Video = "video", // Base64 video
+  Format = "format", // Format configuration object
+  Any = "any", // Pass-through for any data
 }
 
 // ============================================================================
@@ -339,7 +339,7 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         type: ConnectorType.Any, // Array of FilterConfig
         required: false,
         acceptsMultiple: false,
-      }
+      },
     ],
     outputConnectors: [
       {
@@ -351,7 +351,7 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "filters",
         label: "Filters",
         type: ConnectorType.Any, // Updated filter config array
-      }
+      },
     ],
   },
 
@@ -374,7 +374,7 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         type: ConnectorType.Any,
         required: false,
         acceptsMultiple: false,
-      }
+      },
     ],
     outputConnectors: [
       {
@@ -386,7 +386,7 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "filters",
         label: "Filters",
         type: ConnectorType.Any,
-      }
+      },
     ],
   },
 
@@ -409,7 +409,7 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         type: ConnectorType.Any,
         required: false,
         acceptsMultiple: false,
-      }
+      },
     ],
     outputConnectors: [
       {
@@ -421,7 +421,7 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "filters",
         label: "Filters",
         type: ConnectorType.Any,
-      }
+      },
     ],
   },
 
@@ -444,7 +444,7 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         type: ConnectorType.Any,
         required: false,
         acceptsMultiple: false,
-      }
+      },
     ],
     outputConnectors: [
       {
@@ -456,7 +456,7 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "filters",
         label: "Filters",
         type: ConnectorType.Any,
-      }
+      },
     ],
   },
 
@@ -479,7 +479,7 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         type: ConnectorType.Any,
         required: false,
         acceptsMultiple: false,
-      }
+      },
     ],
     outputConnectors: [
       {
@@ -491,7 +491,7 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "filters",
         label: "Filters",
         type: ConnectorType.Any,
-      }
+      },
     ],
   },
 
@@ -514,7 +514,7 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         type: ConnectorType.Any,
         required: false,
         acceptsMultiple: false,
-      }
+      },
     ],
     outputConnectors: [
       {
@@ -526,7 +526,7 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "filters",
         label: "Filters",
         type: ConnectorType.Any,
-      }
+      },
     ],
   },
 
@@ -782,7 +782,7 @@ export function getNodeConfiguration(nodeType: NodeType): NodeConfiguration {
 
 export function canConnect(
   sourceType: ConnectorType,
-  targetType: ConnectorType
+  targetType: ConnectorType,
 ): boolean {
   // Any can connect to anything
   if (sourceType === ConnectorType.Any || targetType === ConnectorType.Any) {
@@ -790,7 +790,10 @@ export function canConnect(
   }
 
   // Image can connect to Images (array)
-  if (sourceType === ConnectorType.Image && targetType === ConnectorType.Images) {
+  if (
+    sourceType === ConnectorType.Image &&
+    targetType === ConnectorType.Images
+  ) {
     return true;
   }
 
@@ -800,16 +803,18 @@ export function canConnect(
 
 export function validateMutualExclusion(
   nodeType: NodeType,
-  connections: Record<string, any>
+  connections: Record<string, any>,
 ): { valid: boolean; error?: string } {
   if (nodeType === NodeType.GenerateVideo) {
     const hasFrames = connections.first_frame || connections.last_frame;
-    const hasReferences = connections.reference_images && connections.reference_images.length > 0;
+    const hasReferences =
+      connections.reference_images && connections.reference_images.length > 0;
 
     if (hasFrames && hasReferences) {
       return {
         valid: false,
-        error: "Cannot use both frame bridging (first/last frame) and reference images. Disconnect one.",
+        error:
+          "Cannot use both frame bridging (first/last frame) and reference images. Disconnect one.",
       };
     }
   }

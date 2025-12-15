@@ -80,8 +80,8 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
 
           const response = await fetch(url, {
             headers: {
-              'Authorization': `Bearer ${token}`
-            }
+              Authorization: `Bearer ${token}`,
+            },
           });
 
           console.log("[DEBUG] Library response status:", response.status);
@@ -98,9 +98,14 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
 
           if (data.assets && data.assets.length > 0) {
             console.log("[DEBUG] First asset:", data.assets[0]);
-            console.log("[DEBUG] Asset IDs:", data.assets.map((a: any) => a.id));
+            console.log(
+              "[DEBUG] Asset IDs:",
+              data.assets.map((a: any) => a.id),
+            );
           } else {
-            console.log("[DEBUG] No assets returned - backend may not be saving generated images");
+            console.log(
+              "[DEBUG] No assets returned - backend may not be saving generated images",
+            );
           }
 
           setAssets(data.assets || []);
@@ -162,8 +167,8 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
           {
             method: "DELETE",
             headers: {
-              'Authorization': `Bearer ${token}`
-            }
+              Authorization: `Bearer ${token}`,
+            },
           },
         );
 

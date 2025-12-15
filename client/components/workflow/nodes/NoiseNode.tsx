@@ -1,26 +1,28 @@
-import { memo, useEffect, useCallback, useRef } from 'react';
-import { Handle, Position, NodeProps } from 'reactflow';
-import { NoiseNodeData } from '../types';
-import { Slider } from '@/components/ui/slider';
-import { Radio } from 'lucide-react';
-import { FilterConfig, FILTER_DEFINITIONS } from '@/lib/pixi-filter-configs';
+import { memo, useEffect, useCallback, useRef } from "react";
+import { Handle, Position, NodeProps } from "reactflow";
+import { NoiseNodeData } from "../types";
+import { Slider } from "@/components/ui/slider";
+import { Radio } from "lucide-react";
+import { FilterConfig, FILTER_DEFINITIONS } from "@/lib/pixi-filter-configs";
 
 function NoiseNode({ data, id }: NodeProps<NoiseNodeData>) {
   // Get incoming data
   const imageInput = (data as any).image || (data as any).imageInput;
   const upstreamFiltersRaw = (data as any).filters || [];
 
-  const upstreamFiltersKey = JSON.stringify(upstreamFiltersRaw.map((f: FilterConfig) => ({
-    type: f.type,
-    params: f.params
-  })));
+  const upstreamFiltersKey = JSON.stringify(
+    upstreamFiltersRaw.map((f: FilterConfig) => ({
+      type: f.type,
+      params: f.params,
+    })),
+  );
 
   const createConfig = useCallback(
     (noise: number): FilterConfig => ({
-      type: 'noise',
+      type: "noise",
       params: { noise },
     }),
-    []
+    [],
   );
 
   const updateOutputsRef = useRef((noise: number) => {});
@@ -30,7 +32,7 @@ function NoiseNode({ data, id }: NodeProps<NoiseNodeData>) {
       const thisConfig = createConfig(noise);
       const updatedFilters = [...upstreamFiltersRaw, thisConfig];
 
-      const updateEvent = new CustomEvent('node-update', {
+      const updateEvent = new CustomEvent("node-update", {
         detail: {
           id,
           data: {
@@ -62,21 +64,61 @@ function NoiseNode({ data, id }: NodeProps<NoiseNodeData>) {
         </div>
       </div>
 
-      <Handle type="target" position={Position.Left} id="image" data-connector-type="image" className="!w-3 !h-3 !border-2 !border-background" style={{ top: '30%' }} />
-      <Handle type="target" position={Position.Left} id="filters" data-connector-type="any" className="!w-3 !h-3 !border-2 !border-background" style={{ top: '70%' }} />
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="image"
+        data-connector-type="image"
+        className="!w-3 !h-3 !border-2 !border-background"
+        style={{ top: "30%" }}
+      />
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="filters"
+        data-connector-type="any"
+        className="!w-3 !h-3 !border-2 !border-background"
+        style={{ top: "70%" }}
+      />
 
       <div className="space-y-4">
         <div>
           <label className="text-xs text-muted-foreground block mb-2 flex justify-between">
             <span>{def.params.noise.label}</span>
-            <span>{((data.noise * (def.params.noise.displayMultiplier || 1))).toFixed(0)}{def.params.noise.displayMultiplier ? '%' : ''}</span>
+            <span>
+              {(data.noise * (def.params.noise.displayMultiplier || 1)).toFixed(
+                0,
+              )}
+              {def.params.noise.displayMultiplier ? "%" : ""}
+            </span>
           </label>
-          <Slider value={[data.noise]} onValueChange={([v]) => updateOutputsRef.current(v)} min={def.params.noise.min} max={def.params.noise.max} step={def.params.noise.step} className="w-full" />
+          <Slider
+            value={[data.noise]}
+            onValueChange={([v]) => updateOutputsRef.current(v)}
+            min={def.params.noise.min}
+            max={def.params.noise.max}
+            step={def.params.noise.step}
+            className="w-full"
+          />
         </div>
       </div>
 
-      <Handle type="source" position={Position.Right} id="image" data-connector-type="image" className="!w-3 !h-3 !border-2 !border-background" style={{ top: '30%' }} />
-      <Handle type="source" position={Position.Right} id="filters" data-connector-type="any" className="!w-3 !h-3 !border-2 !border-background" style={{ top: '70%' }} />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="image"
+        data-connector-type="image"
+        className="!w-3 !h-3 !border-2 !border-background"
+        style={{ top: "30%" }}
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="filters"
+        data-connector-type="any"
+        className="!w-3 !h-3 !border-2 !border-background"
+        style={{ top: "70%" }}
+      />
     </div>
   );
 }

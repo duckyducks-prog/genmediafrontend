@@ -9,7 +9,8 @@ export const MOCK_WORKFLOW_TEMPLATES: SavedWorkflow[] = [
   {
     id: "template-1",
     name: "Image Enhancement Pipeline",
-    description: "Apply professional image enhancements with adjustable filters for brightness, contrast, and sharpening",
+    description:
+      "Apply professional image enhancements with adjustable filters for brightness, contrast, and sharpening",
     is_public: true,
     user_email: "templates@hubspot.com",
     created_at: new Date("2024-01-15").toISOString(),
@@ -96,7 +97,8 @@ export const MOCK_WORKFLOW_TEMPLATES: SavedWorkflow[] = [
   {
     id: "template-2",
     name: "AI Image Generation",
-    description: "Generate AI images from text prompts with customizable format settings",
+    description:
+      "Generate AI images from text prompts with customizable format settings",
     is_public: true,
     user_email: "templates@hubspot.com",
     created_at: new Date("2024-01-20").toISOString(),
@@ -170,7 +172,8 @@ export const MOCK_WORKFLOW_TEMPLATES: SavedWorkflow[] = [
   {
     id: "template-3",
     name: "Creative Filter Chain",
-    description: "Experiment with multiple artistic filters including blur, vignette, and hue/saturation adjustments",
+    description:
+      "Experiment with multiple artistic filters including blur, vignette, and hue/saturation adjustments",
     is_public: true,
     user_email: "templates@hubspot.com",
     created_at: new Date("2024-01-25").toISOString(),
@@ -283,7 +286,8 @@ export const MOCK_WORKFLOW_TEMPLATES: SavedWorkflow[] = [
   {
     id: "template-4",
     name: "Video Generation Workflow",
-    description: "Generate AI videos from text prompts with format configuration",
+    description:
+      "Generate AI videos from text prompts with format configuration",
     is_public: true,
     user_email: "templates@hubspot.com",
     created_at: new Date("2024-02-01").toISOString(),

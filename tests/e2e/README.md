@@ -225,6 +225,7 @@ npm test tests/e2e/video-debug.spec.ts
 ```
 
 This test will:
+
 - Start a video generation request
 - Poll every 10 seconds for up to 10 minutes
 - **Log ALL API responses** in complete detail
@@ -239,6 +240,7 @@ npm test tests/e2e/video-debug.spec.ts -t "manual"
 ```
 
 This helps diagnose issues like:
+
 - Backend returning different status values (e.g., "processing" vs "complete")
 - Video data field named differently (e.g., "video" vs "video_base64")
 - Backend timing out or failing silently

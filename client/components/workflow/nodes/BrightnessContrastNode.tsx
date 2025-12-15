@@ -1,30 +1,34 @@
-import { memo, useEffect, useCallback, useRef } from 'react';
-import { Handle, Position, NodeProps } from 'reactflow';
-import { BrightnessContrastNodeData } from '../types';
-import { Slider } from '@/components/ui/slider';
-import { Sun } from 'lucide-react';
-import { FilterConfig, FILTER_DEFINITIONS } from '@/lib/pixi-filter-configs';
+import { memo, useEffect, useCallback, useRef } from "react";
+import { Handle, Position, NodeProps } from "reactflow";
+import { BrightnessContrastNodeData } from "../types";
+import { Slider } from "@/components/ui/slider";
+import { Sun } from "lucide-react";
+import { FilterConfig, FILTER_DEFINITIONS } from "@/lib/pixi-filter-configs";
 
-function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeData>) {
-
+function BrightnessContrastNode({
+  data,
+  id,
+}: NodeProps<BrightnessContrastNodeData>) {
   // Get incoming data
   // Extract primitive/comparable values to use as dependencies
   const imageInput = (data as any).image || (data as any).imageInput;
   const upstreamFiltersRaw = (data as any).filters || [];
 
   // Convert filters to a stable string for comparison
-  const upstreamFiltersKey = JSON.stringify(upstreamFiltersRaw.map((f: FilterConfig) => ({
-    type: f.type,
-    params: f.params
-  })));
+  const upstreamFiltersKey = JSON.stringify(
+    upstreamFiltersRaw.map((f: FilterConfig) => ({
+      type: f.type,
+      params: f.params,
+    })),
+  );
 
   // Create this node's filter config (lightweight, no PixiJS instance)
   const createConfig = useCallback(
     (brightness: number, contrast: number): FilterConfig => ({
-      type: 'brightness',
+      type: "brightness",
       params: { brightness, contrast },
     }),
-    []
+    [],
   );
 
   // Update node outputs (Layer 1: store ONLY config)
@@ -36,7 +40,7 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
       const thisConfig = createConfig(brightness, contrast);
       const updatedFilters = [...upstreamFiltersRaw, thisConfig];
 
-      console.log('[BrightnessContrastNode] Dispatching node-update:', {
+      console.log("[BrightnessContrastNode] Dispatching node-update:", {
         nodeId: id,
         brightness,
         contrast,
@@ -45,7 +49,7 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
         totalFilterCount: updatedFilters.length,
       });
 
-      const updateEvent = new CustomEvent('node-update', {
+      const updateEvent = new CustomEvent("node-update", {
         detail: {
           id,
           data: {
@@ -95,7 +99,7 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
         id="image"
         data-connector-type="image"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: '30%' }}
+        style={{ top: "30%" }}
       />
       <Handle
         type="target"
@@ -103,7 +107,7 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
         id="filters"
         data-connector-type="any"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: '70%' }}
+        style={{ top: "70%" }}
       />
 
       {/* Controls */}
@@ -112,8 +116,10 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
           <label className="text-xs text-muted-foreground block mb-2 flex justify-between">
             <span>{def.params.brightness.label}</span>
             <span>
-              {((data.brightness * (def.params.brightness.displayMultiplier || 1))).toFixed(0)}
-              {def.params.brightness.displayMultiplier ? '%' : ''}
+              {(
+                data.brightness * (def.params.brightness.displayMultiplier || 1)
+              ).toFixed(0)}
+              {def.params.brightness.displayMultiplier ? "%" : ""}
             </span>
           </label>
           <Slider
@@ -130,8 +136,10 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
           <label className="text-xs text-muted-foreground block mb-2 flex justify-between">
             <span>{def.params.contrast.label}</span>
             <span>
-              {((data.contrast * (def.params.contrast.displayMultiplier || 1))).toFixed(0)}
-              {def.params.contrast.displayMultiplier ? '%' : ''}
+              {(
+                data.contrast * (def.params.contrast.displayMultiplier || 1)
+              ).toFixed(0)}
+              {def.params.contrast.displayMultiplier ? "%" : ""}
             </span>
           </label>
           <Slider
@@ -152,7 +160,7 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
         id="image"
         data-connector-type="image"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: '30%' }}
+        style={{ top: "30%" }}
       />
       <Handle
         type="source"
@@ -160,7 +168,7 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
         id="filters"
         data-connector-type="any"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: '70%' }}
+        style={{ top: "70%" }}
       />
     </div>
   );

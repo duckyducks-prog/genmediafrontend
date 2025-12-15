@@ -35,13 +35,13 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
     const textInput = (data as any).text || (data as any).textContent;
     const filters: FilterConfig[] = (data as any).filters || [];
 
-    console.log('[PreviewNode] Data update:', {
+    console.log("[PreviewNode] Data update:", {
       nodeId: id,
       hasImage: !!imageInput,
       hasVideo: !!videoInput,
       hasText: !!textInput,
       filterCount: filters.length,
-      filters: filters.map(f => ({ type: f.type, params: f.params })),
+      filters: filters.map((f) => ({ type: f.type, params: f.params })),
     });
 
     // Handle image with possible filters
@@ -51,18 +51,26 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
         // Increment request ID to track this render
         const currentRequestId = ++renderRequestId.current;
 
-        console.log('[PreviewNode] Starting PixiJS render with', filters.length, 'filters (request #' + currentRequestId + ')');
+        console.log(
+          "[PreviewNode] Starting PixiJS render with",
+          filters.length,
+          "filters (request #" + currentRequestId + ")",
+        );
         setIsRendering(true);
 
         renderWithPixi(imageInput, filters)
-          .then(rendered => {
+          .then((rendered) => {
             // Only update if this is still the latest request
             if (currentRequestId === renderRequestId.current) {
-              console.log('[PreviewNode] Render completed successfully (request #' + currentRequestId + ')');
+              console.log(
+                "[PreviewNode] Render completed successfully (request #" +
+                  currentRequestId +
+                  ")",
+              );
               setDisplayContent({ type: "image", content: rendered });
 
               // Dispatch the rendered image as output
-              const updateEvent = new CustomEvent('node-update', {
+              const updateEvent = new CustomEvent("node-update", {
                 detail: {
                   id,
                   data: {
@@ -75,13 +83,24 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
               });
               window.dispatchEvent(updateEvent);
             } else {
-              console.log('[PreviewNode] Discarding stale render result (request #' + currentRequestId + ', current is #' + renderRequestId.current + ')');
+              console.log(
+                "[PreviewNode] Discarding stale render result (request #" +
+                  currentRequestId +
+                  ", current is #" +
+                  renderRequestId.current +
+                  ")",
+              );
             }
           })
-          .catch(error => {
+          .catch((error) => {
             // Only handle error if this is still the latest request
             if (currentRequestId === renderRequestId.current) {
-              console.error("[PreviewNode] Render failed (request #" + currentRequestId + "):", error);
+              console.error(
+                "[PreviewNode] Render failed (request #" +
+                  currentRequestId +
+                  "):",
+                error,
+              );
               // Fallback to original image
               setDisplayContent({ type: "image", content: imageInput });
             }
@@ -94,11 +113,11 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
           });
       } else {
         // No filters, show original
-        console.log('[PreviewNode] Showing original image (no filters)');
+        console.log("[PreviewNode] Showing original image (no filters)");
         setDisplayContent({ type: "image", content: imageInput });
 
         // Dispatch the original image as output
-        const updateEvent = new CustomEvent('node-update', {
+        const updateEvent = new CustomEvent("node-update", {
           detail: {
             id,
             data: {
@@ -128,9 +147,9 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
 
   const handleDownload = () => {
     if (displayContent.type === "image" && displayContent.content) {
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = displayContent.content;
-      link.download = 'modified-image.png';
+      link.download = "modified-image.png";
       link.click();
     }
   };
@@ -143,9 +162,7 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
         <div className="flex items-center gap-2">
           <Eye className="w-4 h-4 text-accent" />
-          <div className="font-semibold text-sm">
-            {data.label || "Preview"}
-          </div>
+          <div className="font-semibold text-sm">{data.label || "Preview"}</div>
         </div>
         {isExecuting && (
           <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />
@@ -207,7 +224,9 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
                 alt="Preview"
                 className="w-full h-auto max-h-[250px] object-contain"
                 crossOrigin={
-                  displayContent.content?.startsWith("data:") ? undefined : "anonymous"
+                  displayContent.content?.startsWith("data:")
+                    ? undefined
+                    : "anonymous"
                 }
                 onError={(e) => {
                   console.error("[PreviewNode] Image failed to load");

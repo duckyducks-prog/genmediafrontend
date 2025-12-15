@@ -1,26 +1,28 @@
-import { memo, useEffect, useCallback, useRef } from 'react';
-import { Handle, Position, NodeProps } from 'reactflow';
-import { HueSaturationNodeData } from '../types';
-import { Slider } from '@/components/ui/slider';
-import { Palette } from 'lucide-react';
-import { FilterConfig, FILTER_DEFINITIONS } from '@/lib/pixi-filter-configs';
+import { memo, useEffect, useCallback, useRef } from "react";
+import { Handle, Position, NodeProps } from "reactflow";
+import { HueSaturationNodeData } from "../types";
+import { Slider } from "@/components/ui/slider";
+import { Palette } from "lucide-react";
+import { FilterConfig, FILTER_DEFINITIONS } from "@/lib/pixi-filter-configs";
 
 function HueSaturationNode({ data, id }: NodeProps<HueSaturationNodeData>) {
   // Get incoming data
   const imageInput = (data as any).image || (data as any).imageInput;
   const upstreamFiltersRaw = (data as any).filters || [];
 
-  const upstreamFiltersKey = JSON.stringify(upstreamFiltersRaw.map((f: FilterConfig) => ({
-    type: f.type,
-    params: f.params
-  })));
+  const upstreamFiltersKey = JSON.stringify(
+    upstreamFiltersRaw.map((f: FilterConfig) => ({
+      type: f.type,
+      params: f.params,
+    })),
+  );
 
   const createConfig = useCallback(
     (hue: number, saturation: number): FilterConfig => ({
-      type: 'hueSaturation',
+      type: "hueSaturation",
       params: { hue, saturation },
     }),
-    []
+    [],
   );
 
   const updateOutputsRef = useRef((hue: number, saturation: number) => {});
@@ -30,7 +32,7 @@ function HueSaturationNode({ data, id }: NodeProps<HueSaturationNodeData>) {
       const thisConfig = createConfig(hue, saturation);
       const updatedFilters = [...upstreamFiltersRaw, thisConfig];
 
-      const updateEvent = new CustomEvent('node-update', {
+      const updateEvent = new CustomEvent("node-update", {
         detail: {
           id,
           data: {
@@ -63,8 +65,22 @@ function HueSaturationNode({ data, id }: NodeProps<HueSaturationNodeData>) {
         </div>
       </div>
 
-      <Handle type="target" position={Position.Left} id="image" data-connector-type="image" className="!w-3 !h-3 !border-2 !border-background" style={{ top: '30%' }} />
-      <Handle type="target" position={Position.Left} id="filters" data-connector-type="any" className="!w-3 !h-3 !border-2 !border-background" style={{ top: '70%' }} />
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="image"
+        data-connector-type="image"
+        className="!w-3 !h-3 !border-2 !border-background"
+        style={{ top: "30%" }}
+      />
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="filters"
+        data-connector-type="any"
+        className="!w-3 !h-3 !border-2 !border-background"
+        style={{ top: "70%" }}
+      />
 
       <div className="space-y-4">
         <div>
@@ -72,20 +88,55 @@ function HueSaturationNode({ data, id }: NodeProps<HueSaturationNodeData>) {
             <span>{def.params.hue.label}</span>
             <span>{data.hue.toFixed(0)}°</span>
           </label>
-          <Slider value={[data.hue]} onValueChange={([v]) => updateOutputsRef.current(v, data.saturation)} min={def.params.hue.min} max={def.params.hue.max} step={def.params.hue.step} className="w-full" />
+          <Slider
+            value={[data.hue]}
+            onValueChange={([v]) =>
+              updateOutputsRef.current(v, data.saturation)
+            }
+            min={def.params.hue.min}
+            max={def.params.hue.max}
+            step={def.params.hue.step}
+            className="w-full"
+          />
         </div>
 
         <div>
           <label className="text-xs text-muted-foreground block mb-2 flex justify-between">
             <span>{def.params.saturation.label}</span>
-            <span>{((data.saturation * (def.params.saturation.displayMultiplier || 1))).toFixed(0)}{def.params.saturation.displayMultiplier ? '%' : ''}</span>
+            <span>
+              {(
+                data.saturation * (def.params.saturation.displayMultiplier || 1)
+              ).toFixed(0)}
+              {def.params.saturation.displayMultiplier ? "%" : ""}
+            </span>
           </label>
-          <Slider value={[data.saturation]} onValueChange={([v]) => updateOutputsRef.current(data.hue, v)} min={def.params.saturation.min} max={def.params.saturation.max} step={def.params.saturation.step} className="w-full" />
+          <Slider
+            value={[data.saturation]}
+            onValueChange={([v]) => updateOutputsRef.current(data.hue, v)}
+            min={def.params.saturation.min}
+            max={def.params.saturation.max}
+            step={def.params.saturation.step}
+            className="w-full"
+          />
         </div>
       </div>
 
-      <Handle type="source" position={Position.Right} id="image" data-connector-type="image" className="!w-3 !h-3 !border-2 !border-background" style={{ top: '30%' }} />
-      <Handle type="source" position={Position.Right} id="filters" data-connector-type="any" className="!w-3 !h-3 !border-2 !border-background" style={{ top: '70%' }} />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="image"
+        data-connector-type="image"
+        className="!w-3 !h-3 !border-2 !border-background"
+        style={{ top: "30%" }}
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="filters"
+        data-connector-type="any"
+        className="!w-3 !h-3 !border-2 !border-background"
+        style={{ top: "70%" }}
+      />
     </div>
   );
 }

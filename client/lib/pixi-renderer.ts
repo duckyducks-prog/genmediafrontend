@@ -1,6 +1,14 @@
-import { Application, Sprite, Texture, Filter, ColorMatrixFilter, BlurFilter, NoiseFilter } from 'pixi.js';
-import { AdjustmentFilter } from 'pixi-filters';
-import { FilterConfig, FILTER_DEFINITIONS } from './pixi-filter-configs';
+import {
+  Application,
+  Sprite,
+  Texture,
+  Filter,
+  ColorMatrixFilter,
+  BlurFilter,
+  NoiseFilter,
+} from "pixi.js";
+import { AdjustmentFilter } from "pixi-filters";
+import { FilterConfig, FILTER_DEFINITIONS } from "./pixi-filter-configs";
 
 /**
  * Singleton PixiJS Application to avoid WebGL context exhaustion
@@ -28,14 +36,16 @@ async function getSharedApp(): Promise<Application> {
     try {
       // Check WebGL support before attempting to create app
       if (!isPixiSupported()) {
-        throw new Error('WebGL is not supported in this browser - PixiJS requires WebGL');
+        throw new Error(
+          "WebGL is not supported in this browser - PixiJS requires WebGL",
+        );
       }
 
       // Pixi v8: Create app instance, then initialize with options
       // preserveDrawingBuffer is CRITICAL for canvas readback (toDataURL/extract)
       const app = new Application();
 
-      console.log('[PixiJS] Calling app.init()...');
+      console.log("[PixiJS] Calling app.init()...");
       await app.init({
         backgroundAlpha: 0,
         antialias: true,
@@ -45,41 +55,47 @@ async function getSharedApp(): Promise<Application> {
         preserveDrawingBuffer: true, // Essential for extract/toDataURL to work
       });
 
-      console.log('[PixiJS] app.init() completed');
+      console.log("[PixiJS] app.init() completed");
 
       // Verify renderer is ready
       if (!app.renderer) {
-        throw new Error('PixiJS renderer not available after init');
+        throw new Error("PixiJS renderer not available after init");
       }
 
       // Verify canvas is ready
       const canvas = app.canvas as HTMLCanvasElement;
       if (!canvas) {
-        throw new Error('PixiJS canvas not available after init');
+        throw new Error("PixiJS canvas not available after init");
       }
 
-      console.log('[PixiJS] Renderer and canvas verified');
+      console.log("[PixiJS] Renderer and canvas verified");
 
       // Add WebGL context loss/restore event listeners for better recovery
-      canvas.addEventListener('webglcontextlost', (event) => {
-        console.error('[PixiJS] WebGL context lost! Preventing default to allow recovery.');
+      canvas.addEventListener("webglcontextlost", (event) => {
+        console.error(
+          "[PixiJS] WebGL context lost! Preventing default to allow recovery.",
+        );
         event.preventDefault(); // Prevent browser from giving up on context
       });
 
-      canvas.addEventListener('webglcontextrestored', () => {
-        console.log('[PixiJS] WebGL context restored! Disposing and allowing re-initialization.');
+      canvas.addEventListener("webglcontextrestored", () => {
+        console.log(
+          "[PixiJS] WebGL context restored! Disposing and allowing re-initialization.",
+        );
         // Dispose the app so next render will create a fresh one
         disposeSharedPixiApp();
       });
 
-      console.log('[PixiJS] Shared application initialized successfully');
+      console.log("[PixiJS] Shared application initialized successfully");
       sharedApp = app;
       sharedAppInitPromise = null; // Clear promise after success
       return app;
     } catch (error) {
-      console.error('[PixiJS] Initialization failed:', error);
+      console.error("[PixiJS] Initialization failed:", error);
       sharedAppInitPromise = null; // Clear promise to allow retry
-      throw new Error(`Failed to initialize PixiJS: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to initialize PixiJS: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   })();
 
@@ -94,9 +110,13 @@ async function getSharedApp(): Promise<Application> {
 export function disposeSharedPixiApp(): void {
   if (sharedApp) {
     try {
-      sharedApp.destroy(true, { children: true, texture: true, textureSource: true });
+      sharedApp.destroy(true, {
+        children: true,
+        texture: true,
+        textureSource: true,
+      });
     } catch (error) {
-      console.error('Error disposing PixiJS app:', error);
+      console.error("Error disposing PixiJS app:", error);
     }
     sharedApp = null;
   }
@@ -109,15 +129,15 @@ export function disposeSharedPixiApp(): void {
  */
 function createFilterFromConfig(config: FilterConfig): Filter {
   const def = FILTER_DEFINITIONS[config.type];
-  
+
   switch (def.filterClass) {
-    case 'AdjustmentFilter': {
+    case "AdjustmentFilter": {
       // Brightness/Contrast node uses UI sliders -1..1, must map to filter 0..2
       // This is necessary because:
       // - UI sliders use -1 to 1 with 0 = "no change" (user-friendly)
       // - AdjustmentFilter expects 0 to 2 with 1 = "no change" (filter API)
       // Mapping: filterValue = sliderValue + 1
-      if (config.type === 'brightness') {
+      if (config.type === "brightness") {
         const rawB = config.params.brightness ?? 0;
         const rawC = config.params.contrast ?? 0;
 
@@ -133,30 +153,30 @@ function createFilterFromConfig(config: FilterConfig): Filter {
       // Sharpen uses gamma 0-3 range (pass through unchanged)
       return new AdjustmentFilter(config.params);
     }
-    
-    case 'BlurFilter':
+
+    case "BlurFilter":
       return new BlurFilter(config.params);
-    
-    case 'ColorMatrixFilter': {
+
+    case "ColorMatrixFilter": {
       const filter = new ColorMatrixFilter();
       // ColorMatrixFilter uses methods, not constructor params
-      if (config.type === 'hueSaturation') {
+      if (config.type === "hueSaturation") {
         filter.hue(config.params.hue || 0, false);
         filter.saturate(config.params.saturation || 0);
       }
       return filter;
     }
-    
-    case 'NoiseFilter':
+
+    case "NoiseFilter":
       return new NoiseFilter({ noise: config.params.noise });
-    
-    case 'Custom':
+
+    case "Custom":
       // Handle custom filters like vignette
-      if (config.type === 'vignette') {
+      if (config.type === "vignette") {
         return createVignetteFilter(config.params);
       }
       throw new Error(`Custom filter ${config.type} not implemented`);
-    
+
     default:
       throw new Error(`Unknown filter class: ${def.filterClass}`);
   }
@@ -170,7 +190,7 @@ function createVignetteFilter(params: Record<string, number>): Filter {
   // Use brightness reduction as a simple vignette approximation
   const filter = new ColorMatrixFilter();
   const amount = params.amount || 0.5;
-  filter.brightness(1 - (amount * 0.3), false);
+  filter.brightness(1 - amount * 0.3, false);
   return filter;
 }
 
@@ -186,22 +206,22 @@ let renderQueue = Promise.resolve();
  */
 async function performRender(
   imageSource: string,
-  filterConfigs: FilterConfig[]
+  filterConfigs: FilterConfig[],
 ): Promise<string> {
-  console.log('[performRender] Starting render:', {
+  console.log("[performRender] Starting render:", {
     imageSourceLength: imageSource?.length,
     imageSourcePrefix: imageSource?.substring(0, 30),
     filterCount: filterConfigs.length,
-    filters: filterConfigs.map(f => ({ type: f.type, params: f.params })),
+    filters: filterConfigs.map((f) => ({ type: f.type, params: f.params })),
   });
 
   // 1. Get shared PixiJS application (reuses WebGL context)
   let app;
   try {
     app = await getSharedApp();
-    console.log('[performRender] Pixi app obtained successfully');
+    console.log("[performRender] Pixi app obtained successfully");
   } catch (error) {
-    console.error('[performRender] Failed to get Pixi app:', error);
+    console.error("[performRender] Failed to get Pixi app:", error);
     throw error;
   }
 
@@ -210,25 +230,25 @@ async function performRender(
     // Automatically dispose the app to allow fresh initialization on next call
     disposeSharedPixiApp();
     throw new Error(
-      'WebGL context was lost (GPU reset or too many contexts). ' +
-      'The app will automatically recover on the next render attempt. ' +
-      'If this persists, try refreshing the page.'
+      "WebGL context was lost (GPU reset or too many contexts). " +
+        "The app will automatically recover on the next render attempt. " +
+        "If this persists, try refreshing the page.",
     );
   }
 
   // 2. Load image into HTMLImageElement with timeout (prevent hanging)
-  console.log('[performRender] Creating HTMLImageElement');
+  console.log("[performRender] Creating HTMLImageElement");
   const img = new Image();
 
   // Only set crossOrigin for remote URLs (not data: URIs)
-  if (!imageSource.startsWith('data:')) {
-    console.log('[performRender] Setting crossOrigin for remote URL');
-    img.crossOrigin = 'anonymous';
+  if (!imageSource.startsWith("data:")) {
+    console.log("[performRender] Setting crossOrigin for remote URL");
+    img.crossOrigin = "anonymous";
   } else {
-    console.log('[performRender] Using data URI (no crossOrigin needed)');
+    console.log("[performRender] Using data URI (no crossOrigin needed)");
   }
 
-  console.log('[performRender] Starting image load');
+  console.log("[performRender] Starting image load");
   try {
     // Use timeout with proper cleanup to avoid race condition
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -236,7 +256,7 @@ async function performRender(
     await Promise.race([
       new Promise<void>((resolve, reject) => {
         img.onload = () => {
-          console.log('[performRender] Image loaded successfully');
+          console.log("[performRender] Image loaded successfully");
           if (timeoutId !== null) {
             clearTimeout(timeoutId);
             timeoutId = null;
@@ -244,24 +264,32 @@ async function performRender(
           resolve();
         };
         img.onerror = (e) => {
-          console.error('[performRender] Image load error:', e);
+          console.error("[performRender] Image load error:", e);
           if (timeoutId !== null) {
             clearTimeout(timeoutId);
             timeoutId = null;
           }
-          reject(new Error('Failed to load image - check image source or CORS policy'));
+          reject(
+            new Error(
+              "Failed to load image - check image source or CORS policy",
+            ),
+          );
         };
         img.src = imageSource;
       }),
       new Promise<void>((_, reject) => {
         timeoutId = setTimeout(() => {
-          console.error('[performRender] Image load timeout');
-          reject(new Error('Image load timeout (10s) - image may be too large or network is slow'));
+          console.error("[performRender] Image load timeout");
+          reject(
+            new Error(
+              "Image load timeout (10s) - image may be too large or network is slow",
+            ),
+          );
         }, 10000);
-      })
+      }),
     ]);
   } catch (error) {
-    console.error('[performRender] Image load failed:', error);
+    console.error("[performRender] Image load failed:", error);
     throw error;
   }
 
@@ -270,7 +298,9 @@ async function performRender(
 
   // Ensure texture is valid
   if (!texture || !texture.source) {
-    throw new Error('Failed to create texture from image - texture or source is invalid');
+    throw new Error(
+      "Failed to create texture from image - texture or source is invalid",
+    );
   }
 
   // Resize app to match image dimensions (with max limits to prevent GPU OOM)
@@ -282,7 +312,9 @@ async function performRender(
     const scale = Math.min(MAX_DIMENSION / width, MAX_DIMENSION / height);
     width = Math.floor(width * scale);
     height = Math.floor(height * scale);
-    console.warn(`[PixiJS] Image dimensions exceed ${MAX_DIMENSION}px, scaling down to ${width}x${height}`);
+    console.warn(
+      `[PixiJS] Image dimensions exceed ${MAX_DIMENSION}px, scaling down to ${width}x${height}`,
+    );
   }
 
   app.renderer.resize(width, height);
@@ -297,7 +329,9 @@ async function performRender(
 
   // 6. Build filter array from configs (Layer 2 logic)
   if (filterConfigs.length > 0) {
-    const filters = filterConfigs.map(config => createFilterFromConfig(config));
+    const filters = filterConfigs.map((config) =>
+      createFilterFromConfig(config),
+    );
     sprite.filters = filters; // PixiJS applies all filters on GPU
   }
 
@@ -313,30 +347,36 @@ async function performRender(
     // PixiJS extract API handles WebGL readback properly
     // In Pixi v8, base64() takes only the target parameter (format is PNG by default)
     dataURL = await app.renderer.extract.base64(app.stage);
-    console.log('[PixiJS] Successfully extracted rendered image');
+    console.log("[PixiJS] Successfully extracted rendered image");
   } catch (extractError) {
     // Handle CORS/SecurityError specifically
-    if (extractError instanceof DOMException && extractError.name === 'SecurityError') {
+    if (
+      extractError instanceof DOMException &&
+      extractError.name === "SecurityError"
+    ) {
       throw new Error(
-        'Canvas extraction blocked by CORS policy. ' +
-        'The image server must send Access-Control-Allow-Origin header, ' +
-        'or use a proxied/local image. Error: ' + extractError.message
+        "Canvas extraction blocked by CORS policy. " +
+          "The image server must send Access-Control-Allow-Origin header, " +
+          "or use a proxied/local image. Error: " +
+          extractError.message,
       );
     }
 
     // Re-throw other errors
-    throw new Error(`Failed to extract canvas: ${extractError instanceof Error ? extractError.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to extract canvas: ${extractError instanceof Error ? extractError.message : "Unknown error"}`,
+    );
   }
 
   // 9. Cleanup resources (keep the app/context alive)
   // Destroy filters explicitly to free GPU resources (shaders, uniforms, buffers)
   if (sprite.filters && Array.isArray(sprite.filters)) {
-    sprite.filters.forEach(filter => {
-      if (filter && typeof filter.destroy === 'function') {
+    sprite.filters.forEach((filter) => {
+      if (filter && typeof filter.destroy === "function") {
         try {
           filter.destroy();
         } catch (error) {
-          console.warn('Failed to destroy filter:', error);
+          console.warn("Failed to destroy filter:", error);
         }
       }
     });
@@ -364,7 +404,7 @@ async function performRender(
  */
 export async function renderWithPixi(
   imageSource: string,
-  filterConfigs: FilterConfig[]
+  filterConfigs: FilterConfig[],
 ): Promise<string> {
   // Enqueue this render to prevent concurrent modification of shared app
   return new Promise<string>((resolve, reject) => {
@@ -380,8 +420,9 @@ export async function renderWithPixi(
  */
 export function isPixiSupported(): boolean {
   try {
-    const testCanvas = document.createElement('canvas');
-    const gl = testCanvas.getContext('webgl') || testCanvas.getContext('webgl2');
+    const testCanvas = document.createElement("canvas");
+    const gl =
+      testCanvas.getContext("webgl") || testCanvas.getContext("webgl2");
     return !!gl;
   } catch {
     return false;
