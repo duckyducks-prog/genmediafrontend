@@ -407,7 +407,7 @@ async function performRender(
     );
   }
 
-  // 9. Cleanup resources (keep the app/context alive)
+  // 10. Cleanup resources (keep the app/context alive)
   // Destroy filters explicitly to free GPU resources (shaders, uniforms, buffers)
   if (sprite.filters && Array.isArray(sprite.filters)) {
     sprite.filters.forEach((filter) => {
