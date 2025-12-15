@@ -1,27 +1,11 @@
-import { memo, useEffect, useCallback, useState, useRef, useMemo } from 'react';
+import { memo, useEffect, useCallback, useRef } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { BrightnessContrastNodeData } from '../types';
 import { Slider } from '@/components/ui/slider';
-import { Sun, Loader2 } from 'lucide-react';
-import { renderWithPixi } from '@/lib/pixi-renderer';
+import { Sun } from 'lucide-react';
 import { FilterConfig, FILTER_DEFINITIONS } from '@/lib/pixi-filter-configs';
 
-// Simple debounce hook
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-  useEffect(() => {
-    const handler = setTimeout(() => setDebouncedValue(value), delay);
-    return () => clearTimeout(handler);
-  }, [value, delay]);
-  return debouncedValue;
-}
-
 function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeData>) {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isRendering, setIsRendering] = useState(false);
-
-  // Request sequencing to prevent race conditions
-  const renderRequestId = useRef(0);
 
   // Get incoming data
   // Extract primitive/comparable values to use as dependencies
@@ -33,10 +17,6 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
     type: f.type,
     params: f.params
   })));
-
-  // Debounce for preview (500ms for better performance)
-  const debouncedBrightness = useDebounce(data.brightness, 500);
-  const debouncedContrast = useDebounce(data.contrast, 500);
 
   // Create this node's filter config (lightweight, no PixiJS instance)
   const createConfig = useCallback(
@@ -88,72 +68,6 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
     updateOutputsRef.current(data.brightness, data.contrast);
   }, [data.brightness, data.contrast, imageInput, upstreamFiltersKey]);
 
-  // Generate inline preview with debouncing
-  // Use ref to track if a render is in progress to prevent cascading renders
-  const isRenderingRef = useRef(false);
-
-  useEffect(() => {
-    // Reconstruct filters from the stable key
-    const upstreamFilters = upstreamFiltersRaw;
-
-    console.log('[BrightnessContrastNode] Preview effect triggered:', {
-      hasImageInput: !!imageInput,
-      brightness: debouncedBrightness,
-      contrast: debouncedContrast,
-      upstreamFilterCount: upstreamFilters.length,
-      isRenderingInProgress: isRenderingRef.current,
-      filtersKey: upstreamFiltersKey.substring(0, 50),
-    });
-
-    if (!imageInput) {
-      console.log('[BrightnessContrastNode] No image input, clearing preview');
-      setPreviewUrl(null);
-      setIsRendering(false);
-      return;
-    }
-
-    // Skip if a render is already in progress
-    if (isRenderingRef.current) {
-      console.log('[BrightnessContrastNode] Skipping render - already in progress');
-      return;
-    }
-
-    const thisConfig = createConfig(debouncedBrightness, debouncedContrast);
-    const allFilters = [...upstreamFilters, thisConfig];
-
-    // Increment request ID to track this render
-    const currentRequestId = ++renderRequestId.current;
-    isRenderingRef.current = true;
-
-    console.log('[BrightnessContrastNode] Starting inline preview render (request #' + currentRequestId + ')');
-    setIsRendering(true);
-
-    renderWithPixi(imageInput, allFilters)
-      .then(rendered => {
-        // Only update if this is still the latest request
-        if (currentRequestId === renderRequestId.current) {
-          console.log('[BrightnessContrastNode] Preview render completed (request #' + currentRequestId + ')');
-          setPreviewUrl(rendered);
-        } else {
-          console.log('[BrightnessContrastNode] Discarding stale preview (request #' + currentRequestId + ')');
-        }
-      })
-      .catch(error => {
-        if (currentRequestId === renderRequestId.current) {
-          console.error('[BrightnessContrastNode] Preview failed (request #' + currentRequestId + '):', {
-            errorMessage: error instanceof Error ? error.message : String(error),
-          });
-          setPreviewUrl(null);
-        }
-      })
-      .finally(() => {
-        if (currentRequestId === renderRequestId.current) {
-          setIsRendering(false);
-        }
-        isRenderingRef.current = false; // Always clear the in-progress flag
-      });
-  }, [imageInput, debouncedBrightness, debouncedContrast, upstreamFiltersKey, upstreamFiltersRaw, createConfig]);
-
   const handleBrightnessChange = (value: number) => {
     updateOutputsRef.current(value, data.contrast);
   };
@@ -172,7 +86,6 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
           <Sun className="w-4 h-4 text-primary" />
           <span className="font-semibold text-sm">{def.label}</span>
         </div>
-        {isRendering && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
       </div>
 
       {/* Input Handles */}
@@ -230,25 +143,6 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
             className="w-full"
           />
         </div>
-
-        {/* Inline Preview */}
-        {imageInput && (
-          <div className="relative border border-border rounded overflow-hidden bg-muted/30 mt-2">
-            {previewUrl ? (
-              <img
-                src={previewUrl}
-                alt="Preview"
-                className="w-full h-24 object-cover"
-              />
-            ) : (
-              <div className="w-full h-24 flex items-center justify-center">
-                <span className="text-xs text-muted-foreground">
-                  {isRendering ? 'Rendering preview...' : 'No preview'}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Output Handles */}

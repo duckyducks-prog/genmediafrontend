@@ -703,7 +703,13 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         acceptsMultiple: false,
       },
     ],
-    outputConnectors: [],
+    outputConnectors: [
+      {
+        id: "image",
+        label: "Image",
+        type: ConnectorType.Image,
+      },
+    ],
   },
 
   [NodeType.Download]: {

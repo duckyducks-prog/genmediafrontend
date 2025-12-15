@@ -1,6 +1,7 @@
 import { memo, useState, useEffect, useRef } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
-import { CheckCircle2, Loader2, Eye } from "lucide-react";
+import { CheckCircle2, Loader2, Eye, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { renderWithPixi } from "@/lib/pixi-renderer";
 import { FilterConfig } from "@/lib/pixi-filter-configs";
 
@@ -59,6 +60,20 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
             if (currentRequestId === renderRequestId.current) {
               console.log('[PreviewNode] Render completed successfully (request #' + currentRequestId + ')');
               setDisplayContent({ type: "image", content: rendered });
+
+              // Dispatch the rendered image as output
+              const updateEvent = new CustomEvent('node-update', {
+                detail: {
+                  id,
+                  data: {
+                    ...data,
+                    outputs: {
+                      image: rendered, // The processed image with all filters applied
+                    },
+                  },
+                },
+              });
+              window.dispatchEvent(updateEvent);
             } else {
               console.log('[PreviewNode] Discarding stale render result (request #' + currentRequestId + ', current is #' + renderRequestId.current + ')');
             }
@@ -81,6 +96,20 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
         // No filters, show original
         console.log('[PreviewNode] Showing original image (no filters)');
         setDisplayContent({ type: "image", content: imageInput });
+
+        // Dispatch the original image as output
+        const updateEvent = new CustomEvent('node-update', {
+          detail: {
+            id,
+            data: {
+              ...data,
+              outputs: {
+                image: imageInput,
+              },
+            },
+          },
+        });
+        window.dispatchEvent(updateEvent);
       }
     } else if (videoInput) {
       setDisplayContent({ type: "video", content: videoInput });
@@ -95,6 +124,15 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
     if (isExecuting) return "border-yellow-500";
     if (isCompleted) return "border-green-500";
     return "border-border";
+  };
+
+  const handleDownload = () => {
+    if (displayContent.type === "image" && displayContent.content) {
+      const link = document.createElement('a');
+      link.href = displayContent.content;
+      link.download = 'modified-image.png';
+      link.click();
+    }
   };
 
   return (
@@ -149,22 +187,43 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
         style={{ top: "75%", transform: "translateY(-50%)" }}
       />
 
+      {/* Output Handle */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="image"
+        data-connector-type="image"
+        className="!w-3 !h-3 !border-2 !border-background"
+        style={{ top: "50%", transform: "translateY(-50%)" }}
+      />
+
       {/* Node Content */}
       <div className="space-y-3">
         {displayContent.type === "image" && displayContent.content ? (
-          <div className="relative rounded-lg overflow-hidden bg-muted border border-border">
-            <img
-              src={displayContent.content}
-              alt="Preview"
-              className="w-full h-auto max-h-[250px] object-contain"
-              crossOrigin={
-                displayContent.content?.startsWith("data:") ? undefined : "anonymous"
-              }
-              onError={(e) => {
-                console.error("[PreviewNode] Image failed to load");
-              }}
-            />
-          </div>
+          <>
+            <div className="relative rounded-lg overflow-hidden bg-muted border border-border">
+              <img
+                src={displayContent.content}
+                alt="Preview"
+                className="w-full h-auto max-h-[250px] object-contain"
+                crossOrigin={
+                  displayContent.content?.startsWith("data:") ? undefined : "anonymous"
+                }
+                onError={(e) => {
+                  console.error("[PreviewNode] Image failed to load");
+                }}
+              />
+            </div>
+            <Button
+              onClick={handleDownload}
+              variant="outline"
+              size="sm"
+              className="w-full"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download
+            </Button>
+          </>
         ) : displayContent.type === "video" && displayContent.content ? (
           <div className="relative rounded-lg overflow-hidden bg-muted border border-border">
             <video
