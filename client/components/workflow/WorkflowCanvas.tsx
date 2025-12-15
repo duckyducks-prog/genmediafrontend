@@ -22,8 +22,11 @@ import {
 } from "./types";
 import NodePalette from "./NodePalette";
 import WorkflowToolbar from "./WorkflowToolbar";
+import SaveWorkflowDialog from "./SaveWorkflowDialog";
 import { useWorkflowExecution } from "./useWorkflowExecution";
 import { validateConnection, getConnectorType } from "./connectionValidation";
+import { useToast } from "@/hooks/use-toast";
+import { SavedWorkflow } from "@/lib/workflow-api";
 
 // Import all custom node components
 import PromptInputNode from "./nodes/PromptInputNode";
@@ -71,8 +74,13 @@ const nodeTypes: NodeTypes = {
   [NodeType.VideoOutput]: VideoOutputNode,
 };
 
+export interface WorkflowCanvasRef {
+  loadWorkflow: (workflow: SavedWorkflow) => void;
+}
+
 interface WorkflowCanvasProps {
   onAssetGenerated?: () => void;
+  onLoadWorkflowRequest?: () => void;
 }
 
 function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
@@ -383,11 +391,38 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
     [reactFlowInstance, addNode],
   );
 
+  const { toast } = useToast();
+
   // Clear canvas
   const clearCanvas = useCallback(() => {
     setNodes([]);
     setEdges([]);
+    setCurrentWorkflowId(null);
   }, [setNodes, setEdges]);
+
+  // Load a workflow
+  const loadWorkflow = useCallback((workflow: SavedWorkflow) => {
+    setNodes(workflow.nodes || []);
+    setEdges(workflow.edges || []);
+    setCurrentWorkflowId(workflow.id || null);
+    toast({
+      title: "Workflow loaded",
+      description: `"${workflow.name}" has been loaded`,
+    });
+  }, [setNodes, setEdges, toast]);
+
+  // Save workflow handler
+  const handleSaveWorkflow = useCallback(() => {
+    setIsSaveDialogOpen(true);
+  }, []);
+
+  // Load workflow handler (navigate to home)
+  const handleLoadWorkflow = useCallback(() => {
+    toast({
+      title: "Load workflow",
+      description: "Go to the Home tab to browse and load workflows",
+    });
+  }, [toast]);
 
   // Workflow execution
   const { executeWorkflow, resetWorkflow, executeSingleNode, isExecuting } = useWorkflowExecution(
@@ -441,6 +476,8 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
             onClearCanvas={clearCanvas}
             onExecuteWorkflow={executeWorkflow}
             onResetWorkflow={resetWorkflow}
+            onSaveWorkflow={handleSaveWorkflow}
+            onLoadWorkflow={handleLoadWorkflow}
             isExecuting={isExecuting}
           />
         </ReactFlow>
@@ -457,16 +494,37 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
           </div>
         )}
       </div>
+
+      {/* Save Workflow Dialog */}
+      <SaveWorkflowDialog
+        open={isSaveDialogOpen}
+        onOpenChange={setIsSaveDialogOpen}
+        nodes={nodes}
+        edges={edges}
+        onSaveSuccess={(workflowId) => {
+          setCurrentWorkflowId(workflowId);
+        }}
+      />
     </div>
   );
 }
 
-export default function WorkflowCanvas({
-  onAssetGenerated,
-}: WorkflowCanvasProps) {
-  return (
-    <ReactFlowProvider>
-      <WorkflowCanvasInner onAssetGenerated={onAssetGenerated} />
-    </ReactFlowProvider>
-  );
-}
+import { forwardRef, useImperativeHandle } from "react";
+
+const WorkflowCanvas = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
+  ({ onAssetGenerated, onLoadWorkflowRequest }, ref) => {
+    return (
+      <ReactFlowProvider>
+        <WorkflowCanvasInner
+          ref={ref}
+          onAssetGenerated={onAssetGenerated}
+          onLoadWorkflowRequest={onLoadWorkflowRequest}
+        />
+      </ReactFlowProvider>
+    );
+  }
+);
+
+WorkflowCanvas.displayName = "WorkflowCanvas";
+
+export default WorkflowCanvas;
