@@ -24,7 +24,8 @@ export const googleProvider = new GoogleAuthProvider();
 // Allowed emails list
 const ALLOWED_EMAILS = [
   "ldebortolialves@hubspot.com",
-  "sfiske@hubspot.com"
+  "sfiske@hubspot.com",
+  "meganzinka@gmail.com"
 ];
 
 export const signInWithGoogle = async () => {
