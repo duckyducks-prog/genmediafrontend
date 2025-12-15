@@ -104,8 +104,8 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
 
       const img = new Image();
       img.onload = () => {
-        const originalWidth = img.width;
-        const originalHeight = img.height;
+        const originalWidth = img.naturalWidth;
+        const originalHeight = img.naturalHeight;
 
         console.log("[CropNode] Image loaded:", {
           originalWidth,
