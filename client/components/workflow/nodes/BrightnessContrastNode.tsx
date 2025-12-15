@@ -82,19 +82,28 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
   }, [data.brightness, data.contrast, imageInput, upstreamFilters]);
 
   // Generate inline preview with debouncing
+  // Use ref to track if a render is in progress to prevent cascading renders
+  const isRenderingRef = useRef(false);
+
   useEffect(() => {
     console.log('[BrightnessContrastNode] Preview effect triggered:', {
       hasImageInput: !!imageInput,
-      imageInputType: typeof imageInput,
-      imageInputLength: imageInput?.length,
       brightness: debouncedBrightness,
       contrast: debouncedContrast,
       upstreamFilterCount: upstreamFilters.length,
+      isRenderingInProgress: isRenderingRef.current,
     });
 
     if (!imageInput) {
       console.log('[BrightnessContrastNode] No image input, clearing preview');
       setPreviewUrl(null);
+      setIsRendering(false);
+      return;
+    }
+
+    // Skip if a render is already in progress
+    if (isRenderingRef.current) {
+      console.log('[BrightnessContrastNode] Skipping render - already in progress');
       return;
     }
 
@@ -103,21 +112,16 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
 
     // Increment request ID to track this render
     const currentRequestId = ++renderRequestId.current;
+    isRenderingRef.current = true;
 
-    console.log('[BrightnessContrastNode] Starting inline preview render (request #' + currentRequestId + ')', {
-      imageSource: imageInput?.substring(0, 50) + '...',
-      filterCount: allFilters.length,
-      filters: allFilters.map(f => ({ type: f.type, params: f.params })),
-    });
+    console.log('[BrightnessContrastNode] Starting inline preview render (request #' + currentRequestId + ')');
     setIsRendering(true);
 
     renderWithPixi(imageInput, allFilters)
       .then(rendered => {
         // Only update if this is still the latest request
         if (currentRequestId === renderRequestId.current) {
-          console.log('[BrightnessContrastNode] Preview render completed (request #' + currentRequestId + ')', {
-            renderedLength: rendered?.length,
-          });
+          console.log('[BrightnessContrastNode] Preview render completed (request #' + currentRequestId + ')');
           setPreviewUrl(rendered);
         } else {
           console.log('[BrightnessContrastNode] Discarding stale preview (request #' + currentRequestId + ')');
@@ -126,9 +130,7 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
       .catch(error => {
         if (currentRequestId === renderRequestId.current) {
           console.error('[BrightnessContrastNode] Preview failed (request #' + currentRequestId + '):', {
-            error: error,
             errorMessage: error instanceof Error ? error.message : String(error),
-            errorStack: error instanceof Error ? error.stack : undefined,
           });
           setPreviewUrl(null);
         }
@@ -137,6 +139,7 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
         if (currentRequestId === renderRequestId.current) {
           setIsRendering(false);
         }
+        isRenderingRef.current = false; // Always clear the in-progress flag
       });
   }, [imageInput, debouncedBrightness, debouncedContrast, upstreamFilters]);
 
