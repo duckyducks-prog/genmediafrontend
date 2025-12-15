@@ -197,6 +197,13 @@ function validateWorkflowData(workflow: SavedWorkflow): { valid: boolean; error?
 export async function saveWorkflow(
   workflow: SavedWorkflow,
 ): Promise<{ id: string }> {
+  // Validate workflow data before sending
+  const validation = validateWorkflowData(workflow);
+  if (!validation.valid) {
+    console.error('[saveWorkflow] Validation failed:', validation.error);
+    throw new Error(`Invalid workflow data: ${validation.error}`);
+  }
+
   const user = auth.currentUser;
   if (!user) {
     throw new Error("User not authenticated");
