@@ -816,7 +816,7 @@ export function useWorkflowExecution(
           }
         }
 
-        // Combine results
+        // Combine results from both parallel and sequential execution
         const results = [...otherResults, ...apiResults];
 
         // Process results for this level
