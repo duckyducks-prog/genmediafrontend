@@ -302,8 +302,8 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/20 flex flex-col">
       <header className="border-b border-border">
-        <div className="px-4 py-8 border-b border-border">
-          <div className="container mx-auto flex items-center justify-between">
+        <div className="py-8 border-b border-border">
+          <div className="px-4 flex items-center justify-between">
             <div className="inline-flex items-center gap-2">
               <img
                 src="https://cdn.builder.io/api/v1/image/assets%2Fb1d3bf7cc0eb4f0daca65fdc5a7d5179%2F30fc0e70b75040f4858161ac143ab00c?format=webp&width=800"
