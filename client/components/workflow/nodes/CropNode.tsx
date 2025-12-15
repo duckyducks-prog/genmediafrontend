@@ -406,6 +406,18 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
     const scaleX = rect.width / imageDimensions.width;
     const scaleY = rect.height / imageDimensions.height;
 
+    console.log("[CropNode] Overlay style calculation:", {
+      dataWidth: data.width,
+      dataHeight: data.height,
+      imageDimensions,
+      rectWidth: rect.width,
+      rectHeight: rect.height,
+      scaleX,
+      scaleY,
+      overlayWidth: data.width * scaleX,
+      overlayHeight: data.height * scaleY,
+    });
+
     return {
       left: `${data.x * scaleX}px`,
       top: `${data.y * scaleY}px`,
