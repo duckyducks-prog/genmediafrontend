@@ -81,7 +81,17 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
 
   // Generate inline preview with debouncing
   useEffect(() => {
+    console.log('[BrightnessContrastNode] Preview effect triggered:', {
+      hasImageInput: !!imageInput,
+      imageInputType: typeof imageInput,
+      imageInputLength: imageInput?.length,
+      brightness: debouncedBrightness,
+      contrast: debouncedContrast,
+      upstreamFilterCount: upstreamFilters.length,
+    });
+
     if (!imageInput) {
+      console.log('[BrightnessContrastNode] No image input, clearing preview');
       setPreviewUrl(null);
       return;
     }
@@ -92,14 +102,20 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
     // Increment request ID to track this render
     const currentRequestId = ++renderRequestId.current;
 
-    console.log('[BrightnessContrastNode] Starting inline preview render (request #' + currentRequestId + ')');
+    console.log('[BrightnessContrastNode] Starting inline preview render (request #' + currentRequestId + ')', {
+      imageSource: imageInput?.substring(0, 50) + '...',
+      filterCount: allFilters.length,
+      filters: allFilters.map(f => ({ type: f.type, params: f.params })),
+    });
     setIsRendering(true);
 
     renderWithPixi(imageInput, allFilters)
       .then(rendered => {
         // Only update if this is still the latest request
         if (currentRequestId === renderRequestId.current) {
-          console.log('[BrightnessContrastNode] Preview render completed (request #' + currentRequestId + ')');
+          console.log('[BrightnessContrastNode] Preview render completed (request #' + currentRequestId + ')', {
+            renderedLength: rendered?.length,
+          });
           setPreviewUrl(rendered);
         } else {
           console.log('[BrightnessContrastNode] Discarding stale preview (request #' + currentRequestId + ')');
@@ -107,7 +123,11 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
       })
       .catch(error => {
         if (currentRequestId === renderRequestId.current) {
-          console.error('[BrightnessContrastNode] Preview failed (request #' + currentRequestId + '):', error);
+          console.error('[BrightnessContrastNode] Preview failed (request #' + currentRequestId + '):', {
+            error: error,
+            errorMessage: error instanceof Error ? error.message : String(error),
+            errorStack: error instanceof Error ? error.stack : undefined,
+          });
           setPreviewUrl(null);
         }
       })
