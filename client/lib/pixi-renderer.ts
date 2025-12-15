@@ -174,8 +174,22 @@ async function performRender(
   imageSource: string,
   filterConfigs: FilterConfig[]
 ): Promise<string> {
+  console.log('[performRender] Starting render:', {
+    imageSourceLength: imageSource?.length,
+    imageSourcePrefix: imageSource?.substring(0, 30),
+    filterCount: filterConfigs.length,
+    filters: filterConfigs.map(f => ({ type: f.type, params: f.params })),
+  });
+
   // 1. Get shared PixiJS application (reuses WebGL context)
-  const app = await getSharedApp();
+  let app;
+  try {
+    app = await getSharedApp();
+    console.log('[performRender] Pixi app obtained successfully');
+  } catch (error) {
+    console.error('[performRender] Failed to get Pixi app:', error);
+    throw error;
+  }
 
   // Check for WebGL context loss before attempting render
   if ((app.renderer as any).gl?.isContextLost?.()) {
