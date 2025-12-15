@@ -23,27 +23,16 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
   // Request sequencing to prevent race conditions
   const renderRequestId = useRef(0);
 
-  // Get incoming data (memoized for stable identity in effect dependencies)
-  // Use specific properties instead of whole data object to prevent unnecessary re-renders
-  const rawImage = (data as any).image;
-  const rawImageInput = (data as any).imageInput;
-  const rawFilters = (data as any).filters;
+  // Get incoming data
+  // Extract primitive/comparable values to use as dependencies
+  const imageInput = (data as any).image || (data as any).imageInput;
+  const upstreamFiltersRaw = (data as any).filters || [];
 
-  const imageInput = useMemo(() => rawImage || rawImageInput, [rawImage, rawImageInput]);
-
-  // Use JSON comparison for filters to prevent re-renders when filter values haven't actually changed
-  const upstreamFiltersJson = useMemo(() => {
-    const filters = rawFilters || [];
-    return JSON.stringify(filters);
-  }, [rawFilters]);
-
-  const upstreamFilters: FilterConfig[] = useMemo(() => {
-    try {
-      return JSON.parse(upstreamFiltersJson);
-    } catch {
-      return [];
-    }
-  }, [upstreamFiltersJson]);
+  // Convert filters to a stable string for comparison
+  const upstreamFiltersKey = JSON.stringify(upstreamFiltersRaw.map((f: FilterConfig) => ({
+    type: f.type,
+    params: f.params
+  })));
 
   // Debounce for preview (500ms for better performance)
   const debouncedBrightness = useDebounce(data.brightness, 500);
