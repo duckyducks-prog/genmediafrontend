@@ -18,8 +18,11 @@ import {
   saveWorkflow,
   updateWorkflow,
   WorkflowMetadata,
+  testWorkflowAPI,
 } from "@/lib/workflow-api";
 import { WorkflowNode, WorkflowEdge } from "./types";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface SaveWorkflowDialogProps {
   open: boolean;
@@ -44,6 +47,8 @@ export default function SaveWorkflowDialog({
   const [isSaving, setIsSaving] = useState(false);
   const [nameError, setNameError] = useState("");
   const [workflowError, setWorkflowError] = useState("");
+  const [serverError, setServerError] = useState("");
+  const [isTestingConnection, setIsTestingConnection] = useState(false);
   const { toast } = useToast();
 
   // Populate form when editing existing workflow
@@ -113,13 +118,76 @@ export default function SaveWorkflowDialog({
       onOpenChange(false);
     } catch (error) {
       console.error("Error saving workflow:", error);
+
+      const errorMessage = error instanceof Error ? error.message : String(error);
+
+      // Provide user-friendly error messages
+      let userFriendlyMessage = errorMessage;
+      let detailedMessage = errorMessage;
+
+      if (errorMessage.includes('404') || errorMessage.includes('not found')) {
+        userFriendlyMessage = 'Workflow API endpoint not found';
+        detailedMessage = 'The backend API may not be properly deployed or the router is not mounted at /workflows. Contact support.';
+      } else if (errorMessage.includes('401') || errorMessage.includes('Unauthorized') || errorMessage.includes('Authentication failed')) {
+        userFriendlyMessage = 'Authentication failed';
+        detailedMessage = 'Your session may have expired. Please sign out and sign back in.';
+      } else if (errorMessage.includes('403') || errorMessage.includes('Access denied') || errorMessage.includes('Forbidden')) {
+        userFriendlyMessage = 'Access denied';
+        detailedMessage = 'You may not have permission to save workflows. Contact your administrator.';
+      } else if (errorMessage.includes('CORS') || errorMessage.includes('Network') || errorMessage.includes('Cannot connect')) {
+        userFriendlyMessage = 'Cannot connect to backend';
+        detailedMessage = 'Network error or CORS configuration issue. The backend may be down or unreachable.';
+      } else if (errorMessage.includes('500') || errorMessage.includes('Server error')) {
+        userFriendlyMessage = 'Backend server error';
+        detailedMessage = errorMessage;
+      } else if (errorMessage.includes('Invalid workflow data')) {
+        userFriendlyMessage = 'Validation error';
+        detailedMessage = errorMessage;
+      }
+
+      setServerError(detailedMessage);
+
       toast({
-        title: "Failed to save workflow",
-        description: error instanceof Error ? error.message : "Unknown error",
+        title: userFriendlyMessage,
+        description: detailedMessage,
         variant: "destructive",
       });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleTestConnection = async () => {
+    setIsTestingConnection(true);
+    setServerError("");
+
+    try {
+      const result = await testWorkflowAPI();
+
+      if (result.available) {
+        toast({
+          title: "Connection successful",
+          description: "Workflow API is accessible. You can save workflows.",
+        });
+        setServerError("");
+      } else {
+        const errorMsg = `API Status: ${result.endpoints.list ? '✓' : '✗'} List endpoint\n${result.details || result.error || 'Unknown error'}`;
+        setServerError(errorMsg);
+        toast({
+          title: "Connection failed",
+          description: result.details || result.error || "Cannot reach workflow API",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      setServerError(error instanceof Error ? error.message : "Connection test failed");
+      toast({
+        title: "Connection test failed",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTestingConnection(false);
     }
   };
 
