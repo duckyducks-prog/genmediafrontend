@@ -203,23 +203,42 @@ async function performRender(
   }
 
   // 2. Load image into HTMLImageElement with timeout (prevent hanging)
+  console.log('[performRender] Creating HTMLImageElement');
   const img = new Image();
 
   // Only set crossOrigin for remote URLs (not data: URIs)
   if (!imageSource.startsWith('data:')) {
+    console.log('[performRender] Setting crossOrigin for remote URL');
     img.crossOrigin = 'anonymous';
+  } else {
+    console.log('[performRender] Using data URI (no crossOrigin needed)');
   }
 
-  await Promise.race([
-    new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error('Failed to load image - check image source or CORS policy'));
-      img.src = imageSource;
-    }),
-    new Promise<void>((_, reject) =>
-      setTimeout(() => reject(new Error('Image load timeout (10s) - image may be too large or network is slow')), 10000)
-    )
-  ]);
+  console.log('[performRender] Starting image load');
+  try {
+    await Promise.race([
+      new Promise<void>((resolve, reject) => {
+        img.onload = () => {
+          console.log('[performRender] Image loaded successfully');
+          resolve();
+        };
+        img.onerror = (e) => {
+          console.error('[performRender] Image load error:', e);
+          reject(new Error('Failed to load image - check image source or CORS policy'));
+        };
+        img.src = imageSource;
+      }),
+      new Promise<void>((_, reject) =>
+        setTimeout(() => {
+          console.error('[performRender] Image load timeout');
+          reject(new Error('Image load timeout (10s) - image may be too large or network is slow'));
+        }, 10000)
+      )
+    ]);
+  } catch (error) {
+    console.error('[performRender] Image load failed:', error);
+    throw error;
+  }
 
   // 3. Create texture from the loaded image
   const texture = Texture.from(img);
