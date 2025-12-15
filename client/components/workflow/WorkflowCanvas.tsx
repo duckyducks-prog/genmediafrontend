@@ -94,6 +94,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
   const [currentWorkflowId, setCurrentWorkflowId] = useState<string | null>(null);
   const [copiedNodes, setCopiedNodes] = useState<WorkflowNode[]>([]);
   const [copiedEdges, setCopiedEdges] = useState<WorkflowEdge[]>([]);
+  const hasInitialized = useRef(false);
 
   // Listen for node update events from node components
   useEffect(() => {
@@ -412,7 +413,25 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
       title: "Workflow loaded",
       description: `"${workflow.name}" has been loaded`,
     });
-  }, [setNodes, setEdges, toast]);
+    // Fit view after loading workflow
+    setTimeout(() => {
+      if (reactFlowInstance && workflow.nodes.length > 0) {
+        reactFlowInstance.fitView({ padding: 0.2, duration: 300 });
+      }
+    }, 50);
+  }, [setNodes, setEdges, toast, reactFlowInstance]);
+
+  // Handle ReactFlow initialization
+  const handleInit = useCallback((instance: ReactFlowInstance) => {
+    setReactFlowInstance(instance);
+    // Only fit view on initial load if there are nodes
+    if (!hasInitialized.current && nodes.length > 0) {
+      setTimeout(() => {
+        instance.fitView({ padding: 0.2, duration: 300 });
+      }, 50);
+      hasInitialized.current = true;
+    }
+  }, [nodes.length]);
 
   // Save workflow handler
   const handleSaveWorkflow = useCallback(() => {
@@ -604,13 +623,12 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
-          onInit={setReactFlowInstance}
+          onInit={handleInit}
           onDrop={onDrop}
           onDragOver={onDragOver}
           isValidConnection={isValidConnection}
           nodeTypes={nodeTypes}
           connectionMode={ConnectionMode.Loose}
-          fitView
           className="bg-background"
           proOptions={{ hideAttribution: true }}
           multiSelectionKeyCode="Shift"
@@ -619,6 +637,11 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           selectionOnDrag={true}
           panOnDrag={[1, 2]}
           selectNodesOnDrag={true}
+          minZoom={0.1}
+          maxZoom={4}
+          defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
+          translateExtent={[[-5000, -5000], [5000, 5000]]}
+          nodeExtent={[[-5000, -5000], [5000, 5000]]}
         >
           <Background className="bg-background" />
           <Controls className="bg-card border border-border" />
@@ -648,6 +671,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
                 <p>• <kbd className="px-1.5 py-0.5 bg-background rounded border">Ctrl/Cmd</kbd> + <kbd className="px-1.5 py-0.5 bg-background rounded border">V</kbd> to paste</p>
                 <p>• <kbd className="px-1.5 py-0.5 bg-background rounded border">Delete</kbd> to remove</p>
                 <p>• <strong>Right-click</strong> or <strong>Middle-click</strong> to pan canvas</p>
+                <p>• <strong>Scroll</strong> to zoom in/out (10,000 x 10,000 canvas!)</p>
               </div>
             </div>
           </div>
