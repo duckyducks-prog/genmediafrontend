@@ -69,7 +69,7 @@ describe("Video Generation Debug", () => {
         body: JSON.stringify({
           prompt: "A serene mountain landscape with flowing water, debug test video",
           aspect_ratio: "16:9",
-          duration_seconds: 5,
+          duration_seconds: 4,
           generate_audio: false,
         }),
       });

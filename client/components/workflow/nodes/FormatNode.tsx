@@ -99,10 +99,9 @@ function FormatNode({ data, id }: NodeProps<FormatNodeData>) {
               onChange={(e) => handleUpdate('durationSeconds', parseInt(e.target.value))}
               className="w-full px-3 py-2 text-sm bg-background border border-border rounded-md appearance-none pr-8"
             >
-              <option value="5">5 seconds</option>
+              <option value="4">4 seconds</option>
               <option value="6">6 seconds</option>
-              <option value="7">7 seconds</option>
-              <option value="8">8 seconds</option>
+              <option value="8">8 seconds (default)</option>
             </select>
             <ChevronDown className="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
           </div>

@@ -102,7 +102,7 @@ export interface PromptConcatenatorNodeData extends BaseNodeData {
 // FORMAT node
 export interface FormatNodeData extends BaseNodeData {
   aspectRatio: "16:9" | "9:16" | "1:1";
-  durationSeconds: 5 | 6 | 7 | 8;
+  durationSeconds: 4 | 6 | 8;
   generateAudio: boolean;
   resolution: "1080p" | "720p";
 }
