@@ -475,6 +475,31 @@ export function useWorkflowExecution(
               };
             }
 
+            // Show debug toast for user feedback
+            if (firstFrame) {
+              toast({
+                title: "Video Generation Debug",
+                description: `✓ First frame detected (${firstFrame.length} chars)`,
+              });
+            } else if (lastFrame) {
+              toast({
+                title: "Video Generation Debug",
+                description: `✓ Last frame detected (${lastFrame.length} chars)`,
+              });
+            } else if (referenceImages) {
+              const count = Array.isArray(referenceImages) ? referenceImages.length : 1;
+              toast({
+                title: "Video Generation Debug",
+                description: `✓ Reference images detected (${count} image${count > 1 ? 's' : ''})`,
+              });
+            } else {
+              toast({
+                title: "Video Generation Debug",
+                description: "⚠️ No first frame, last frame, or reference images connected",
+                variant: "destructive",
+              });
+            }
+
             // NEW: Apply filters before sending to API (Layer 3 integration)
             if (filters.length > 0) {
               console.log(
