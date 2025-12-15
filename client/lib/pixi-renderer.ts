@@ -216,24 +216,35 @@ async function performRender(
 
   console.log('[performRender] Starting image load');
   try {
+    // Use timeout with proper cleanup to avoid race condition
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
     await Promise.race([
       new Promise<void>((resolve, reject) => {
         img.onload = () => {
           console.log('[performRender] Image loaded successfully');
+          if (timeoutId !== null) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+          }
           resolve();
         };
         img.onerror = (e) => {
           console.error('[performRender] Image load error:', e);
+          if (timeoutId !== null) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+          }
           reject(new Error('Failed to load image - check image source or CORS policy'));
         };
         img.src = imageSource;
       }),
-      new Promise<void>((_, reject) =>
-        setTimeout(() => {
+      new Promise<void>((_, reject) => {
+        timeoutId = setTimeout(() => {
           console.error('[performRender] Image load timeout');
           reject(new Error('Image load timeout (10s) - image may be too large or network is slow'));
-        }, 10000)
-      )
+        }, 10000);
+      })
     ]);
   } catch (error) {
     console.error('[performRender] Image load failed:', error);
