@@ -92,6 +92,8 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   const [currentWorkflowId, setCurrentWorkflowId] = useState<string | null>(null);
+  const [copiedNodes, setCopiedNodes] = useState<WorkflowNode[]>([]);
+  const [copiedEdges, setCopiedEdges] = useState<WorkflowEdge[]>([]);
 
   // Listen for node update events from node components
   useEffect(() => {
@@ -433,6 +435,142 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
     onAssetGenerated,
   );
 
+  // Copy selected nodes
+  const copySelectedNodes = useCallback(() => {
+    const selectedNodes = nodes.filter((node) => (node as any).selected);
+    if (selectedNodes.length === 0) {
+      toast({
+        title: "No nodes selected",
+        description: "Select one or more nodes to copy",
+      });
+      return;
+    }
+
+    // Get IDs of selected nodes
+    const selectedNodeIds = new Set(selectedNodes.map((n) => n.id));
+
+    // Copy edges that connect selected nodes
+    const relevantEdges = edges.filter(
+      (edge) =>
+        selectedNodeIds.has(edge.source) && selectedNodeIds.has(edge.target)
+    );
+
+    setCopiedNodes(selectedNodes);
+    setCopiedEdges(relevantEdges);
+
+    toast({
+      title: "Copied",
+      description: `${selectedNodes.length} node${selectedNodes.length > 1 ? "s" : ""} copied to clipboard`,
+    });
+  }, [nodes, edges, toast]);
+
+  // Paste copied nodes
+  const pasteNodes = useCallback(() => {
+    if (copiedNodes.length === 0) {
+      toast({
+        title: "Nothing to paste",
+        description: "Copy some nodes first",
+      });
+      return;
+    }
+
+    // Generate new IDs and offset positions
+    const idMap = new Map<string, string>();
+    const PASTE_OFFSET = 50;
+
+    const newNodes = copiedNodes.map((node) => {
+      const newId = `${node.type}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      idMap.set(node.id, newId);
+
+      return {
+        ...node,
+        id: newId,
+        position: {
+          x: node.position.x + PASTE_OFFSET,
+          y: node.position.y + PASTE_OFFSET,
+        },
+        selected: true, // Select the pasted nodes
+        data: {
+          ...node.data,
+          outputs: {}, // Clear outputs
+        },
+      };
+    });
+
+    // Update edges with new IDs
+    const newEdges = copiedEdges
+      .map((edge) => {
+        const newSource = idMap.get(edge.source);
+        const newTarget = idMap.get(edge.target);
+
+        if (!newSource || !newTarget) return null;
+
+        return {
+          ...edge,
+          id: `e-${newSource}-${newTarget}-${Date.now()}`,
+          source: newSource,
+          target: newTarget,
+        };
+      })
+      .filter((edge): edge is WorkflowEdge => edge !== null);
+
+    // Deselect existing nodes
+    setNodes((nds) =>
+      nds.map((node) => ({ ...node, selected: false })).concat(newNodes as any)
+    );
+    setEdges((eds) => eds.concat(newEdges));
+
+    toast({
+      title: "Pasted",
+      description: `${newNodes.length} node${newNodes.length > 1 ? "s" : ""} pasted`,
+    });
+  }, [copiedNodes, copiedEdges, setNodes, setEdges, toast]);
+
+  // Keyboard shortcuts for copy/paste
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Check if we're in an input/textarea to avoid conflicts
+      const target = event.target as HTMLElement;
+      const isInputField =
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable;
+
+      if (isInputField) return;
+
+      const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+      const modifier = isMac ? event.metaKey : event.ctrlKey;
+
+      if (modifier && event.key === "c") {
+        event.preventDefault();
+        copySelectedNodes();
+      } else if (modifier && event.key === "v") {
+        event.preventDefault();
+        pasteNodes();
+      } else if (event.key === "Delete" || event.key === "Backspace") {
+        // Delete selected nodes
+        const selectedNodes = nodes.filter((node) => (node as any).selected);
+        if (selectedNodes.length > 0) {
+          event.preventDefault();
+          const selectedNodeIds = new Set(selectedNodes.map((n) => n.id));
+          setNodes((nds) => nds.filter((n) => !selectedNodeIds.has(n.id)));
+          setEdges((eds) =>
+            eds.filter(
+              (e) => !selectedNodeIds.has(e.source) && !selectedNodeIds.has(e.target)
+            )
+          );
+          toast({
+            title: "Deleted",
+            description: `${selectedNodes.length} node${selectedNodes.length > 1 ? "s" : ""} deleted`,
+          });
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [copySelectedNodes, pasteNodes, nodes, setNodes, setEdges, toast]);
+
   // Expose loadWorkflow method to parent
   useImperativeHandle(ref, () => ({
     loadWorkflow,
@@ -475,6 +613,9 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           fitView
           className="bg-background"
           proOptions={{ hideAttribution: true }}
+          multiSelectionKeyCode="Shift"
+          selectionKeyCode="Shift"
+          deleteKeyCode="Delete"
         >
           <Background className="bg-background" />
           <Controls className="bg-card border border-border" />
