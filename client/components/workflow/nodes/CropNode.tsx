@@ -281,6 +281,10 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!imageRef.current || !imageDimensions) return;
 
+    // Prevent React Flow from dragging the node
+    e.stopPropagation();
+    e.preventDefault();
+
     const rect = imageRef.current.getBoundingClientRect();
     const scaleX = imageDimensions.width / rect.width;
     const scaleY = imageDimensions.height / rect.height;
@@ -295,6 +299,10 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging || !dragStart || !imageRef.current || !imageDimensions)
       return;
+
+    // Prevent React Flow from handling this
+    e.stopPropagation();
+    e.preventDefault();
 
     const rect = imageRef.current.getBoundingClientRect();
     const scaleX = imageDimensions.width / rect.width;
@@ -333,10 +341,47 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
 
   useEffect(() => {
     if (isDragging) {
+      const handleGlobalMouseMove = (e: MouseEvent) => {
+        if (!imageRef.current || !imageDimensions || !dragStart) return;
+
+        const rect = imageRef.current.getBoundingClientRect();
+        const scaleX = imageDimensions.width / rect.width;
+        const scaleY = imageDimensions.height / rect.height;
+
+        const mouseX = (e.clientX - rect.left) * scaleX;
+        const mouseY = (e.clientY - rect.top) * scaleY;
+
+        const newX = Math.max(
+          0,
+          Math.min(mouseX - dragStart.x, imageDimensions.width - data.width),
+        );
+        const newY = Math.max(
+          0,
+          Math.min(mouseY - dragStart.y, imageDimensions.height - data.height),
+        );
+
+        const updateEvent = new CustomEvent("node-update", {
+          detail: {
+            id,
+            data: {
+              ...data,
+              x: Math.round(newX),
+              y: Math.round(newY),
+              aspectRatio: "custom",
+            },
+          },
+        });
+        window.dispatchEvent(updateEvent);
+      };
+
+      window.addEventListener("mousemove", handleGlobalMouseMove);
       window.addEventListener("mouseup", handleMouseUp as any);
-      return () => window.removeEventListener("mouseup", handleMouseUp as any);
+      return () => {
+        window.removeEventListener("mousemove", handleGlobalMouseMove);
+        window.removeEventListener("mouseup", handleMouseUp as any);
+      };
     }
-  }, [isDragging]);
+  }, [isDragging, dragStart, imageDimensions, data, id]);
 
   // Calculate crop overlay position and size for display
   const getCropOverlayStyle = () => {
