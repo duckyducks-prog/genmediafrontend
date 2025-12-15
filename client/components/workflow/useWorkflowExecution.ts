@@ -816,13 +816,13 @@ export function useWorkflowExecution(
           }
         }
 
-        // Combine results from both parallel and sequential execution
-        const results = [...otherResults, ...apiResults];
+        // Process results from both parallel and sequential execution
+        const allResults = [
+          ...otherResults.map((result, index) => ({ result, node: otherNodes[index] })),
+          ...apiResults.map((result, index) => ({ result, node: apiNodes[index] })),
+        ];
 
-        // Process results for this level
-        results.forEach((result, index) => {
-          const node = levelNodes[index];
-
+        allResults.forEach(({ result, node }) => {
           if (result.status === "fulfilled") {
             if (result.value.success) {
               progress.set(node.id, "completed");
