@@ -29,6 +29,7 @@ import {
   cloneWorkflow,
   SavedWorkflow,
 } from "@/lib/workflow-api";
+import { MOCK_WORKFLOW_TEMPLATES } from "@/lib/mock-workflows";
 
 interface WorkflowGalleryProps {
   onLoadWorkflow: (workflow: SavedWorkflow) => void;
@@ -45,17 +46,26 @@ export default function WorkflowGallery({ onLoadWorkflow }: WorkflowGalleryProps
     setIsLoading(true);
     try {
       const [myWf, publicWf] = await Promise.all([
-        listMyWorkflows(),
-        listPublicWorkflows(),
+        listMyWorkflows().catch(() => []),
+        listPublicWorkflows().catch(() => []),
       ]);
+
       setMyWorkflows(myWf);
-      setPublicWorkflows(publicWf);
+
+      // Use mock templates as fallback when API is not available
+      if (publicWf.length === 0) {
+        console.log("[WorkflowGallery] Using mock templates (API not available)");
+        setPublicWorkflows(MOCK_WORKFLOW_TEMPLATES);
+      } else {
+        setPublicWorkflows(publicWf);
+      }
     } catch (error) {
       console.error("Error fetching workflows:", error);
+      // Use mock templates on error
+      setPublicWorkflows(MOCK_WORKFLOW_TEMPLATES);
       toast({
-        title: "Failed to load workflows",
-        description: error instanceof Error ? error.message : "Unknown error",
-        variant: "destructive",
+        title: "Using example templates",
+        description: "Backend workflow API is not available yet. Showing example templates.",
       });
     } finally {
       setIsLoading(false);
