@@ -32,28 +32,84 @@ export async function saveWorkflow(
   }
 
   const token = await user.getIdToken();
+  const url = `${API_BASE}/workflows/save`;
 
-  const response = await fetch(`${API_BASE}/workflows/save`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(workflow),
+  console.log('[saveWorkflow] Request:', {
+    method: 'POST',
+    url,
+    hasAuth: !!token,
+    tokenPreview: token.substring(0, 20) + '...',
+    workflowName: workflow.name,
+    nodeCount: workflow.nodes.length,
+    edgeCount: workflow.edges.length,
+    isPublic: workflow.is_public,
   });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("[saveWorkflow] Failed:", {
-      status: response.status,
-      body: errorText,
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(workflow),
     });
-    throw new Error(`Failed to save workflow: ${response.status}`);
-  }
 
-  const result = await response.json();
-  console.log("[saveWorkflow] Success:", result);
-  return result;
+    console.log('[saveWorkflow] Response:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+      contentType: response.headers.get('content-type'),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("[saveWorkflow] Error Response:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+        headers: Object.fromEntries(response.headers.entries()),
+      });
+
+      // Try to parse backend error message
+      try {
+        const errorJson = JSON.parse(errorText);
+        const message = errorJson.detail || errorJson.message || `Server error: ${response.status}`;
+        throw new Error(message);
+      } catch (parseError) {
+        // If not JSON, use raw text
+        if (response.status === 404) {
+          throw new Error('Workflow API endpoint not found (404). The backend may not be properly deployed or the router is not mounted at /workflows.');
+        } else if (response.status === 401) {
+          throw new Error('Authentication failed (401). Please sign out and sign in again.');
+        } else if (response.status === 403) {
+          throw new Error('Access denied (403). You may not have permission to save workflows.');
+        } else if (response.status >= 500) {
+          throw new Error(`Backend server error (${response.status}): ${errorText.substring(0, 200)}`);
+        } else {
+          throw new Error(`Failed to save workflow (${response.status}): ${errorText.substring(0, 200)}`);
+        }
+      }
+    }
+
+    const result = await response.json();
+    console.log("[saveWorkflow] Success:", result);
+
+    // Validate response
+    if (!result.id) {
+      console.error('[saveWorkflow] Invalid response - missing id:', result);
+      throw new Error('Backend returned invalid response: missing workflow ID');
+    }
+
+    return result;
+  } catch (error) {
+    // Network errors or fetch failures
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      console.error('[saveWorkflow] Network error:', error);
+      throw new Error('Cannot connect to backend API. Please check your internet connection or the API may be down.');
+    }
+    throw error;
+  }
 }
 
 /**
@@ -118,19 +174,41 @@ export async function listMyWorkflows(): Promise<SavedWorkflow[]> {
   }
 
   const token = await user.getIdToken();
+  const url = `${API_BASE}/workflows?scope=my`;
 
-  const response = await fetch(`${API_BASE}/workflows?scope=my`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  console.log('[listMyWorkflows] Request:', { url });
 
-  if (!response.ok) {
-    throw new Error(`Failed to list workflows: ${response.status}`);
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    console.log('[listMyWorkflows] Response:', {
+      status: response.status,
+      ok: response.ok,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[listMyWorkflows] Error:', {
+        status: response.status,
+        body: errorText,
+      });
+      throw new Error(`Failed to list workflows: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('[listMyWorkflows] Success:', { count: data.workflows?.length || 0 });
+    return data.workflows || [];
+  } catch (error) {
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      console.error('[listMyWorkflows] Network error');
+      throw new Error('Cannot connect to backend API');
+    }
+    throw error;
   }
-
-  const data = await response.json();
-  return data.workflows || [];
 }
 
 /**
@@ -143,19 +221,41 @@ export async function listPublicWorkflows(): Promise<SavedWorkflow[]> {
   }
 
   const token = await user.getIdToken();
+  const url = `${API_BASE}/workflows?scope=public`;
 
-  const response = await fetch(`${API_BASE}/workflows?scope=public`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  console.log('[listPublicWorkflows] Request:', { url });
 
-  if (!response.ok) {
-    throw new Error(`Failed to list public workflows: ${response.status}`);
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    console.log('[listPublicWorkflows] Response:', {
+      status: response.status,
+      ok: response.ok,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[listPublicWorkflows] Error:', {
+        status: response.status,
+        body: errorText,
+      });
+      throw new Error(`Failed to list public workflows: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('[listPublicWorkflows] Success:', { count: data.workflows?.length || 0 });
+    return data.workflows || [];
+  } catch (error) {
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      console.error('[listPublicWorkflows] Network error');
+      throw new Error('Cannot connect to backend API');
+    }
+    throw error;
   }
-
-  const data = await response.json();
-  return data.workflows || [];
 }
 
 /**
