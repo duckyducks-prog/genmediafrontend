@@ -26,6 +26,7 @@ import {
   Workflow as WorkflowIcon,
   Globe,
   Lock,
+  AlertCircle,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -34,8 +35,11 @@ import {
   deleteWorkflow,
   cloneWorkflow,
   SavedWorkflow,
+  testWorkflowAPI,
+  APITestResult,
 } from "@/lib/workflow-api";
 import { MOCK_WORKFLOW_TEMPLATES } from "@/lib/mock-workflows";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface WorkflowGalleryProps {
   onLoadWorkflow: (workflow: SavedWorkflow) => void;
@@ -48,14 +52,22 @@ export default function WorkflowGallery({
   const [publicWorkflows, setPublicWorkflows] = useState<SavedWorkflow[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [apiStatus, setApiStatus] = useState<APITestResult | null>(null);
+  const [showApiTest, setShowApiTest] = useState(false);
   const { toast } = useToast();
 
   const fetchWorkflows = useCallback(async () => {
     setIsLoading(true);
     try {
       const [myWf, publicWf] = await Promise.all([
-        listMyWorkflows().catch(() => []),
-        listPublicWorkflows().catch(() => []),
+        listMyWorkflows().catch((err) => {
+          console.error('[WorkflowGallery] Failed to fetch my workflows:', err);
+          return [];
+        }),
+        listPublicWorkflows().catch((err) => {
+          console.error('[WorkflowGallery] Failed to fetch public workflows:', err);
+          return [];
+        }),
       ]);
 
       setMyWorkflows(myWf);
@@ -66,22 +78,40 @@ export default function WorkflowGallery({
           "[WorkflowGallery] Using mock templates (API not available)",
         );
         setPublicWorkflows(MOCK_WORKFLOW_TEMPLATES);
+        setShowApiTest(true);
       } else {
         setPublicWorkflows(publicWf);
+        setShowApiTest(false);
       }
     } catch (error) {
       console.error("Error fetching workflows:", error);
       // Use mock templates on error
       setPublicWorkflows(MOCK_WORKFLOW_TEMPLATES);
+      setShowApiTest(true);
       toast({
         title: "Using example templates",
         description:
-          "Backend workflow API is not available yet. Showing example templates.",
+          "Backend workflow API is not available. Showing example templates.",
       });
     } finally {
       setIsLoading(false);
     }
   }, [toast]);
+
+  // Test API connectivity on mount
+  useEffect(() => {
+    const testAPI = async () => {
+      const result = await testWorkflowAPI();
+      setApiStatus(result);
+
+      if (!result.available) {
+        console.warn('[WorkflowGallery] API Status:', result);
+        setShowApiTest(true);
+      }
+    };
+
+    testAPI();
+  }, []);
 
   useEffect(() => {
     fetchWorkflows();
