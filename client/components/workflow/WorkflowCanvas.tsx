@@ -383,10 +383,59 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
       [setNodes],
     );
 
+    // Validate image file type and size
+    const validateImageFile = (
+      file: File,
+    ): { valid: boolean; error?: string } => {
+      const validTypes = ["image/jpeg", "image/png"];
+      const maxSize = 10 * 1024 * 1024; // 10MB
+
+      if (!validTypes.includes(file.type)) {
+        return {
+          valid: false,
+          error: "Only JPG and PNG images are supported",
+        };
+      }
+
+      if (file.size > maxSize) {
+        return {
+          valid: false,
+          error: `Image size exceeds 10MB limit (${(file.size / (1024 * 1024)).toFixed(2)}MB)`,
+        };
+      }
+
+      return { valid: true };
+    };
+
+    // Convert file to data URI
+    const readFileAsDataURL = (file: File): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const result = event.target?.result as string;
+          resolve(result);
+        };
+        reader.onerror = () => {
+          reject(new Error("Failed to read image file"));
+        };
+        reader.readAsDataURL(file);
+      });
+    };
+
     // Handle drag over for drop zone
     const onDragOver = useCallback((event: React.DragEvent) => {
       event.preventDefault();
-      event.dataTransfer.dropEffect = "move";
+      // Check if dragging files or nodes
+      const hasFiles = event.dataTransfer.types.includes("Files");
+      const hasReactFlow = event.dataTransfer.types.includes(
+        "application/reactflow",
+      );
+
+      if (hasFiles) {
+        event.dataTransfer.dropEffect = "copy";
+      } else if (hasReactFlow) {
+        event.dataTransfer.dropEffect = "move";
+      }
     }, []);
 
     // Handle drop to add node
