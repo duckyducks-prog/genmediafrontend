@@ -448,10 +448,7 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
 
       {/* Image Preview with Crop Overlay */}
       {imagePreview ? (
-        <div
-          className="mb-3 rounded-lg overflow-hidden bg-muted border border-border relative"
-          onMouseMove={handleMouseMove}
-        >
+        <div className="mb-3 rounded-lg overflow-hidden bg-muted border border-border relative">
           <img
             ref={imageRef}
             src={imagePreview}
