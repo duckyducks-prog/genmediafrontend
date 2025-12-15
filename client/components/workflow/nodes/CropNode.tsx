@@ -166,24 +166,19 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
     window.dispatchEvent(updateEvent);
 
     // Calculate new dimensions based on aspect ratio
+    // Always use full height of original image
     if (aspectRatio !== "custom" && imageDimensions) {
       const ratio = ASPECT_RATIOS[aspectRatio];
-      const currentRatio = imageDimensions.width / imageDimensions.height;
 
-      let newWidth = imageDimensions.width;
-      let newHeight = imageDimensions.height;
+      // Height is always the full original image height
+      const newHeight = imageDimensions.height;
 
-      if (currentRatio > ratio) {
-        // Image is wider, constrain width
-        newWidth = Math.round(imageDimensions.height * ratio);
-      } else {
-        // Image is taller, constrain height
-        newHeight = Math.round(imageDimensions.width / ratio);
-      }
+      // Width is calculated based on aspect ratio
+      const newWidth = Math.round(newHeight * ratio);
 
-      // Center the crop area
+      // Center the crop area horizontally, Y is 0 (full height)
       const newX = Math.floor((imageDimensions.width - newWidth) / 2);
-      const newY = Math.floor((imageDimensions.height - newHeight) / 2);
+      const newY = 0;
 
       const dimensionUpdateEvent = new CustomEvent("node-update", {
         detail: {
