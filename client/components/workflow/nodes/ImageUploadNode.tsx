@@ -67,33 +67,34 @@ function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
   };
 
   const handleRemove = () => {
+    console.log('[ImageUploadNode] Removing image from node:', id);
+
     setImageUrl(null);
+
+    const newData = {
+      ...data,
+      imageUrl: null,
+      file: null,
+      outputs: {}, // Clear outputs
+    };
+
     setNodes((nodes) =>
       nodes.map((node) =>
         node.id === id
           ? {
               ...node,
-              data: {
-                ...node.data,
-                imageUrl: null,
-                file: null,
-                outputs: {},
-              },
+              data: newData,
             }
           : node,
       ),
     );
 
     // Trigger data propagation to downstream nodes
+    console.log('[ImageUploadNode] Dispatching node-update event (clear)');
     const updateEvent = new CustomEvent('node-update', {
       detail: {
         id,
-        data: {
-          ...data,
-          imageUrl: null,
-          file: null,
-          outputs: {},
-        },
+        data: newData,
       },
     });
     window.dispatchEvent(updateEvent);
