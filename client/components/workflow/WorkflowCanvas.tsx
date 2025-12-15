@@ -83,7 +83,8 @@ interface WorkflowCanvasProps {
   onLoadWorkflowRequest?: () => void;
 }
 
-function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
+const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
+  ({ onAssetGenerated, onLoadWorkflowRequest }, ref) => {
   const [nodes, setNodes, onNodesChange] = useNodesState<WorkflowNodeData>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [reactFlowInstance, setReactFlowInstance] =
@@ -512,9 +513,9 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
       />
     </div>
   );
-}
+});
 
-import { forwardRef, useImperativeHandle } from "react";
+WorkflowCanvasInner.displayName = "WorkflowCanvasInner";
 
 const WorkflowCanvas = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
   ({ onAssetGenerated, onLoadWorkflowRequest }, ref) => {
