@@ -71,7 +71,7 @@ function NoiseNode({ data, id }: NodeProps<NoiseNodeData>) {
             <span>{def.params.noise.label}</span>
             <span>{((data.noise * (def.params.noise.displayMultiplier || 1))).toFixed(0)}{def.params.noise.displayMultiplier ? '%' : ''}</span>
           </label>
-          <Slider value={[data.noise]} onValueChange={([v]) => updateOutputs(v)} min={def.params.noise.min} max={def.params.noise.max} step={def.params.noise.step} className="w-full" />
+          <Slider value={[data.noise]} onValueChange={([v]) => updateOutputsRef.current(v)} min={def.params.noise.min} max={def.params.noise.max} step={def.params.noise.step} className="w-full" />
         </div>
       </div>
 

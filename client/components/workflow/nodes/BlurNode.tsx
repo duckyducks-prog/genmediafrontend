@@ -75,7 +75,7 @@ function BlurNode({ data, id }: NodeProps<BlurNodeData>) {
             <span>{def.params.strength.label}</span>
             <span>{data.strength.toFixed(0)}</span>
           </label>
-          <Slider value={[data.strength]} onValueChange={([v]) => updateOutputs(v, data.quality)} min={def.params.strength.min} max={def.params.strength.max} step={def.params.strength.step} className="w-full" />
+          <Slider value={[data.strength]} onValueChange={([v]) => updateOutputsRef.current(v, data.quality)} min={def.params.strength.min} max={def.params.strength.max} step={def.params.strength.step} className="w-full" />
         </div>
 
         <div>
@@ -83,7 +83,7 @@ function BlurNode({ data, id }: NodeProps<BlurNodeData>) {
             <span>{def.params.quality.label}</span>
             <span>{data.quality.toFixed(0)}</span>
           </label>
-          <Slider value={[data.quality]} onValueChange={([v]) => updateOutputs(data.strength, v)} min={def.params.quality.min} max={def.params.quality.max} step={def.params.quality.step} className="w-full" />
+          <Slider value={[data.quality]} onValueChange={([v]) => updateOutputsRef.current(data.strength, v)} min={def.params.quality.min} max={def.params.quality.max} step={def.params.quality.step} className="w-full" />
         </div>
       </div>
 

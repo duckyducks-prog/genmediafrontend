@@ -72,7 +72,7 @@ function VignetteNode({ data, id }: NodeProps<VignetteNodeData>) {
             <span>{def.params.size.label}</span>
             <span>{((data.size * (def.params.size.displayMultiplier || 1))).toFixed(0)}{def.params.size.displayMultiplier ? '%' : ''}</span>
           </label>
-          <Slider value={[data.size]} onValueChange={([v]) => updateOutputs(v, data.amount)} min={def.params.size.min} max={def.params.size.max} step={def.params.size.step} className="w-full" />
+          <Slider value={[data.size]} onValueChange={([v]) => updateOutputsRef.current(v, data.amount)} min={def.params.size.min} max={def.params.size.max} step={def.params.size.step} className="w-full" />
         </div>
 
         <div>
@@ -80,7 +80,7 @@ function VignetteNode({ data, id }: NodeProps<VignetteNodeData>) {
             <span>{def.params.amount.label}</span>
             <span>{((data.amount * (def.params.amount.displayMultiplier || 1))).toFixed(0)}{def.params.amount.displayMultiplier ? '%' : ''}</span>
           </label>
-          <Slider value={[data.amount]} onValueChange={([v]) => updateOutputs(data.size, v)} min={def.params.amount.min} max={def.params.amount.max} step={def.params.amount.step} className="w-full" />
+          <Slider value={[data.amount]} onValueChange={([v]) => updateOutputsRef.current(data.size, v)} min={def.params.amount.min} max={def.params.amount.max} step={def.params.amount.step} className="w-full" />
         </div>
       </div>
 

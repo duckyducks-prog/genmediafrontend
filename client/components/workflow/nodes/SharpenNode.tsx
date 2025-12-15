@@ -71,7 +71,7 @@ function SharpenNode({ data, id }: NodeProps<SharpenNodeData>) {
             <span>{def.params.gamma.label}</span>
             <span>{data.gamma.toFixed(1)}</span>
           </label>
-          <Slider value={[data.gamma]} onValueChange={([v]) => updateOutputs(v)} min={def.params.gamma.min} max={def.params.gamma.max} step={def.params.gamma.step} className="w-full" />
+          <Slider value={[data.gamma]} onValueChange={([v]) => updateOutputsRef.current(v)} min={def.params.gamma.min} max={def.params.gamma.max} step={def.params.gamma.step} className="w-full" />
         </div>
       </div>
 

@@ -72,7 +72,7 @@ function HueSaturationNode({ data, id }: NodeProps<HueSaturationNodeData>) {
             <span>{def.params.hue.label}</span>
             <span>{data.hue.toFixed(0)}°</span>
           </label>
-          <Slider value={[data.hue]} onValueChange={([v]) => updateOutputs(v, data.saturation)} min={def.params.hue.min} max={def.params.hue.max} step={def.params.hue.step} className="w-full" />
+          <Slider value={[data.hue]} onValueChange={([v]) => updateOutputsRef.current(v, data.saturation)} min={def.params.hue.min} max={def.params.hue.max} step={def.params.hue.step} className="w-full" />
         </div>
 
         <div>
@@ -80,7 +80,7 @@ function HueSaturationNode({ data, id }: NodeProps<HueSaturationNodeData>) {
             <span>{def.params.saturation.label}</span>
             <span>{((data.saturation * (def.params.saturation.displayMultiplier || 1))).toFixed(0)}{def.params.saturation.displayMultiplier ? '%' : ''}</span>
           </label>
-          <Slider value={[data.saturation]} onValueChange={([v]) => updateOutputs(data.hue, v)} min={def.params.saturation.min} max={def.params.saturation.max} step={def.params.saturation.step} className="w-full" />
+          <Slider value={[data.saturation]} onValueChange={([v]) => updateOutputsRef.current(data.hue, v)} min={def.params.saturation.min} max={def.params.saturation.max} step={def.params.saturation.step} className="w-full" />
         </div>
       </div>
 
