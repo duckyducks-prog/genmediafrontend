@@ -34,6 +34,8 @@ async function getSharedApp(): Promise<Application> {
       // Pixi v8: Create app instance, then initialize with options
       // preserveDrawingBuffer is CRITICAL for canvas readback (toDataURL/extract)
       const app = new Application();
+
+      console.log('[PixiJS] Calling app.init()...');
       await app.init({
         backgroundAlpha: 0,
         antialias: true,
@@ -43,20 +45,32 @@ async function getSharedApp(): Promise<Application> {
         preserveDrawingBuffer: true, // Essential for extract/toDataURL to work
       });
 
-      // Add WebGL context loss/restore event listeners for better recovery
-      const canvas = app.canvas as HTMLCanvasElement;
-      if (canvas) {
-        canvas.addEventListener('webglcontextlost', (event) => {
-          console.error('[PixiJS] WebGL context lost! Preventing default to allow recovery.');
-          event.preventDefault(); // Prevent browser from giving up on context
-        });
+      console.log('[PixiJS] app.init() completed');
 
-        canvas.addEventListener('webglcontextrestored', () => {
-          console.log('[PixiJS] WebGL context restored! Disposing and allowing re-initialization.');
-          // Dispose the app so next render will create a fresh one
-          disposeSharedPixiApp();
-        });
+      // Verify renderer is ready
+      if (!app.renderer) {
+        throw new Error('PixiJS renderer not available after init');
       }
+
+      // Verify canvas is ready
+      const canvas = app.canvas as HTMLCanvasElement;
+      if (!canvas) {
+        throw new Error('PixiJS canvas not available after init');
+      }
+
+      console.log('[PixiJS] Renderer and canvas verified');
+
+      // Add WebGL context loss/restore event listeners for better recovery
+      canvas.addEventListener('webglcontextlost', (event) => {
+        console.error('[PixiJS] WebGL context lost! Preventing default to allow recovery.');
+        event.preventDefault(); // Prevent browser from giving up on context
+      });
+
+      canvas.addEventListener('webglcontextrestored', () => {
+        console.log('[PixiJS] WebGL context restored! Disposing and allowing re-initialization.');
+        // Dispose the app so next render will create a fresh one
+        disposeSharedPixiApp();
+      });
 
       console.log('[PixiJS] Shared application initialized successfully');
       sharedApp = app;
