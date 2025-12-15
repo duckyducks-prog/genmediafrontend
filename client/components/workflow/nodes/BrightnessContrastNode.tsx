@@ -138,7 +138,7 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
           setIsRendering(false);
         }
       });
-  }, [imageInput, debouncedBrightness, debouncedContrast, upstreamFilters, createConfig]);
+  }, [imageInput, debouncedBrightness, debouncedContrast, upstreamFilters]);
 
   const handleBrightnessChange = (value: number) => {
     updateOutputsRef.current(value, data.contrast);
