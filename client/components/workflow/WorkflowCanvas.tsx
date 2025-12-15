@@ -632,11 +632,18 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
         {/* Empty state message */}
         {nodes.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="text-center text-muted-foreground">
+            <div className="text-center text-muted-foreground max-w-md">
               <p className="text-lg font-medium mb-2">Your canvas is empty</p>
-              <p className="text-sm">
+              <p className="text-sm mb-4">
                 Drag nodes from the palette or click on a node to add it
               </p>
+              <div className="text-xs space-y-1 bg-muted/50 rounded-lg p-3 pointer-events-auto">
+                <p className="font-medium mb-2">💡 Keyboard Shortcuts:</p>
+                <p>• Hold <kbd className="px-1.5 py-0.5 bg-background rounded border">Shift</kbd> + Click to select multiple nodes</p>
+                <p>• <kbd className="px-1.5 py-0.5 bg-background rounded border">Ctrl/Cmd</kbd> + <kbd className="px-1.5 py-0.5 bg-background rounded border">C</kbd> to copy</p>
+                <p>• <kbd className="px-1.5 py-0.5 bg-background rounded border">Ctrl/Cmd</kbd> + <kbd className="px-1.5 py-0.5 bg-background rounded border">V</kbd> to paste</p>
+                <p>• <kbd className="px-1.5 py-0.5 bg-background rounded border">Delete</kbd> to remove selected nodes</p>
+              </div>
             </div>
           </div>
         )}
