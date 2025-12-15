@@ -17,18 +17,43 @@ export function gatherNodeInputs(
   const inputs: Record<string, any> = {};
   const nodeConfig = NODE_CONFIGURATIONS[node.type];
 
+  console.log(`[gatherNodeInputs] Processing node ${node.id} (${node.type})`);
+
   // Find all edges that connect TO this node
   const incomingEdges = edges.filter((edge) => edge.target === node.id);
+  console.log(`[gatherNodeInputs] Found ${incomingEdges.length} incoming edges`);
 
   incomingEdges.forEach((edge) => {
     const sourceNode = allNodes.find((n) => n.id === edge.source);
-    if (!sourceNode || !sourceNode.data.outputs) return;
+
+    console.log(`[gatherNodeInputs] Edge:`, {
+      source: edge.source,
+      target: edge.target,
+      sourceHandle: edge.sourceHandle,
+      targetHandle: edge.targetHandle,
+      hasSourceNode: !!sourceNode,
+      sourceNodeType: sourceNode?.type,
+      sourceNodeHasOutputs: !!sourceNode?.data?.outputs,
+      sourceNodeOutputKeys: sourceNode?.data?.outputs ? Object.keys(sourceNode.data.outputs) : [],
+    });
+
+    if (!sourceNode || !sourceNode.data.outputs) {
+      console.warn(`[gatherNodeInputs] ⚠️ Skipping edge - missing source node or outputs`);
+      return;
+    }
 
     const targetHandle = edge.targetHandle || "default";
     const sourceHandle = edge.sourceHandle || "default";
 
     // Get the output value from the source node
     const outputValue = sourceNode.data.outputs[sourceHandle];
+
+    console.log(`[gatherNodeInputs] Looking for outputs["${sourceHandle}"]`, {
+      found: outputValue !== undefined,
+      valueType: typeof outputValue,
+      valueLength: outputValue?.length || 0,
+      valuePreview: typeof outputValue === 'string' ? outputValue.substring(0, 50) + '...' : outputValue,
+    });
 
     if (outputValue !== undefined) {
       // Check if this input accepts multiple connections
@@ -42,13 +67,18 @@ export function gatherNodeInputs(
           inputs[targetHandle] = [];
         }
         inputs[targetHandle].push(outputValue);
+        console.log(`[gatherNodeInputs] ✓ Added to inputs["${targetHandle}"] array (now ${inputs[targetHandle].length} items)`);
       } else {
         // Single value
         inputs[targetHandle] = outputValue;
+        console.log(`[gatherNodeInputs] ✓ Set inputs["${targetHandle}"] = ${typeof outputValue}`);
       }
+    } else {
+      console.warn(`[gatherNodeInputs] ⚠️ Output value is undefined for handle "${sourceHandle}"`);
     }
   });
 
+  console.log(`[gatherNodeInputs] Final inputs keys:`, Object.keys(inputs));
   return inputs;
 }
 
