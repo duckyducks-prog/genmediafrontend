@@ -81,6 +81,8 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
   const [reactFlowInstance, setReactFlowInstance] =
     useState<ReactFlowInstance | null>(null);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+  const [currentWorkflowId, setCurrentWorkflowId] = useState<string | null>(null);
 
   // Listen for node update events from node components
   useEffect(() => {
