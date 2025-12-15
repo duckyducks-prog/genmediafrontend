@@ -285,6 +285,47 @@ export default function WorkflowGallery({
         </Button>
       </div>
 
+      {showApiTest && apiStatus && !apiStatus.available && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Workflow API Unavailable</AlertTitle>
+          <AlertDescription>
+            Cannot connect to the backend API. You won't be able to save or load your own workflows.
+            {apiStatus.details && (
+              <span className="block mt-1 text-sm">
+                <strong>Details:</strong> {apiStatus.details}
+              </span>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-2"
+              onClick={async () => {
+                const result = await testWorkflowAPI();
+                setApiStatus(result);
+                if (result.available) {
+                  setShowApiTest(false);
+                  fetchWorkflows();
+                  toast({
+                    title: "Connection restored",
+                    description: "Workflow API is now accessible",
+                  });
+                } else {
+                  toast({
+                    title: "Still unavailable",
+                    description: result.details || result.error || "Cannot reach API",
+                    variant: "destructive",
+                  });
+                }
+              }}
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Retry Connection
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Tabs defaultValue="templates" className="w-full">
         <TabsList className="grid w-full grid-cols-2 max-w-md">
           <TabsTrigger value="templates">
