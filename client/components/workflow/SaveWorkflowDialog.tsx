@@ -42,6 +42,8 @@ export default function SaveWorkflowDialog({
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [nameError, setNameError] = useState("");
+  const [workflowError, setWorkflowError] = useState("");
   const { toast } = useToast();
 
   // Populate form when editing existing workflow
@@ -58,21 +60,25 @@ export default function SaveWorkflowDialog({
   }, [existingWorkflow, open]);
 
   const handleSave = async () => {
+    let hasError = false;
+
+    // Validate name
     if (!name.trim()) {
-      toast({
-        title: "Name required",
-        description: "Please enter a name for your workflow",
-        variant: "destructive",
-      });
-      return;
+      setNameError("Workflow name is required");
+      hasError = true;
+    } else {
+      setNameError("");
     }
 
+    // Validate workflow not empty
     if (nodes.length === 0) {
-      toast({
-        title: "Empty workflow",
-        description: "Add some nodes before saving",
-        variant: "destructive",
-      });
+      setWorkflowError("Please add at least one node before saving");
+      hasError = true;
+    } else {
+      setWorkflowError("");
+    }
+
+    if (hasError) {
       return;
     }
 
@@ -138,9 +144,22 @@ export default function SaveWorkflowDialog({
               id="workflow-name"
               placeholder="My awesome workflow"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (e.target.value.trim() !== "") {
+                  setNameError("");
+                }
+              }}
               disabled={isSaving}
+              aria-invalid={!!nameError}
+              aria-describedby={nameError ? "name-error" : undefined}
+              className={nameError ? "border-red-500 focus-visible:ring-red-500" : ""}
             />
+            {nameError && (
+              <p id="name-error" className="text-sm text-red-500">
+                {nameError}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -170,12 +189,15 @@ export default function SaveWorkflowDialog({
             />
           </div>
 
-          <div className="bg-muted/50 rounded-lg p-3 text-sm text-muted-foreground">
+          <div className={`rounded-lg p-3 text-sm ${workflowError ? "bg-red-50 border border-red-200 text-red-700 dark:bg-red-950/20 dark:border-red-800/50 dark:text-red-400" : "bg-muted/50 text-muted-foreground"}`}>
             <p>
               <strong>Workflow info:</strong>
             </p>
             <p>• {nodes.length} nodes</p>
             <p>• {edges.length} connections</p>
+            {workflowError && (
+              <p className="mt-2 text-sm font-medium">{workflowError}</p>
+            )}
           </div>
         </div>
 
@@ -187,7 +209,10 @@ export default function SaveWorkflowDialog({
           >
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
+          <Button
+            onClick={handleSave}
+            disabled={isSaving || !!nameError || nodes.length === 0}
+          >
             {isSaving ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
