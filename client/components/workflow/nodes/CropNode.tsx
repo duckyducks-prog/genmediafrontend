@@ -14,12 +14,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 const ASPECT_RATIOS = {
-  "1:1": 1,
-  "3:4": 3 / 4,
-  "4:3": 4 / 3,
-  "16:9": 16 / 9,
-  "9:16": 9 / 16,
-  custom: 0,
+  "1:1": { ratio: 1, width: 1080, height: 1080 },
+  "3:4": { ratio: 3 / 4, width: 1080, height: 1440 },
+  "4:3": { ratio: 4 / 3, width: 1440, height: 1080 },
+  "16:9": { ratio: 16 / 9, width: 1920, height: 1080 },
+  "9:16": { ratio: 9 / 16, width: 1080, height: 1920 },
+  custom: { ratio: 0, width: 0, height: 0 },
 };
 
 function CropNode({ data, id }: NodeProps<CropNodeData>) {
