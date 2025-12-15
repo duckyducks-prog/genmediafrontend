@@ -31,9 +31,10 @@ async function getSharedApp(): Promise<Application> {
         throw new Error('WebGL is not supported in this browser - PixiJS requires WebGL');
       }
 
-      // Pixi v8: Pass options to constructor instead of calling init()
+      // Pixi v8: Create app instance, then initialize with options
       // preserveDrawingBuffer is CRITICAL for canvas readback (toDataURL/extract)
-      const app = await new Application().init({
+      const app = new Application();
+      await app.init({
         backgroundAlpha: 0,
         antialias: true,
         autoStart: false,
