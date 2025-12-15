@@ -188,8 +188,22 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
     // Handle new connections between nodes
     const onConnect = useCallback(
       (params: Connection | Edge) => {
+        console.log('[onConnect] Creating edge:', {
+          source: params.source,
+          target: params.target,
+          sourceHandle: params.sourceHandle,
+          targetHandle: params.targetHandle,
+        });
+
         // Get the source node to determine connector type
         const sourceNode = nodes.find((n) => n.id === params.source);
+        console.log('[onConnect] Source node:', {
+          found: !!sourceNode,
+          type: sourceNode?.type,
+          hasOutputs: !!sourceNode?.data?.outputs,
+          outputKeys: sourceNode?.data?.outputs ? Object.keys(sourceNode.data.outputs) : [],
+        });
+
         if (sourceNode) {
           const connectorType = getConnectorType(
             sourceNode,
@@ -202,6 +216,10 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
             className: `connector-type-${connectorType || "any"}`,
             data: { connectorType: connectorType || "any" },
           };
+          console.log('[onConnect] Edge created with handles:', {
+            sourceHandle: newEdge.sourceHandle,
+            targetHandle: newEdge.targetHandle,
+          });
           setEdges((eds) => addEdge(newEdge, eds));
 
           // Immediately propagate ALL outputs through the new connection
