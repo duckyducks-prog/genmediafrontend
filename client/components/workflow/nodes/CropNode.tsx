@@ -279,7 +279,6 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
 
   // Handle drag on crop overlay
   const handleMouseDown = (e: React.MouseEvent) => {
-    console.log("[CropNode] Mouse down on crop box");
     if (!imageRef.current || !imageDimensions) return;
 
     // Prevent React Flow from dragging the node
@@ -292,15 +291,6 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
 
     const clickX = (e.clientX - rect.left) * scaleX;
     const clickY = (e.clientY - rect.top) * scaleY;
-
-    console.log("[CropNode] Starting drag:", {
-      clickX,
-      clickY,
-      currentX: data.x,
-      currentY: data.y,
-      width: data.width,
-      height: data.height,
-    });
 
     setIsDragging(true);
     setDragStart({ x: clickX - data.x, y: clickY - data.y });
@@ -351,7 +341,6 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
 
   useEffect(() => {
     if (isDragging) {
-      console.log("[CropNode] Drag active, setting up global listeners");
       const handleGlobalMouseMove = (e: MouseEvent) => {
         if (!imageRef.current || !imageDimensions || !dragStart) return;
 
@@ -370,13 +359,6 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
           0,
           Math.min(mouseY - dragStart.y, imageDimensions.height - data.height),
         );
-
-        console.log("[CropNode] Dragging - new position:", {
-          newX: Math.round(newX),
-          newY: Math.round(newY),
-          width: data.width,
-          height: data.height,
-        });
 
         const updateEvent = new CustomEvent("node-update", {
           detail: {
