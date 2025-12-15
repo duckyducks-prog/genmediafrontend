@@ -126,11 +126,16 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
               });
 
               // Update the target node's data with ALL outputs
+              // Set BOTH top-level properties (for direct access) AND data.outputs (for execution helpers)
               updatedNodes[targetNodeIndex] = {
                 ...targetNode,
                 data: {
                   ...targetNode.data,
-                  ...allOutputs, // Merge all outputs into target node data
+                  ...allOutputs, // Merge all outputs into target node data (top-level)
+                  outputs: {     // Also set outputs property for consistency
+                    ...(targetNode.data?.outputs || {}),
+                    ...allOutputs,
+                  },
                 },
               };
             }
