@@ -30,6 +30,20 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
   const incomingImageUrl = data.imageUrl;
   const images = data.images || [];
 
+  // Debug logging
+  useEffect(() => {
+    console.log('[GenerateImageNode] Data updated:', {
+      nodeId: id,
+      status,
+      isCompleted,
+      hasImageUrl: !!incomingImageUrl,
+      hasImages: images.length > 0,
+      imageUrlPreview: incomingImageUrl ? incomingImageUrl.substring(0, 50) : 'null',
+      imageCount: images.length,
+      allDataKeys: Object.keys(data),
+    });
+  }, [id, status, isCompleted, incomingImageUrl, images, data]);
+
   const [upscaleFactor, setUpscaleFactor] = useState<string>("x2");
   const [isUpscaling, setIsUpscaling] = useState(false);
   const [upscaleError, setUpscaleError] = useState<string | null>(null);

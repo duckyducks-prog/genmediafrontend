@@ -329,11 +329,22 @@ export function useWorkflowExecution(
 
               const apiData = await response.json();
 
+              console.log('[GenerateImage] API Response:', {
+                hasImages: !!apiData.images,
+                imageCount: apiData.images?.length || 0,
+              });
+
               if (apiData.images && apiData.images.length > 0) {
                 const images = apiData.images.map(
                   (img: string) => `data:image/png;base64,${img}`,
                 );
                 const firstImage = images[0];
+
+                console.log('[GenerateImage] Generated images:', {
+                  imageCount: images.length,
+                  firstImageLength: firstImage.length,
+                  firstImagePreview: firstImage.substring(0, 50),
+                });
 
                 // Save first image to library
                 try {
@@ -356,13 +367,22 @@ export function useWorkflowExecution(
                   onAssetGenerated();
                 }
 
+                const resultData = {
+                  images,
+                  image: firstImage,
+                  imageUrl: firstImage,
+                };
+
+                console.log('[GenerateImage] Returning result data:', {
+                  hasImages: !!resultData.images,
+                  hasImage: !!resultData.image,
+                  hasImageUrl: !!resultData.imageUrl,
+                  imageUrlLength: resultData.imageUrl?.length || 0,
+                });
+
                 return {
                   success: true,
-                  data: {
-                    images,
-                    image: firstImage,
-                    imageUrl: firstImage,
-                  },
+                  data: resultData,
                 };
               } else {
                 return { success: false, error: "No images returned from API" };
@@ -826,10 +846,25 @@ export function useWorkflowExecution(
           if (result.status === "fulfilled") {
             if (result.value.success) {
               progress.set(node.id, "completed");
-              updateNodeState(node.id, "completed", {
+
+              const updateData = {
                 ...result.value.data,
                 outputs: result.value.data,
+              };
+
+              console.log('[Workflow] Updating node state:', {
+                nodeId: node.id,
+                nodeType: node.type,
+                updateData: {
+                  hasImageUrl: !!updateData.imageUrl,
+                  hasImage: !!updateData.image,
+                  hasImages: !!updateData.images,
+                  hasOutputs: !!updateData.outputs,
+                  outputsHasImageUrl: !!updateData.outputs?.imageUrl,
+                },
               });
+
+              updateNodeState(node.id, "completed", updateData);
               totalCompleted++;
             } else {
               progress.set(node.id, "error");
