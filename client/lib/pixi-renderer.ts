@@ -327,9 +327,31 @@ async function performRender(
   sprite.width = width;
   sprite.height = height;
 
-  // 6. Build filter array from configs (Layer 2 logic)
-  if (filterConfigs.length > 0) {
-    const filters = filterConfigs.map((config) =>
+  // 6. Build filter array from configs and handle crop (Layer 2 logic)
+  // Separate crop config from other filters (crop modifies canvas, not sprite filters)
+  const cropConfig = filterConfigs.find((f) => f.type === "crop");
+  const otherFilters = filterConfigs.filter((f) => f.type !== "crop");
+
+  // Apply crop if specified (resize canvas and center sprite)
+  if (cropConfig) {
+    const cropWidth = cropConfig.params.width || width;
+    const cropHeight = cropConfig.params.height || height;
+
+    // Resize app to crop dimensions
+    app.renderer.resize(cropWidth, cropHeight);
+
+    // Center the sprite in the cropped area
+    sprite.x = (cropWidth - width) / 2;
+    sprite.y = (cropHeight - height) / 2;
+
+    // Update width/height for extraction
+    width = cropWidth;
+    height = cropHeight;
+  }
+
+  // Apply remaining filters to sprite
+  if (otherFilters.length > 0) {
+    const filters = otherFilters.map((config) =>
       createFilterFromConfig(config),
     );
     sprite.filters = filters; // PixiJS applies all filters on GPU

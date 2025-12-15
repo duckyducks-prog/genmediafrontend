@@ -21,6 +21,7 @@ export enum NodeType {
   HueSaturation = "hueSaturation",
   Noise = "noise",
   Vignette = "vignette",
+  Crop = "crop",
 
   // ACTION nodes (inputs and outputs)
   GenerateVideo = "generateVideo",
@@ -159,6 +160,14 @@ export interface VignetteNodeData extends BaseNodeData {
   amount: number;
 }
 
+export interface CropNodeData extends BaseNodeData {
+  aspectRatio: "1:1" | "3:4" | "4:3" | "16:9" | "9:16" | "custom";
+  width: number;
+  height: number;
+  originalWidth?: number;
+  originalHeight?: number;
+}
+
 // PREVIEW node
 export interface PreviewNodeData extends BaseNodeData {
   imageUrl?: string;
@@ -192,6 +201,7 @@ export type WorkflowNodeData =
   | HueSaturationNodeData
   | NoiseNodeData
   | VignetteNodeData
+  | CropNodeData
   | GenerateVideoNodeData
   | GenerateImageNodeData
   | LLMNodeData
@@ -500,6 +510,41 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
     label: "Vignette",
     category: "modifier",
     description: "Add vignette effect",
+    inputConnectors: [
+      {
+        id: "image",
+        label: "Image",
+        type: ConnectorType.Image,
+        required: true,
+        acceptsMultiple: false,
+      },
+      {
+        id: "filters",
+        label: "Filters",
+        type: ConnectorType.Any,
+        required: false,
+        acceptsMultiple: false,
+      },
+    ],
+    outputConnectors: [
+      {
+        id: "image",
+        label: "Image",
+        type: ConnectorType.Image,
+      },
+      {
+        id: "filters",
+        label: "Filters",
+        type: ConnectorType.Any,
+      },
+    ],
+  },
+
+  [NodeType.Crop]: {
+    type: NodeType.Crop,
+    label: "Crop",
+    category: "modifier",
+    description: "Crop image to aspect ratio",
     inputConnectors: [
       {
         id: "image",

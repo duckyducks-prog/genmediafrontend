@@ -3,7 +3,7 @@
  * NO PixiJS Filter instances, just parameter data
  */
 export interface FilterConfig {
-  type: 'brightness' | 'blur' | 'sharpen' | 'hueSaturation' | 'noise' | 'vignette';
+  type: 'brightness' | 'blur' | 'sharpen' | 'hueSaturation' | 'noise' | 'vignette' | 'crop';
   params: Record<string, number>;
 }
 
@@ -154,6 +154,29 @@ export const FILTER_DEFINITIONS: Record<string, FilterDefinition> = {
         step: 0.01,
         default: 0.5,
         displayMultiplier: 100,
+      },
+    },
+  },
+
+  crop: {
+    type: 'crop',
+    label: 'Crop',
+    description: 'Crop image to specific dimensions',
+    filterClass: 'Custom', // Custom crop implementation
+    params: {
+      width: {
+        label: 'Width',
+        min: 1,
+        max: 4096,
+        step: 1,
+        default: 1024,
+      },
+      height: {
+        label: 'Height',
+        min: 1,
+        max: 4096,
+        step: 1,
+        default: 1024,
       },
     },
   },
