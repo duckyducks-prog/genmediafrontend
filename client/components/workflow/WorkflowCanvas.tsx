@@ -1,4 +1,4 @@
-import { useCallback, useState, useRef, useEffect } from "react";
+import { useCallback, useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -431,6 +431,11 @@ function WorkflowCanvasInner({ onAssetGenerated }: WorkflowCanvasProps) {
     setNodes,
     onAssetGenerated,
   );
+
+  // Expose loadWorkflow method to parent
+  useImperativeHandle(ref, () => ({
+    loadWorkflow,
+  }), [loadWorkflow]);
 
   // Listen for node execute events
   useEffect(() => {
