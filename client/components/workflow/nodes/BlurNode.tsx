@@ -1,4 +1,4 @@
-import { memo, useEffect, useCallback, useMemo } from 'react';
+import { memo, useEffect, useCallback, useRef } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { BlurNodeData } from '../types';
 import { Slider } from '@/components/ui/slider';
@@ -6,9 +6,16 @@ import { Blend } from 'lucide-react';
 import { FilterConfig, FILTER_DEFINITIONS } from '@/lib/pixi-filter-configs';
 
 function BlurNode({ data, id }: NodeProps<BlurNodeData>) {
-  // Get incoming data (memoized for stable identity in effect dependencies)
-  const imageInput = useMemo(() => (data as any).image || (data as any).imageInput, [data]);
-  const upstreamFilters: FilterConfig[] = useMemo(() => (data as any).filters || [], [data]);
+  // Get incoming data
+  // Extract primitive/comparable values to use as dependencies
+  const imageInput = (data as any).image || (data as any).imageInput;
+  const upstreamFiltersRaw = (data as any).filters || [];
+
+  // Convert filters to a stable string for comparison
+  const upstreamFiltersKey = JSON.stringify(upstreamFiltersRaw.map((f: FilterConfig) => ({
+    type: f.type,
+    params: f.params
+  })));
 
   const createConfig = useCallback(
     (strength: number, quality: number): FilterConfig => ({
@@ -18,10 +25,13 @@ function BlurNode({ data, id }: NodeProps<BlurNodeData>) {
     []
   );
 
-  const updateOutputs = useCallback(
-    (strength: number, quality: number) => {
+  // Update node outputs - use useRef to avoid re-render loops
+  const updateOutputsRef = useRef((strength: number, quality: number) => {});
+
+  useEffect(() => {
+    updateOutputsRef.current = (strength: number, quality: number) => {
       const thisConfig = createConfig(strength, quality);
-      const updatedFilters = [...upstreamFilters, thisConfig];
+      const updatedFilters = [...upstreamFiltersRaw, thisConfig];
 
       const updateEvent = new CustomEvent('node-update', {
         detail: {
@@ -38,13 +48,12 @@ function BlurNode({ data, id }: NodeProps<BlurNodeData>) {
         },
       });
       window.dispatchEvent(updateEvent);
-    },
-    [id, data, imageInput, upstreamFilters, createConfig]
-  );
+    };
+  });
 
   useEffect(() => {
-    updateOutputs(data.strength, data.quality);
-  }, [data.strength, data.quality, imageInput, upstreamFilters, updateOutputs]);
+    updateOutputsRef.current(data.strength, data.quality);
+  }, [data.strength, data.quality, imageInput, upstreamFiltersKey]);
 
   const def = FILTER_DEFINITIONS.blur;
 
