@@ -170,11 +170,24 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
     if (aspectRatio !== "custom" && imageDimensions) {
       const ratio = ASPECT_RATIOS[aspectRatio];
 
+      console.log("[CropNode] Aspect ratio change:", {
+        aspectRatio,
+        ratio,
+        imageDimensions,
+        dataOriginalWidth: data.originalWidth,
+        dataOriginalHeight: data.originalHeight,
+      });
+
       // Height is always the full original image height
       const newHeight = imageDimensions.height;
 
       // Width is calculated based on aspect ratio
       const newWidth = Math.round(newHeight * ratio);
+
+      console.log("[CropNode] Calculated dimensions:", {
+        newWidth,
+        newHeight,
+      });
 
       // Center the crop area horizontally, Y is 0 (full height)
       const newX = Math.floor((imageDimensions.width - newWidth) / 2);
