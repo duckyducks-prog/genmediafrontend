@@ -66,17 +66,6 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
       const thisConfig = createConfig(x, y, width, height);
       const updatedFilters = [...upstreamFiltersRaw, thisConfig];
 
-      console.log("[CropNode] Dispatching node-update:", {
-        nodeId: id,
-        x,
-        y,
-        width,
-        height,
-        hasImage: !!imageInput,
-        upstreamFilterCount: upstreamFiltersRaw.length,
-        totalFilterCount: updatedFilters.length,
-      });
-
       const updateEvent = new CustomEvent("node-update", {
         detail: {
           id,
@@ -106,13 +95,6 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
       img.onload = () => {
         const originalWidth = img.naturalWidth;
         const originalHeight = img.naturalHeight;
-
-        console.log("[CropNode] Image loaded:", {
-          originalWidth,
-          originalHeight,
-          naturalWidth: img.naturalWidth,
-          naturalHeight: img.naturalHeight,
-        });
 
         setImageDimensions({ width: originalWidth, height: originalHeight });
 
@@ -177,12 +159,6 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
     if (aspectRatio !== "custom" && imageDimensions) {
       const aspectConfig = ASPECT_RATIOS[aspectRatio];
 
-      console.log("[CropNode] Aspect ratio change:", {
-        aspectRatio,
-        standardDimensions: { width: aspectConfig.width, height: aspectConfig.height },
-        imageDimensions,
-      });
-
       // Start with standard dimensions
       let newWidth = aspectConfig.width;
       let newHeight = aspectConfig.height;
@@ -196,18 +172,7 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
 
         newWidth = Math.round(newWidth * scale);
         newHeight = Math.round(newHeight * scale);
-
-        console.log("[CropNode] Scaled down to fit:", {
-          scale,
-          newWidth,
-          newHeight,
-        });
       }
-
-      console.log("[CropNode] Final dimensions:", {
-        newWidth,
-        newHeight,
-      });
 
       // Center the crop area both horizontally and vertically
       const newX = Math.floor((imageDimensions.width - newWidth) / 2);
@@ -418,18 +383,6 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
     const rect = imageRef.current.getBoundingClientRect();
     const scaleX = rect.width / imageDimensions.width;
     const scaleY = rect.height / imageDimensions.height;
-
-    console.log("[CropNode] Overlay style calculation:", {
-      dataWidth: data.width,
-      dataHeight: data.height,
-      imageDimensions,
-      rectWidth: rect.width,
-      rectHeight: rect.height,
-      scaleX,
-      scaleY,
-      overlayWidth: data.width * scaleX,
-      overlayHeight: data.height * scaleY,
-    });
 
     return {
       left: `${data.x * scaleX}px`,
