@@ -107,6 +107,13 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
         const originalWidth = img.width;
         const originalHeight = img.height;
 
+        console.log("[CropNode] Image loaded:", {
+          originalWidth,
+          originalHeight,
+          naturalWidth: img.naturalWidth,
+          naturalHeight: img.naturalHeight,
+        });
+
         setImageDimensions({ width: originalWidth, height: originalHeight });
 
         // Initialize dimensions if not set or if original dimensions changed
