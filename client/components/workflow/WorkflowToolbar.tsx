@@ -6,6 +6,8 @@ import {
   Maximize2,
   Play,
   RotateCcw,
+  Save,
+  FolderOpen,
 } from "lucide-react";
 import { useReactFlow } from "reactflow";
 
@@ -13,6 +15,8 @@ interface WorkflowToolbarProps {
   onClearCanvas: () => void;
   onExecuteWorkflow: () => void;
   onResetWorkflow: () => void;
+  onSaveWorkflow: () => void;
+  onLoadWorkflow: () => void;
   isExecuting: boolean;
 }
 
@@ -20,12 +24,35 @@ export default function WorkflowToolbar({
   onClearCanvas,
   onExecuteWorkflow,
   onResetWorkflow,
+  onSaveWorkflow,
+  onLoadWorkflow,
   isExecuting,
 }: WorkflowToolbarProps) {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
 
   return (
     <div className="absolute top-4 right-4 flex items-center gap-2 bg-card border border-border rounded-lg p-2 shadow-lg z-10">
+      <Button
+        onClick={onSaveWorkflow}
+        variant="default"
+        size="sm"
+        title="Save Workflow"
+      >
+        <Save className="w-4 h-4 mr-1" />
+        Save
+      </Button>
+
+      <Button
+        onClick={onLoadWorkflow}
+        variant="outline"
+        size="sm"
+        title="Load Workflow"
+      >
+        <FolderOpen className="w-4 h-4" />
+      </Button>
+
+      <div className="w-px h-6 bg-border mx-1" />
+
       <Button
         onClick={onExecuteWorkflow}
         disabled={isExecuting}
