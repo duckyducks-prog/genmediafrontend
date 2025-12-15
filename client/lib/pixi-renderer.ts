@@ -6,6 +6,7 @@ import {
   ColorMatrixFilter,
   BlurFilter,
   NoiseFilter,
+  Rectangle,
 } from "pixi.js";
 import { AdjustmentFilter } from "pixi-filters";
 import { FilterConfig, FILTER_DEFINITIONS } from "./pixi-filter-configs";
@@ -294,7 +295,7 @@ async function performRender(
   }
 
   // 3. Create texture from the loaded image
-  const texture = Texture.from(img);
+  let texture = Texture.from(img);
 
   // Ensure texture is valid
   if (!texture || !texture.source) {
@@ -303,7 +304,7 @@ async function performRender(
     );
   }
 
-  // Resize app to match image dimensions (with max limits to prevent GPU OOM)
+  // Get original image dimensions
   const MAX_DIMENSION = 4096; // Reasonable limit for most GPUs
   let width = img.width || 1024;
   let height = img.height || 1024;
@@ -317,25 +318,13 @@ async function performRender(
     );
   }
 
-  app.renderer.resize(width, height);
-
-  // 4. Clear the stage from previous renders
-  app.stage.removeChildren();
-
-  // 5. Create sprite from texture
-  const sprite = new Sprite(texture);
-  sprite.width = width;
-  sprite.height = height;
-
-  // 6. Build filter array from configs and handle crop (Layer 2 logic)
-  // Separate crop config from other filters (crop modifies texture, not just filters)
+  // 4. Handle crop BEFORE creating sprite (crop the texture itself)
   const cropConfig = filterConfigs.find((f) => f.type === "crop");
   const otherFilters = filterConfigs.filter((f) => f.type !== "crop");
 
-  // Apply crop if specified - create a cropped texture
   if (cropConfig) {
-    const cropX = Math.max(0, cropConfig.params.x || 0);
-    const cropY = Math.max(0, cropConfig.params.y || 0);
+    const cropX = Math.max(0, Math.min(cropConfig.params.x || 0, width));
+    const cropY = Math.max(0, Math.min(cropConfig.params.y || 0, height));
     const cropWidth = Math.min(
       cropConfig.params.width || width,
       width - cropX,
@@ -354,19 +343,30 @@ async function performRender(
       originalHeight: height,
     });
 
-    // Resize app to crop dimensions
-    app.renderer.resize(cropWidth, cropHeight);
+    // Create a cropped texture using a frame Rectangle
+    const cropFrame = new Rectangle(cropX, cropY, cropWidth, cropHeight);
+    texture = new Texture({
+      source: texture.source,
+      frame: cropFrame,
+    });
 
-    // Position sprite to show the cropped area (negative offset to shift the visible portion)
-    sprite.x = -cropX;
-    sprite.y = -cropY;
-
-    // Update dimensions for the cropped output
+    // Update dimensions to cropped size
     width = cropWidth;
     height = cropHeight;
   }
 
-  // Apply remaining filters to sprite
+  // Resize app to match final dimensions
+  app.renderer.resize(width, height);
+
+  // 5. Clear the stage from previous renders
+  app.stage.removeChildren();
+
+  // 6. Create sprite from (possibly cropped) texture
+  const sprite = new Sprite(texture);
+  sprite.width = width;
+  sprite.height = height;
+
+  // 7. Apply remaining filters to sprite
   if (otherFilters.length > 0) {
     const filters = otherFilters.map((config) =>
       createFilterFromConfig(config),
@@ -374,11 +374,11 @@ async function performRender(
     sprite.filters = filters; // PixiJS applies all filters on GPU
   }
 
-  // 7. Add to stage and render
+  // 8. Add to stage and render
   app.stage.addChild(sprite);
   app.renderer.render(app.stage);
 
-  // 8. Extract as base64 using PixiJS extract API (Layer 3 logic)
+  // 9. Extract as base64 using PixiJS extract API (Layer 3 logic)
   // Using renderer.extract is more reliable than canvas.toDataURL for WebGL
   let dataURL: string;
 
