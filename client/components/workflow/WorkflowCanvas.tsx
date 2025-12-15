@@ -664,14 +664,14 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
                 Drag nodes from the palette or click on a node to add it
               </p>
               <div className="text-xs space-y-1 bg-muted/50 rounded-lg p-3 pointer-events-auto">
-                <p className="font-medium mb-2">💡 Selection & Shortcuts:</p>
+                <p className="font-medium mb-2">Selection & Shortcuts:</p>
                 <p>• <strong>Drag</strong> on empty canvas to select area</p>
                 <p>• Hold <kbd className="px-1.5 py-0.5 bg-background rounded border">Shift</kbd> + Click for multi-select</p>
                 <p>• <kbd className="px-1.5 py-0.5 bg-background rounded border">Ctrl/Cmd</kbd> + <kbd className="px-1.5 py-0.5 bg-background rounded border">C</kbd> to copy</p>
                 <p>• <kbd className="px-1.5 py-0.5 bg-background rounded border">Ctrl/Cmd</kbd> + <kbd className="px-1.5 py-0.5 bg-background rounded border">V</kbd> to paste</p>
                 <p>• <kbd className="px-1.5 py-0.5 bg-background rounded border">Delete</kbd> to remove</p>
                 <p>• <strong>Right-click</strong> or <strong>Middle-click</strong> to pan canvas</p>
-                <p>• <strong>Scroll</strong> to zoom in/out (10,000 x 10,000 canvas!)</p>
+                <p>• <strong>Scroll</strong> to zoom in/out</p>
               </div>
             </div>
           </div>
