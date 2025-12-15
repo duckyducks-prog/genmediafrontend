@@ -141,11 +141,11 @@ function BrightnessContrastNode({ data, id }: NodeProps<BrightnessContrastNodeDa
   }, [imageInput, debouncedBrightness, debouncedContrast, upstreamFilters, createConfig]);
 
   const handleBrightnessChange = (value: number) => {
-    updateOutputs(value, data.contrast);
+    updateOutputsRef.current(value, data.contrast);
   };
 
   const handleContrastChange = (value: number) => {
-    updateOutputs(data.brightness, value);
+    updateOutputsRef.current(data.brightness, value);
   };
 
   const def = FILTER_DEFINITIONS.brightness;
