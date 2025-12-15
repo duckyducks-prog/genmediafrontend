@@ -62,6 +62,10 @@ export default function SaveWorkflowDialog({
       setDescription("");
       setIsPublic(false);
     }
+    // Clear errors when dialog opens/closes
+    setServerError("");
+    setNameError("");
+    setWorkflowError("");
   }, [existingWorkflow, open]);
 
   const handleSave = async () => {
@@ -267,6 +271,32 @@ export default function SaveWorkflowDialog({
               <p className="mt-2 text-sm font-medium">{workflowError}</p>
             )}
           </div>
+
+          {serverError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Server Error</AlertTitle>
+              <AlertDescription className="whitespace-pre-wrap">
+                {serverError}
+              </AlertDescription>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-2"
+                onClick={handleTestConnection}
+                disabled={isTestingConnection}
+              >
+                {isTestingConnection ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Testing...
+                  </>
+                ) : (
+                  "Test Connection"
+                )}
+              </Button>
+            </Alert>
+          )}
         </div>
 
         <DialogFooter>
