@@ -1,7 +1,7 @@
 import { memo, useEffect, useCallback, useRef, useState } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { CropNodeData } from "../types";
-import { Crop } from "lucide-react";
+import { Crop, Maximize2 } from "lucide-react";
 import { FilterConfig } from "@/lib/pixi-filter-configs";
 import {
   Select,
@@ -30,6 +30,12 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
     width: number;
     height: number;
   } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(
+    null,
+  );
+  const cropOverlayRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
 
   const upstreamFiltersKey = JSON.stringify(
     upstreamFiltersRaw.map((f: FilterConfig) => ({
@@ -39,22 +45,31 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
   );
 
   const createConfig = useCallback(
-    (width: number, height: number): FilterConfig => ({
+    (x: number, y: number, width: number, height: number): FilterConfig => ({
       type: "crop",
-      params: { width, height },
+      params: { x, y, width, height },
     }),
     [],
   );
 
-  const updateOutputsRef = useRef((width: number, height: number) => {});
+  const updateOutputsRef = useRef(
+    (x: number, y: number, width: number, height: number) => {},
+  );
 
   useEffect(() => {
-    updateOutputsRef.current = (width: number, height: number) => {
-      const thisConfig = createConfig(width, height);
+    updateOutputsRef.current = (
+      x: number,
+      y: number,
+      width: number,
+      height: number,
+    ) => {
+      const thisConfig = createConfig(x, y, width, height);
       const updatedFilters = [...upstreamFiltersRaw, thisConfig];
 
       console.log("[CropNode] Dispatching node-update:", {
         nodeId: id,
+        x,
+        y,
         width,
         height,
         hasImage: !!imageInput,
@@ -67,6 +82,8 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
           id,
           data: {
             ...data,
+            x,
+            y,
             width,
             height,
             outputs: {
@@ -103,6 +120,8 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
               id,
               data: {
                 ...data,
+                x: 0,
+                y: 0,
                 width: originalWidth,
                 height: originalHeight,
                 originalWidth,
@@ -120,12 +139,17 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
     }
   }, [imageInput, id]);
 
-  // Update outputs whenever dimensions change
+  // Update outputs whenever crop parameters change
   useEffect(() => {
-    if (data.width && data.height) {
-      updateOutputsRef.current(data.width, data.height);
+    if (
+      data.width &&
+      data.height &&
+      data.x !== undefined &&
+      data.y !== undefined
+    ) {
+      updateOutputsRef.current(data.x, data.y, data.width, data.height);
     }
-  }, [data.width, data.height, imageInput, upstreamFiltersKey]);
+  }, [data.x, data.y, data.width, data.height, imageInput, upstreamFiltersKey]);
 
   const handleAspectRatioChange = (value: string) => {
     const aspectRatio = value as CropNodeData["aspectRatio"];
@@ -157,12 +181,18 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
         newHeight = Math.round(imageDimensions.width / ratio);
       }
 
+      // Center the crop area
+      const newX = Math.floor((imageDimensions.width - newWidth) / 2);
+      const newY = Math.floor((imageDimensions.height - newHeight) / 2);
+
       const dimensionUpdateEvent = new CustomEvent("node-update", {
         detail: {
           id,
           data: {
             ...data,
             aspectRatio,
+            x: newX,
+            y: newY,
             width: newWidth,
             height: newHeight,
           },
@@ -172,14 +202,20 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
     }
   };
 
-  const handleWidthChange = (value: string) => {
-    const width = parseInt(value) || 1;
+  const handlePositionChange = (axis: "x" | "y", value: string) => {
+    const numValue = parseInt(value) || 0;
+    const maxValue =
+      axis === "x"
+        ? (imageDimensions?.width || 0) - data.width
+        : (imageDimensions?.height || 0) - data.height;
+    const clampedValue = Math.max(0, Math.min(numValue, maxValue));
+
     const updateEvent = new CustomEvent("node-update", {
       detail: {
         id,
         data: {
           ...data,
-          width,
+          [axis]: clampedValue,
           aspectRatio: "custom",
         },
       },
@@ -187,14 +223,14 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
     window.dispatchEvent(updateEvent);
   };
 
-  const handleHeightChange = (value: string) => {
-    const height = parseInt(value) || 1;
+  const handleDimensionChange = (dimension: "width" | "height", value: string) => {
+    const numValue = parseInt(value) || 1;
     const updateEvent = new CustomEvent("node-update", {
       detail: {
         id,
         data: {
           ...data,
-          height,
+          [dimension]: numValue,
           aspectRatio: "custom",
         },
       },
@@ -209,6 +245,8 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
           id,
           data: {
             ...data,
+            x: 0,
+            y: 0,
             width: imageDimensions.width,
             height: imageDimensions.height,
             aspectRatio: "custom",
@@ -219,22 +257,130 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
     }
   };
 
+  const handleFitToCrop = () => {
+    if (imageDimensions) {
+      // Keep current crop dimensions, just center it
+      const newX = Math.floor((imageDimensions.width - data.width) / 2);
+      const newY = Math.floor((imageDimensions.height - data.height) / 2);
+
+      const updateEvent = new CustomEvent("node-update", {
+        detail: {
+          id,
+          data: {
+            ...data,
+            x: Math.max(0, newX),
+            y: Math.max(0, newY),
+          },
+        },
+      });
+      window.dispatchEvent(updateEvent);
+    }
+  };
+
+  // Handle drag on crop overlay
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!imageRef.current || !imageDimensions) return;
+
+    const rect = imageRef.current.getBoundingClientRect();
+    const scaleX = imageDimensions.width / rect.width;
+    const scaleY = imageDimensions.height / rect.height;
+
+    const clickX = (e.clientX - rect.left) * scaleX;
+    const clickY = (e.clientY - rect.top) * scaleY;
+
+    setIsDragging(true);
+    setDragStart({ x: clickX - data.x, y: clickY - data.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !dragStart || !imageRef.current || !imageDimensions)
+      return;
+
+    const rect = imageRef.current.getBoundingClientRect();
+    const scaleX = imageDimensions.width / rect.width;
+    const scaleY = imageDimensions.height / rect.height;
+
+    const mouseX = (e.clientX - rect.left) * scaleX;
+    const mouseY = (e.clientY - rect.top) * scaleY;
+
+    const newX = Math.max(
+      0,
+      Math.min(mouseX - dragStart.x, imageDimensions.width - data.width),
+    );
+    const newY = Math.max(
+      0,
+      Math.min(mouseY - dragStart.y, imageDimensions.height - data.height),
+    );
+
+    const updateEvent = new CustomEvent("node-update", {
+      detail: {
+        id,
+        data: {
+          ...data,
+          x: Math.round(newX),
+          y: Math.round(newY),
+          aspectRatio: "custom",
+        },
+      },
+    });
+    window.dispatchEvent(updateEvent);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    setDragStart(null);
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener("mouseup", handleMouseUp as any);
+      return () => window.removeEventListener("mouseup", handleMouseUp as any);
+    }
+  }, [isDragging]);
+
+  // Calculate crop overlay position and size for display
+  const getCropOverlayStyle = () => {
+    if (!imageDimensions || !imageRef.current) return {};
+
+    const rect = imageRef.current.getBoundingClientRect();
+    const scaleX = rect.width / imageDimensions.width;
+    const scaleY = rect.height / imageDimensions.height;
+
+    return {
+      left: `${data.x * scaleX}px`,
+      top: `${data.y * scaleY}px`,
+      width: `${data.width * scaleX}px`,
+      height: `${data.height * scaleY}px`,
+    };
+  };
+
   return (
-    <div className="bg-card border-2 rounded-lg p-4 min-w-[320px] shadow-lg">
+    <div className="bg-card border-2 rounded-lg p-4 min-w-[340px] shadow-lg">
       {/* Header */}
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
         <div className="flex items-center gap-2">
           <Crop className="w-4 h-4 text-primary" />
           <span className="font-semibold text-sm">Crop</span>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleReset}
-          className="h-7 text-xs"
-        >
-          Reset
-        </Button>
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleFitToCrop}
+            className="h-7 text-xs px-2"
+            title="Center crop area"
+          >
+            <Maximize2 className="w-3 h-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleReset}
+            className="h-7 text-xs"
+          >
+            Reset
+          </Button>
+        </div>
       </div>
 
       {/* Input Handles */}
@@ -255,17 +401,44 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
         style={{ top: "70%" }}
       />
 
-      {/* Image Preview */}
+      {/* Image Preview with Crop Overlay */}
       {imagePreview ? (
-        <div className="mb-3 rounded-lg overflow-hidden bg-muted border border-border">
+        <div
+          className="mb-3 rounded-lg overflow-hidden bg-muted border border-border relative"
+          onMouseMove={handleMouseMove}
+        >
           <img
+            ref={imageRef}
             src={imagePreview}
             alt="Crop preview"
-            className="w-full h-auto max-h-[200px] object-contain"
+            className="w-full h-auto max-h-[220px] object-contain"
             crossOrigin={
               imagePreview?.startsWith("data:") ? undefined : "anonymous"
             }
           />
+          {/* Crop overlay */}
+          {imageDimensions && (
+            <>
+              {/* Dark overlay outside crop area */}
+              <div className="absolute inset-0 bg-black/40 pointer-events-none" />
+              {/* Crop box */}
+              <div
+                ref={cropOverlayRef}
+                className="absolute border-2 border-primary bg-transparent cursor-move"
+                style={getCropOverlayStyle()}
+                onMouseDown={handleMouseDown}
+              >
+                {/* Corner handles */}
+                <div className="absolute -top-1 -left-1 w-3 h-3 bg-primary rounded-full" />
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full" />
+                <div className="absolute -bottom-1 -left-1 w-3 h-3 bg-primary rounded-full" />
+                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-primary rounded-full" />
+                {/* Crosshair lines */}
+                <div className="absolute top-1/2 left-0 right-0 h-px bg-primary/50" />
+                <div className="absolute left-1/2 top-0 bottom-0 w-px bg-primary/50" />
+              </div>
+            </>
+          )}
         </div>
       ) : (
         <div className="mb-3 flex items-center justify-center h-[150px] border-2 border-dashed border-border rounded-lg bg-muted/30">
@@ -301,6 +474,37 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
           </Select>
         </div>
 
+        {/* Position */}
+        <div>
+          <label className="text-xs text-muted-foreground block mb-2">
+            Position
+          </label>
+          <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <div className="text-xs text-muted-foreground mb-1">X</div>
+              <Input
+                type="number"
+                value={data.x || 0}
+                onChange={(e) => handlePositionChange("x", e.target.value)}
+                className="w-full"
+                min={0}
+                max={Math.max(0, (imageDimensions?.width || 0) - data.width)}
+              />
+            </div>
+            <div className="flex-1">
+              <div className="text-xs text-muted-foreground mb-1">Y</div>
+              <Input
+                type="number"
+                value={data.y || 0}
+                onChange={(e) => handlePositionChange("y", e.target.value)}
+                className="w-full"
+                min={0}
+                max={Math.max(0, (imageDimensions?.height || 0) - data.height)}
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Dimensions */}
         <div>
           <label className="text-xs text-muted-foreground block mb-2">
@@ -312,10 +516,10 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
               <Input
                 type="number"
                 value={data.width || ""}
-                onChange={(e) => handleWidthChange(e.target.value)}
+                onChange={(e) => handleDimensionChange("width", e.target.value)}
                 className="w-full"
                 min={1}
-                max={4096}
+                max={imageDimensions?.width || 4096}
               />
             </div>
             <div className="flex-1">
@@ -323,10 +527,12 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
               <Input
                 type="number"
                 value={data.height || ""}
-                onChange={(e) => handleHeightChange(e.target.value)}
+                onChange={(e) =>
+                  handleDimensionChange("height", e.target.value)
+                }
                 className="w-full"
                 min={1}
-                max={4096}
+                max={imageDimensions?.height || 4096}
               />
             </div>
           </div>

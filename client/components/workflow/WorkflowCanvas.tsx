@@ -336,6 +336,8 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           case NodeType.Crop:
             data = {
               aspectRatio: "custom",
+              x: 0,
+              y: 0,
               width: 1024,
               height: 1024,
               label: "Crop",
