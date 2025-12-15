@@ -1,4 +1,4 @@
-import { memo, useEffect, useCallback, useMemo } from 'react';
+import { memo, useEffect, useCallback, useRef } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { NoiseNodeData } from '../types';
 import { Slider } from '@/components/ui/slider';
@@ -6,9 +6,14 @@ import { Radio } from 'lucide-react';
 import { FilterConfig, FILTER_DEFINITIONS } from '@/lib/pixi-filter-configs';
 
 function NoiseNode({ data, id }: NodeProps<NoiseNodeData>) {
-  // Get incoming data (memoized for stable identity in effect dependencies)
-  const imageInput = useMemo(() => (data as any).image || (data as any).imageInput, [data]);
-  const upstreamFilters: FilterConfig[] = useMemo(() => (data as any).filters || [], [data]);
+  // Get incoming data
+  const imageInput = (data as any).image || (data as any).imageInput;
+  const upstreamFiltersRaw = (data as any).filters || [];
+
+  const upstreamFiltersKey = JSON.stringify(upstreamFiltersRaw.map((f: FilterConfig) => ({
+    type: f.type,
+    params: f.params
+  })));
 
   const createConfig = useCallback(
     (noise: number): FilterConfig => ({
@@ -18,10 +23,12 @@ function NoiseNode({ data, id }: NodeProps<NoiseNodeData>) {
     []
   );
 
-  const updateOutputs = useCallback(
-    (noise: number) => {
+  const updateOutputsRef = useRef((noise: number) => {});
+
+  useEffect(() => {
+    updateOutputsRef.current = (noise: number) => {
       const thisConfig = createConfig(noise);
-      const updatedFilters = [...upstreamFilters, thisConfig];
+      const updatedFilters = [...upstreamFiltersRaw, thisConfig];
 
       const updateEvent = new CustomEvent('node-update', {
         detail: {
@@ -37,13 +44,12 @@ function NoiseNode({ data, id }: NodeProps<NoiseNodeData>) {
         },
       });
       window.dispatchEvent(updateEvent);
-    },
-    [id, data, imageInput, upstreamFilters, createConfig]
-  );
+    };
+  });
 
   useEffect(() => {
-    updateOutputs(data.noise);
-  }, [data.noise, imageInput, upstreamFilters, updateOutputs]);
+    updateOutputsRef.current(data.noise);
+  }, [data.noise, imageInput, upstreamFiltersKey]);
 
   const def = FILTER_DEFINITIONS.noise;
 

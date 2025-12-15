@@ -1,4 +1,4 @@
-import { memo, useEffect, useCallback, useMemo } from 'react';
+import { memo, useEffect, useCallback, useRef } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { VignetteNodeData } from '../types';
 import { Slider } from '@/components/ui/slider';
@@ -6,9 +6,14 @@ import { Circle } from 'lucide-react';
 import { FilterConfig, FILTER_DEFINITIONS } from '@/lib/pixi-filter-configs';
 
 function VignetteNode({ data, id }: NodeProps<VignetteNodeData>) {
-  // Get incoming data (memoized for stable identity in effect dependencies)
-  const imageInput = useMemo(() => (data as any).image || (data as any).imageInput, [data]);
-  const upstreamFilters: FilterConfig[] = useMemo(() => (data as any).filters || [], [data]);
+  // Get incoming data
+  const imageInput = (data as any).image || (data as any).imageInput;
+  const upstreamFiltersRaw = (data as any).filters || [];
+
+  const upstreamFiltersKey = JSON.stringify(upstreamFiltersRaw.map((f: FilterConfig) => ({
+    type: f.type,
+    params: f.params
+  })));
 
   const createConfig = useCallback(
     (size: number, amount: number): FilterConfig => ({
@@ -18,10 +23,12 @@ function VignetteNode({ data, id }: NodeProps<VignetteNodeData>) {
     []
   );
 
-  const updateOutputs = useCallback(
-    (size: number, amount: number) => {
+  const updateOutputsRef = useRef((size: number, amount: number) => {});
+
+  useEffect(() => {
+    updateOutputsRef.current = (size: number, amount: number) => {
       const thisConfig = createConfig(size, amount);
-      const updatedFilters = [...upstreamFilters, thisConfig];
+      const updatedFilters = [...upstreamFiltersRaw, thisConfig];
 
       const updateEvent = new CustomEvent('node-update', {
         detail: {
@@ -38,13 +45,12 @@ function VignetteNode({ data, id }: NodeProps<VignetteNodeData>) {
         },
       });
       window.dispatchEvent(updateEvent);
-    },
-    [id, data, imageInput, upstreamFilters, createConfig]
-  );
+    };
+  });
 
   useEffect(() => {
-    updateOutputs(data.size, data.amount);
-  }, [data.size, data.amount, imageInput, upstreamFilters, updateOutputs]);
+    updateOutputsRef.current(data.size, data.amount);
+  }, [data.size, data.amount, imageInput, upstreamFiltersKey]);
 
   const def = FILTER_DEFINITIONS.vignette;
 
