@@ -161,9 +161,23 @@ export const FILTER_DEFINITIONS: Record<string, FilterDefinition> = {
   crop: {
     type: 'crop',
     label: 'Crop',
-    description: 'Crop image to specific dimensions',
+    description: 'Crop image to specific dimensions and position',
     filterClass: 'Custom', // Custom crop implementation
     params: {
+      x: {
+        label: 'X Position',
+        min: 0,
+        max: 4096,
+        step: 1,
+        default: 0,
+      },
+      y: {
+        label: 'Y Position',
+        min: 0,
+        max: 4096,
+        step: 1,
+        default: 0,
+      },
       width: {
         label: 'Width',
         min: 1,

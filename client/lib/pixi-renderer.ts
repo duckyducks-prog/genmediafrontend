@@ -328,23 +328,40 @@ async function performRender(
   sprite.height = height;
 
   // 6. Build filter array from configs and handle crop (Layer 2 logic)
-  // Separate crop config from other filters (crop modifies canvas, not sprite filters)
+  // Separate crop config from other filters (crop modifies texture, not just filters)
   const cropConfig = filterConfigs.find((f) => f.type === "crop");
   const otherFilters = filterConfigs.filter((f) => f.type !== "crop");
 
-  // Apply crop if specified (resize canvas and center sprite)
+  // Apply crop if specified - create a cropped texture
   if (cropConfig) {
-    const cropWidth = cropConfig.params.width || width;
-    const cropHeight = cropConfig.params.height || height;
+    const cropX = Math.max(0, cropConfig.params.x || 0);
+    const cropY = Math.max(0, cropConfig.params.y || 0);
+    const cropWidth = Math.min(
+      cropConfig.params.width || width,
+      width - cropX,
+    );
+    const cropHeight = Math.min(
+      cropConfig.params.height || height,
+      height - cropY,
+    );
+
+    console.log("[PixiJS] Applying crop:", {
+      x: cropX,
+      y: cropY,
+      width: cropWidth,
+      height: cropHeight,
+      originalWidth: width,
+      originalHeight: height,
+    });
 
     // Resize app to crop dimensions
     app.renderer.resize(cropWidth, cropHeight);
 
-    // Center the sprite in the cropped area
-    sprite.x = (cropWidth - width) / 2;
-    sprite.y = (cropHeight - height) / 2;
+    // Position sprite to show the cropped area (negative offset to shift the visible portion)
+    sprite.x = -cropX;
+    sprite.y = -cropY;
 
-    // Update width/height for extraction
+    // Update dimensions for the cropped output
     width = cropWidth;
     height = cropHeight;
   }

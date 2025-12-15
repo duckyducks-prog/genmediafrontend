@@ -162,6 +162,8 @@ export interface VignetteNodeData extends BaseNodeData {
 
 export interface CropNodeData extends BaseNodeData {
   aspectRatio: "1:1" | "3:4" | "4:3" | "16:9" | "9:16" | "custom";
+  x: number;
+  y: number;
   width: number;
   height: number;
   originalWidth?: number;
