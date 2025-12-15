@@ -96,8 +96,28 @@ function createFilterFromConfig(config: FilterConfig): Filter {
   const def = FILTER_DEFINITIONS[config.type];
   
   switch (def.filterClass) {
-    case 'AdjustmentFilter':
+    case 'AdjustmentFilter': {
+      // Brightness/Contrast node uses UI sliders -1..1, must map to filter 0..2
+      // This is necessary because:
+      // - UI sliders use -1 to 1 with 0 = "no change" (user-friendly)
+      // - AdjustmentFilter expects 0 to 2 with 1 = "no change" (filter API)
+      // Mapping: filterValue = sliderValue + 1
+      if (config.type === 'brightness') {
+        const rawB = config.params.brightness ?? 0;
+        const rawC = config.params.contrast ?? 0;
+
+        // Map: slider -1 → filter 0 (dark), slider 0 → filter 1 (normal), slider 1 → filter 2 (bright)
+        const mapValue = (v: number) => Math.min(Math.max(v + 1, 0), 2);
+
+        return new AdjustmentFilter({
+          brightness: mapValue(rawB),
+          contrast: mapValue(rawC),
+        });
+      }
+
+      // Sharpen uses gamma 0-3 range (pass through unchanged)
       return new AdjustmentFilter(config.params);
+    }
     
     case 'BlurFilter':
       return new BlurFilter(config.params);
