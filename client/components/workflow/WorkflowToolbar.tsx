@@ -47,6 +47,7 @@ export default function WorkflowToolbar({
         variant="outline"
         size="sm"
         title="Load Workflow"
+        aria-label="Load Workflow"
       >
         <FolderOpen className="w-4 h-4" />
       </Button>
@@ -71,6 +72,7 @@ export default function WorkflowToolbar({
         variant="ghost"
         size="sm"
         title="Reset Workflow"
+        aria-label="Reset Workflow"
       >
         <RotateCcw className="w-4 h-4" />
       </Button>
@@ -82,6 +84,7 @@ export default function WorkflowToolbar({
         variant="ghost"
         size="sm"
         title="Zoom In"
+        aria-label="Zoom In"
       >
         <ZoomIn className="w-4 h-4" />
       </Button>
@@ -91,6 +94,7 @@ export default function WorkflowToolbar({
         variant="ghost"
         size="sm"
         title="Zoom Out"
+        aria-label="Zoom Out"
       >
         <ZoomOut className="w-4 h-4" />
       </Button>
@@ -100,6 +104,7 @@ export default function WorkflowToolbar({
         variant="ghost"
         size="sm"
         title="Fit View"
+        aria-label="Fit View"
       >
         <Maximize2 className="w-4 h-4" />
       </Button>
@@ -111,6 +116,7 @@ export default function WorkflowToolbar({
         variant="ghost"
         size="sm"
         title="Clear Canvas"
+        aria-label="Clear Canvas"
       >
         <Trash2 className="w-4 h-4 text-destructive" />
       </Button>
