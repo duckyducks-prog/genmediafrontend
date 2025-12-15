@@ -438,28 +438,127 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
       }
     }, []);
 
-    // Handle drop to add node
+    // Handle drop to add node or create image input nodes from files
     const onDrop = useCallback(
-      (event: React.DragEvent) => {
+      async (event: React.DragEvent) => {
         event.preventDefault();
 
         if (!reactFlowWrapper.current || !reactFlowInstance) return;
 
+        // First, try to handle React Flow node drops
         const type = event.dataTransfer.getData(
           "application/reactflow",
         ) as NodeType;
 
-        if (!type) return;
+        if (type) {
+          // Use screenToFlowPosition (replaces deprecated project method)
+          const position = reactFlowInstance.screenToFlowPosition({
+            x: event.clientX,
+            y: event.clientY,
+          });
 
-        // Use screenToFlowPosition (replaces deprecated project method)
-        const position = reactFlowInstance.screenToFlowPosition({
-          x: event.clientX,
-          y: event.clientY,
+          addNode(type, position);
+          return;
+        }
+
+        // Handle file drops
+        const files = event.dataTransfer.files;
+        if (files.length === 0) return;
+
+        const imageFiles: File[] = [];
+        const errors: string[] = [];
+
+        // Validate all files
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const validation = validateImageFile(file);
+
+          if (validation.valid) {
+            imageFiles.push(file);
+          } else if (validation.error) {
+            errors.push(`${file.name}: ${validation.error}`);
+          }
+        }
+
+        // Show error toasts for invalid files
+        errors.forEach((error) => {
+          toast({
+            title: "Invalid image",
+            description: error,
+            variant: "destructive",
+          });
         });
 
-        addNode(type, position);
+        // Process valid image files
+        if (imageFiles.length > 0) {
+          try {
+            // Calculate base position for stacking nodes
+            const basePosition = reactFlowInstance.screenToFlowPosition({
+              x: event.clientX,
+              y: event.clientY,
+            });
+
+            // Read all files in parallel
+            const imageDataPromises = imageFiles.map((file) =>
+              readFileAsDataURL(file).catch((error) => {
+                toast({
+                  title: "Failed to read image",
+                  description: `${file.name}: ${error.message}`,
+                  variant: "destructive",
+                });
+                return null;
+              }),
+            );
+
+            const imageDataArray = await Promise.all(imageDataPromises);
+
+            // Create nodes for valid image data
+            let nodeCount = 0;
+            imageDataArray.forEach((imageUrl, index) => {
+              if (!imageUrl) return;
+
+              // Stack nodes slightly offset from drop position
+              const offsetY = index * 50;
+              const position = {
+                x: basePosition.x,
+                y: basePosition.y + offsetY,
+              };
+
+              // Create image input node with image data
+              const newNode: WorkflowNode = {
+                id: `${NodeType.ImageInput}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                type: NodeType.ImageInput,
+                position,
+                data: {
+                  imageUrl,
+                  file: imageFiles[index],
+                  label: "Image Input",
+                  outputs: { image: imageUrl },
+                },
+              };
+
+              setNodes((nds) => [...nds, newNode]);
+              nodeCount++;
+            });
+
+            // Show success toast
+            if (nodeCount > 0) {
+              toast({
+                title: "Images loaded",
+                description: `Created ${nodeCount} image input node${nodeCount > 1 ? "s" : ""}`,
+              });
+            }
+          } catch (error) {
+            toast({
+              title: "Error loading images",
+              description:
+                error instanceof Error ? error.message : "Unknown error",
+              variant: "destructive",
+            });
+          }
+        }
       },
-      [reactFlowInstance, addNode],
+      [reactFlowInstance, addNode, setNodes, toast, validateImageFile, readFileAsDataURL],
     );
 
     const { toast } = useToast();
