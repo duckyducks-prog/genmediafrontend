@@ -409,14 +409,24 @@ export default function Index() {
                   // Load templates (public workflows) as read-only
                   const readOnly = workflow.is_public === true;
 
-                  if (workflowCanvasRef.current?.loadWorkflow) {
-                    console.log('[Index] ✓ Calling loadWorkflow...');
-                    workflowCanvasRef.current.loadWorkflow(workflow, { readOnly });
-                  } else {
-                    console.error('[Index] ❌ workflowCanvasRef.current.loadWorkflow is not available!');
-                  }
-
+                  // Switch to workflow tab FIRST to ensure canvas is mounted
                   setCurrentTab("workflow");
+
+                  // Then load workflow after a small delay to ensure canvas is ready
+                  setTimeout(() => {
+                    console.log('[Index] After tab switch - workflowCanvasRef.current:', workflowCanvasRef.current);
+
+                    if (workflowCanvasRef.current?.loadWorkflow) {
+                      console.log('[Index] ✓ Calling loadWorkflow...');
+                      workflowCanvasRef.current.loadWorkflow(workflow, { readOnly });
+                    } else {
+                      console.error('[Index] ❌ workflowCanvasRef.current.loadWorkflow is not available!');
+                      console.error('[Index] Ref state:', {
+                        refExists: !!workflowCanvasRef.current,
+                        refKeys: workflowCanvasRef.current ? Object.keys(workflowCanvasRef.current) : [],
+                      });
+                    }
+                  }, 100);
                 }}
               />
             </TabsContent>
