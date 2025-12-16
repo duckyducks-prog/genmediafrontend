@@ -480,23 +480,12 @@ export function useWorkflowExecution(
               firstFramePreview: typeof inputs.first_frame === 'string' ? inputs.first_frame.substring(0, 50) + '...' : inputs.first_frame,
             });
 
-            const prompt = inputs.prompt;
+            let prompt = inputs.prompt;
             let firstFrame = inputs.first_frame || null;
             let lastFrame = inputs.last_frame || null;
             let referenceImages = inputs.reference_images || null;
             const formatData = inputs.format;
             const filters: FilterConfig[] = inputs.filters || [];
-
-            console.log('[GenerateVideo] After variable assignment:', {
-              hasFirstFrame: !!firstFrame,
-              hasLastFrame: !!lastFrame,
-              hasReferenceImages: !!referenceImages,
-              firstFrameLength: firstFrame?.length || 0,
-              hasFormatData: !!formatData,
-              formatData: formatData,
-              nodeAspectRatio: node.data.aspectRatio,
-              finalAspectRatio: formatData?.aspect_ratio || node.data.aspectRatio || "16:9",
-            });
 
             if (!prompt) {
               return {
@@ -504,6 +493,26 @@ export function useWorkflowExecution(
                 error: "No prompt connected",
               };
             }
+
+            // Append aspect ratio to prompt if format data is connected
+            const aspectRatio = formatData?.aspect_ratio || node.data.aspectRatio || "16:9";
+            if (formatData?.aspect_ratio) {
+              const aspectRatioLabel = aspectRatio === "16:9" ? "landscape" :
+                                      aspectRatio === "9:16" ? "portrait" : "";
+              prompt = `${prompt}, ${aspectRatio} aspect ratio${aspectRatioLabel ? ` (${aspectRatioLabel})` : ""}`;
+            }
+
+            console.log('[GenerateVideo] After variable assignment:', {
+              originalPrompt: inputs.prompt,
+              finalPrompt: prompt,
+              hasFirstFrame: !!firstFrame,
+              hasLastFrame: !!lastFrame,
+              hasReferenceImages: !!referenceImages,
+              firstFrameLength: firstFrame?.length || 0,
+              hasFormatData: !!formatData,
+              formatData: formatData,
+              aspectRatio: aspectRatio,
+            });
 
             // Show debug toast for user feedback
             if (firstFrame) {
