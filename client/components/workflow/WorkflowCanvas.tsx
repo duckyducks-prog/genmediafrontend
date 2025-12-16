@@ -114,6 +114,13 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
       const handleNodeUpdate = (event: any) => {
         const { id, data } = event.detail;
 
+        // Block updates if in read-only mode (except status updates from execution)
+        const isStatusUpdate = data && ('status' in data || 'isGenerating' in data || 'error' in data);
+        if (isReadOnly && !isStatusUpdate) {
+          console.log('[WorkflowCanvas] Ignoring node update - read-only mode');
+          return;
+        }
+
         console.log("[WorkflowCanvas] node-update received:", {
           nodeId: id,
           hasOutputs: !!data?.outputs,
@@ -187,6 +194,16 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
     // Handle new connections between nodes
     const onConnect = useCallback(
       (params: Connection | Edge) => {
+        // Block connections in read-only mode
+        if (isReadOnly) {
+          toast({
+            title: "Read-Only Template",
+            description: "Clone this template to make edits",
+            variant: "destructive",
+          });
+          return;
+        }
+
         console.log('[onConnect] Creating edge:', {
           source: params.source,
           target: params.target,
@@ -264,6 +281,16 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
     // Add a new node to the canvas
     const addNode = useCallback(
       (type: NodeType, position?: { x: number; y: number }) => {
+        // Block adding nodes in read-only mode
+        if (isReadOnly) {
+          toast({
+            title: "Read-Only Template",
+            description: "Clone this template to make edits",
+            variant: "destructive",
+          });
+          return;
+        }
+
         const nodePosition = position || {
           x: Math.random() * 400 + 100,
           y: Math.random() * 200 + 100,
