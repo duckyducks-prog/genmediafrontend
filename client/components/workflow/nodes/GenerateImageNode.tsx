@@ -64,6 +64,9 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
   }, [incomingImageUrl, currentImageUrl]);
 
   const handleUpdate = (field: keyof GenerateImageNodeData, value: any) => {
+    // Block updates in read-only mode
+    if (data.readOnly) return;
+
     const event = new CustomEvent("node-update", {
       detail: {
         id,
@@ -250,7 +253,7 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
               value={data.aspectRatio}
               onChange={(e) => handleUpdate("aspectRatio", e.target.value)}
               className="w-full px-3 py-2 text-sm bg-background border border-border rounded-md appearance-none pr-8"
-              disabled={isGenerating}
+              disabled={isGenerating || data.readOnly}
             >
               <option value="1:1">1:1 (Square)</option>
               <option value="16:9">16:9 (Landscape)</option>
@@ -291,7 +294,7 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
               <Select
                 value={upscaleFactor}
                 onValueChange={setUpscaleFactor}
-                disabled={isUpscaling}
+                disabled={isUpscaling || data.readOnly}
               >
                 <SelectTrigger className="w-20 h-8">
                   <SelectValue placeholder="x2" />
@@ -305,7 +308,7 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
 
               <Button
                 onClick={handleUpscale}
-                disabled={isUpscaling}
+                disabled={isUpscaling || data.readOnly}
                 variant="secondary"
                 size="sm"
                 className="flex-1"
@@ -350,7 +353,7 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
                 });
                 window.dispatchEvent(event);
               }}
-              disabled={isGenerating}
+              disabled={isGenerating || data.readOnly}
               variant="ghost"
               size="sm"
               className="w-full text-xs"
@@ -391,7 +394,7 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
                 });
                 window.dispatchEvent(event);
               }}
-              disabled={isGenerating}
+              disabled={isGenerating || data.readOnly}
               variant="ghost"
               size="sm"
               className="w-full text-xs"
