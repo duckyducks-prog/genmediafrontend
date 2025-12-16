@@ -390,16 +390,17 @@ export default function Index() {
             <TabsContent value="home" className="space-y-6">
               <WorkflowGallery
                 onLoadWorkflow={(workflow) => {
-                  console.log('[Index] Loading workflow from gallery:', {
-                    id: workflow.id,
-                    name: workflow.name,
-                    hasNodes: !!workflow.nodes,
-                    hasEdges: !!workflow.edges,
-                    nodeCount: workflow.nodes?.length || 0,
-                    edgeCount: workflow.edges?.length || 0,
-                    workflowKeys: Object.keys(workflow),
-                    fullWorkflow: workflow,
-                  });
+                  console.log('[Index] Loading workflow from gallery:');
+                  console.log('  ID:', workflow.id);
+                  console.log('  Name:', workflow.name);
+                  console.log('  Has nodes?', !!workflow.nodes);
+                  console.log('  Has edges?', !!workflow.edges);
+                  console.log('  Node count:', workflow.nodes?.length || 0);
+                  console.log('  Edge count:', workflow.edges?.length || 0);
+                  console.log('  Workflow keys:', Object.keys(workflow));
+                  console.log('  NODES ARRAY:', JSON.stringify(workflow.nodes, null, 2));
+                  console.log('  EDGES ARRAY:', JSON.stringify(workflow.edges, null, 2));
+                  console.log('  Full workflow object:', workflow);
                   // Load templates (public workflows) as read-only
                   const readOnly = workflow.is_public === true;
                   workflowCanvasRef.current?.loadWorkflow(workflow, { readOnly });
