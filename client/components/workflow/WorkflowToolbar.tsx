@@ -20,6 +20,7 @@ interface WorkflowToolbarProps {
   isExecuting: boolean;
   executionProgress?: Map<string, string>;
   totalNodes?: number;
+  isReadOnly?: boolean;
 }
 
 export default function WorkflowToolbar({
@@ -31,6 +32,7 @@ export default function WorkflowToolbar({
   isExecuting,
   executionProgress,
   totalNodes,
+  isReadOnly = false,
 }: WorkflowToolbarProps) {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
 
@@ -55,7 +57,8 @@ export default function WorkflowToolbar({
         onClick={onSaveWorkflow}
         variant="default"
         size="sm"
-        title="Save Workflow"
+        title={isReadOnly ? "Read-Only Template" : "Save Workflow"}
+        disabled={isReadOnly}
       >
         <Save className="w-4 h-4 mr-1" />
         Save
@@ -87,10 +90,10 @@ export default function WorkflowToolbar({
 
       <Button
         onClick={onResetWorkflow}
-        disabled={isExecuting}
+        disabled={isExecuting || isReadOnly}
         variant="ghost"
         size="sm"
-        title="Reset Workflow"
+        title={isReadOnly ? "Read-Only Template" : "Reset Workflow"}
         aria-label="Reset Workflow"
       >
         <RotateCcw className="w-4 h-4" />
@@ -134,8 +137,9 @@ export default function WorkflowToolbar({
         onClick={onClearCanvas}
         variant="ghost"
         size="sm"
-        title="Clear Canvas"
+        title={isReadOnly ? "Read-Only Template" : "Clear Canvas"}
         aria-label="Clear Canvas"
+        disabled={isReadOnly}
       >
         <Trash2 className="w-4 h-4 text-destructive" />
       </Button>
