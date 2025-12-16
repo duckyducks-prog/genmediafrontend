@@ -34,7 +34,9 @@ import SaveWorkflowDialog from "./SaveWorkflowDialog";
 import { useWorkflowExecution } from "./useWorkflowExecution";
 import { validateConnection, getConnectorType } from "./connectionValidation";
 import { useToast } from "@/hooks/use-toast";
-import { SavedWorkflow } from "@/lib/workflow-api";
+import { SavedWorkflow, cloneWorkflow } from "@/lib/workflow-api";
+import { Button } from "@/components/ui/button";
+import { Copy } from "lucide-react";
 
 // Import all custom node components
 import PromptInputNode from "./nodes/PromptInputNode";
@@ -969,14 +971,45 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
         <div ref={reactFlowWrapper} className="flex-1 relative">
           {/* Read-Only Mode Banner */}
           {isReadOnly && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-orange-500/90 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-purple-600/95 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-4">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
               </svg>
               <div>
                 <p className="font-semibold">Read-Only Template</p>
-                <p className="text-sm">To edit, clear the canvas and start a new workflow</p>
+                <p className="text-sm">Clone this template to make it editable</p>
               </div>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={async () => {
+                  if (!currentWorkflowId) {
+                    toast({
+                      title: "Error",
+                      description: "No workflow ID found",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  try {
+                    await cloneWorkflow(currentWorkflowId);
+                    toast({
+                      title: "Workflow Cloned",
+                      description: "The template has been cloned to your workflows. Check the Library tab.",
+                    });
+                  } catch (error) {
+                    toast({
+                      title: "Clone Failed",
+                      description: error instanceof Error ? error.message : "Unknown error",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                className="ml-2"
+              >
+                <Copy className="w-4 h-4 mr-2" />
+                Clone Workflow
+              </Button>
             </div>
           )}
           <ReactFlow
