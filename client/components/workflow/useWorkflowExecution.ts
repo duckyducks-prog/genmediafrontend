@@ -354,32 +354,28 @@ export function useWorkflowExecution(
               count: Array.isArray(referenceImages) ? referenceImages.length : (referenceImages ? 1 : 0),
             });
 
-            // Warn user if they connected reference images (not supported by Gemini 3 Pro)
-            if (referenceImages) {
-              console.warn("[GenerateImage] Reference images are connected but NOT supported by Gemini 3 Pro API. They will be ignored.");
-              toast({
-                title: "Reference Images Not Supported",
-                description: "Gemini 3 Pro does not support reference images. Only the text prompt will be used.",
-                variant: "default",
-              });
-            }
-
             try {
               const user = auth.currentUser;
               const token = await user?.getIdToken();
 
-              // Build request body
-              // NOTE: Gemini 3 Pro does NOT support reference_images parameter
-              // Reference images cause a 404 "Cannot set internal reference_type field" error
+              // Build request body - include reference_images if available
               const requestBody: any = {
                 prompt,
                 aspect_ratio: formatData?.aspect_ratio || node.data.aspectRatio || "1:1",
               };
 
+              // Add reference_images if we have valid data
+              if (referenceImages) {
+                requestBody.reference_images = referenceImages;
+              }
+
               console.log("[GenerateImage] Request body:", {
                 hasPrompt: !!requestBody.prompt,
                 aspectRatio: requestBody.aspect_ratio,
-                referenceImagesIgnored: !!referenceImages,
+                hasReferenceImages: !!requestBody.reference_images,
+                referenceImageCount: Array.isArray(requestBody.reference_images)
+                  ? requestBody.reference_images.length
+                  : (requestBody.reference_images ? 1 : 0),
               });
 
               const response = await fetch(

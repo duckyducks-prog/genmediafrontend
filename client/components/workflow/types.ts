@@ -604,7 +604,7 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
     type: NodeType.GenerateImage,
     label: "Generate Image",
     category: "action",
-    description: "Generate images using Gemini 3 Pro (text-to-image only)",
+    description: "Generate or edit images using Gemini (supports reference images with newer models)",
     inputConnectors: [
       {
         id: "prompt",
@@ -613,8 +613,13 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         required: true,
         acceptsMultiple: false,
       },
-      // NOTE: Gemini 3 Pro does NOT support reference images
-      // Removed reference_images connector to prevent user confusion
+      {
+        id: "reference_images",
+        label: "Reference Images",
+        type: ConnectorType.Images,
+        required: false,
+        acceptsMultiple: true,
+      },
       {
         id: "filters",
         label: "Filters",
