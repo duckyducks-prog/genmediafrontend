@@ -151,7 +151,7 @@ export default function NodePalette({ onAddNode }: NodePaletteProps) {
       </div>
 
       {/* Input Nodes */}
-      <div>
+      <div className="pr-4">
         <h4 className="text-xs font-medium text-muted-foreground uppercase mb-2 tracking-wide">
           Inputs
         </h4>
@@ -178,7 +178,7 @@ export default function NodePalette({ onAddNode }: NodePaletteProps) {
       </div>
 
       {/* Modifier Nodes */}
-      <div>
+      <div className="pr-4">
         <h4 className="text-xs font-medium text-muted-foreground uppercase mb-2 tracking-wide">
           Modifiers
         </h4>
@@ -205,7 +205,7 @@ export default function NodePalette({ onAddNode }: NodePaletteProps) {
       </div>
 
       {/* Action Nodes */}
-      <div>
+      <div className="pr-4">
         <h4 className="text-xs font-medium text-muted-foreground uppercase mb-2 tracking-wide">
           Actions
         </h4>
