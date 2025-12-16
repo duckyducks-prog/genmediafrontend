@@ -36,6 +36,7 @@ interface SaveWorkflowDialogProps {
   edges: WorkflowEdge[];
   existingWorkflow?: WorkflowMetadata & { id: string };
   onSaveSuccess?: (workflowId: string) => void;
+  onCaptureThumbnail?: () => Promise<string | null>;
 }
 
 export default function SaveWorkflowDialog({
@@ -45,6 +46,7 @@ export default function SaveWorkflowDialog({
   edges,
   existingWorkflow,
   onSaveSuccess,
+  onCaptureThumbnail,
 }: SaveWorkflowDialogProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -98,6 +100,20 @@ export default function SaveWorkflowDialog({
 
     setIsSaving(true);
     try {
+      // Capture thumbnail before sanitizing
+      let thumbnail: string | undefined;
+      if (onCaptureThumbnail) {
+        console.log('[SaveWorkflowDialog] Capturing thumbnail...');
+        const thumbnailData = await onCaptureThumbnail();
+        if (thumbnailData) {
+          thumbnail = thumbnailData;
+          console.log('[SaveWorkflowDialog] Thumbnail captured:',
+            `${Math.round(thumbnailData.length / 1024)}KB`);
+        } else {
+          console.warn('[SaveWorkflowDialog] Thumbnail capture returned null');
+        }
+      }
+
       // Sanitize workflow data (remove large base64 images)
       console.log('[SaveWorkflowDialog] Sanitizing workflow before save...');
       const sanitized = sanitizeWorkflowForSave(nodes, edges);
@@ -134,6 +150,7 @@ export default function SaveWorkflowDialog({
         is_public: isPublic,
         nodes: sanitized.nodes,
         edges: sanitized.edges,
+        thumbnail,
       };
 
       if (existingWorkflow?.id) {
