@@ -23,6 +23,11 @@ import {
 import { WorkflowNode, WorkflowEdge } from "./types";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  sanitizeWorkflowForSave,
+  validatePayloadSize,
+  formatBytes,
+} from "@/lib/workflow-sanitizer";
 
 interface SaveWorkflowDialogProps {
   open: boolean;
@@ -93,12 +98,42 @@ export default function SaveWorkflowDialog({
 
     setIsSaving(true);
     try {
+      // Sanitize workflow data (remove large base64 images)
+      console.log('[SaveWorkflowDialog] Sanitizing workflow before save...');
+      const sanitized = sanitizeWorkflowForSave(nodes, edges);
+
+      // Validate payload size
+      const sizeValidation = validatePayloadSize(sanitized.sanitizedSize);
+
+      if (!sizeValidation.valid) {
+        setServerError(sizeValidation.error!);
+        toast({
+          title: "Payload too large",
+          description: sizeValidation.error,
+          variant: "destructive",
+        });
+        setIsSaving(false);
+        return;
+      }
+
+      if (sizeValidation.warning) {
+        console.warn('[SaveWorkflowDialog]', sizeValidation.warning);
+      }
+
+      console.log('[SaveWorkflowDialog] Payload stats:', {
+        originalSize: formatBytes(sanitized.originalSize),
+        sanitizedSize: formatBytes(sanitized.sanitizedSize),
+        removed: formatBytes(sanitized.removed),
+        nodes: sanitized.nodes.length,
+        edges: sanitized.edges.length,
+      });
+
       const workflowData = {
         name: name.trim(),
         description: description.trim(),
         is_public: isPublic,
-        nodes,
-        edges,
+        nodes: sanitized.nodes,
+        edges: sanitized.edges,
       };
 
       if (existingWorkflow?.id) {
