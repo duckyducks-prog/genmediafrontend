@@ -961,6 +961,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               isExecuting={isExecuting}
               executionProgress={executionProgress}
               totalNodes={totalNodes}
+              isReadOnly={isReadOnly}
             />
           </ReactFlow>
 
