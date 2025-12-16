@@ -458,7 +458,19 @@ export async function listPublicWorkflows(): Promise<SavedWorkflow[]> {
     }
 
     const data = await response.json();
-    console.log('[listPublicWorkflows] Success:', { count: data.workflows?.length || 0 });
+    console.log('[listPublicWorkflows] Raw response data:', data);
+    console.log('[listPublicWorkflows] Success:', {
+      count: data.workflows?.length || 0,
+      sampleWorkflow: data.workflows?.[0] ? {
+        id: data.workflows[0].id,
+        name: data.workflows[0].name,
+        hasNodes: !!data.workflows[0].nodes,
+        hasEdges: !!data.workflows[0].edges,
+        nodeCount: data.workflows[0].nodes?.length || 0,
+        edgeCount: data.workflows[0].edges?.length || 0,
+        keys: Object.keys(data.workflows[0]),
+      } : null
+    });
     return data.workflows || [];
   } catch (error) {
     if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
