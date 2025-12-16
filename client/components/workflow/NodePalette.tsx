@@ -35,13 +35,6 @@ const paletteNodes: PaletteNode[] = [
     description: "Combine multiple prompts",
   },
   {
-    type: NodeType.Format,
-    label: "Format",
-    icon: <Settings className="w-4 h-4" />,
-    category: "modifier",
-    description: "Configure generation settings",
-  },
-  {
     type: NodeType.BrightnessContrast,
     label: "Brightness/Contrast",
     icon: <Sun className="w-4 h-4" />,
