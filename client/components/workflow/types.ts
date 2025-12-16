@@ -12,7 +12,6 @@ export enum NodeType {
 
   // MODIFIER nodes (both input and output connectors)
   PromptConcatenator = "promptConcatenator",
-  Format = "format",
 
   // IMAGE MODIFIER nodes (PixiJS filters)
   BrightnessContrast = "brightnessContrast",
@@ -49,7 +48,6 @@ export enum ConnectorType {
   Image = "image", // Single base64 image
   Images = "images", // Array of base64 images
   Video = "video", // Base64 video
-  Format = "format", // Format configuration object
   Any = "any", // Pass-through for any data
 }
 
@@ -98,14 +96,6 @@ export interface PromptNodeData extends BaseNodeData {
 export interface PromptConcatenatorNodeData extends BaseNodeData {
   separator: "Space" | "Comma" | "Newline" | "Period";
   combinedPreview?: string; // Shows preview of combined text
-}
-
-// FORMAT node
-export interface FormatNodeData extends BaseNodeData {
-  aspectRatio: "16:9" | "9:16" | "1:1";
-  durationSeconds: 4 | 6 | 8;
-  generateAudio: boolean;
-  resolution: "1080p" | "720p";
 }
 
 // GENERATE VIDEO node
@@ -200,7 +190,6 @@ export type WorkflowNodeData =
   | ImageInputNodeData
   | PromptNodeData
   | PromptConcatenatorNodeData
-  | FormatNodeData
   | BrightnessContrastNodeData
   | BlurNodeData
   | SharpenNodeData
@@ -308,29 +297,6 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "combined",
         label: "Combined",
         type: ConnectorType.Text,
-      },
-    ],
-  },
-
-  [NodeType.Format]: {
-    type: NodeType.Format,
-    label: "Format",
-    category: "modifier",
-    description: "Configure generation settings",
-    inputConnectors: [
-      {
-        id: "input",
-        label: "Pass-through",
-        type: ConnectorType.Any,
-        required: false,
-        acceptsMultiple: false,
-      },
-    ],
-    outputConnectors: [
-      {
-        id: "format",
-        label: "Format",
-        type: ConnectorType.Format,
       },
     ],
   },
@@ -623,13 +589,6 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         required: false,
         acceptsMultiple: false,
       },
-      {
-        id: "format",
-        label: "Format",
-        type: ConnectorType.Format,
-        required: false,
-        acceptsMultiple: false,
-      },
     ],
     outputConnectors: [
       {
@@ -664,13 +623,6 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "filters",
         label: "Filters",
         type: ConnectorType.Any, // Array of FilterConfig
-        required: false,
-        acceptsMultiple: false,
-      },
-      {
-        id: "format",
-        label: "Format",
-        type: ConnectorType.Format,
         required: false,
         acceptsMultiple: false,
       },
