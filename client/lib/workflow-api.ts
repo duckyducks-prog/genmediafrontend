@@ -20,6 +20,7 @@ export interface WorkflowMetadata {
   description: string;
   is_public: boolean;
   thumbnail?: string;
+  background_image?: string;
   created_at?: string;
   updated_at?: string;
   user_id?: string;
