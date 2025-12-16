@@ -956,31 +956,6 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
         window.removeEventListener("node-execute", handleNodeExecute);
     }, [executeSingleNode]);
 
-    // Log what's being rendered
-    console.log('[WorkflowCanvas] RENDERING with:', {
-      nodeCount: nodes.length,
-      edgeCount: edges.length,
-      nodes: nodes,
-      edges: edges,
-      isReadOnly: isReadOnly,
-    });
-
-    // Validate node types
-    const availableNodeTypes = Object.keys(nodeTypes);
-    console.log('[WorkflowCanvas] Available nodeTypes:', availableNodeTypes);
-    nodes.forEach(node => {
-      const hasNodeType = availableNodeTypes.includes(node.type);
-      if (!hasNodeType) {
-        console.error('[WorkflowCanvas] ❌ MISSING NODE TYPE:', {
-          nodeId: node.id,
-          nodeType: node.type,
-          availableTypes: availableNodeTypes,
-        });
-      } else {
-        console.log('[WorkflowCanvas] ✓ Node type OK:', node.type);
-      }
-    });
-
     return (
       <div className="flex w-full h-full">
         {/* Node Palette - Always visible unless in read-only mode */}
