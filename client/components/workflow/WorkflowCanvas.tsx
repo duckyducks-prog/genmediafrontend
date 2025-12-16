@@ -380,6 +380,8 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               status: "ready",
               label: "Generate Video",
               aspectRatio: "16:9",
+              generateAudio: true,
+              durationSeconds: 8,
               outputs: {},
             };
             break;
