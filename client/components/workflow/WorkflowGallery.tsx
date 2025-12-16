@@ -220,54 +220,73 @@ export default function WorkflowGallery({
             </div>
           )}
 
-          {/* Hover overlay with actions */}
-          <div
-            className={`absolute inset-0 bg-black/60 flex items-center justify-center gap-2 transition-opacity ${
-              isHovered ? "opacity-100" : "opacity-0"
-            }`}
-            style={{ zIndex: 5 }}
-          >
-            <Button
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onLoadWorkflow(workflow);
-              }}
-              className="shadow-lg"
+          {/* Action buttons overlay - always visible for templates */}
+          {workflow.is_public ? (
+            <div
+              className="absolute inset-0 flex items-center justify-center gap-2"
+              style={{ zIndex: 5 }}
             >
-              <WorkflowIcon className="w-4 h-4 mr-1" />
-              Open
-            </Button>
-
-            {showClone && (
               <Button
-                size="sm"
-                variant="outline"
+                size="lg"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleClone(workflow);
-                }}
-                className="shadow-lg bg-background"
-              >
-                <Copy className="w-4 h-4 mr-1" />
-                Clone
-              </Button>
-            )}
-
-            {showDelete && (
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setDeleteId(workflow.id!);
+                  onLoadWorkflow(workflow);
                 }}
                 className="shadow-lg"
               >
-                <Trash2 className="w-4 h-4" />
+                <WorkflowIcon className="w-4 h-4 mr-2" />
+                Open
               </Button>
-            )}
-          </div>
+
+              {showClone && (
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleClone(workflow);
+                  }}
+                  className="shadow-lg bg-background"
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  Clone
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div
+              className={`absolute inset-0 bg-black/60 flex items-center justify-center gap-2 transition-opacity ${
+                isHovered ? "opacity-100" : "opacity-0"
+              }`}
+              style={{ zIndex: 5 }}
+            >
+              <Button
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onLoadWorkflow(workflow);
+                }}
+                className="shadow-lg"
+              >
+                <WorkflowIcon className="w-4 h-4 mr-1" />
+                Open
+              </Button>
+
+              {showDelete && (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeleteId(workflow.id!);
+                  }}
+                  className="shadow-lg"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+          )}
 
           {/* Title at bottom */}
           <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
