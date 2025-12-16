@@ -481,6 +481,10 @@ export function useWorkflowExecution(
               hasLastFrame: !!lastFrame,
               hasReferenceImages: !!referenceImages,
               firstFrameLength: firstFrame?.length || 0,
+              hasFormatData: !!formatData,
+              formatData: formatData,
+              nodeAspectRatio: node.data.aspectRatio,
+              finalAspectRatio: formatData?.aspect_ratio || node.data.aspectRatio || "16:9",
             });
 
             if (!prompt) {
