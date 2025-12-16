@@ -401,9 +401,21 @@ export default function Index() {
                   console.log('  NODES ARRAY:', JSON.stringify(workflow.nodes, null, 2));
                   console.log('  EDGES ARRAY:', JSON.stringify(workflow.edges, null, 2));
                   console.log('  Full workflow object:', workflow);
+
+                  // Check ref before loading
+                  console.log('[Index] workflowCanvasRef.current:', workflowCanvasRef.current);
+                  console.log('[Index] Has loadWorkflow?', !!workflowCanvasRef.current?.loadWorkflow);
+
                   // Load templates (public workflows) as read-only
                   const readOnly = workflow.is_public === true;
-                  workflowCanvasRef.current?.loadWorkflow(workflow, { readOnly });
+
+                  if (workflowCanvasRef.current?.loadWorkflow) {
+                    console.log('[Index] ✓ Calling loadWorkflow...');
+                    workflowCanvasRef.current.loadWorkflow(workflow, { readOnly });
+                  } else {
+                    console.error('[Index] ❌ workflowCanvasRef.current.loadWorkflow is not available!');
+                  }
+
                   setCurrentTab("workflow");
                 }}
               />
