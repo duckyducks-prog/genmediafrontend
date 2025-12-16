@@ -995,12 +995,21 @@ export function useWorkflowExecution(
               console.log("[Workflow] Updating node state:", {
                 nodeId: node.id,
                 nodeType: node.type,
+                resultData: result.value.data,
                 updateData: {
-                  hasImageUrl: !!updateData.imageUrl,
-                  hasImage: !!updateData.image,
-                  hasImages: !!updateData.images,
-                  hasOutputs: !!updateData.outputs,
-                  outputsHasImageUrl: !!updateData.outputs?.imageUrl,
+                  topLevel: {
+                    hasImageUrl: !!updateData.imageUrl,
+                    hasImage: !!updateData.image,
+                    hasImages: !!updateData.images,
+                  },
+                  outputs: {
+                    hasOutputs: !!updateData.outputs,
+                    outputsKeys: updateData.outputs ? Object.keys(updateData.outputs) : [],
+                    outputsHasImage: !!updateData.outputs?.image,
+                    outputsHasImages: !!updateData.outputs?.images,
+                    outputsHasImageUrl: !!updateData.outputs?.imageUrl,
+                    outputsImagePreview: updateData.outputs?.image ? updateData.outputs.image.substring(0, 50) : 'none',
+                  },
                 },
               });
 
