@@ -354,6 +354,16 @@ export function useWorkflowExecution(
               count: Array.isArray(referenceImages) ? referenceImages.length : (referenceImages ? 1 : 0),
             });
 
+            // Warn user if they connected reference images (not supported by Gemini 3 Pro)
+            if (referenceImages) {
+              console.warn("[GenerateImage] Reference images are connected but NOT supported by Gemini 3 Pro API. They will be ignored.");
+              toast({
+                title: "Reference Images Not Supported",
+                description: "Gemini 3 Pro does not support reference images. Only the text prompt will be used.",
+                variant: "default",
+              });
+            }
+
             try {
               const user = auth.currentUser;
               const token = await user?.getIdToken();
