@@ -51,6 +51,7 @@ export default function SaveWorkflowDialog({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(false);
+  const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [nameError, setNameError] = useState("");
   const [workflowError, setWorkflowError] = useState("");
