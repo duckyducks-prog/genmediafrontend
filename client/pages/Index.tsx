@@ -390,22 +390,6 @@ export default function Index() {
             <TabsContent value="home" className="space-y-6">
               <WorkflowGallery
                 onLoadWorkflow={(workflow) => {
-                  console.log('[Index] Loading workflow from gallery:');
-                  console.log('  ID:', workflow.id);
-                  console.log('  Name:', workflow.name);
-                  console.log('  Has nodes?', !!workflow.nodes);
-                  console.log('  Has edges?', !!workflow.edges);
-                  console.log('  Node count:', workflow.nodes?.length || 0);
-                  console.log('  Edge count:', workflow.edges?.length || 0);
-                  console.log('  Workflow keys:', Object.keys(workflow));
-                  console.log('  NODES ARRAY:', JSON.stringify(workflow.nodes, null, 2));
-                  console.log('  EDGES ARRAY:', JSON.stringify(workflow.edges, null, 2));
-                  console.log('  Full workflow object:', workflow);
-
-                  // Check ref before loading
-                  console.log('[Index] workflowCanvasRef.current:', workflowCanvasRef.current);
-                  console.log('[Index] Has loadWorkflow?', !!workflowCanvasRef.current?.loadWorkflow);
-
                   // Load templates (public workflows) as read-only
                   const readOnly = workflow.is_public === true;
 
@@ -414,17 +398,10 @@ export default function Index() {
 
                   // Then load workflow after a small delay to ensure canvas is ready
                   setTimeout(() => {
-                    console.log('[Index] After tab switch - workflowCanvasRef.current:', workflowCanvasRef.current);
-
                     if (workflowCanvasRef.current?.loadWorkflow) {
-                      console.log('[Index] ✓ Calling loadWorkflow...');
                       workflowCanvasRef.current.loadWorkflow(workflow, { readOnly });
                     } else {
-                      console.error('[Index] ❌ workflowCanvasRef.current.loadWorkflow is not available!');
-                      console.error('[Index] Ref state:', {
-                        refExists: !!workflowCanvasRef.current,
-                        refKeys: workflowCanvasRef.current ? Object.keys(workflowCanvasRef.current) : [],
-                      });
+                      console.error('[Index] Failed to load workflow - canvas not ready');
                     }
                   }, 100);
                 }}
