@@ -18,6 +18,8 @@ interface WorkflowToolbarProps {
   onSaveWorkflow: () => void;
   onLoadWorkflow: () => void;
   isExecuting: boolean;
+  executionProgress?: Map<string, string>;
+  totalNodes?: number;
 }
 
 export default function WorkflowToolbar({
@@ -27,8 +29,25 @@ export default function WorkflowToolbar({
   onSaveWorkflow,
   onLoadWorkflow,
   isExecuting,
+  executionProgress,
+  totalNodes,
 }: WorkflowToolbarProps) {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
+
+  // Calculate execution progress percentage
+  const calculateProgress = () => {
+    if (!executionProgress || !totalNodes || totalNodes === 0) {
+      return 0;
+    }
+
+    const completed = Array.from(executionProgress.values()).filter(
+      (status) => status === "completed" || status === "error"
+    ).length;
+
+    return Math.round((completed / totalNodes) * 100);
+  };
+
+  const progressPercentage = calculateProgress();
 
   return (
     <div className="absolute top-4 right-4 flex items-center gap-2 bg-card border border-border rounded-lg p-2 shadow-lg z-10">
@@ -63,7 +82,7 @@ export default function WorkflowToolbar({
         className="bg-[#F3C5DB] hover:bg-[#D6C2D9] text-[#46062B]"
       >
         <Play className="w-4 h-4 mr-1" />
-        {isExecuting ? "Running..." : "Run All"}
+        {isExecuting ? `Running... ${progressPercentage}%` : "Run All"}
       </Button>
 
       <Button
