@@ -224,13 +224,24 @@ export async function saveWorkflow(
   });
 
   try {
+    const payload = JSON.stringify(workflow);
+    const payloadSize = new Blob([payload]).size;
+    const payloadSizeMB = (payloadSize / (1024 * 1024)).toFixed(2);
+
+    console.log('[saveWorkflow] Payload size:', `${payloadSizeMB} MB (${payloadSize} bytes)`);
+
+    // Warn if payload is suspiciously large (after sanitization, should be small)
+    if (payloadSize > 5 * 1024 * 1024) {
+      console.warn('[saveWorkflow] WARNING: Large payload detected. This may fail or timeout.');
+    }
+
     const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(workflow),
+      body: payload,
     });
 
     console.log('[saveWorkflow] Response:', {
@@ -262,6 +273,8 @@ export async function saveWorkflow(
           throw new Error('Authentication failed (401). Please sign out and sign in again.');
         } else if (response.status === 403) {
           throw new Error('Access denied (403). You may not have permission to save workflows.');
+        } else if (response.status === 413) {
+          throw new Error(`Payload too large (413). The workflow data exceeds server limits. Payload size: ${payloadSizeMB} MB`);
         } else if (response.status >= 500) {
           throw new Error(`Backend server error (${response.status}): ${errorText.substring(0, 200)}`);
         } else {
@@ -282,10 +295,17 @@ export async function saveWorkflow(
     return result;
   } catch (error) {
     // Network errors or fetch failures
-    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-      console.error('[saveWorkflow] Network error:', error);
-      throw new Error('Cannot connect to backend API. Please check your internet connection or the API may be down.');
+    if (error instanceof TypeError) {
+      if (error.message.includes('Failed to fetch')) {
+        console.error('[saveWorkflow] Network error:', error);
+        throw new Error('Cannot connect to backend API. Please check your internet connection or the API may be down.');
+      } else if (error.message.includes('NetworkError') || error.message.includes('network')) {
+        console.error('[saveWorkflow] Network error:', error);
+        throw new Error('Network error occurred while saving workflow. Please try again.');
+      }
     }
+
+    // Re-throw other errors as-is
     throw error;
   }
 }
