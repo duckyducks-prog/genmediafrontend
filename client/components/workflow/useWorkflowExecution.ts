@@ -277,6 +277,8 @@ export function useWorkflowExecution(
               originalPrompt: inputs.prompt,
               finalPrompt: prompt,
               hasReferenceImages: !!referenceImages,
+              referenceImagesType: typeof referenceImages,
+              referenceImagesIsArray: Array.isArray(referenceImages),
               hasFormatData: !!formatData,
               formatData: formatData,
               aspectRatio: aspectRatio,
@@ -318,25 +320,60 @@ export function useWorkflowExecution(
             }
 
             // Strip data URI prefix from reference images if present
+            // and ensure we only have valid base64 strings
             if (referenceImages) {
               if (Array.isArray(referenceImages)) {
-                referenceImages = referenceImages.map((img: string) => {
-                  if (typeof img === "string" && img.startsWith("data:")) {
-                    return img.split(",")[1];
-                  }
-                  return img;
-                });
-              } else if (
-                typeof referenceImages === "string" &&
-                referenceImages.startsWith("data:")
-              ) {
-                referenceImages = referenceImages.split(",")[1];
+                // Filter out null/undefined and extract base64
+                referenceImages = referenceImages
+                  .filter((img: any) => img && typeof img === "string")
+                  .map((img: string) => {
+                    if (img.startsWith("data:")) {
+                      return img.split(",")[1];
+                    }
+                    return img;
+                  });
+
+                // If array is empty after filtering, set to null
+                if (referenceImages.length === 0) {
+                  referenceImages = null;
+                }
+              } else if (typeof referenceImages === "string") {
+                if (referenceImages.startsWith("data:")) {
+                  referenceImages = referenceImages.split(",")[1];
+                }
+              } else {
+                // If not string or array, set to null
+                referenceImages = null;
               }
             }
+
+            console.log("[GenerateImage] Processed reference images:", {
+              hasReferenceImages: !!referenceImages,
+              type: typeof referenceImages,
+              isArray: Array.isArray(referenceImages),
+              count: Array.isArray(referenceImages) ? referenceImages.length : (referenceImages ? 1 : 0),
+            });
 
             try {
               const user = auth.currentUser;
               const token = await user?.getIdToken();
+
+              // Build request body - only include reference_images if we have valid data
+              const requestBody: any = {
+                prompt,
+                aspect_ratio: formatData?.aspect_ratio || node.data.aspectRatio || "1:1",
+              };
+
+              // Only add reference_images if we have valid data (not null or empty)
+              if (referenceImages) {
+                requestBody.reference_images = referenceImages;
+              }
+
+              console.log("[GenerateImage] Request body:", {
+                hasPrompt: !!requestBody.prompt,
+                hasReferenceImages: !!requestBody.reference_images,
+                aspectRatio: requestBody.aspect_ratio,
+              });
 
               const response = await fetch(
                 "https://veo-api-82187245577.us-central1.run.app/generate/image",
@@ -346,11 +383,7 @@ export function useWorkflowExecution(
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                   },
-                  body: JSON.stringify({
-                    prompt,
-                    reference_images: referenceImages,
-                    aspect_ratio: formatData?.aspect_ratio || node.data.aspectRatio || "1:1",
-                  }),
+                  body: JSON.stringify(requestBody),
                 },
               );
 
