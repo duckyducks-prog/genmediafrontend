@@ -969,9 +969,9 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
 
     return (
       <div className="flex w-full h-full">
-        {/* Node Palette - Hidden in read-only mode */}
+        {/* Node Palette - Always visible unless in read-only mode */}
         {!isReadOnly && (
-          <div className="hidden lg:block">
+          <div className="shrink-0">
             <NodePalette onAddNode={addNode} />
           </div>
         )}
