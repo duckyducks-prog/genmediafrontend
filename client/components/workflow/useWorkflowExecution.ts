@@ -10,7 +10,6 @@ import {
   gatherNodeInputs,
   validateNodeInputs,
   executeConcatenator,
-  executeFormat,
   pollVideoStatus,
   groupNodesByLevel,
   findUpstreamDependencies,
