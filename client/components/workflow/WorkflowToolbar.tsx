@@ -55,96 +55,115 @@ export default function WorkflowToolbar({
   const progressPercentage = calculateProgress();
 
   return (
-    <div className="absolute top-4 right-4 flex items-center gap-2 bg-card border border-border rounded-lg p-2 shadow-lg z-10">
+    <div className="absolute top-2 right-2 flex items-center gap-1 bg-card border border-border rounded-lg px-2 py-1.5 shadow-lg z-10">
       <Button
         onClick={onSaveWorkflow}
         variant="default"
-        size="sm"
+        size="icon"
+        className="h-8 w-8"
         title={isReadOnly ? "Read-Only Template" : "Save Workflow"}
         disabled={isReadOnly}
       >
-        <Save className="w-4 h-4 mr-1" />
-        Save
+        <Save className="w-3.5 h-3.5" />
       </Button>
 
       <Button
         onClick={onLoadWorkflow}
         variant="outline"
-        size="sm"
+        size="icon"
+        className="h-8 w-8"
         title="Load Workflow"
         aria-label="Load Workflow"
       >
-        <FolderOpen className="w-4 h-4" />
+        <FolderOpen className="w-3.5 h-3.5" />
       </Button>
 
-      <div className="w-px h-6 bg-border mx-1" />
+      <div className="w-px h-6 bg-border mx-0.5" />
 
       <Button
         onClick={onExecuteWorkflow}
         disabled={isExecuting}
         variant="default"
         size="sm"
+        className="h-8 bg-[#F3C5DB] hover:bg-[#D6C2D9] text-[#46062B] px-3"
         title="Run All Nodes"
-        className="bg-[#F3C5DB] hover:bg-[#D6C2D9] text-[#46062B]"
       >
-        <Play className="w-4 h-4 mr-1" />
-        {isExecuting ? `Running... ${progressPercentage}%` : "Run All"}
+        <Play className="w-3.5 h-3.5 mr-1" />
+        {isExecuting ? `${progressPercentage}%` : "Run All"}
       </Button>
+
+      {isExecuting && (
+        <Button
+          onClick={onAbortWorkflow}
+          variant="destructive"
+          size="icon"
+          className="h-8 w-8"
+          title="Stop Workflow"
+          aria-label="Stop Workflow"
+        >
+          <StopCircle className="w-3.5 h-3.5" />
+        </Button>
+      )}
 
       <Button
         onClick={onResetWorkflow}
         disabled={isExecuting || isReadOnly}
         variant="ghost"
-        size="sm"
+        size="icon"
+        className="h-8 w-8"
         title={isReadOnly ? "Read-Only Template" : "Reset Workflow"}
         aria-label="Reset Workflow"
       >
-        <RotateCcw className="w-4 h-4" />
+        <RotateCcw className="w-3.5 h-3.5" />
       </Button>
 
-      <div className="w-px h-6 bg-border mx-1" />
+      <div className="w-px h-6 bg-border mx-0.5" />
 
       <Button
         onClick={() => zoomIn()}
         variant="ghost"
-        size="sm"
+        size="icon"
+        className="h-8 w-8"
         title="Zoom In"
         aria-label="Zoom In"
       >
-        <ZoomIn className="w-4 h-4" />
+        <ZoomIn className="w-3.5 h-3.5" />
       </Button>
 
       <Button
         onClick={() => zoomOut()}
         variant="ghost"
-        size="sm"
+        size="icon"
+        className="h-8 w-8"
         title="Zoom Out"
         aria-label="Zoom Out"
       >
-        <ZoomOut className="w-4 h-4" />
+        <ZoomOut className="w-3.5 h-3.5" />
       </Button>
 
       <Button
         onClick={() => fitView()}
         variant="ghost"
-        size="sm"
+        size="icon"
+        className="h-8 w-8"
         title="Fit View"
         aria-label="Fit View"
       >
-        <Maximize2 className="w-4 h-4" />
+        <Maximize2 className="w-3.5 h-3.5" />
       </Button>
 
-      <div className="w-px h-6 bg-border mx-1" />
+      <div className="w-px h-6 bg-border mx-0.5" />
 
       <Button
         onClick={onClearCanvas}
         variant="ghost"
-        size="sm"
+        size="icon"
+        className="h-8 w-8"
         title={isReadOnly ? "Read-Only Template" : "Clear Canvas"}
         aria-label="Clear Canvas"
         disabled={isReadOnly}
       >
-        <Trash2 className="w-4 h-4 text-destructive" />
+        <Trash2 className="w-3.5 h-3.5 text-destructive" />
       </Button>
     </div>
   );
