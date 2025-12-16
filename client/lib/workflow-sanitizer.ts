@@ -43,7 +43,15 @@ function sanitizeObject(obj: any, path: string = ''): any {
   if (obj === null || obj === undefined) return obj;
 
   if (Array.isArray(obj)) {
-    return obj.map((item, index) => sanitizeObject(item, `${path}[${index}]`));
+    return obj.map((item, index) => {
+      const itemPath = `${path}[${index}]`;
+      // IMPORTANT: Check if array item is a string and sanitize it
+      if (typeof item === 'string') {
+        return sanitizeValue(item, itemPath);
+      }
+      // Otherwise recursively sanitize the item
+      return sanitizeObject(item, itemPath);
+    });
   }
 
   if (typeof obj === 'object') {
@@ -69,6 +77,11 @@ function sanitizeObject(obj: any, path: string = ''): any {
       }
     }
     return sanitized;
+  }
+
+  // For primitive values (strings, numbers, booleans), sanitize strings
+  if (typeof obj === 'string') {
+    return sanitizeValue(obj, path);
   }
 
   return obj;
