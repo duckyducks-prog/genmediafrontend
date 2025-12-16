@@ -11,6 +11,7 @@ import {
   Download,
   AlertTriangle,
   Play,
+  ChevronDown,
 } from 'lucide-react';
 
 function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
@@ -30,6 +31,19 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
   const hasReferenceConnections = edges.some(
     e => e.target === id && e.targetHandle === 'reference_images'
   );
+
+  const handleUpdate = (field: keyof GenerateVideoNodeData, value: any) => {
+    const event = new CustomEvent('node-update', {
+      detail: {
+        id,
+        data: {
+          ...data,
+          [field]: value,
+        },
+      },
+    });
+    window.dispatchEvent(event);
+  };
 
   const getBorderColor = () => {
     if (isGenerating) return 'border-yellow-500';
@@ -147,6 +161,25 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
 
       {/* Node Content */}
       <div className="space-y-3">
+        {/* Aspect Ratio Dropdown */}
+        <div>
+          <label className="text-xs font-medium text-muted-foreground block mb-1">
+            Aspect Ratio
+          </label>
+          <div className="relative">
+            <select
+              value={data.aspectRatio}
+              onChange={(e) => handleUpdate('aspectRatio', e.target.value)}
+              className="w-full px-3 py-2 text-sm bg-background border border-border rounded-md appearance-none pr-8"
+              disabled={isGenerating}
+            >
+              <option value="16:9">16:9 (Landscape)</option>
+              <option value="9:16">9:16 (Portrait)</option>
+            </select>
+            <ChevronDown className="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          </div>
+        </div>
+
         {/* Status */}
         <div className="text-xs text-muted-foreground">
           Status: <span className="font-medium">{getStatusText()}</span>
