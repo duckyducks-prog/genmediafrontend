@@ -28,6 +28,7 @@ interface WorkflowToolbarProps {
 export default function WorkflowToolbar({
   onClearCanvas,
   onExecuteWorkflow,
+  onAbortWorkflow,
   onResetWorkflow,
   onSaveWorkflow,
   onLoadWorkflow,
