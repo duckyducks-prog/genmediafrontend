@@ -725,6 +725,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
     // Workflow execution
     const {
       executeWorkflow,
+      abortWorkflow,
       resetWorkflow,
       executeSingleNode,
       isExecuting,
@@ -1052,6 +1053,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
             <WorkflowToolbar
               onClearCanvas={clearCanvas}
               onExecuteWorkflow={executeWorkflow}
+              onAbortWorkflow={abortWorkflow}
               onResetWorkflow={resetWorkflow}
               onSaveWorkflow={handleSaveWorkflow}
               onLoadWorkflow={handleLoadWorkflow}
