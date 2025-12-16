@@ -361,14 +361,12 @@ export async function loadWorkflow(workflowId: string): Promise<SavedWorkflow> {
   }
 
   const workflow = await response.json();
-  console.log('[loadWorkflow] Raw response:', workflow);
 
   // Parse nodes/edges if they're stringified JSON
   let nodes = workflow.nodes;
   let edges = workflow.edges;
 
   if (typeof nodes === 'string') {
-    console.log('[loadWorkflow] Parsing stringified nodes');
     try {
       nodes = JSON.parse(nodes);
     } catch (e) {
@@ -378,7 +376,6 @@ export async function loadWorkflow(workflowId: string): Promise<SavedWorkflow> {
   }
 
   if (typeof edges === 'string') {
-    console.log('[loadWorkflow] Parsing stringified edges');
     try {
       edges = JSON.parse(edges);
     } catch (e) {
@@ -387,20 +384,11 @@ export async function loadWorkflow(workflowId: string): Promise<SavedWorkflow> {
     }
   }
 
-  const parsedWorkflow = {
+  return {
     ...workflow,
     nodes: nodes || [],
     edges: edges || [],
   };
-
-  console.log('[loadWorkflow] Parsed workflow:', {
-    id: parsedWorkflow.id,
-    name: parsedWorkflow.name,
-    nodeCount: parsedWorkflow.nodes.length,
-    edgeCount: parsedWorkflow.edges.length,
-  });
-
-  return parsedWorkflow;
 }
 
 /**
