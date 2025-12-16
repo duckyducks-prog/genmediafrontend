@@ -991,6 +991,15 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
         window.removeEventListener("node-execute", handleNodeExecute);
     }, [executeSingleNode]);
 
+    // Log what's being rendered
+    console.log('[WorkflowCanvas] RENDERING with:', {
+      nodeCount: nodes.length,
+      edgeCount: edges.length,
+      nodes: nodes,
+      edges: edges,
+      isReadOnly: isReadOnly,
+    });
+
     return (
       <div className="flex w-full h-full">
         {/* Node Palette - Always visible unless in read-only mode */}
