@@ -358,21 +358,18 @@ export function useWorkflowExecution(
               const user = auth.currentUser;
               const token = await user?.getIdToken();
 
-              // Build request body - only include reference_images if we have valid data
+              // Build request body
+              // NOTE: Gemini 3 Pro does NOT support reference_images parameter
+              // Reference images cause a 404 "Cannot set internal reference_type field" error
               const requestBody: any = {
                 prompt,
                 aspect_ratio: formatData?.aspect_ratio || node.data.aspectRatio || "1:1",
               };
 
-              // Only add reference_images if we have valid data (not null or empty)
-              if (referenceImages) {
-                requestBody.reference_images = referenceImages;
-              }
-
               console.log("[GenerateImage] Request body:", {
                 hasPrompt: !!requestBody.prompt,
-                hasReferenceImages: !!requestBody.reference_images,
                 aspectRatio: requestBody.aspect_ratio,
+                referenceImagesIgnored: !!referenceImages,
               });
 
               const response = await fetch(
