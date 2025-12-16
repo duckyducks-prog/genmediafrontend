@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -179,20 +180,22 @@ export default function WorkflowGallery({
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <CardTitle className="text-lg flex items-center gap-2">
-              {workflow.name}
+            <div className="flex items-center gap-2 mb-1">
+              <CardTitle className="text-lg">
+                {workflow.name}
+              </CardTitle>
               {workflow.is_public ? (
-                <Globe
-                  className="w-4 h-4 text-primary"
-                  title="Public template"
-                />
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <Lock className="w-3 h-3" />
+                  Template
+                </Badge>
               ) : (
-                <Lock
-                  className="w-4 h-4 text-muted-foreground"
-                  title="Private"
-                />
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <Lock className="w-3 h-3" />
+                  Private
+                </Badge>
               )}
-            </CardTitle>
+            </div>
             <p className="text-sm text-muted-foreground mt-1">
               {workflow.description}
             </p>
@@ -243,8 +246,10 @@ export default function WorkflowGallery({
               size="sm"
               variant="outline"
               onClick={() => handleClone(workflow)}
+              title="Clone this template to make your own editable copy"
             >
-              <Copy className="w-4 h-4" />
+              <Copy className="w-4 h-4 mr-1" />
+              Clone to Edit
             </Button>
           )}
 
