@@ -175,97 +175,106 @@ export default function WorkflowGallery({
     workflow: SavedWorkflow;
     showDelete?: boolean;
     showClone?: boolean;
-  }) => (
-    <Card className="hover:shadow-lg transition-shadow">
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <CardTitle className="text-lg">
-                {workflow.name}
-              </CardTitle>
-              {workflow.is_public ? (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  <Lock className="w-3 h-3" />
-                  Template
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="flex items-center gap-1">
-                  <Lock className="w-3 h-3" />
-                  Private
-                </Badge>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground mt-1">
-              {workflow.description}
-            </p>
-          </div>
-        </div>
-      </CardHeader>
+  }) => {
+    const [isHovered, setIsHovered] = useState(false);
 
-      {workflow.thumbnail && (
-        <CardContent className="px-6 py-0">
-          <div className="relative aspect-video bg-muted rounded-lg overflow-hidden border border-border">
+    return (
+      <div
+        className="group relative cursor-pointer rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onClick={() => onLoadWorkflow(workflow)}
+      >
+        {/* Thumbnail Image */}
+        <div className="relative aspect-video bg-muted">
+          {workflow.thumbnail ? (
             <img
               src={workflow.thumbnail}
               alt={workflow.name}
               className="w-full h-full object-cover"
             />
-          </div>
-        </CardContent>
-      )}
-
-      <CardFooter className="flex items-center justify-between pt-4">
-        <div className="text-xs text-muted-foreground">
-          {workflow.user_email && (
-            <span className="block">By {workflow.user_email}</span>
+          ) : (
+            // Placeholder when no thumbnail
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted via-muted to-accent/20">
+              <WorkflowIcon className="w-16 h-16 opacity-30" />
+            </div>
           )}
-          {workflow.created_at && (
-            <span className="block">
-              Created {formatDate(workflow.created_at)}
-            </span>
-          )}
-          <span className="block">
-            {workflow.nodes?.length || 0} nodes, {workflow.edges?.length || 0}{" "}
-            connections
-          </span>
-        </div>
 
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            onClick={() => onLoadWorkflow(workflow)}
-            variant="default"
+          {/* Dark gradient overlay at bottom for title */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+          {/* Template badge (top-right) */}
+          {workflow.is_public && (
+            <div className="absolute top-2 right-2 z-10">
+              <Badge variant="secondary" className="flex items-center gap-1 shadow-lg">
+                <Lock className="w-3 h-3" />
+                Template
+              </Badge>
+            </div>
+          )}
+
+          {/* Hover overlay with actions */}
+          <div
+            className={`absolute inset-0 bg-black/60 flex items-center justify-center gap-2 transition-opacity ${
+              isHovered ? "opacity-100" : "opacity-0"
+            }`}
+            style={{ zIndex: 5 }}
           >
-            <WorkflowIcon className="w-4 h-4 mr-1" />
-            Open
-          </Button>
-
-          {showClone && (
             <Button
               size="sm"
-              variant="outline"
-              onClick={() => handleClone(workflow)}
-              title="Clone this template to make your own editable copy"
+              onClick={(e) => {
+                e.stopPropagation();
+                onLoadWorkflow(workflow);
+              }}
+              className="shadow-lg"
             >
-              <Copy className="w-4 h-4 mr-1" />
-              Clone to Edit
+              <WorkflowIcon className="w-4 h-4 mr-1" />
+              Open
             </Button>
-          )}
 
-          {showDelete && (
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => setDeleteId(workflow.id!)}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          )}
+            {showClone && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleClone(workflow);
+                }}
+                className="shadow-lg bg-background"
+              >
+                <Copy className="w-4 h-4 mr-1" />
+                Clone
+              </Button>
+            )}
+
+            {showDelete && (
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDeleteId(workflow.id!);
+                }}
+                className="shadow-lg"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+
+          {/* Title at bottom */}
+          <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
+            <h3 className="font-semibold text-white text-lg drop-shadow-lg line-clamp-2">
+              {workflow.name}
+            </h3>
+            <p className="text-xs text-white/80 mt-1">
+              {workflow.nodes?.length || 0} nodes
+            </p>
+          </div>
         </div>
-      </CardFooter>
-    </Card>
-  );
+      </div>
+    );
+  };
 
   if (isLoading) {
     return (
