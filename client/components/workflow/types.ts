@@ -115,6 +115,8 @@ export interface GenerateVideoNodeData extends BaseNodeData {
   pollAttempts?: number;
   videoUrl?: string;
   aspectRatio: "16:9" | "9:16";
+  generateAudio: boolean;
+  durationSeconds: 4 | 6 | 8;
 }
 
 // GENERATE IMAGE node
