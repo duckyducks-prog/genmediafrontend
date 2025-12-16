@@ -139,13 +139,13 @@ export default function NodePalette({ onAddNode }: NodePaletteProps) {
   };
 
   return (
-    <div className="w-64 bg-card border-r border-border p-4 space-y-6 overflow-y-auto h-full">
+    <div className="w-64 bg-card border-r border-border pl-4 pt-4 pb-4 space-y-6 overflow-y-auto h-full">
       <div>
-        <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
+        <h3 className="font-semibold text-sm mb-3 flex items-center gap-2 pr-4">
           <Sparkles className="w-4 h-4 text-primary" />
           Node Library
         </h3>
-        <p className="text-xs text-muted-foreground mb-4">
+        <p className="text-xs text-muted-foreground mb-4 pr-4">
           Drag nodes onto the canvas to build your AI workflow
         </p>
       </div>
