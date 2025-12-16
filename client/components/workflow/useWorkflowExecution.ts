@@ -637,7 +637,11 @@ export function useWorkflowExecution(
                 prompt: requestBody.prompt?.substring(0, 50),
                 first_frame: requestBody.first_frame ? `${typeof requestBody.first_frame} (${requestBody.first_frame.length} chars)` : null,
                 last_frame: requestBody.last_frame ? `${typeof requestBody.last_frame} (${requestBody.last_frame.length} chars)` : null,
-                reference_images: requestBody.reference_images ? `${typeof requestBody.reference_images}` : null,
+                reference_images: requestBody.reference_images
+                  ? Array.isArray(requestBody.reference_images)
+                    ? `array (${requestBody.reference_images.length} images)`
+                    : `string (${requestBody.reference_images.length} chars)`
+                  : null,
                 aspect_ratio: requestBody.aspect_ratio,
                 duration_seconds: requestBody.duration_seconds,
                 generate_audio: requestBody.generate_audio,
