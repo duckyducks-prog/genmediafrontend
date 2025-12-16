@@ -38,6 +38,7 @@ export function useWorkflowExecution(
     Map<string, string>
   >(new Map());
   const [totalNodes, setTotalNodes] = useState(0);
+  const [abortRequested, setAbortRequested] = useState(false);
 
   // Build adjacency list for the graph
   const buildGraph = useCallback(() => {
@@ -902,6 +903,15 @@ export function useWorkflowExecution(
     [updateNodeState, onAssetGenerated],
   );
 
+  // Abort workflow execution
+  const abortWorkflow = useCallback(() => {
+    setAbortRequested(true);
+    toast({
+      title: "Aborting Workflow",
+      description: "Stopping execution after current node...",
+    });
+  }, []);
+
   // Main execution function
   const executeWorkflow = useCallback(async () => {
     if (isExecuting) {
@@ -921,6 +931,7 @@ export function useWorkflowExecution(
     }
 
     setIsExecuting(true);
+    setAbortRequested(false);
     const executionOrder = getExecutionOrder();
 
     if (!executionOrder) {
@@ -945,6 +956,16 @@ export function useWorkflowExecution(
 
       // Execute each level in sequence
       for (let levelIndex = 0; levelIndex < levels.length; levelIndex++) {
+        // Check if abort was requested
+        if (abortRequested) {
+          toast({
+            title: "Workflow Aborted",
+            description: "Execution stopped by user",
+            variant: "destructive",
+          });
+          break;
+        }
+
         const levelNodes = levels[levelIndex];
 
         // Separate API-calling nodes from others
@@ -1119,6 +1140,7 @@ export function useWorkflowExecution(
       });
     } finally {
       setIsExecuting(false);
+      setAbortRequested(false);
     }
   }, [
     isExecuting,
@@ -1127,6 +1149,7 @@ export function useWorkflowExecution(
     getNodeInputs,
     executeNode,
     updateNodeState,
+    abortRequested,
   ]);
 
   // Reset workflow state
@@ -1251,6 +1274,7 @@ export function useWorkflowExecution(
 
   return {
     executeWorkflow,
+    abortWorkflow,
     resetWorkflow,
     executeSingleNode,
     isExecuting,
