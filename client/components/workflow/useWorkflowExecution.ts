@@ -266,6 +266,15 @@ export function useWorkflowExecution(
             const formatData = inputs.format;
             const filters: FilterConfig[] = inputs.filters || [];
 
+            console.log("[GenerateImage] Execution inputs:", {
+              hasPrompt: !!prompt,
+              hasReferenceImages: !!referenceImages,
+              hasFormatData: !!formatData,
+              formatData: formatData,
+              nodeAspectRatio: node.data.aspectRatio,
+              finalAspectRatio: formatData?.aspect_ratio || node.data.aspectRatio || "1:1",
+            });
+
             if (!prompt) {
               return { success: false, error: "No prompt connected" };
             }
