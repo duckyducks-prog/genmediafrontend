@@ -203,7 +203,15 @@ export default function WorkflowGallery({
           ) : (
             // Placeholder when no thumbnail or background
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted via-muted to-accent/20">
-              <WorkflowIcon className="w-16 h-16 opacity-30" />
+              {workflow.is_public ? (
+                <img
+                  src="https://cdn.builder.io/api/v1/image/assets%2Fb1d3bf7cc0eb4f0daca65fdc5a7d5179%2F3ea4f6b35eec42ab9cd2e7b29661cc88?format=webp&width=800"
+                  alt="Template icon"
+                  className="w-24 h-24 object-contain"
+                />
+              ) : (
+                <WorkflowIcon className="w-16 h-16 opacity-30" />
+              )}
             </div>
           )}
 
