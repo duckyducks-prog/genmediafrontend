@@ -995,7 +995,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
                     await cloneWorkflow(currentWorkflowId);
                     toast({
                       title: "Workflow Cloned",
-                      description: "The template has been cloned to your workflows. Check the Library tab.",
+                      description: "The template has been cloned to your workflows. Check My Workflows.",
                     });
                   } catch (error) {
                     toast({
