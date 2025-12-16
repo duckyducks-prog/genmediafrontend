@@ -902,13 +902,55 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
       return () => window.removeEventListener("keydown", handleKeyDown);
     }, [copySelectedNodes, pasteNodes, nodes, setNodes, setEdges, toast]);
 
-    // Expose loadWorkflow method to parent
+    // Capture thumbnail of the canvas
+    const captureThumbnail = useCallback(async (): Promise<string | null> => {
+      if (!reactFlowWrapper.current) {
+        console.warn('[WorkflowCanvas] Cannot capture thumbnail - wrapper ref not available');
+        return null;
+      }
+
+      try {
+        console.log('[WorkflowCanvas] Capturing thumbnail...');
+
+        // Find the ReactFlow viewport element
+        const viewport = reactFlowWrapper.current.querySelector('.react-flow__viewport');
+        if (!viewport) {
+          console.warn('[WorkflowCanvas] Cannot find .react-flow__viewport element');
+          return null;
+        }
+
+        // Capture with html2canvas
+        const canvas = await html2canvas(viewport as HTMLElement, {
+          backgroundColor: '#0a0a0a', // Match dark background
+          scale: 0.5, // Reduce resolution for smaller file size
+          logging: false,
+          width: 1600,
+          height: 900,
+        });
+
+        // Convert to PNG data URL
+        const dataUrl = canvas.toDataURL('image/png', 0.8);
+
+        console.log('[WorkflowCanvas] Thumbnail captured:', {
+          size: `${Math.round(dataUrl.length / 1024)}KB`,
+          dimensions: `${canvas.width}x${canvas.height}`,
+        });
+
+        return dataUrl;
+      } catch (error) {
+        console.error('[WorkflowCanvas] Failed to capture thumbnail:', error);
+        return null;
+      }
+    }, []);
+
+    // Expose loadWorkflow and captureThumbnail methods to parent
     useImperativeHandle(
       ref,
       () => ({
         loadWorkflow,
+        captureThumbnail,
       }),
-      [loadWorkflow],
+      [loadWorkflow, captureThumbnail],
     );
 
     // Listen for node execute events
