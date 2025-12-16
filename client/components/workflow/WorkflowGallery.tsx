@@ -200,23 +200,22 @@ export default function WorkflowGallery({
               alt={workflow.name}
               className="w-full h-full object-cover"
             />
+          ) : workflow.is_public ? (
+            // Use default template image for public workflows
+            <img
+              src="https://cdn.builder.io/api/v1/image/assets%2Fb1d3bf7cc0eb4f0daca65fdc5a7d5179%2F5cc32d6d0a324e819ef846f34c73c640?format=webp&width=800"
+              alt={workflow.name}
+              className="w-full h-full object-cover"
+            />
           ) : (
-            // Placeholder when no thumbnail or background
+            // Placeholder for personal workflows
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted via-muted to-accent/20">
-              {workflow.is_public ? (
-                <img
-                  src="https://cdn.builder.io/api/v1/image/assets%2Fb1d3bf7cc0eb4f0daca65fdc5a7d5179%2F3ea4f6b35eec42ab9cd2e7b29661cc88?format=webp&width=800"
-                  alt="Template icon"
-                  className="w-24 h-24 object-contain"
-                />
-              ) : (
-                <WorkflowIcon className="w-16 h-16 opacity-30" />
-              )}
+              <WorkflowIcon className="w-16 h-16 opacity-30" />
             </div>
           )}
 
-          {/* Dark gradient overlay at bottom for title */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+          {/* Dark gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
           {/* Template badge (top-right) */}
           {workflow.is_public && (
@@ -297,11 +296,11 @@ export default function WorkflowGallery({
           )}
 
           {/* Title at bottom */}
-          <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
-            <h3 className="font-semibold text-white text-lg drop-shadow-lg line-clamp-2">
+          <div className="absolute bottom-0 left-0 right-0 p-6 z-10">
+            <h3 className="font-bold text-white text-xl drop-shadow-lg line-clamp-2">
               {workflow.name}
             </h3>
-            <p className="text-xs text-white/80 mt-1">
+            <p className="text-sm text-white/90 mt-1">
               {workflow.nodes?.length || 0} nodes
             </p>
           </div>
