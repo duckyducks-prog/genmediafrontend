@@ -173,6 +173,9 @@ export default function SaveWorkflowDialog({
       } else if (errorMessage.includes('403') || errorMessage.includes('Access denied') || errorMessage.includes('Forbidden')) {
         userFriendlyMessage = 'Access denied';
         detailedMessage = 'You may not have permission to save workflows. Contact your administrator.';
+      } else if (errorMessage.includes('413') || errorMessage.includes('Payload too large')) {
+        userFriendlyMessage = 'Workflow too large';
+        detailedMessage = 'The workflow is too large to save. Try reducing the number of nodes or removing large images. ' + errorMessage;
       } else if (errorMessage.includes('CORS') || errorMessage.includes('Network') || errorMessage.includes('Cannot connect')) {
         userFriendlyMessage = 'Cannot connect to backend';
         detailedMessage = 'Network error or CORS configuration issue. The backend may be down or unreachable.';
