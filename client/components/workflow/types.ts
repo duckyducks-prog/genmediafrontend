@@ -79,6 +79,7 @@ export interface BaseNodeData {
   status?: "ready" | "executing" | "completed" | "error";
   error?: string;
   outputs?: Record<string, any>; // Store output values from execution
+  readOnly?: boolean; // Indicates if node is in read-only mode (for templates)
 }
 
 // IMAGE INPUT node
