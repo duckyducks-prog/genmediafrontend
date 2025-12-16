@@ -647,8 +647,8 @@ export function useWorkflowExecution(
                 last_frame: lastFrame,
                 reference_images: referenceImages,
                 aspect_ratio: formatData?.aspect_ratio || node.data.aspectRatio || "16:9",
-                duration_seconds: formatData?.duration_seconds || 8,
-                generate_audio: formatData?.generate_audio ?? true,
+                duration_seconds: formatData?.duration_seconds || node.data.durationSeconds || 8,
+                generate_audio: formatData?.generate_audio ?? node.data.generateAudio ?? true,
               };
 
               console.log('[GenerateVideo] Full request body (truncated):', {
