@@ -947,12 +947,16 @@ export function useWorkflowExecution(
       for (let levelIndex = 0; levelIndex < levels.length; levelIndex++) {
         const levelNodes = levels[levelIndex];
 
-        // Separate nodes by type for different execution strategies
-        const imageNodes = levelNodes.filter((node) => node.type === NodeType.GenerateImage);
-        const videoNodes = levelNodes.filter((node) => node.type === NodeType.GenerateVideo);
-        const llmNodes = levelNodes.filter((node) => node.type === NodeType.LLM);
+        // Separate API-calling nodes from others
+        const apiNodes = levelNodes.filter((node) =>
+          [
+            NodeType.GenerateImage,
+            NodeType.GenerateVideo,
+            NodeType.LLM,
+          ].includes(node.type),
+        );
         const otherNodes = levelNodes.filter(
-          (node) => !imageNodes.includes(node) && !videoNodes.includes(node) && !llmNodes.includes(node),
+          (node) => !apiNodes.includes(node),
         );
 
         // Execute non-API nodes in parallel (they're fast)
@@ -979,61 +983,9 @@ export function useWorkflowExecution(
           }),
         );
 
-        // Execute image nodes in parallel (new fast models don't need delays)
-        const imageResults = await Promise.allSettled(
-          imageNodes.map(async (node) => {
-            progress.set(node.id, "executing");
-            updateNodeState(node.id, "executing");
-            setExecutionProgress(new Map(progress));
-
-            const inputs = getNodeInputs(node.id);
-            const validation = validateNodeInputs(node, inputs);
-
-            if (!validation.valid) {
-              return {
-                nodeId: node.id,
-                success: false,
-                error: validation.error,
-              };
-            }
-
-            const result = await executeNode(node, inputs);
-            return {
-              nodeId: node.id,
-              ...result,
-            };
-          }),
-        );
-
-        // Execute LLM nodes in parallel (they're also fast)
-        const llmResults = await Promise.allSettled(
-          llmNodes.map(async (node) => {
-            progress.set(node.id, "executing");
-            updateNodeState(node.id, "executing");
-            setExecutionProgress(new Map(progress));
-
-            const inputs = getNodeInputs(node.id);
-            const validation = validateNodeInputs(node, inputs);
-
-            if (!validation.valid) {
-              return {
-                nodeId: node.id,
-                success: false,
-                error: validation.error,
-              };
-            }
-
-            const result = await executeNode(node, inputs);
-            return {
-              nodeId: node.id,
-              ...result,
-            };
-          }),
-        );
-
-        // Execute video nodes sequentially (slower, uses polling)
-        const videoResults = [];
-        for (const node of videoNodes) {
+        // Execute API nodes sequentially (no delays)
+        const apiResults = [];
+        for (const node of apiNodes) {
           progress.set(node.id, "executing");
           updateNodeState(node.id, "executing");
           setExecutionProgress(new Map(progress));
@@ -1069,26 +1021,18 @@ export function useWorkflowExecution(
             }
           }
 
-          videoResults.push(result);
+          apiResults.push(result);
         }
 
-        // Process results from all execution types
+        // Process results from both parallel and sequential execution
         const allResults = [
           ...otherResults.map((result, index) => ({
             result,
             node: otherNodes[index],
           })),
-          ...imageResults.map((result, index) => ({
+          ...apiResults.map((result, index) => ({
             result,
-            node: imageNodes[index],
-          })),
-          ...llmResults.map((result, index) => ({
-            result,
-            node: llmNodes[index],
-          })),
-          ...videoResults.map((result, index) => ({
-            result,
-            node: videoNodes[index],
+            node: apiNodes[index],
           })),
         ];
 
