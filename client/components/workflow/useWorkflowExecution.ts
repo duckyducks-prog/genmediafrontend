@@ -270,16 +270,14 @@ export function useWorkflowExecution(
               return { success: false, error: "No prompt connected" };
             }
 
-            // Append aspect ratio to prompt if format data is connected
+            // Always append aspect ratio to prompt (from format connector or node dropdown)
             const aspectRatio = formatData?.aspect_ratio || node.data.aspectRatio || "1:1";
-            if (formatData?.aspect_ratio) {
-              const aspectRatioLabel = aspectRatio === "16:9" ? "landscape" :
-                                      aspectRatio === "9:16" ? "portrait" :
-                                      aspectRatio === "1:1" ? "square" :
-                                      aspectRatio === "3:4" ? "portrait" :
-                                      aspectRatio === "4:3" ? "landscape" : "";
-              prompt = `${prompt}, ${aspectRatio} aspect ratio${aspectRatioLabel ? ` (${aspectRatioLabel})` : ""}`;
-            }
+            const aspectRatioLabel = aspectRatio === "16:9" ? "landscape" :
+                                    aspectRatio === "9:16" ? "portrait" :
+                                    aspectRatio === "1:1" ? "square" :
+                                    aspectRatio === "3:4" ? "portrait" :
+                                    aspectRatio === "4:3" ? "landscape" : "";
+            prompt = `${prompt}, ${aspectRatio} aspect ratio${aspectRatioLabel ? ` (${aspectRatioLabel})` : ""}`;
 
             console.log("[GenerateImage] Execution inputs:", {
               originalPrompt: inputs.prompt,
@@ -494,13 +492,11 @@ export function useWorkflowExecution(
               };
             }
 
-            // Append aspect ratio to prompt if format data is connected
+            // Always append aspect ratio to prompt (from format connector or node dropdown)
             const aspectRatio = formatData?.aspect_ratio || node.data.aspectRatio || "16:9";
-            if (formatData?.aspect_ratio) {
-              const aspectRatioLabel = aspectRatio === "16:9" ? "landscape" :
-                                      aspectRatio === "9:16" ? "portrait" : "";
-              prompt = `${prompt}, ${aspectRatio} aspect ratio${aspectRatioLabel ? ` (${aspectRatioLabel})` : ""}`;
-            }
+            const aspectRatioLabel = aspectRatio === "16:9" ? "landscape" :
+                                    aspectRatio === "9:16" ? "portrait" : "";
+            prompt = `${prompt}, ${aspectRatio} aspect ratio${aspectRatioLabel ? ` (${aspectRatioLabel})` : ""}`;
 
             console.log('[GenerateVideo] After variable assignment:', {
               originalPrompt: inputs.prompt,
