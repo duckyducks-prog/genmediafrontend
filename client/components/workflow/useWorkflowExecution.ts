@@ -196,11 +196,6 @@ export function useWorkflowExecution(
             return { success: true, data: { combined } };
           }
 
-          case NodeType.Format: {
-            const formatData = executeFormat(node.data);
-            return { success: true, data: { format: formatData } };
-          }
-
           // ACTION NODES
           case NodeType.LLM: {
             const prompt = inputs.prompt;
