@@ -38,6 +38,7 @@ export function useWorkflowExecution(
   const [executionProgress, setExecutionProgress] = useState<
     Map<string, string>
   >(new Map());
+  const [totalNodes, setTotalNodes] = useState(0);
 
   // Build adjacency list for the graph
   const buildGraph = useCallback(() => {
@@ -854,6 +855,9 @@ export function useWorkflowExecution(
       return;
     }
 
+    // Track total nodes for progress calculation
+    setTotalNodes(executionOrder.length);
+
     // Store executed node data
     const executedData = new Map<string, any>();
     const progress = new Map<string, string>();
@@ -1083,6 +1087,7 @@ export function useWorkflowExecution(
   // Reset workflow state
   const resetWorkflow = useCallback(() => {
     setExecutionProgress(new Map());
+    setTotalNodes(0);
     setNodes((prevNodes) =>
       prevNodes.map((node) => ({
         ...node,
@@ -1205,5 +1210,6 @@ export function useWorkflowExecution(
     executeSingleNode,
     isExecuting,
     executionProgress,
+    totalNodes,
   };
 }
