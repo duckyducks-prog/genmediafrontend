@@ -111,22 +111,6 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
     const hasInitialized = useRef(false);
     const { toast } = useToast();
 
-    // Monitor nodes/edges state changes
-    useEffect(() => {
-      console.log('[WorkflowCanvas] Nodes state changed:', {
-        count: nodes.length,
-        nodeIds: nodes.map(n => n.id),
-        nodes: nodes,
-      });
-    }, [nodes]);
-
-    useEffect(() => {
-      console.log('[WorkflowCanvas] Edges state changed:', {
-        count: edges.length,
-        edgeIds: edges.map(e => e.id),
-        edges: edges,
-      });
-    }, [edges]);
 
     // Listen for node update events from node components
     useEffect(() => {
