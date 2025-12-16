@@ -196,6 +196,7 @@ export default function SaveWorkflowDialog({
         nodes: sanitized.nodes,
         edges: sanitized.edges,
         thumbnail,
+        background_image: isPublic ? backgroundImage || undefined : undefined,
       };
 
       if (existingWorkflow?.id) {
