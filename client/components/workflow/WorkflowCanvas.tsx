@@ -1005,9 +1005,9 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
                     });
                   }
                 }}
-                className="ml-2"
+                className="ml-2 text-xs h-7"
               >
-                <Copy className="w-4 h-4 mr-2" />
+                <Copy className="w-3 h-3 mr-1.5" />
                 Clone Workflow
               </Button>
             </div>
