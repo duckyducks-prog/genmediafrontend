@@ -265,12 +265,9 @@ export default function WorkflowGallery({
 
           {/* Title at bottom */}
           <div className="absolute bottom-0 left-0 right-0 p-6 z-10">
-            <h3 className="font-bold text-white text-xl drop-shadow-lg line-clamp-2">
+            <h3 className="font-semibold text-white text-base drop-shadow-lg line-clamp-2">
               {workflow.name}
             </h3>
-            <p className="text-sm text-white/90 mt-1">
-              {workflow.nodes?.length || 0} nodes
-            </p>
           </div>
         </div>
       </div>
