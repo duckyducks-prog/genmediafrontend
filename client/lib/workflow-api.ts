@@ -2,9 +2,7 @@ import { auth } from "./firebase";
 import { WorkflowNode, WorkflowEdge } from "@/components/workflow/types";
 
 // Workflow storage API (our backend)
-const WORKFLOW_API_BASE = import.meta.env.DEV
-  ? "http://localhost:5001/api"  // Local development
-  : "/.netlify/functions/api";    // Production (Netlify)
+const WORKFLOW_API_BASE = "/api"; // Works for both dev (Vite proxy) and production (Express server)
 
 // External Veo API for video/image generation
 const VEO_API_BASE = "https://veo-api-82187245577.us-central1.run.app";
