@@ -23,6 +23,7 @@ function PromptConcatenatorNode({ data, id }: NodeProps<PromptConcatenatorNodeDa
     const currentNode = nodes.find(n => n.id === id);
 
     if (!currentNode) return;
+    // Allow execution updates even in read-only mode (this is just output calculation)
 
     // Gather inputs from connected nodes
     const inputs = gatherNodeInputs(currentNode, nodes, edges);
@@ -90,6 +91,9 @@ function PromptConcatenatorNode({ data, id }: NodeProps<PromptConcatenatorNodeDa
             <select
               value={data.separator}
               onChange={(e) => {
+                // Block changes in read-only mode
+                if (data.readOnly) return;
+
                 // This will be handled by WorkflowCanvas setNodes
                 const event = new CustomEvent('node-update', {
                   detail: {
@@ -100,6 +104,7 @@ function PromptConcatenatorNode({ data, id }: NodeProps<PromptConcatenatorNodeDa
                 window.dispatchEvent(event);
               }}
               className="w-full px-3 py-2 text-sm bg-background border border-border rounded-md appearance-none pr-8"
+              disabled={data.readOnly}
             >
               <option value="Space">Space</option>
               <option value="Comma">Comma</option>
