@@ -21,6 +21,7 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 import "./workflow.css";
+import html2canvas from "html2canvas";
 import {
   WorkflowNode,
   WorkflowEdge,
@@ -82,7 +83,8 @@ const nodeTypes: NodeTypes = {
 };
 
 export interface WorkflowCanvasRef {
-  loadWorkflow: (workflow: SavedWorkflow) => void;
+  loadWorkflow: (workflow: SavedWorkflow, options?: { readOnly?: boolean }) => void;
+  captureThumbnail: () => Promise<string | null>;
 }
 
 interface WorkflowCanvasProps {
