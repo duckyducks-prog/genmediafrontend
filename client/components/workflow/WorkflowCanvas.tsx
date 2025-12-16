@@ -370,6 +370,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               isGenerating: false,
               status: "ready",
               label: "Generate Image",
+              aspectRatio: "1:1",
               outputs: {},
             };
             break;
@@ -378,6 +379,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               isGenerating: false,
               status: "ready",
               label: "Generate Video",
+              aspectRatio: "16:9",
               outputs: {},
             };
             break;
