@@ -114,6 +114,7 @@ export interface GenerateVideoNodeData extends BaseNodeData {
   operationName?: string;
   pollAttempts?: number;
   videoUrl?: string;
+  aspectRatio: "16:9" | "9:16";
 }
 
 // GENERATE IMAGE node
@@ -121,6 +122,7 @@ export interface GenerateImageNodeData extends BaseNodeData {
   isGenerating: boolean;
   imageUrl?: string;
   images?: string[];
+  aspectRatio: "1:1" | "16:9" | "9:16" | "3:4" | "4:3";
 }
 
 // LLM node
