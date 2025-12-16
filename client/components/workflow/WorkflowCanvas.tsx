@@ -906,10 +906,12 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
 
     return (
       <div className="flex w-full h-full">
-        {/* Node Palette */}
-        <div className="hidden lg:block">
-          <NodePalette onAddNode={addNode} />
-        </div>
+        {/* Node Palette - Hidden in read-only mode */}
+        {!isReadOnly && (
+          <div className="hidden lg:block">
+            <NodePalette onAddNode={addNode} />
+          </div>
+        )}
 
         {/* Canvas Area */}
         <div ref={reactFlowWrapper} className="flex-1 relative">
@@ -929,10 +931,13 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
             proOptions={{ hideAttribution: true }}
             multiSelectionKeyCode="Shift"
             selectionKeyCode="Shift"
-            deleteKeyCode="Delete"
-            selectionOnDrag={true}
+            deleteKeyCode={isReadOnly ? null : "Delete"}
+            selectionOnDrag={!isReadOnly}
             panOnDrag={[1, 2]}
-            selectNodesOnDrag={true}
+            selectNodesOnDrag={!isReadOnly}
+            nodesDraggable={!isReadOnly}
+            nodesConnectable={!isReadOnly}
+            edgesFocusable={!isReadOnly}
             minZoom={0.1}
             maxZoom={4}
             defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
