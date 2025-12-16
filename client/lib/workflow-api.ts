@@ -439,7 +439,6 @@ export async function listMyWorkflows(): Promise<SavedWorkflow[]> {
     }
 
     const data = await response.json();
-    console.log('[listMyWorkflows] Raw response data:', data);
 
     // Parse workflows and ensure nodes/edges are arrays (not stringified JSON)
     const workflows = (data.workflows || []).map((workflow: any) => {
@@ -448,7 +447,6 @@ export async function listMyWorkflows(): Promise<SavedWorkflow[]> {
       let edges = workflow.edges;
 
       if (typeof nodes === 'string') {
-        console.log('[listMyWorkflows] Parsing stringified nodes for workflow:', workflow.id);
         try {
           nodes = JSON.parse(nodes);
         } catch (e) {
@@ -458,7 +456,6 @@ export async function listMyWorkflows(): Promise<SavedWorkflow[]> {
       }
 
       if (typeof edges === 'string') {
-        console.log('[listMyWorkflows] Parsing stringified edges for workflow:', workflow.id);
         try {
           edges = JSON.parse(edges);
         } catch (e) {
@@ -474,18 +471,7 @@ export async function listMyWorkflows(): Promise<SavedWorkflow[]> {
       };
     });
 
-    console.log('[listMyWorkflows] Success:', {
-      count: workflows.length,
-      sampleWorkflow: workflows[0] ? {
-        id: workflows[0].id,
-        name: workflows[0].name,
-        hasNodes: !!workflows[0].nodes,
-        hasEdges: !!workflows[0].edges,
-        nodeCount: workflows[0].nodes?.length || 0,
-        edgeCount: workflows[0].edges?.length || 0,
-        keys: Object.keys(workflows[0]),
-      } : null
-    });
+    console.log('[listMyWorkflows] Loaded', workflows.length, 'workflows');
     return workflows;
   } catch (error) {
     if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
