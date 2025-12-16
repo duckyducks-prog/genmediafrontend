@@ -331,7 +331,7 @@ export async function updateWorkflow(
 
   const token = await user.getIdToken();
 
-  const response = await fetch(`${API_BASE}/workflows/${workflowId}`, {
+  const response = await fetch(`${WORKFLOW_API_BASE}/workflows/${workflowId}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -356,7 +356,7 @@ export async function loadWorkflow(workflowId: string): Promise<SavedWorkflow> {
 
   const token = await user.getIdToken();
 
-  const response = await fetch(`${API_BASE}/workflows/${workflowId}`, {
+  const response = await fetch(`${WORKFLOW_API_BASE}/workflows/${workflowId}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -566,7 +566,7 @@ export async function deleteWorkflow(workflowId: string): Promise<void> {
 
   const token = await user.getIdToken();
 
-  const response = await fetch(`${API_BASE}/workflows/${workflowId}`, {
+  const response = await fetch(`${WORKFLOW_API_BASE}/workflows/${workflowId}`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${token}`,
