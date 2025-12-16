@@ -587,33 +587,46 @@ export function useWorkflowExecution(
             }
 
             // Strip data URI prefix from image inputs if present
-            if (
-              firstFrame &&
-              typeof firstFrame === "string" &&
-              firstFrame.startsWith("data:")
-            ) {
-              firstFrame = firstFrame.split(",")[1];
+            // and ensure we only have valid base64 strings
+            if (firstFrame && typeof firstFrame === "string") {
+              if (firstFrame.startsWith("data:")) {
+                firstFrame = firstFrame.split(",")[1];
+              }
+            } else {
+              firstFrame = null;
             }
-            if (
-              lastFrame &&
-              typeof lastFrame === "string" &&
-              lastFrame.startsWith("data:")
-            ) {
-              lastFrame = lastFrame.split(",")[1];
+
+            if (lastFrame && typeof lastFrame === "string") {
+              if (lastFrame.startsWith("data:")) {
+                lastFrame = lastFrame.split(",")[1];
+              }
+            } else {
+              lastFrame = null;
             }
+
             if (referenceImages) {
               if (Array.isArray(referenceImages)) {
-                referenceImages = referenceImages.map((img: string) => {
-                  if (typeof img === "string" && img.startsWith("data:")) {
-                    return img.split(",")[1];
-                  }
-                  return img;
-                });
-              } else if (
-                typeof referenceImages === "string" &&
-                referenceImages.startsWith("data:")
-              ) {
-                referenceImages = referenceImages.split(",")[1];
+                // Filter out null/undefined and extract base64
+                referenceImages = referenceImages
+                  .filter((img: any) => img && typeof img === "string")
+                  .map((img: string) => {
+                    if (img.startsWith("data:")) {
+                      return img.split(",")[1];
+                    }
+                    return img;
+                  });
+
+                // If array is empty after filtering, set to null
+                if (referenceImages.length === 0) {
+                  referenceImages = null;
+                }
+              } else if (typeof referenceImages === "string") {
+                if (referenceImages.startsWith("data:")) {
+                  referenceImages = referenceImages.split(",")[1];
+                }
+              } else {
+                // If not string or array, set to null
+                referenceImages = null;
               }
             }
 
@@ -656,15 +669,24 @@ export function useWorkflowExecution(
                 lastFrameLength: typeof lastFrame === 'string' ? lastFrame.length : 0,
               });
 
+              // Build request body - only include optional fields if we have valid data
               const requestBody: any = {
                 prompt,
-                first_frame: firstFrame,
-                last_frame: lastFrame,
-                reference_images: referenceImages,
                 aspect_ratio: formatData?.aspect_ratio || node.data.aspectRatio || "16:9",
                 duration_seconds: formatData?.duration_seconds || node.data.durationSeconds || 8,
                 generate_audio: formatData?.generate_audio ?? node.data.generateAudio ?? true,
               };
+
+              // Only add image fields if we have valid data (not null or empty)
+              if (firstFrame) {
+                requestBody.first_frame = firstFrame;
+              }
+              if (lastFrame) {
+                requestBody.last_frame = lastFrame;
+              }
+              if (referenceImages) {
+                requestBody.reference_images = referenceImages;
+              }
 
               console.log('[GenerateVideo] Full request body (truncated):', {
                 prompt: requestBody.prompt?.substring(0, 50),
