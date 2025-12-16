@@ -652,8 +652,14 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
     }, [toast]);
 
     // Workflow execution
-    const { executeWorkflow, resetWorkflow, executeSingleNode, isExecuting } =
-      useWorkflowExecution(nodes, edges, setNodes, onAssetGenerated);
+    const {
+      executeWorkflow,
+      resetWorkflow,
+      executeSingleNode,
+      isExecuting,
+      executionProgress,
+      totalNodes,
+    } = useWorkflowExecution(nodes, edges, setNodes, onAssetGenerated);
 
     // Copy selected nodes
     const copySelectedNodes = useCallback(() => {
@@ -868,6 +874,8 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               onSaveWorkflow={handleSaveWorkflow}
               onLoadWorkflow={handleLoadWorkflow}
               isExecuting={isExecuting}
+              executionProgress={executionProgress}
+              totalNodes={totalNodes}
             />
           </ReactFlow>
 
