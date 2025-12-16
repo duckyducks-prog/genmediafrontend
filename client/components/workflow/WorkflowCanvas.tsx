@@ -682,12 +682,16 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           data: { ...node.data, readOnly },
         }));
 
-        console.log('[WorkflowCanvas] Setting nodes:', nodesWithReadOnly.length);
-        console.log('[WorkflowCanvas] Setting edges:', (workflow.edges || []).length);
+        console.log('[WorkflowCanvas] About to set nodes:', nodesWithReadOnly.length);
+        console.log('[WorkflowCanvas] About to set edges:', (workflow.edges || []).length);
+        console.log('[WorkflowCanvas] Nodes being set:', JSON.stringify(nodesWithReadOnly, null, 2));
+        console.log('[WorkflowCanvas] Edges being set:', JSON.stringify(workflow.edges || [], null, 2));
 
         setNodes(nodesWithReadOnly);
         setEdges(workflow.edges || []);
         setCurrentWorkflowId(workflow.id || null);
+
+        console.log('[WorkflowCanvas] ✓ setNodes() and setEdges() called');
 
         toast({
           title: readOnly ? "Template loaded (Read-Only)" : "Workflow loaded",
