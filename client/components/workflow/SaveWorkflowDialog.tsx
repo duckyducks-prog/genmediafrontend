@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   saveWorkflow,
