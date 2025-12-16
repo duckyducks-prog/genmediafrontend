@@ -8,12 +8,14 @@ import {
   RotateCcw,
   Save,
   FolderOpen,
+  StopCircle,
 } from "lucide-react";
 import { useReactFlow } from "reactflow";
 
 interface WorkflowToolbarProps {
   onClearCanvas: () => void;
   onExecuteWorkflow: () => void;
+  onAbortWorkflow: () => void;
   onResetWorkflow: () => void;
   onSaveWorkflow: () => void;
   onLoadWorkflow: () => void;
