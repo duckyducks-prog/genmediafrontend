@@ -296,16 +296,6 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               outputs: {},
             };
             break;
-          case NodeType.Format:
-            data = {
-              aspectRatio: "16:9",
-              durationSeconds: 8,
-              generateAudio: true,
-              resolution: "1080p",
-              label: "Format",
-              outputs: {},
-            };
-            break;
           case NodeType.BrightnessContrast:
             data = {
               brightness: 0,
