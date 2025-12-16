@@ -400,19 +400,53 @@ export async function listMyWorkflows(): Promise<SavedWorkflow[]> {
 
     const data = await response.json();
     console.log('[listMyWorkflows] Raw response data:', data);
+
+    // Parse workflows and ensure nodes/edges are arrays (not stringified JSON)
+    const workflows = (data.workflows || []).map((workflow: any) => {
+      // Check if nodes/edges are stringified JSON
+      let nodes = workflow.nodes;
+      let edges = workflow.edges;
+
+      if (typeof nodes === 'string') {
+        console.log('[listMyWorkflows] Parsing stringified nodes for workflow:', workflow.id);
+        try {
+          nodes = JSON.parse(nodes);
+        } catch (e) {
+          console.error('[listMyWorkflows] Failed to parse nodes:', e);
+          nodes = [];
+        }
+      }
+
+      if (typeof edges === 'string') {
+        console.log('[listMyWorkflows] Parsing stringified edges for workflow:', workflow.id);
+        try {
+          edges = JSON.parse(edges);
+        } catch (e) {
+          console.error('[listMyWorkflows] Failed to parse edges:', e);
+          edges = [];
+        }
+      }
+
+      return {
+        ...workflow,
+        nodes: nodes || [],
+        edges: edges || [],
+      };
+    });
+
     console.log('[listMyWorkflows] Success:', {
-      count: data.workflows?.length || 0,
-      sampleWorkflow: data.workflows?.[0] ? {
-        id: data.workflows[0].id,
-        name: data.workflows[0].name,
-        hasNodes: !!data.workflows[0].nodes,
-        hasEdges: !!data.workflows[0].edges,
-        nodeCount: data.workflows[0].nodes?.length || 0,
-        edgeCount: data.workflows[0].edges?.length || 0,
-        keys: Object.keys(data.workflows[0]),
+      count: workflows.length,
+      sampleWorkflow: workflows[0] ? {
+        id: workflows[0].id,
+        name: workflows[0].name,
+        hasNodes: !!workflows[0].nodes,
+        hasEdges: !!workflows[0].edges,
+        nodeCount: workflows[0].nodes?.length || 0,
+        edgeCount: workflows[0].edges?.length || 0,
+        keys: Object.keys(workflows[0]),
       } : null
     });
-    return data.workflows || [];
+    return workflows;
   } catch (error) {
     if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
       console.error('[listMyWorkflows] Network error');
