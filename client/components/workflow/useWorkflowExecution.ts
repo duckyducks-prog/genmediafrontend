@@ -336,7 +336,7 @@ export function useWorkflowExecution(
                   body: JSON.stringify({
                     prompt,
                     reference_images: referenceImages,
-                    aspect_ratio: formatData?.aspect_ratio || "1:1",
+                    aspect_ratio: formatData?.aspect_ratio || node.data.aspectRatio || "1:1",
                   }),
                 },
               );
@@ -616,7 +616,7 @@ export function useWorkflowExecution(
                 first_frame: firstFrame,
                 last_frame: lastFrame,
                 reference_images: referenceImages,
-                aspect_ratio: formatData?.aspect_ratio || "16:9",
+                aspect_ratio: formatData?.aspect_ratio || node.data.aspectRatio || "16:9",
                 duration_seconds: formatData?.duration_seconds || 8,
                 generate_audio: formatData?.generate_audio ?? true,
               };
