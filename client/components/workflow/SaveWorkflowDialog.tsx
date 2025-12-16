@@ -65,10 +65,12 @@ export default function SaveWorkflowDialog({
       setName(existingWorkflow.name);
       setDescription(existingWorkflow.description);
       setIsPublic(existingWorkflow.is_public);
+      setBackgroundImage((existingWorkflow as any).background_image || null);
     } else {
       setName("");
       setDescription("");
       setIsPublic(false);
+      setBackgroundImage(null);
     }
     // Clear errors when dialog opens/closes
     setServerError("");
