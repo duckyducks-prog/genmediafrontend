@@ -78,6 +78,48 @@ export default function SaveWorkflowDialog({
     setWorkflowError("");
   }, [existingWorkflow, open]);
 
+  const handleBackgroundImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload a JPG, PNG, or WebP image",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast({
+        title: "File too large",
+        description: `Image must be less than 5MB (current: ${(file.size / (1024 * 1024)).toFixed(2)}MB)`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Read file as data URL
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      setBackgroundImage(result);
+    };
+    reader.onerror = () => {
+      toast({
+        title: "Failed to read image",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSave = async () => {
     let hasError = false;
 
