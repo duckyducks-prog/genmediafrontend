@@ -180,6 +180,42 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
           </div>
         </div>
 
+        {/* Duration Dropdown */}
+        <div>
+          <label className="text-xs font-medium text-muted-foreground block mb-1">
+            Duration
+          </label>
+          <div className="relative">
+            <select
+              value={data.durationSeconds}
+              onChange={(e) => handleUpdate('durationSeconds', parseInt(e.target.value))}
+              className="w-full px-3 py-2 text-sm bg-background border border-border rounded-md appearance-none pr-8"
+              disabled={isGenerating}
+            >
+              <option value="4">4 seconds</option>
+              <option value="6">6 seconds</option>
+              <option value="8">8 seconds</option>
+            </select>
+            <ChevronDown className="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          </div>
+        </div>
+
+        {/* Generate Audio Checkbox */}
+        <div>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={data.generateAudio}
+              onChange={(e) => handleUpdate('generateAudio', e.target.checked)}
+              disabled={isGenerating}
+              className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+            />
+            <span className="text-xs font-medium text-muted-foreground">
+              Generate Audio
+            </span>
+          </label>
+        </div>
+
         {/* Status */}
         <div className="text-xs text-muted-foreground">
           Status: <span className="font-medium">{getStatusText()}</span>
