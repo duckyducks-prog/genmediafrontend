@@ -390,7 +390,9 @@ export default function Index() {
             <TabsContent value="home" className="space-y-6">
               <WorkflowGallery
                 onLoadWorkflow={(workflow) => {
-                  workflowCanvasRef.current?.loadWorkflow(workflow);
+                  // Load templates (public workflows) as read-only
+                  const readOnly = workflow.is_public === true;
+                  workflowCanvasRef.current?.loadWorkflow(workflow, { readOnly });
                   setCurrentTab("workflow");
                 }}
               />
