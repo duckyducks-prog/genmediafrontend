@@ -947,18 +947,13 @@ export function useWorkflowExecution(
       for (let levelIndex = 0; levelIndex < levels.length; levelIndex++) {
         const levelNodes = levels[levelIndex];
 
-        // Separate API-calling nodes from others for sequential execution
-        const apiNodes = levelNodes.filter((node) =>
-          [
-            NodeType.GenerateImage,
-            NodeType.GenerateVideo,
-            NodeType.LLM,
-          ].includes(node.type),
-        );
+        // Separate nodes by type for different execution strategies
+        const imageNodes = levelNodes.filter((node) => node.type === NodeType.GenerateImage);
+        const videoNodes = levelNodes.filter((node) => node.type === NodeType.GenerateVideo);
+        const llmNodes = levelNodes.filter((node) => node.type === NodeType.LLM);
         const otherNodes = levelNodes.filter(
-          (node) => !apiNodes.includes(node),
+          (node) => !imageNodes.includes(node) && !videoNodes.includes(node) && !llmNodes.includes(node),
         );
-
 
         // Execute non-API nodes in parallel (they're fast)
         const otherResults = await Promise.allSettled(
@@ -984,15 +979,64 @@ export function useWorkflowExecution(
           }),
         );
 
-        // Execute API nodes sequentially with delays
-        const apiResults = [];
-        for (let i = 0; i < apiNodes.length; i++) {
-          const node = apiNodes[i];
+        // Execute image nodes in parallel (new fast models don't need delays)
+        const imageResults = await Promise.allSettled(
+          imageNodes.map(async (node) => {
+            progress.set(node.id, "executing");
+            updateNodeState(node.id, "executing");
+            setExecutionProgress(new Map(progress));
 
+            const inputs = getNodeInputs(node.id);
+            const validation = validateNodeInputs(node, inputs);
+
+            if (!validation.valid) {
+              return {
+                nodeId: node.id,
+                success: false,
+                error: validation.error,
+              };
+            }
+
+            const result = await executeNode(node, inputs);
+            return {
+              nodeId: node.id,
+              ...result,
+            };
+          }),
+        );
+
+        // Execute LLM nodes in parallel (they're also fast)
+        const llmResults = await Promise.allSettled(
+          llmNodes.map(async (node) => {
+            progress.set(node.id, "executing");
+            updateNodeState(node.id, "executing");
+            setExecutionProgress(new Map(progress));
+
+            const inputs = getNodeInputs(node.id);
+            const validation = validateNodeInputs(node, inputs);
+
+            if (!validation.valid) {
+              return {
+                nodeId: node.id,
+                success: false,
+                error: validation.error,
+              };
+            }
+
+            const result = await executeNode(node, inputs);
+            return {
+              nodeId: node.id,
+              ...result,
+            };
+          }),
+        );
+
+        // Execute video nodes sequentially (slower, uses polling)
+        const videoResults = [];
+        for (const node of videoNodes) {
           progress.set(node.id, "executing");
           updateNodeState(node.id, "executing");
           setExecutionProgress(new Map(progress));
-
 
           const inputs = getNodeInputs(node.id);
           const validation = validateNodeInputs(node, inputs);
@@ -1025,23 +1069,26 @@ export function useWorkflowExecution(
             }
           }
 
-          apiResults.push(result);
-
-          // Add delay between API calls to avoid quota exhaustion
-          if (i < apiNodes.length - 1) {
-            await new Promise((resolve) => setTimeout(resolve, 3000));
-          }
+          videoResults.push(result);
         }
 
-        // Process results from both parallel and sequential execution
+        // Process results from all execution types
         const allResults = [
           ...otherResults.map((result, index) => ({
             result,
             node: otherNodes[index],
           })),
-          ...apiResults.map((result, index) => ({
+          ...imageResults.map((result, index) => ({
             result,
-            node: apiNodes[index],
+            node: imageNodes[index],
+          })),
+          ...llmResults.map((result, index) => ({
+            result,
+            node: llmNodes[index],
+          })),
+          ...videoResults.map((result, index) => ({
+            result,
+            node: videoNodes[index],
           })),
         ];
 
