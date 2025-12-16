@@ -667,7 +667,7 @@ export default function Index() {
               )}
             </TabsContent>
 
-            <TabsContent value="workflow" className="h-[calc(100vh-200px)]">
+            <TabsContent value="workflow" className="h-[calc(100vh-180px)]">
               <WorkflowCanvas
                 ref={workflowCanvasRef}
                 onAssetGenerated={() => {
