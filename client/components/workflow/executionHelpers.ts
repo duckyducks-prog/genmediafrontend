@@ -91,8 +91,28 @@ export function gatherNodeInputs(
         if (!inputs[targetHandle]) {
           inputs[targetHandle] = [];
         }
-        inputs[targetHandle].push(outputValue);
-        console.log(`[gatherNodeInputs] ✓ Added to inputs["${targetHandle}"] array (now ${inputs[targetHandle].length} items)`);
+
+        // FIXED: Flatten if the output value is itself an array
+        if (Array.isArray(outputValue)) {
+          // Source outputs an array (e.g., GenerateImage outputs.images)
+          // Flatten it into the target array
+          const beforeCount = inputs[targetHandle].length;
+          inputs[targetHandle].push(...outputValue);
+          console.log(`[gatherNodeInputs] ✓ Flattened array into inputs["${targetHandle}"]`, {
+            sourceOutputWasArray: true,
+            itemsAdded: outputValue.length,
+            totalItemsNow: inputs[targetHandle].length,
+            exampleItem: typeof outputValue[0] === 'string' ? outputValue[0]?.substring(0, 50) + '...' : outputValue[0],
+          });
+        } else {
+          // Source outputs a single value
+          inputs[targetHandle].push(outputValue);
+          console.log(`[gatherNodeInputs] ✓ Added single item to inputs["${targetHandle}"]`, {
+            sourceOutputWasArray: false,
+            itemType: typeof outputValue,
+            totalItemsNow: inputs[targetHandle].length,
+          });
+        }
       } else {
         // Single value
         inputs[targetHandle] = outputValue;
