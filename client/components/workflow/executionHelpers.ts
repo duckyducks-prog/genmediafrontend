@@ -26,34 +26,59 @@ export function gatherNodeInputs(
   incomingEdges.forEach((edge) => {
     const sourceNode = allNodes.find((n) => n.id === edge.source);
 
-    console.log(`[gatherNodeInputs] Edge:`, {
+    console.log(`[gatherNodeInputs] Edge details:`, {
+      edgeId: edge.id,
       source: edge.source,
       target: edge.target,
-      sourceHandle: edge.sourceHandle,
-      targetHandle: edge.targetHandle,
+      sourceHandle: edge.sourceHandle || 'default',
+      targetHandle: edge.targetHandle || 'default',
       hasSourceNode: !!sourceNode,
       sourceNodeType: sourceNode?.type,
       sourceNodeHasOutputs: !!sourceNode?.data?.outputs,
       sourceNodeOutputKeys: sourceNode?.data?.outputs ? Object.keys(sourceNode.data.outputs) : [],
+      sourceNodeTopLevelKeys: sourceNode?.data ? Object.keys(sourceNode.data).filter(k => !['label', 'status', 'isGenerating'].includes(k)) : [],
     });
 
-    if (!sourceNode || !sourceNode.data.outputs) {
-      console.warn(`[gatherNodeInputs] ⚠️ Skipping edge - missing source node or outputs`);
+    if (!sourceNode) {
+      console.warn(`[gatherNodeInputs] ⚠️ Skipping edge - source node not found`);
       return;
     }
 
     const targetHandle = edge.targetHandle || "default";
     const sourceHandle = edge.sourceHandle || "default";
 
-    // Get the output value from the source node
-    const outputValue = sourceNode.data.outputs[sourceHandle];
+    // First, try to get from outputs object
+    let outputValue = sourceNode.data.outputs?.[sourceHandle];
 
     console.log(`[gatherNodeInputs] Looking for outputs["${sourceHandle}"]`, {
       found: outputValue !== undefined,
       valueType: typeof outputValue,
+      isArray: Array.isArray(outputValue),
       valueLength: outputValue?.length || 0,
       valuePreview: typeof outputValue === 'string' ? outputValue.substring(0, 50) + '...' : outputValue,
+      fullOutputsObject: sourceNode.data.outputs,
     });
+
+    // FALLBACK: If not found in outputs, try top-level data
+    if (outputValue === undefined && sourceNode.data) {
+      outputValue = sourceNode.data[sourceHandle];
+      if (outputValue !== undefined) {
+        console.warn(`[gatherNodeInputs] ⚠️ Using fallback from node.data["${sourceHandle}"] (not in outputs)`, {
+          valueType: typeof outputValue,
+          valueLength: outputValue?.length || 0,
+        });
+      }
+    }
+
+    // If still not found, check common aliases
+    if (outputValue === undefined && sourceHandle === 'image') {
+      outputValue = sourceNode.data.outputs?.imageUrl || sourceNode.data.imageUrl;
+      if (outputValue !== undefined) {
+        console.warn(`[gatherNodeInputs] ⚠️ Using alias: imageUrl for image handle`, {
+          valueLength: outputValue?.length || 0,
+        });
+      }
+    }
 
     if (outputValue !== undefined) {
       // Check if this input accepts multiple connections
