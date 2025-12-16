@@ -8,6 +8,9 @@ function PromptInputNode({ data, id }: NodeProps<PromptNodeData>) {
   const { setNodes } = useReactFlow();
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    // Block changes in read-only mode
+    if (data.readOnly) return;
+
     const newPrompt = e.target.value;
     setNodes((nodes) =>
       nodes.map((node) =>
@@ -60,6 +63,7 @@ function PromptInputNode({ data, id }: NodeProps<PromptNodeData>) {
           onChange={handleChange}
           placeholder="Enter your prompt..."
           className="min-h-[100px] nodrag"
+          disabled={data.readOnly}
         />
       </div>
 
