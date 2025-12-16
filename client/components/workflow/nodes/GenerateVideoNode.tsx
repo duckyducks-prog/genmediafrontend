@@ -33,6 +33,9 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
   );
 
   const handleUpdate = (field: keyof GenerateVideoNodeData, value: any) => {
+    // Block updates in read-only mode
+    if (data.readOnly) return;
+
     const event = new CustomEvent('node-update', {
       detail: {
         id,
@@ -171,7 +174,7 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
               value={data.aspectRatio}
               onChange={(e) => handleUpdate('aspectRatio', e.target.value)}
               className="w-full px-3 py-2 text-sm bg-background border border-border rounded-md appearance-none pr-8"
-              disabled={isGenerating}
+              disabled={isGenerating || data.readOnly}
             >
               <option value="16:9">16:9 (Landscape)</option>
               <option value="9:16">9:16 (Portrait)</option>
@@ -190,7 +193,7 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
               value={data.durationSeconds}
               onChange={(e) => handleUpdate('durationSeconds', parseInt(e.target.value))}
               className="w-full px-3 py-2 text-sm bg-background border border-border rounded-md appearance-none pr-8"
-              disabled={isGenerating}
+              disabled={isGenerating || data.readOnly}
             >
               <option value="4">4 seconds</option>
               <option value="6">6 seconds</option>
@@ -207,7 +210,7 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
               type="checkbox"
               checked={data.generateAudio}
               onChange={(e) => handleUpdate('generateAudio', e.target.checked)}
-              disabled={isGenerating}
+              disabled={isGenerating || data.readOnly}
               className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
             />
             <span className="text-xs font-medium text-muted-foreground">
