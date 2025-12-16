@@ -261,23 +261,34 @@ export function useWorkflowExecution(
           }
 
           case NodeType.GenerateImage: {
-            const prompt = inputs.prompt;
+            let prompt = inputs.prompt;
             let referenceImages = inputs.reference_images || null;
             const formatData = inputs.format;
             const filters: FilterConfig[] = inputs.filters || [];
 
-            console.log("[GenerateImage] Execution inputs:", {
-              hasPrompt: !!prompt,
-              hasReferenceImages: !!referenceImages,
-              hasFormatData: !!formatData,
-              formatData: formatData,
-              nodeAspectRatio: node.data.aspectRatio,
-              finalAspectRatio: formatData?.aspect_ratio || node.data.aspectRatio || "1:1",
-            });
-
             if (!prompt) {
               return { success: false, error: "No prompt connected" };
             }
+
+            // Append aspect ratio to prompt if format data is connected
+            const aspectRatio = formatData?.aspect_ratio || node.data.aspectRatio || "1:1";
+            if (formatData?.aspect_ratio) {
+              const aspectRatioLabel = aspectRatio === "16:9" ? "landscape" :
+                                      aspectRatio === "9:16" ? "portrait" :
+                                      aspectRatio === "1:1" ? "square" :
+                                      aspectRatio === "3:4" ? "portrait" :
+                                      aspectRatio === "4:3" ? "landscape" : "";
+              prompt = `${prompt}, ${aspectRatio} aspect ratio${aspectRatioLabel ? ` (${aspectRatioLabel})` : ""}`;
+            }
+
+            console.log("[GenerateImage] Execution inputs:", {
+              originalPrompt: inputs.prompt,
+              finalPrompt: prompt,
+              hasReferenceImages: !!referenceImages,
+              hasFormatData: !!formatData,
+              formatData: formatData,
+              aspectRatio: aspectRatio,
+            });
 
             // NEW: Apply filters before sending to API (Layer 3 integration)
             if (referenceImages && filters.length > 0) {
