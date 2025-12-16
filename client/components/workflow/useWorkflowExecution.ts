@@ -149,7 +149,12 @@ export function useWorkflowExecution(
               nodeType: node.type,
               oldDataKeys: Object.keys(node.data),
               newDataKeys: Object.keys(updatedData),
-              hasImageUrl: !!updatedData.imageUrl,
+              hasOutputs: !!updatedData.outputs,
+              outputsKeys: updatedData.outputs ? Object.keys(updatedData.outputs) : [],
+              topLevelHasImage: !!updatedData.image,
+              topLevelHasImageUrl: !!updatedData.imageUrl,
+              outputsHasImage: !!updatedData.outputs?.image,
+              outputsHasImageUrl: !!updatedData.outputs?.imageUrl,
               imageUrlPreview: updatedData.imageUrl
                 ? updatedData.imageUrl.substring(0, 50)
                 : "none",
