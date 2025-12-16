@@ -37,39 +37,40 @@ function sanitizeValue(value: any, fieldName: string): any {
 
 /**
  * Recursively sanitize an object by removing large base64 data
+ * This is now MORE AGGRESSIVE - strips ALL base64 data URIs from any field
  */
 function sanitizeObject(obj: any, path: string = ''): any {
   if (obj === null || obj === undefined) return obj;
-  
+
   if (Array.isArray(obj)) {
     return obj.map((item, index) => sanitizeObject(item, `${path}[${index}]`));
   }
-  
+
   if (typeof obj === 'object') {
     const sanitized: any = {};
     for (const [key, value] of Object.entries(obj)) {
       const fieldPath = path ? `${path}.${key}` : key;
-      
-      // Special handling for known large data fields
-      if (key === 'imageUrl' || key === 'videoUrl' || key === 'image' || key === 'video') {
-        sanitized[key] = sanitizeValue(value, fieldPath);
-      } else if (key === 'outputs' && typeof value === 'object') {
-        // Sanitize outputs object (contains execution results with base64 data)
-        sanitized[key] = sanitizeObject(value, fieldPath);
-      } else if (key === 'file') {
-        // Remove File objects entirely (can't be serialized anyway)
+
+      // Remove File objects entirely (can't be serialized anyway)
+      if (key === 'file') {
         sanitized[key] = null;
-      } else if (typeof value === 'object') {
+      }
+      // Recursively sanitize objects
+      else if (typeof value === 'object' && value !== null) {
         sanitized[key] = sanitizeObject(value, fieldPath);
-      } else if (typeof value === 'string') {
+      }
+      // Strip ALL base64 data URIs from any string field
+      else if (typeof value === 'string') {
         sanitized[key] = sanitizeValue(value, fieldPath);
-      } else {
+      }
+      // Keep other primitives as-is
+      else {
         sanitized[key] = value;
       }
     }
     return sanitized;
   }
-  
+
   return obj;
 }
 
@@ -98,7 +99,7 @@ export function formatBytes(bytes: number): string {
 /**
  * Sanitize workflow data before saving
  * Removes large base64 image/video data to reduce payload size
- * 
+ *
  * @param nodes - Array of workflow nodes
  * @param edges - Array of workflow edges
  * @returns Sanitized copies of nodes and edges safe for API transmission
@@ -112,33 +113,68 @@ export function sanitizeWorkflowForSave(nodes: WorkflowNode[], edges: WorkflowEd
 } {
   console.log('[Sanitizer] Starting workflow sanitization...');
   console.log(`[Sanitizer] Input: ${nodes.length} nodes, ${edges.length} edges`);
-  
+
   // Calculate original size
   const originalSize = calculatePayloadSize({ nodes, edges });
   console.log(`[Sanitizer] Original payload size: ${formatBytes(originalSize)}`);
-  
+
+  // Log sample of original data to debug
+  console.log('[Sanitizer] Sample node data before sanitization:', {
+    nodeCount: nodes.length,
+    sampleNode: nodes[0] ? {
+      id: nodes[0].id,
+      type: nodes[0].type,
+      dataKeys: Object.keys(nodes[0].data),
+      dataPreview: JSON.stringify(nodes[0].data).substring(0, 200) + '...',
+    } : null,
+  });
+
   // Deep clone and sanitize nodes
   const sanitizedNodes = nodes.map((node) => ({
     ...node,
     data: sanitizeObject(node.data, `node[${node.id}].data`),
   }));
-  
+
   // Edges typically don't have large data, but sanitize just in case
   const sanitizedEdges = edges.map((edge) => ({
     ...edge,
   }));
-  
+
   // Calculate sanitized size
   const sanitizedSize = calculatePayloadSize({ nodes: sanitizedNodes, edges: sanitizedEdges });
   const removed = originalSize - sanitizedSize;
-  
+
   console.log(`[Sanitizer] Sanitized payload size: ${formatBytes(sanitizedSize)}`);
   console.log(`[Sanitizer] Removed: ${formatBytes(removed)} (${((removed / originalSize) * 100).toFixed(1)}%)`);
-  
+
+  // Log sample of sanitized data
+  console.log('[Sanitizer] Sample node data after sanitization:', {
+    sampleNode: sanitizedNodes[0] ? {
+      id: sanitizedNodes[0].id,
+      type: sanitizedNodes[0].type,
+      dataKeys: Object.keys(sanitizedNodes[0].data),
+      dataPreview: JSON.stringify(sanitizedNodes[0].data).substring(0, 200) + '...',
+    } : null,
+  });
+
   if (sanitizedSize > 1024 * 1024) {
     console.warn(`[Sanitizer] WARNING: Payload still large (${formatBytes(sanitizedSize)}). May fail to send.`);
+
+    // Additional debugging - find the largest nodes
+    const nodeSizes = sanitizedNodes.map((node, idx) => ({
+      index: idx,
+      id: node.id,
+      type: node.type,
+      size: calculatePayloadSize(node),
+    })).sort((a, b) => b.size - a.size);
+
+    console.warn('[Sanitizer] Top 5 largest nodes:', nodeSizes.slice(0, 5).map(n => ({
+      id: n.id,
+      type: n.type,
+      size: formatBytes(n.size),
+    })));
   }
-  
+
   return {
     nodes: sanitizedNodes,
     edges: sanitizedEdges,
