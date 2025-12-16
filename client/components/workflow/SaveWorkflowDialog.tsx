@@ -362,6 +362,58 @@ export default function SaveWorkflowDialog({
             />
           </div>
 
+          {/* Background Image Upload - Only for templates */}
+          {isPublic && (
+            <div className="space-y-2">
+              <Label htmlFor="background-image">Template Background Image (Optional)</Label>
+              <p className="text-sm text-muted-foreground">
+                Upload a custom background image for your template card
+              </p>
+
+              {backgroundImage ? (
+                <div className="relative aspect-video rounded-lg overflow-hidden border border-border">
+                  <img
+                    src={backgroundImage}
+                    alt="Background preview"
+                    className="w-full h-full object-cover"
+                  />
+                  <Button
+                    size="icon"
+                    variant="destructive"
+                    className="absolute top-2 right-2"
+                    onClick={() => setBackgroundImage(null)}
+                    disabled={isSaving}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <label
+                  htmlFor="background-image"
+                  className="flex flex-col items-center justify-center w-full aspect-video border-2 border-dashed border-border rounded-lg cursor-pointer bg-muted/30 hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex flex-col items-center justify-center py-6">
+                    <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">
+                      Click to upload background image
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      JPG, PNG, or WebP (max 5MB)
+                    </p>
+                  </div>
+                  <input
+                    id="background-image"
+                    type="file"
+                    className="hidden"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleBackgroundImageUpload}
+                    disabled={isSaving}
+                  />
+                </label>
+              )}
+            </div>
+          )}
+
           <div className={`rounded-lg p-3 text-sm ${workflowError ? "bg-red-50 border border-red-200 text-red-700 dark:bg-red-950/20 dark:border-red-800/50 dark:text-red-400" : "bg-muted/50 text-muted-foreground"}`}>
             <p>
               <strong>Workflow info:</strong>
