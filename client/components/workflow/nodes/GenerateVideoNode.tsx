@@ -265,7 +265,7 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
                 });
                 window.dispatchEvent(event);
               }}
-              disabled={isGenerating}
+              disabled={isGenerating || data.readOnly}
               variant="ghost"
               size="sm"
               className="w-full text-xs"
@@ -306,7 +306,7 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
                 });
                 window.dispatchEvent(event);
               }}
-              disabled={isGenerating}
+              disabled={isGenerating || data.readOnly}
               variant="ghost"
               size="sm"
               className="w-full text-xs"
