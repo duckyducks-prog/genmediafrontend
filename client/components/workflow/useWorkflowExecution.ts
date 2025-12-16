@@ -504,30 +504,6 @@ export function useWorkflowExecution(
               aspectRatio: aspectRatio,
             });
 
-            // Show debug toast for user feedback
-            if (firstFrame) {
-              toast({
-                title: "Video Generation Debug",
-                description: `✓ First frame detected (${firstFrame.length} chars)`,
-              });
-            } else if (lastFrame) {
-              toast({
-                title: "Video Generation Debug",
-                description: `✓ Last frame detected (${lastFrame.length} chars)`,
-              });
-            } else if (referenceImages) {
-              const count = Array.isArray(referenceImages) ? referenceImages.length : 1;
-              toast({
-                title: "Video Generation Debug",
-                description: `✓ Reference images detected (${count} image${count > 1 ? 's' : ''})`,
-              });
-            } else {
-              toast({
-                title: "Video Generation Debug",
-                description: "⚠️ No first frame, last frame, or reference images connected",
-                variant: "destructive",
-              });
-            }
 
             // NEW: Apply filters before sending to API (Layer 3 integration)
             if (filters.length > 0) {
@@ -888,10 +864,6 @@ export function useWorkflowExecution(
     // Group nodes by execution level for parallel execution
     const levels = groupNodesByLevel(executionOrder, nodes, edges);
 
-    toast({
-      title: "Workflow Started",
-      description: `Executing ${executionOrder.length} nodes across ${levels.length} level${levels.length > 1 ? "s" : ""}...`,
-    });
 
     try {
       let totalCompleted = 0;
@@ -913,13 +885,6 @@ export function useWorkflowExecution(
           (node) => !apiNodes.includes(node),
         );
 
-        toast({
-          title: `Executing Level ${levelIndex + 1}/${levels.length}`,
-          description:
-            apiNodes.length > 0
-              ? `Running ${apiNodes.length} API node${apiNodes.length > 1 ? "s" : ""} sequentially (rate limiting)...`
-              : `Running ${levelNodes.length} node${levelNodes.length > 1 ? "s" : ""}...`,
-        });
 
         // Execute non-API nodes in parallel (they're fast)
         const otherResults = await Promise.allSettled(
@@ -954,10 +919,6 @@ export function useWorkflowExecution(
           updateNodeState(node.id, "executing");
           setExecutionProgress(new Map(progress));
 
-          toast({
-            title: `API Call ${i + 1}/${apiNodes.length}`,
-            description: `Executing ${node.data.label || node.type}...`,
-          });
 
           const inputs = getNodeInputs(node.id);
           const validation = validateNodeInputs(node, inputs);
@@ -994,10 +955,6 @@ export function useWorkflowExecution(
 
           // Add delay between API calls to avoid quota exhaustion
           if (i < apiNodes.length - 1) {
-            toast({
-              title: "Rate limiting",
-              description: "Waiting 3 seconds before next API call...",
-            });
             await new Promise((resolve) => setTimeout(resolve, 3000));
           }
         }
