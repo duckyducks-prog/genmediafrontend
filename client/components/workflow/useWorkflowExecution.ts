@@ -584,6 +584,18 @@ export function useWorkflowExecution(
               }
             }
 
+            // Validate reference_images limit (Veo supports max 3)
+            if (referenceImages && Array.isArray(referenceImages)) {
+              if (referenceImages.length > 3) {
+                return {
+                  success: false,
+                  error: `Too many reference images (${referenceImages.length}). Veo supports a maximum of 3 reference images. Please disconnect some images.`,
+                };
+              }
+
+              console.log(`[GenerateVideo] Reference images count: ${referenceImages.length}/3`);
+            }
+
             // Validate mutual exclusion
             const validation = validateMutualExclusion(node.type, {
               first_frame: firstFrame,
