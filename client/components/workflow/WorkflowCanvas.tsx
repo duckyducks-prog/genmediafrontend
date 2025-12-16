@@ -478,6 +478,13 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
     // Handle drag over for drop zone
     const onDragOver = useCallback((event: React.DragEvent) => {
       event.preventDefault();
+
+      // Block drag-drop in read-only mode
+      if (isReadOnly) {
+        event.dataTransfer.dropEffect = "none";
+        return;
+      }
+
       // Check if dragging files or nodes
       const hasFiles = event.dataTransfer.types.includes("Files");
       const hasReactFlow = event.dataTransfer.types.includes(
@@ -489,12 +496,22 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
       } else if (hasReactFlow) {
         event.dataTransfer.dropEffect = "move";
       }
-    }, []);
+    }, [isReadOnly]);
 
     // Handle drop to add node or create image input nodes from files
     const onDrop = useCallback(
       async (event: React.DragEvent) => {
         event.preventDefault();
+
+        // Block drops in read-only mode
+        if (isReadOnly) {
+          toast({
+            title: "Read-Only Template",
+            description: "Clone this template to make edits",
+            variant: "destructive",
+          });
+          return;
+        }
 
         if (!reactFlowWrapper.current || !reactFlowInstance) return;
 
@@ -616,10 +633,20 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
 
     // Clear canvas
     const clearCanvas = useCallback(() => {
+      // Block clearing in read-only mode
+      if (isReadOnly) {
+        toast({
+          title: "Read-Only Template",
+          description: "Clone this template to make edits",
+          variant: "destructive",
+        });
+        return;
+      }
+
       setNodes([]);
       setEdges([]);
       setCurrentWorkflowId(null);
-    }, [setNodes, setEdges]);
+    }, [setNodes, setEdges, isReadOnly, toast]);
 
     // Load a workflow
     const loadWorkflow = useCallback(
@@ -724,6 +751,16 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
 
     // Paste copied nodes
     const pasteNodes = useCallback(() => {
+      // Block pasting in read-only mode
+      if (isReadOnly) {
+        toast({
+          title: "Read-Only Template",
+          description: "Clone this template to make edits",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (copiedNodes.length === 0) {
         toast({
           title: "Nothing to paste",
@@ -808,6 +845,17 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           event.preventDefault();
           pasteNodes();
         } else if (event.key === "Delete" || event.key === "Backspace") {
+          // Block deletion in read-only mode
+          if (isReadOnly) {
+            event.preventDefault();
+            toast({
+              title: "Read-Only Template",
+              description: "Clone this template to make edits",
+              variant: "destructive",
+            });
+            return;
+          }
+
           // Delete selected nodes
           const selectedNodes = nodes.filter((node) => (node as any).selected);
           if (selectedNodes.length > 0) {
