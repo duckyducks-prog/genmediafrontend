@@ -63,7 +63,7 @@ export async function testWorkflowAPI(): Promise<APITestResult> {
 
   // Test 1: List public workflows (GET /workflows?scope=public)
   try {
-    const url = `${API_BASE}/workflows?scope=public`;
+    const url = `${WORKFLOW_API_BASE}/workflows?scope=public`;
     console.log('[testWorkflowAPI] Testing:', url);
 
     const response = await fetch(url, {
@@ -113,7 +113,7 @@ export async function testWorkflowAPI(): Promise<APITestResult> {
 
   // Test 2: Try to list my workflows (GET /workflows?scope=my)
   try {
-    const url = `${API_BASE}/workflows?scope=my`;
+    const url = `${WORKFLOW_API_BASE}/workflows?scope=my`;
     const response = await fetch(url, {
       headers: { Authorization: `Bearer ${token}` },
       signal: AbortSignal.timeout(10000),
@@ -217,7 +217,7 @@ export async function saveWorkflow(
   }
 
   const token = await user.getIdToken();
-  const url = `${API_BASE}/workflows/save`;
+  const url = `${WORKFLOW_API_BASE}/workflows/save`;
 
   console.log('[saveWorkflow] Request:', {
     method: 'POST',
@@ -407,7 +407,7 @@ export async function listMyWorkflows(): Promise<SavedWorkflow[]> {
   }
 
   const token = await user.getIdToken();
-  const url = `${API_BASE}/workflows?scope=my`;
+  const url = `${WORKFLOW_API_BASE}/workflows?scope=my`;
 
   console.log('[listMyWorkflows] Request:', { url });
 
@@ -486,7 +486,7 @@ export async function listPublicWorkflows(): Promise<SavedWorkflow[]> {
   }
 
   const token = await user.getIdToken();
-  const url = `${API_BASE}/workflows?scope=public`;
+  const url = `${WORKFLOW_API_BASE}/workflows?scope=public`;
 
   console.log('[listPublicWorkflows] Request:', { url });
 
@@ -591,7 +591,7 @@ export async function cloneWorkflow(
 
   const token = await user.getIdToken();
 
-  const response = await fetch(`${API_BASE}/workflows/${workflowId}/clone`, {
+  const response = await fetch(`${WORKFLOW_API_BASE}/workflows/${workflowId}/clone`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
