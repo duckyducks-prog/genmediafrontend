@@ -193,8 +193,15 @@ export default function WorkflowGallery({
               alt={workflow.name}
               className="w-full h-full object-cover"
             />
+          ) : (workflow as any).background_image && workflow.is_public ? (
+            // Use custom background image for templates
+            <img
+              src={(workflow as any).background_image}
+              alt={workflow.name}
+              className="w-full h-full object-cover"
+            />
           ) : (
-            // Placeholder when no thumbnail
+            // Placeholder when no thumbnail or background
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted via-muted to-accent/20">
               <WorkflowIcon className="w-16 h-16 opacity-30" />
             </div>
