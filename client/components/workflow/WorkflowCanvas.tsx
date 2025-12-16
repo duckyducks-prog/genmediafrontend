@@ -1099,6 +1099,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           onSaveSuccess={(workflowId) => {
             setCurrentWorkflowId(workflowId);
           }}
+          onCaptureThumbnail={captureThumbnail}
         />
       </div>
     );
