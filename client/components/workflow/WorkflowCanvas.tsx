@@ -651,6 +651,22 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
     // Load a workflow
     const loadWorkflow = useCallback(
       (workflow: SavedWorkflow, options?: { readOnly?: boolean }) => {
+        console.log('[WorkflowCanvas] Loading workflow:', {
+          workflowId: workflow.id,
+          workflowName: workflow.name,
+          hasNodes: !!workflow.nodes,
+          hasEdges: !!workflow.edges,
+          nodeCount: workflow.nodes?.length || 0,
+          edgeCount: workflow.edges?.length || 0,
+          workflowKeys: Object.keys(workflow),
+          sampleNode: workflow.nodes?.[0] ? {
+            id: workflow.nodes[0].id,
+            type: workflow.nodes[0].type,
+            hasData: !!workflow.nodes[0].data,
+            dataKeys: workflow.nodes[0].data ? Object.keys(workflow.nodes[0].data) : [],
+          } : null,
+        });
+
         // Determine if workflow should be read-only
         const readOnly = Boolean(options?.readOnly || workflow.is_public);
         setIsReadOnly(readOnly);
@@ -660,6 +676,9 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           ...node,
           data: { ...node.data, readOnly },
         }));
+
+        console.log('[WorkflowCanvas] Setting nodes:', nodesWithReadOnly.length);
+        console.log('[WorkflowCanvas] Setting edges:', (workflow.edges || []).length);
 
         setNodes(nodesWithReadOnly);
         setEdges(workflow.edges || []);
