@@ -204,18 +204,6 @@ export function executeConcatenator(
 }
 
 /**
- * Execute format node logic (frontend only, no API call)
- */
-export function executeFormat(data: any): any {
-  return {
-    aspect_ratio: data.aspectRatio || "16:9",
-    duration_seconds: data.durationSeconds || 8,
-    generate_audio: data.generateAudio ?? true,
-    resolution: data.resolution || "1080p",
-  };
-}
-
-/**
  * Group nodes by execution level for parallel execution
  * Level 0: nodes with no dependencies
  * Level N: nodes whose all dependencies are in levels < N
