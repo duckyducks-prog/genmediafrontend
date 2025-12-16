@@ -105,6 +105,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
     );
     const [copiedNodes, setCopiedNodes] = useState<WorkflowNode[]>([]);
     const [copiedEdges, setCopiedEdges] = useState<WorkflowEdge[]>([]);
+    const [isReadOnly, setIsReadOnly] = useState(false);
     const hasInitialized = useRef(false);
     const { toast } = useToast();
 
@@ -595,14 +596,28 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
 
     // Load a workflow
     const loadWorkflow = useCallback(
-      (workflow: SavedWorkflow) => {
-        setNodes(workflow.nodes || []);
+      (workflow: SavedWorkflow, options?: { readOnly?: boolean }) => {
+        // Determine if workflow should be read-only
+        const readOnly = Boolean(options?.readOnly || workflow.is_public);
+        setIsReadOnly(readOnly);
+
+        // Propagate readOnly to all nodes
+        const nodesWithReadOnly = (workflow.nodes || []).map(node => ({
+          ...node,
+          data: { ...node.data, readOnly },
+        }));
+
+        setNodes(nodesWithReadOnly);
         setEdges(workflow.edges || []);
         setCurrentWorkflowId(workflow.id || null);
+
         toast({
-          title: "Workflow loaded",
-          description: `"${workflow.name}" has been loaded`,
+          title: readOnly ? "Template loaded (Read-Only)" : "Workflow loaded",
+          description: readOnly
+            ? `"${workflow.name}" opened as read-only template. Clone to edit.`
+            : `"${workflow.name}" has been loaded`,
         });
+
         // Fit view after loading workflow
         setTimeout(() => {
           if (reactFlowInstance && workflow.nodes.length > 0) {
