@@ -227,40 +227,8 @@ export default function WorkflowGallery({
             </div>
           )}
 
-          {/* Action buttons overlay - always visible for templates */}
-          {workflow.is_public ? (
-            <div
-              className="absolute inset-0 flex items-center justify-center gap-2"
-              style={{ zIndex: 5 }}
-            >
-              <Button
-                size="lg"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onLoadWorkflow(workflow);
-                }}
-                className="shadow-lg"
-              >
-                <WorkflowIcon className="w-4 h-4 mr-2" />
-                Open
-              </Button>
-
-              {showClone && (
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleClone(workflow);
-                  }}
-                  className="shadow-lg bg-background"
-                >
-                  <Copy className="w-4 h-4 mr-2" />
-                  Clone
-                </Button>
-              )}
-            </div>
-          ) : (
+          {/* Action buttons overlay for personal workflows only */}
+          {!workflow.is_public && (
             <div
               className={`absolute inset-0 bg-black/60 flex items-center justify-center gap-2 transition-opacity ${
                 isHovered ? "opacity-100" : "opacity-0"
