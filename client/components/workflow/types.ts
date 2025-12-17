@@ -177,6 +177,12 @@ export interface ImageCompositeNodeData extends BaseNodeData {
   compositePreview?: string; // Preview of the composited result
 }
 
+// EXTRACT LAST FRAME node
+export interface ExtractLastFrameNodeData extends BaseNodeData {
+  videoUrl?: string;
+  extractedFrameUrl?: string;
+}
+
 // PREVIEW node
 export interface PreviewNodeData extends BaseNodeData {
   imageUrl?: string;
