@@ -276,7 +276,9 @@ export async function saveWorkflow(
   });
 
   try {
-    const payload = JSON.stringify(workflow);
+    // ✅ Strip resolved URLs before sending (keep asset refs)
+    const cleanWorkflow = cleanWorkflowForSave(workflow);
+    const payload = JSON.stringify(cleanWorkflow);
     const payloadSize = new Blob([payload]).size;
     const payloadSizeMB = (payloadSize / (1024 * 1024)).toFixed(2);
 
