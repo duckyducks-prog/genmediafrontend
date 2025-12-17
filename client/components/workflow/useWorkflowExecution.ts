@@ -6,6 +6,7 @@ import {
   validateMutualExclusion,
 } from "./types";
 import { toast } from "@/hooks/use-toast";
+import { API_ENDPOINTS } from "@/lib/api-config";
 import {
   gatherNodeInputs,
   validateNodeInputs,
@@ -296,7 +297,7 @@ export function useWorkflowExecution(
               const token = await user?.getIdToken();
 
               const response = await fetch(
-                "https://veo-api-856765593724.us-central1.run.app/generate/text",
+                API_ENDPOINTS.generate.text,
                 {
                   method: "POST",
                   headers: {
@@ -482,7 +483,7 @@ export function useWorkflowExecution(
               });
 
               const response = await fetch(
-                "https://veo-api-856765593724.us-central1.run.app/generate/image",
+                API_ENDPOINTS.generate.image,
                 {
                   method: "POST",
                   headers: {
@@ -854,7 +855,7 @@ export function useWorkflowExecution(
               });
 
               const response = await fetch(
-                "https://veo-api-856765593724.us-central1.run.app/generate/video",
+                API_ENDPOINTS.generate.video,
                 {
                   method: "POST",
                   headers: {
