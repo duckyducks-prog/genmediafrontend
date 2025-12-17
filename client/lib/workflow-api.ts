@@ -92,6 +92,43 @@ export function cleanWorkflowForSave(workflow: SavedWorkflow): SavedWorkflow {
 }
 
 /**
+ * Centralized API error handler for consistent error messages
+ * Maps HTTP status codes and error patterns to user-friendly messages
+ */
+export async function handleApiError(response: Response): Promise<never> {
+  let errorDetail = "Unknown error";
+
+  try {
+    const body = await response.text();
+    const parsed = JSON.parse(body);
+    errorDetail = parsed.detail || parsed.message || body;
+  } catch {
+    // If not JSON, try to use status text
+    errorDetail = response.statusText || `HTTP ${response.status}`;
+  }
+
+  // Map status codes to user-friendly messages
+  switch (response.status) {
+    case 400:
+      throw new Error(`Validation error: ${errorDetail}`);
+    case 401:
+      throw new Error("Authentication failed. Please sign out and sign in again.");
+    case 403:
+      throw new Error("Access denied. You may not have permission to access this resource.");
+    case 404:
+      throw new Error(`Not found: ${errorDetail}`);
+    case 413:
+      throw new Error(`Request too large. ${errorDetail}`);
+    case 500:
+      throw new Error(`Server error. ${errorDetail}`);
+    case 503:
+      throw new Error("Backend service is temporarily unavailable. Please try again later.");
+    default:
+      throw new Error(`API error (${response.status}): ${errorDetail}`);
+  }
+}
+
+/**
  * Test if workflow API is accessible and which endpoints are working
  */
 export async function testWorkflowAPI(): Promise<APITestResult> {
