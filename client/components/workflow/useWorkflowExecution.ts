@@ -1254,10 +1254,27 @@ export function useWorkflowExecution(
           `[Single Node Execution] Target: ${nodeId}, Dependencies: ${dependencies.join(", ") || "none"}`,
         );
 
-        // Execute dependencies first
+        // Execute dependencies first (only if they don't have outputs already)
         for (const depNodeId of dependencies) {
           const depNode = nodes.find((n) => n.id === depNodeId);
           if (!depNode) continue;
+
+          // Check if this dependency already has outputs - if so, skip execution
+          const hasExistingOutputs = depNode.data.outputs && Object.keys(depNode.data.outputs).length > 0;
+          const isCompleted = depNode.data.status === 'completed';
+
+          if (hasExistingOutputs && isCompleted) {
+            console.log(
+              `[Single Node Execution] Skipping ${depNodeId} - already has outputs`,
+              { outputs: depNode.data.outputs }
+            );
+            continue; // Skip this dependency, use existing outputs
+          }
+
+          console.log(
+            `[Single Node Execution] Executing dependency ${depNodeId} - no existing outputs`,
+            { hasOutputs: hasExistingOutputs, isCompleted }
+          );
 
           updateNodeState(depNodeId, "executing");
 
