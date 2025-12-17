@@ -7,7 +7,6 @@ import {
   BlurFilter,
   NoiseFilter,
   Rectangle,
-  BLEND_MODES,
 } from "pixi.js";
 import { AdjustmentFilter } from "pixi-filters";
 import { FilterConfig, FILTER_DEFINITIONS } from "./pixi-filter-configs";
@@ -456,18 +455,17 @@ export async function renderWithPixi(
 }
 
 /**
- * Blend mode mapping from user-friendly names to PixiJS BLEND_MODES
+ * Blend mode mapping from user-friendly names to PixiJS v8 blend mode strings
+ * In Pixi v8, blendMode accepts string values directly
  */
-const BLEND_MODE_MAP: Record<string, number> = {
-  normal: BLEND_MODES.NORMAL,
-  multiply: BLEND_MODES.MULTIPLY,
-  screen: BLEND_MODES.SCREEN,
-  add: BLEND_MODES.ADD,
-  // Note: overlay, darken, lighten are not directly available in Pixi v8
-  // Using closest approximations or fallback to NORMAL
-  overlay: BLEND_MODES.NORMAL, // Would need custom shader for true overlay
-  darken: BLEND_MODES.NORMAL,  // Would need custom shader
-  lighten: BLEND_MODES.NORMAL, // Would need custom shader
+const BLEND_MODE_MAP: Record<string, string> = {
+  normal: "normal",
+  multiply: "multiply",
+  screen: "screen",
+  add: "add",
+  overlay: "overlay", // Pixi v8 supports overlay
+  darken: "darken",   // Pixi v8 supports darken
+  lighten: "lighten", // Pixi v8 supports lighten
 };
 
 /**
@@ -583,7 +581,7 @@ async function performComposite(
 
   // 5. Create sprites for each image and layer them with blend modes
   const sprites: Sprite[] = [];
-  const blendModeValue = BLEND_MODE_MAP[blendMode] || BLEND_MODES.NORMAL;
+  const blendModeValue = BLEND_MODE_MAP[blendMode] || "normal";
 
   for (let i = 0; i < images.length; i++) {
     const img = images[i];
@@ -600,10 +598,10 @@ async function performComposite(
     // First image (base layer) uses normal blend mode and full opacity
     // Subsequent images use the selected blend mode and opacity
     if (i === 0) {
-      sprite.blendMode = BLEND_MODES.NORMAL;
+      sprite.blendMode = "normal";
       sprite.alpha = 1.0;
     } else {
-      sprite.blendMode = blendModeValue;
+      sprite.blendMode = blendModeValue as any; // Cast to any for type compatibility
       sprite.alpha = opacity;
     }
 
