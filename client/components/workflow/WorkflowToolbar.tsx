@@ -40,21 +40,6 @@ export default function WorkflowToolbar({
 }: WorkflowToolbarProps) {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
 
-  // Calculate execution progress percentage
-  const calculateProgress = () => {
-    if (!executionProgress || !totalNodes || totalNodes === 0) {
-      return 0;
-    }
-
-    const completed = Array.from(executionProgress.values()).filter(
-      (status) => status === "completed" || status === "error"
-    ).length;
-
-    return Math.round((completed / totalNodes) * 100);
-  };
-
-  const progressPercentage = calculateProgress();
-
   return (
     <div className="absolute top-2 right-2 flex items-center gap-1 bg-card border border-border rounded-lg px-2 py-1.5 shadow-lg z-10">
       <Button
