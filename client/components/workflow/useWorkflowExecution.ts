@@ -746,7 +746,7 @@ export function useWorkflowExecution(
               const user = auth.currentUser;
               const token = await user?.getIdToken();
 
-              console.log('[GenerateVideo] Preparing request body:', {
+              console.log('[GenerateVideo] Preparing request body (will use first_frame_image/last_frame_image API fields):', {
                 hasPrompt: !!prompt,
                 hasFirstFrame: !!firstFrame,
                 hasLastFrame: !!lastFrame,
