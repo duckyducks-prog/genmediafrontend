@@ -259,6 +259,15 @@ function ImageCompositeNode({ data, id }: NodeProps<ImageCompositeNodeData>) {
               // Prevent ReactFlow from starting node drag when interacting with slider
               e.stopPropagation();
             }}
+            onMouseDown={(e) => {
+              // Also prevent mouse drag events from bubbling up to ReactFlow
+              e.stopPropagation();
+            }}
+            onDragStart={(e) => {
+              // Prevent any drag events from initiating on the node
+              e.preventDefault();
+              e.stopPropagation();
+            }}
             disabled={data.readOnly}
             className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer
                      [&::-webkit-slider-thumb]:appearance-none
