@@ -174,18 +174,46 @@ export default function WorkflowGallery({
     showDelete = false,
     showClone = false,
   }: {
-    workflow: SavedWorkflow;
+    workflow: WorkflowListItem;
     showDelete?: boolean;
     showClone?: boolean;
   }) => {
     const [isHovered, setIsHovered] = useState(false);
+    const [isLoadingWorkflow, setIsLoadingWorkflow] = useState(false);
+
+    // Load full workflow with nodes/edges when clicked
+    const handleLoadWorkflow = async () => {
+      try {
+        if (!workflow.id) {
+          toast({
+            title: "Error",
+            description: "Workflow ID is missing",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        setIsLoadingWorkflow(true);
+        const fullWorkflow = await loadWorkflow(workflow.id);
+        onLoadWorkflow(fullWorkflow);
+      } catch (error) {
+        console.error("Failed to load workflow:", error);
+        toast({
+          title: "Failed to load workflow",
+          description: error instanceof Error ? error.message : "Unknown error",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingWorkflow(false);
+      }
+    };
 
     return (
       <div
         className="group relative cursor-pointer rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        onClick={() => onLoadWorkflow(workflow)}
+        onClick={handleLoadWorkflow}
       >
         {/* Thumbnail Image */}
         <div className="relative aspect-video bg-muted">
