@@ -598,6 +598,29 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
     ],
   },
 
+  [NodeType.ExtractLastFrame]: {
+    type: NodeType.ExtractLastFrame,
+    label: "Extract Last Frame",
+    category: "modifier",
+    description: "Extract the last frame from a video",
+    inputConnectors: [
+      {
+        id: "video",
+        label: "Video",
+        type: ConnectorType.Video,
+        required: true,
+        acceptsMultiple: false,
+      },
+    ],
+    outputConnectors: [
+      {
+        id: "image",
+        label: "Last Frame",
+        type: ConnectorType.Image,
+      },
+    ],
+  },
+
   // ========== ACTION NODES ==========
   [NodeType.GenerateVideo]: {
     type: NodeType.GenerateVideo,
