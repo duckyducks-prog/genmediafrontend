@@ -456,9 +456,10 @@ export async function loadWorkflow(workflowId: string): Promise<SavedWorkflow> {
 }
 
 /**
- * List user's workflows
+ * List user's workflows - returns metadata only (no nodes/edges)
+ * ⚠️ To get full workflow with nodes/edges, use loadWorkflow()
  */
-export async function listMyWorkflows(): Promise<SavedWorkflow[]> {
+export async function listMyWorkflows(): Promise<WorkflowListItem[]> {
   const user = auth.currentUser;
   if (!user) {
     throw new Error("User not authenticated");
@@ -492,36 +493,8 @@ export async function listMyWorkflows(): Promise<SavedWorkflow[]> {
 
     const data = await response.json();
 
-    // Parse workflows and ensure nodes/edges are arrays (not stringified JSON)
-    const workflows = (data.workflows || []).map((workflow: any) => {
-      // Check if nodes/edges are stringified JSON
-      let nodes = workflow.nodes;
-      let edges = workflow.edges;
-
-      if (typeof nodes === 'string') {
-        try {
-          nodes = JSON.parse(nodes);
-        } catch (e) {
-          console.error('[listMyWorkflows] Failed to parse nodes:', e);
-          nodes = [];
-        }
-      }
-
-      if (typeof edges === 'string') {
-        try {
-          edges = JSON.parse(edges);
-        } catch (e) {
-          console.error('[listMyWorkflows] Failed to parse edges:', e);
-          edges = [];
-        }
-      }
-
-      return {
-        ...workflow,
-        nodes: nodes || [],
-        edges: edges || [],
-      };
-    });
+    // ✅ List returns metadata only (no nodes/edges for performance)
+    const workflows = (data.workflows || []) as WorkflowListItem[];
 
     console.log('[listMyWorkflows] Loaded', workflows.length, 'workflows');
     return workflows;
