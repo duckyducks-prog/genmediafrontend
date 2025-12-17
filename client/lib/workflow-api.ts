@@ -508,9 +508,10 @@ export async function listMyWorkflows(): Promise<WorkflowListItem[]> {
 }
 
 /**
- * List public workflow templates
+ * List public workflow templates - returns metadata only (no nodes/edges)
+ * ⚠️ To get full workflow with nodes/edges, use loadWorkflow()
  */
-export async function listPublicWorkflows(): Promise<SavedWorkflow[]> {
+export async function listPublicWorkflows(): Promise<WorkflowListItem[]> {
   const user = auth.currentUser;
   if (!user) {
     throw new Error("User not authenticated");
@@ -544,36 +545,8 @@ export async function listPublicWorkflows(): Promise<SavedWorkflow[]> {
 
     const data = await response.json();
 
-    // Parse workflows and ensure nodes/edges are arrays (not stringified JSON)
-    const workflows = (data.workflows || []).map((workflow: any) => {
-      // Check if nodes/edges are stringified JSON
-      let nodes = workflow.nodes;
-      let edges = workflow.edges;
-
-      if (typeof nodes === 'string') {
-        try {
-          nodes = JSON.parse(nodes);
-        } catch (e) {
-          console.error('[listPublicWorkflows] Failed to parse nodes:', e);
-          nodes = [];
-        }
-      }
-
-      if (typeof edges === 'string') {
-        try {
-          edges = JSON.parse(edges);
-        } catch (e) {
-          console.error('[listPublicWorkflows] Failed to parse edges:', e);
-          edges = [];
-        }
-      }
-
-      return {
-        ...workflow,
-        nodes: nodes || [],
-        edges: edges || [],
-      };
-    });
+    // ✅ List returns metadata only (no nodes/edges for performance)
+    const workflows = (data.workflows || []) as WorkflowListItem[];
 
     console.log('[listPublicWorkflows] Loaded', workflows.length, 'templates');
     return workflows;
