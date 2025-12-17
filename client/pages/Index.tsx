@@ -192,27 +192,10 @@ export default function Index() {
             const dataUri = `data:video/mp4;base64,${statusData.video_base64}`;
             setVideoResult(dataUri);
 
-            // Save to library
-            try {
-              await saveToLibrary({
-                imageUrl: dataUri,
-                prompt: videoPrompt,
-                assetType: "video",
-              });
-
-              console.log("[Index] Video saved to library successfully");
-
-              // Refresh library to show the newly saved video
-              if (assetLibraryRef.current) {
-                assetLibraryRef.current.refresh();
-              }
-            } catch (error) {
-              console.error("[Index] Failed to save video to library:", error);
-              toast({
-                title: "Warning",
-                description: "Video generated but failed to save to library",
-                variant: "destructive",
-              });
+            // ✅ Backend auto-saves videos to library with prompt metadata
+            // Just refresh the library to show the newly saved video
+            if (assetLibraryRef.current) {
+              assetLibraryRef.current.refresh();
             }
           }
         }
