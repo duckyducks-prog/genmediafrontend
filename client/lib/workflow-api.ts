@@ -23,12 +23,15 @@ export interface WorkflowMetadata {
   name: string;
   description: string;
   is_public: boolean;
-  thumbnail?: string;
+  thumbnail_ref?: string;  // ✅ Asset ID reference (stored in Firestore)
+  thumbnail?: string;  // ✅ Resolved URL (computed by backend on GET)
   background_image?: string;
   created_at?: string;
   updated_at?: string;
   user_id?: string;
   user_email?: string;
+  node_count?: number;  // ✅ Metadata field for list views
+  edge_count?: number;  // ✅ Metadata field for list views
 }
 
 export interface SavedWorkflow extends WorkflowMetadata {
