@@ -623,13 +623,6 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         required: false,
         acceptsMultiple: true, // Can accept multiple Image Input connections
       },
-      {
-        id: "filters",
-        label: "Filters",
-        type: ConnectorType.Any, // Array of FilterConfig
-        required: false,
-        acceptsMultiple: false,
-      },
     ],
     outputConnectors: [
       {
@@ -659,13 +652,6 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         type: ConnectorType.Images,
         required: false,
         acceptsMultiple: true,
-      },
-      {
-        id: "filters",
-        label: "Filters",
-        type: ConnectorType.Any, // Array of FilterConfig
-        required: false,
-        acceptsMultiple: false,
       },
     ],
     outputConnectors: [
