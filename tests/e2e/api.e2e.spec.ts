@@ -233,7 +233,8 @@ describe("API E2E Tests", () => {
       async () => {
         if (!authToken) return;
 
-        const aspectRatios = ["1:1", "16:9", "9:16"];
+        // Test all aspect ratios supported by the frontend
+        const aspectRatios = ["1:1", "16:9", "9:16", "3:4", "4:3"];
 
         for (const ratio of aspectRatios) {
           const response = await apiRequest("/generate/image", {
@@ -248,12 +249,14 @@ describe("API E2E Tests", () => {
           const data = await response.json();
           expect(data.images).toBeDefined();
           expect(data.images[0]).toBeDefined();
+          expect(typeof data.images[0]).toBe("string");
+          expect(data.images[0].length).toBeGreaterThan(100);
 
-          console.log(`✓ Generated ${ratio} image`);
+          console.log(`✓ Generated ${ratio} image successfully`);
         }
       },
-      TEST_TIMEOUT * 2,
-    ); // 4 minutes - generating 3 images sequentially
+      TEST_TIMEOUT * 3,
+    ); // 6 minutes - generating 5 images sequentially
   });
 
   describe("Image Upscaling", () => {
