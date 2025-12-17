@@ -527,12 +527,18 @@ export function useWorkflowExecution(
                   images,
                   image: firstImage,
                   imageUrl: firstImage,
+                  outputs: {
+                    images: images,    // For connecting to reference_images (array)
+                    image: firstImage  // For connecting to first_frame/last_frame (single)
+                  }
                 };
 
                 console.log("[GenerateImage] Returning result data:", {
                   hasImages: !!resultData.images,
                   hasImage: !!resultData.image,
                   hasImageUrl: !!resultData.imageUrl,
+                  hasOutputs: !!resultData.outputs,
+                  outputsKeys: resultData.outputs ? Object.keys(resultData.outputs) : [],
                   imageUrlLength: resultData.imageUrl?.length || 0,
                 });
 
