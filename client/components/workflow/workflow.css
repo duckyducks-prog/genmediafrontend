@@ -30,6 +30,11 @@
 .react-flow__edge-path {
   stroke: hsl(var(--primary));
   stroke-width: 2px;
+  cursor: pointer;
+}
+
+.react-flow__edge-path:hover {
+  stroke-width: 3px;
 }
 
 .react-flow__edge.selected .react-flow__edge-path,
