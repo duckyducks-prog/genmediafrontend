@@ -125,12 +125,12 @@
 
 .react-flow__handle[data-connector-type="image"],
 .react-flow__handle[data-connector-type="images"] {
-  background: #6DD3CE !important;
+  background: #B9CDBE !important;
   border-color: hsl(var(--background)) !important;
 }
 
 .react-flow__handle[data-connector-type="video"] {
-  background: #C96DD8 !important;
+  background: #FF4800 !important;
   border-color: hsl(var(--background)) !important;
 }
 
