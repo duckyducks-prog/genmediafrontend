@@ -40,6 +40,50 @@ export interface SavedWorkflow extends WorkflowMetadata {
 }
 
 /**
+ * Strip resolved URLs and existence flags from node data before saving to backend.
+ * The backend will compute these fields when you fetch the workflow.
+ *
+ * Removes: *Url, *Exists fields (e.g., imageUrl, imageRefExists, etc.)
+ * Keeps: *Ref fields (e.g., imageRef) which store asset IDs
+ */
+export function stripResolvedUrls(data: any): any {
+  if (!data) return data;
+
+  const cleaned = { ...data };
+
+  // Remove all *Url and *Exists fields (backend computes these)
+  const keysToRemove = Object.keys(cleaned).filter(
+    k => k.endsWith('Url') || k.endsWith('Exists')
+  );
+  keysToRemove.forEach(k => delete cleaned[k]);
+
+  // Also clean outputs object if present
+  if (cleaned.outputs && typeof cleaned.outputs === 'object') {
+    const cleanedOutputs = { ...cleaned.outputs };
+    const outputKeysToRemove = Object.keys(cleanedOutputs).filter(
+      k => k.endsWith('Url') || k.endsWith('Exists')
+    );
+    outputKeysToRemove.forEach(k => delete cleanedOutputs[k]);
+    cleaned.outputs = cleanedOutputs;
+  }
+
+  return cleaned;
+}
+
+/**
+ * Clean workflow data for saving - strip all resolved URLs from all nodes
+ */
+export function cleanWorkflowForSave(workflow: SavedWorkflow): SavedWorkflow {
+  return {
+    ...workflow,
+    nodes: workflow.nodes.map(node => ({
+      ...node,
+      data: stripResolvedUrls(node.data)
+    }))
+  };
+}
+
+/**
  * Test if workflow API is accessible and which endpoints are working
  */
 export async function testWorkflowAPI(): Promise<APITestResult> {
