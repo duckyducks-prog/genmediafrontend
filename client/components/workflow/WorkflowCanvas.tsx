@@ -386,6 +386,14 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               outputs: {},
             };
             break;
+          case NodeType.ImageComposite:
+            data = {
+              blendMode: "normal",
+              opacity: 1.0,
+              label: "Image Composite",
+              outputs: {},
+            };
+            break;
 
           // Action nodes
           case NodeType.GenerateImage:
