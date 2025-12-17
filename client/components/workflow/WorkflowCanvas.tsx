@@ -56,6 +56,7 @@ import HueSaturationNode from "./nodes/HueSaturationNode";
 import NoiseNode from "./nodes/NoiseNode";
 import VignetteNode from "./nodes/VignetteNode";
 import CropNode from "./nodes/CropNode";
+import ImageCompositeNode from "./nodes/ImageCompositeNode";
 
 const nodeTypes: NodeTypes = {
   // Input nodes
@@ -71,6 +72,7 @@ const nodeTypes: NodeTypes = {
   [NodeType.Noise]: NoiseNode,
   [NodeType.Vignette]: VignetteNode,
   [NodeType.Crop]: CropNode,
+  [NodeType.ImageComposite]: ImageCompositeNode,
 
   // Action nodes
   [NodeType.GenerateImage]: GenerateImageNode,
