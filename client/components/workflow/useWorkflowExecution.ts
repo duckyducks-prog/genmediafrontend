@@ -583,25 +583,31 @@ export function useWorkflowExecution(
               firstFramePreview: typeof inputs.first_frame === 'string' ? inputs.first_frame.substring(0, 50) + '...' : inputs.first_frame,
             });
 
-            let prompt = inputs.prompt;
+            let prompt = inputs.prompt || "";
             let firstFrame = inputs.first_frame || null;
             let lastFrame = inputs.last_frame || null;
             let referenceImages = inputs.reference_images || null;
             const formatData = inputs.format;
             const filters: FilterConfig[] = inputs.filters || [];
 
-            if (!prompt) {
+            // Validate that at least one input is provided (prompt OR images)
+            if (!prompt && !firstFrame && !lastFrame && !referenceImages) {
               return {
                 success: false,
-                error: "No prompt connected",
+                error: "Video generation requires at least a prompt or image inputs (first frame, last frame, or reference images)",
               };
             }
 
-            // Always append aspect ratio to prompt (from format connector or node dropdown)
-            const aspectRatio = formatData?.aspect_ratio || node.data.aspectRatio || "16:9";
-            const aspectRatioLabel = aspectRatio === "16:9" ? "landscape" :
-                                    aspectRatio === "9:16" ? "portrait" : "";
-            prompt = `${prompt}, ${aspectRatio} aspect ratio${aspectRatioLabel ? ` (${aspectRatioLabel})` : ""}`;
+            // Append aspect ratio to prompt if prompt exists
+            if (prompt) {
+              const aspectRatio = formatData?.aspect_ratio || node.data.aspectRatio || "16:9";
+              const aspectRatioLabel = aspectRatio === "16:9" ? "landscape" :
+                                      aspectRatio === "9:16" ? "portrait" : "";
+              prompt = `${prompt}, ${aspectRatio} aspect ratio${aspectRatioLabel ? ` (${aspectRatioLabel})` : ""}`;
+            } else {
+              // Use a default prompt when only images are provided
+              prompt = "Generate a video from the provided images";
+            }
 
             console.log('[GenerateVideo] After variable assignment:', {
               originalPrompt: inputs.prompt,
@@ -749,11 +755,15 @@ export function useWorkflowExecution(
 
               // Build request body - only include optional fields if we have valid data
               const requestBody: any = {
-                prompt,
                 aspect_ratio: formatData?.aspect_ratio || node.data.aspectRatio || "16:9",
                 duration_seconds: formatData?.duration_seconds || node.data.durationSeconds || 8,
                 generate_audio: formatData?.generate_audio ?? node.data.generateAudio ?? true,
               };
+
+              // Only include prompt if provided
+              if (prompt) {
+                requestBody.prompt = prompt;
+              }
 
               // Only add image fields if we have valid data (not null or empty)
               if (firstFrame) {
