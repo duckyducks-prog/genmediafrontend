@@ -41,8 +41,6 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
   };
 
   const getBorderColor = () => {
-    if (isGenerating) return 'border-yellow-500';
-    if (isCompleted) return 'border-green-500';
     if (isError) return 'border-red-500';
     return 'border-border';
   };
