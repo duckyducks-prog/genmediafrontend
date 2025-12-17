@@ -35,7 +35,9 @@ import {
   listPublicWorkflows,
   deleteWorkflow,
   cloneWorkflow,
+  loadWorkflow,
   SavedWorkflow,
+  WorkflowListItem,
   testWorkflowAPI,
   APITestResult,
 } from "@/lib/workflow-api";
@@ -49,8 +51,8 @@ interface WorkflowGalleryProps {
 export default function WorkflowGallery({
   onLoadWorkflow,
 }: WorkflowGalleryProps) {
-  const [myWorkflows, setMyWorkflows] = useState<SavedWorkflow[]>([]);
-  const [publicWorkflows, setPublicWorkflows] = useState<SavedWorkflow[]>([]);
+  const [myWorkflows, setMyWorkflows] = useState<WorkflowListItem[]>([]);
+  const [publicWorkflows, setPublicWorkflows] = useState<WorkflowListItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [apiStatus, setApiStatus] = useState<APITestResult | null>(null);
