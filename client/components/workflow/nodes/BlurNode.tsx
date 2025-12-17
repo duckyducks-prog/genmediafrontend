@@ -4,8 +4,15 @@ import { BlurNodeData } from "../types";
 import { Slider } from "@/components/ui/slider";
 import { Blend } from "lucide-react";
 import { FilterConfig, FILTER_DEFINITIONS } from "@/lib/pixi-filter-configs";
+import { NodeLockToggle } from "../NodeLockToggle";
 
 function BlurNode({ data, id }: NodeProps<BlurNodeData>) {
+  const toggleLock = () => {
+    const updateEvent = new CustomEvent("node-update", {
+      detail: { id, data: { ...data, locked: !data.locked } },
+    });
+    window.dispatchEvent(updateEvent);
+  };
   // Get incoming data
   // Extract primitive/comparable values to use as dependencies
   const imageInput = (data as any).image || (data as any).imageInput;
@@ -66,6 +73,7 @@ function BlurNode({ data, id }: NodeProps<BlurNodeData>) {
           <Blend className="w-4 h-4 text-primary" />
           <span className="font-semibold text-sm">{def.label}</span>
         </div>
+        <NodeLockToggle locked={!!data.locked} onToggle={toggleLock} disabled={data.readOnly} />
       </div>
 
       <Handle

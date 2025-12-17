@@ -4,6 +4,7 @@ import { CheckCircle2, Loader2, Eye, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { renderWithPixi } from "@/lib/pixi-renderer";
 import { FilterConfig } from "@/lib/pixi-filter-configs";
+import { NodeLockToggle } from "../NodeLockToggle";
 
 export interface PreviewNodeData {
   label: string;
@@ -28,6 +29,13 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
   const status = (data as any).status || "ready";
   const isExecuting = status === "executing" || isRendering;
   const isCompleted = status === "completed";
+
+  const toggleLock = () => {
+    const updateEvent = new CustomEvent("node-update", {
+      detail: { id, data: { ...data, locked: !data.locked } },
+    });
+    window.dispatchEvent(updateEvent);
+  };
 
   useEffect(() => {
     const imageInput = (data as any).image || (data as any).imageUrl;
