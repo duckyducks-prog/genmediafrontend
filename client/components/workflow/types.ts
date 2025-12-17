@@ -21,6 +21,7 @@ export enum NodeType {
   Noise = "noise",
   Vignette = "vignette",
   Crop = "crop",
+  ImageComposite = "imageComposite",
 
   // ACTION nodes (inputs and outputs)
   GenerateVideo = "generateVideo",
@@ -165,6 +166,13 @@ export interface CropNodeData extends BaseNodeData {
   originalHeight?: number;
 }
 
+// IMAGE COMPOSITE node
+export interface ImageCompositeNodeData extends BaseNodeData {
+  blendMode: "normal" | "multiply" | "screen" | "overlay" | "add" | "darken" | "lighten";
+  opacity: number; // 0-1 for the top layers
+  compositePreview?: string; // Preview of the composited result
+}
+
 // PREVIEW node
 export interface PreviewNodeData extends BaseNodeData {
   imageUrl?: string;
@@ -198,6 +206,7 @@ export type WorkflowNodeData =
   | NoiseNodeData
   | VignetteNodeData
   | CropNodeData
+  | ImageCompositeNodeData
   | GenerateVideoNodeData
   | GenerateImageNodeData
   | LLMNodeData
