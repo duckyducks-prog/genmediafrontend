@@ -221,32 +221,49 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
     // Keyboard zoom controls (Cmd+/Cmd- or Ctrl+/Ctrl-)
     useEffect(() => {
       const handleKeyDown = (event: KeyboardEvent) => {
+        if (!reactFlowInstance) return;
+
         const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
         const cmdOrCtrl = isMac ? event.metaKey : event.ctrlKey;
 
-        if (!cmdOrCtrl || !reactFlowInstance) return;
+        if (!cmdOrCtrl) return;
 
         // Cmd/Ctrl + = or + (zoom in)
         if (event.key === '=' || event.key === '+') {
           event.preventDefault();
+          event.stopPropagation();
           const currentZoom = reactFlowInstance.getZoom();
-          reactFlowInstance.zoomTo(currentZoom * 1.2, { duration: 200 });
+          reactFlowInstance.setViewport({
+            x: reactFlowInstance.getViewport().x,
+            y: reactFlowInstance.getViewport().y,
+            zoom: currentZoom * 1.2
+          }, { duration: 200 });
         }
         // Cmd/Ctrl + - (zoom out)
-        else if (event.key === '-') {
+        else if (event.key === '-' || event.key === '_') {
           event.preventDefault();
+          event.stopPropagation();
           const currentZoom = reactFlowInstance.getZoom();
-          reactFlowInstance.zoomTo(currentZoom / 1.2, { duration: 200 });
+          reactFlowInstance.setViewport({
+            x: reactFlowInstance.getViewport().x,
+            y: reactFlowInstance.getViewport().y,
+            zoom: currentZoom / 1.2
+          }, { duration: 200 });
         }
         // Cmd/Ctrl + 0 (reset zoom to 100%)
         else if (event.key === '0') {
           event.preventDefault();
-          reactFlowInstance.zoomTo(1, { duration: 200 });
+          event.stopPropagation();
+          reactFlowInstance.setViewport({
+            x: reactFlowInstance.getViewport().x,
+            y: reactFlowInstance.getViewport().y,
+            zoom: 1
+          }, { duration: 200 });
         }
       };
 
-      window.addEventListener('keydown', handleKeyDown);
-      return () => window.removeEventListener('keydown', handleKeyDown);
+      document.addEventListener('keydown', handleKeyDown, true);
+      return () => document.removeEventListener('keydown', handleKeyDown, true);
     }, [reactFlowInstance]);
 
     // Handle new connections between nodes
