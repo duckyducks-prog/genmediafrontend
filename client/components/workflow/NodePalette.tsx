@@ -92,6 +92,13 @@ const paletteNodes: PaletteNode[] = [
     category: "modifier",
     description: "Blend multiple images together",
   },
+  {
+    type: NodeType.ExtractLastFrame,
+    label: "Extract Last Frame",
+    icon: <Film className="w-4 h-4" />,
+    category: "modifier",
+    description: "Extract the last frame from a video",
+  },
 
   // ACTION NODES
   {
