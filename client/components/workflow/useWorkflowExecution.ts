@@ -768,11 +768,12 @@ export function useWorkflowExecution(
               }
 
               // Only add image fields if we have valid data (not null or empty)
+              // NOTE: The Veo API expects "first_frame_image" and "last_frame_image", not "first_frame" and "last_frame"
               if (firstFrame) {
-                requestBody.first_frame = firstFrame;
+                requestBody.first_frame_image = firstFrame;
               }
               if (lastFrame) {
-                requestBody.last_frame = lastFrame;
+                requestBody.last_frame_image = lastFrame;
               }
               if (referenceImages) {
                 requestBody.reference_images = referenceImages;
@@ -780,8 +781,8 @@ export function useWorkflowExecution(
 
               console.log('[GenerateVideo] Full request body (truncated):', {
                 prompt: requestBody.prompt?.substring(0, 50),
-                first_frame: requestBody.first_frame ? `${typeof requestBody.first_frame} (${requestBody.first_frame.length} chars)` : null,
-                last_frame: requestBody.last_frame ? `${typeof requestBody.last_frame} (${requestBody.last_frame.length} chars)` : null,
+                first_frame_image: requestBody.first_frame_image ? `${typeof requestBody.first_frame_image} (${requestBody.first_frame_image.length} chars)` : null,
+                last_frame_image: requestBody.last_frame_image ? `${typeof requestBody.last_frame_image} (${requestBody.last_frame_image.length} chars)` : null,
                 reference_images: requestBody.reference_images
                   ? Array.isArray(requestBody.reference_images)
                     ? `array (${requestBody.reference_images.length} images)`
