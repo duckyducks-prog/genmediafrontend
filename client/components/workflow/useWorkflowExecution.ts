@@ -816,7 +816,28 @@ export function useWorkflowExecution(
               }
 
               if (!response.ok) {
-                throw new Error(`API error: ${response.status}`);
+                // Try to extract error message from response body
+                let errorMessage = `API error: ${response.status}`;
+                try {
+                  const errorData = await response.json();
+                  if (errorData.error) {
+                    errorMessage = typeof errorData.error === 'string'
+                      ? errorData.error
+                      : JSON.stringify(errorData.error);
+                  } else if (errorData.detail) {
+                    errorMessage = typeof errorData.detail === 'string'
+                      ? errorData.detail
+                      : JSON.stringify(errorData.detail);
+                  } else if (errorData.message) {
+                    errorMessage = typeof errorData.message === 'string'
+                      ? errorData.message
+                      : JSON.stringify(errorData.message);
+                  }
+                  console.error('[GenerateVideo] API error response:', errorData);
+                } catch (parseError) {
+                  console.error('[GenerateVideo] Could not parse error response:', parseError);
+                }
+                throw new Error(errorMessage);
               }
 
               const apiData = await response.json();
