@@ -378,13 +378,16 @@ export async function updateWorkflow(
 
   const token = await user.getIdToken();
 
+  // ✅ Strip resolved URLs before sending (keep asset refs)
+  const cleanWorkflow = cleanWorkflowForSave(workflow);
+
   const response = await fetch(`${WORKFLOW_API_BASE}/workflows/${workflowId}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(workflow),
+    body: JSON.stringify(cleanWorkflow),
   });
 
   if (!response.ok) {
