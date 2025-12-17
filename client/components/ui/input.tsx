@@ -12,6 +12,10 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
           className,
         )}
         ref={ref}
+        onPointerDown={(e) => {
+          // Prevent ReactFlow from starting node drag when interacting with input
+          e.stopPropagation();
+        }}
         {...props}
       />
     );

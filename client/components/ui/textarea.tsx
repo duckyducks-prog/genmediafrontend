@@ -14,6 +14,10 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           className,
         )}
         ref={ref}
+        onPointerDown={(e) => {
+          // Prevent ReactFlow from starting node drag when typing
+          e.stopPropagation();
+        }}
         {...props}
       />
     );
