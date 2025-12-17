@@ -98,7 +98,7 @@ interface WorkflowCanvasProps {
 
 const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
   ({ onAssetGenerated, onLoadWorkflowRequest }, ref) => {
-    const [nodes, setNodes, onNodesChange] = useNodesState<WorkflowNodeData>(
+    const [nodes, setNodes, onNodesChangeBase] = useNodesState<WorkflowNodeData>(
       [],
     );
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -114,6 +114,24 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
     const [isReadOnly, setIsReadOnly] = useState(false);
     const hasInitialized = useRef(false);
     const { toast } = useToast();
+
+    // Custom onNodesChange handler that respects locked state
+    const onNodesChange = useCallback(
+      (changes: any[]) => {
+        onNodesChangeBase(changes);
+      },
+      [onNodesChangeBase],
+    );
+
+    // Ensure nodes have draggable property set based on locked state
+    useEffect(() => {
+      setNodes((nds) =>
+        nds.map((node) => ({
+          ...node,
+          draggable: !node.data.locked && !isReadOnly,
+        })),
+      );
+    }, [setNodes, isReadOnly]);
 
 
     // Listen for node update events from node components

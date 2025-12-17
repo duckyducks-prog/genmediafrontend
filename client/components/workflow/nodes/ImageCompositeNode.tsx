@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { gatherNodeInputs } from "../executionHelpers";
 import { renderCompositeWithPixi } from "@/lib/pixi-renderer";
+import { NodeLockToggle } from "../NodeLockToggle";
 
 function ImageCompositeNode({ data, id }: NodeProps<ImageCompositeNodeData>) {
   const config = NODE_CONFIGURATIONS[NodeType.ImageComposite];
@@ -29,6 +30,10 @@ function ImageCompositeNode({ data, id }: NodeProps<ImageCompositeNodeData>) {
       },
     });
     window.dispatchEvent(event);
+  };
+
+  const toggleLock = () => {
+    handleUpdate("locked", !data.locked);
   };
 
   // Real-time execution: Update composite whenever inputs or blend settings change
@@ -166,15 +171,22 @@ function ImageCompositeNode({ data, id }: NodeProps<ImageCompositeNodeData>) {
             {data.label || "Image Composite"}
           </div>
         </div>
-        {(isRendering || status === "executing") && (
-          <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />
-        )}
-        {!isRendering && status === "completed" && (
-          <div className="text-green-500 text-xs">✓</div>
-        )}
-        {status === "error" && (
-          <div className="text-red-500 text-xs">✗</div>
-        )}
+        <div className="flex items-center gap-1">
+          <NodeLockToggle
+            locked={!!data.locked}
+            onToggle={toggleLock}
+            disabled={data.readOnly}
+          />
+          {(isRendering || status === "executing") && (
+            <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />
+          )}
+          {!isRendering && status === "completed" && (
+            <div className="text-green-500 text-xs">✓</div>
+          )}
+          {status === "error" && (
+            <div className="text-red-500 text-xs">✗</div>
+          )}
+        </div>
       </div>
 
       {/* Input Handles - Left side */}
