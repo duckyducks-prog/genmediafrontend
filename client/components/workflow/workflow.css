@@ -262,7 +262,6 @@
 
 .workflow-node.selected {
   border-color: #FCC3DC;
-  box-shadow: 0 0 0 3px #FCC3DC / 0.2;
 }
 
 /* Node Categories */
