@@ -40,6 +40,14 @@ export interface SavedWorkflow extends WorkflowMetadata {
 }
 
 /**
+ * Workflow list item - returned by list endpoints (metadata only, no nodes/edges)
+ */
+export interface WorkflowListItem extends WorkflowMetadata {
+  // ⚠️ list endpoints do NOT include nodes or edges for performance
+  // Use loadWorkflow() to get full workflow with nodes/edges
+}
+
+/**
  * Strip resolved URLs and existence flags from node data before saving to backend.
  * The backend will compute these fields when you fetch the workflow.
  *
