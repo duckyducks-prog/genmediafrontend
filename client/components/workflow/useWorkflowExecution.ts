@@ -598,9 +598,11 @@ export function useWorkflowExecution(
               };
             }
 
+            // Get aspect ratio for both prompt enhancement and logging
+            const aspectRatio = formatData?.aspect_ratio || node.data.aspectRatio || "16:9";
+
             // Append aspect ratio to prompt if prompt exists
             if (prompt) {
-              const aspectRatio = formatData?.aspect_ratio || node.data.aspectRatio || "16:9";
               const aspectRatioLabel = aspectRatio === "16:9" ? "landscape" :
                                       aspectRatio === "9:16" ? "portrait" : "";
               prompt = `${prompt}, ${aspectRatio} aspect ratio${aspectRatioLabel ? ` (${aspectRatioLabel})` : ""}`;
