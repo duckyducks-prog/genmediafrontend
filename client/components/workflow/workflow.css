@@ -30,7 +30,7 @@
 
 /* Color-coded edges by connector type */
 .react-flow__edge.connector-type-text .react-flow__edge-path {
-  stroke: #D6C2D9 !important;
+  stroke: #FF4800 !important;
 }
 
 .react-flow__edge.connector-type-image .react-flow__edge-path,
@@ -43,11 +43,11 @@
 }
 
 .react-flow__edge.connector-type-format .react-flow__edge-path {
-  stroke: #F3C5DB !important;
+  stroke: #FF4800 !important;
 }
 
 .react-flow__edge.connector-type-any .react-flow__edge-path {
-  stroke: #B8B8B8 !important;
+  stroke: #FF4800 !important;
 }
 
 .react-flow__edge.animated .react-flow__edge-path {
