@@ -138,6 +138,27 @@ function ImageCompositeNode({ data, id }: NodeProps<ImageCompositeNodeData>) {
         </div>
       </div>
 
+      {/* Composite Result Preview */}
+      {(data as any).image && (
+        <div className="mb-3">
+          <div className="text-xs font-medium text-muted-foreground mb-1">
+            Result Preview:
+          </div>
+          <div className="relative rounded-lg overflow-hidden bg-muted border border-border">
+            <img
+              src={(data as any).image}
+              alt="Composite Result"
+              className="w-full h-auto max-h-[120px] object-contain"
+              crossOrigin={
+                (data as any).image?.startsWith("data:")
+                  ? undefined
+                  : "anonymous"
+              }
+            />
+          </div>
+        </div>
+      )}
+
       {/* Preview Info */}
       {data.compositePreview && (
         <div className="bg-muted/50 p-2 rounded border border-border mb-3">
