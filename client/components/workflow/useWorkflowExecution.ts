@@ -195,6 +195,72 @@ export function useWorkflowExecution(
             return { success: true, data: { combined } };
           }
 
+          case NodeType.ImageComposite: {
+            const imageInputs = inputs.images;
+            const filters: FilterConfig[] = inputs.filters || [];
+            const blendMode = (node.data as any).blendMode || "normal";
+            const opacity = (node.data as any).opacity || 1.0;
+
+            console.log("[ImageComposite] Execution inputs:", {
+              imageInputsType: typeof imageInputs,
+              imageInputsIsArray: Array.isArray(imageInputs),
+              imageCount: Array.isArray(imageInputs) ? imageInputs.length : 0,
+              blendMode,
+              opacity,
+              filterCount: filters.length,
+            });
+
+            // Validate at least 2 images
+            if (!Array.isArray(imageInputs) || imageInputs.length < 2) {
+              return {
+                success: false,
+                error: "Composite node requires at least 2 images",
+              };
+            }
+
+            try {
+              // Apply filters to each input image if needed
+              let processedImages = imageInputs;
+              if (filters.length > 0) {
+                console.log(
+                  `[ImageComposite] Applying ${filters.length} filters to ${imageInputs.length} images`,
+                );
+                processedImages = await Promise.all(
+                  imageInputs.map((img) => renderWithPixi(img, filters)),
+                );
+              }
+
+              // Composite images with blend mode
+              console.log(
+                `[ImageComposite] Compositing ${processedImages.length} images with mode: ${blendMode}, opacity: ${opacity}`,
+              );
+              const compositeResult = await renderCompositeWithPixi(
+                processedImages,
+                blendMode,
+                opacity,
+                [], // Don't apply filters again to composite (already applied to inputs)
+              );
+
+              return {
+                success: true,
+                data: {
+                  image: compositeResult,
+                  compositePreview: `${imageInputs.length} layers blended`,
+                  outputs: { image: compositeResult },
+                },
+              };
+            } catch (error) {
+              console.error("[ImageComposite] Composite failed:", error);
+              return {
+                success: false,
+                error:
+                  error instanceof Error
+                    ? error.message
+                    : "Image compositing failed",
+              };
+            }
+          }
+
           // ACTION NODES
           case NodeType.LLM: {
             const prompt = inputs.prompt;
