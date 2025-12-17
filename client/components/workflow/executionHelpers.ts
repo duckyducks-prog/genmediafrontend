@@ -5,6 +5,7 @@ import {
   validateMutualExclusion,
   ConnectorType,
 } from "./types";
+import { API_ENDPOINTS } from "@/lib/api-config";
 
 /**
  * Gather inputs for a node by following connections backwards
@@ -387,7 +388,7 @@ export async function pollVideoStatus(
       const token = await user?.getIdToken();
 
       const statusResponse = await fetch(
-        "https://veo-api-856765593724.us-central1.run.app/generate/video/status",
+        API_ENDPOINTS.generate.videoStatus,
         {
           method: "POST",
           headers: {
