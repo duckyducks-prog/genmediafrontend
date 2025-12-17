@@ -1278,17 +1278,35 @@ export function useWorkflowExecution(
           const hasExistingOutputs = depNode.data.outputs && Object.keys(depNode.data.outputs).length > 0;
           const isCompleted = depNode.data.status === 'completed';
 
+          console.log(
+            `[Single Node Execution] Checking dependency ${depNodeId}:`,
+            {
+              nodeType: depNode.type,
+              status: depNode.data.status,
+              hasOutputsProperty: !!depNode.data.outputs,
+              outputsKeys: depNode.data.outputs ? Object.keys(depNode.data.outputs) : [],
+              hasExistingOutputs,
+              isCompleted,
+              willSkip: hasExistingOutputs && isCompleted,
+              allDataKeys: Object.keys(depNode.data),
+            }
+          );
+
           if (hasExistingOutputs && isCompleted) {
             console.log(
-              `[Single Node Execution] Skipping ${depNodeId} - already has outputs`,
+              `[Single Node Execution] ✓ Skipping ${depNodeId} - already has outputs`,
               { outputs: depNode.data.outputs }
             );
             continue; // Skip this dependency, use existing outputs
           }
 
           console.log(
-            `[Single Node Execution] Executing dependency ${depNodeId} - no existing outputs`,
-            { hasOutputs: hasExistingOutputs, isCompleted }
+            `[Single Node Execution] ⚠️ Re-executing dependency ${depNodeId}`,
+            {
+              reason: !hasExistingOutputs ? 'no outputs' : 'not completed',
+              hasOutputs: hasExistingOutputs,
+              isCompleted
+            }
           );
 
           updateNodeState(depNodeId, "executing");
