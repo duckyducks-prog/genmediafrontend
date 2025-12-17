@@ -126,7 +126,7 @@
 
 .react-flow__handle[data-connector-type="image"],
 .react-flow__handle[data-connector-type="images"] {
-  background: #B9CDBE !important;
+  background: #83D196 !important;
   border-color: hsl(var(--background)) !important;
 }
 
