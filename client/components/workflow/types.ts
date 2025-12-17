@@ -23,6 +23,9 @@ export enum NodeType {
   Crop = "crop",
   ImageComposite = "imageComposite",
 
+  // VIDEO MODIFIER nodes
+  ExtractLastFrame = "extractLastFrame",
+
   // ACTION nodes (inputs and outputs)
   GenerateVideo = "generateVideo",
   GenerateImage = "generateImage",
