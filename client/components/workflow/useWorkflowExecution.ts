@@ -160,6 +160,21 @@ export function useWorkflowExecution(
                 : "none",
             });
 
+            // Dispatch node-update event to trigger output propagation to downstream nodes
+            // This is crucial for nodes like ImageComposite to propagate their outputs to Preview nodes
+            if (status === "completed" && updatedData.outputs) {
+              console.log("[updateNodeState] Dispatching node-update event for output propagation");
+              setTimeout(() => {
+                const event = new CustomEvent("node-update", {
+                  detail: {
+                    id: nodeId,
+                    data: updatedData,
+                  },
+                });
+                window.dispatchEvent(event);
+              }, 0);
+            }
+
             return {
               ...node,
               data: updatedData,
