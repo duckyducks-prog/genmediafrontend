@@ -771,12 +771,15 @@ export function useWorkflowExecution(
               // NOTE: The Veo API expects "first_frame_image" and "last_frame_image", not "first_frame" and "last_frame"
               if (firstFrame) {
                 requestBody.first_frame_image = firstFrame;
+                console.log('[GenerateVideo] ✓ Including first_frame_image in request (base64 length:', firstFrame.length, ')');
               }
               if (lastFrame) {
                 requestBody.last_frame_image = lastFrame;
+                console.log('[GenerateVideo] ✓ Including last_frame_image in request (base64 length:', lastFrame.length, ')');
               }
               if (referenceImages) {
                 requestBody.reference_images = referenceImages;
+                console.log('[GenerateVideo] ✓ Including reference_images in request (count:', Array.isArray(referenceImages) ? referenceImages.length : 1, ')');
               }
 
               console.log('[GenerateVideo] Full request body (truncated):', {
