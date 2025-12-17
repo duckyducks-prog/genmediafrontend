@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase";
+import { API_ENDPOINTS } from "@/lib/api-config";
 
 interface Asset {
   id: string;
