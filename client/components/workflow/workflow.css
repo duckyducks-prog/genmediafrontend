@@ -119,7 +119,7 @@
 
 /* Color-coded handles by connector type */
 .react-flow__handle[data-connector-type="text"] {
-  background: #D6C2D9 !important;
+  background: #FF4800 !important;
   border-color: hsl(var(--background)) !important;
 }
 
@@ -135,12 +135,12 @@
 }
 
 .react-flow__handle[data-connector-type="format"] {
-  background: #F3C5DB !important;
+  background: #FF4800 !important;
   border-color: hsl(var(--background)) !important;
 }
 
 .react-flow__handle[data-connector-type="any"] {
-  background: #B8B8B8 !important;
+  background: #FF4800 !important;
   border-color: hsl(var(--background)) !important;
 }
 
