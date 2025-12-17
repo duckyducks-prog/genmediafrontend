@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { OutputNodeData } from "../types";
+import { API_ENDPOINTS } from "@/lib/api-config";
 import {
   Image as ImageIcon,
   CheckCircle2,
