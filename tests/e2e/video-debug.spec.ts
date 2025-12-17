@@ -13,7 +13,7 @@
 
 import { describe, it, expect, beforeAll } from "vitest";
 
-const API_BASE_URL = "https://veo-api-82187245577.us-central1.run.app";
+const API_BASE_URL = "https://veo-api-856765593724.us-central1.run.app";
 const TEST_TIMEOUT = 600000; // 10 minutes for full video generation
 
 let authToken: string | null = null;

@@ -31,7 +31,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 
 // API Configuration
-const API_BASE_URL = "https://veo-api-82187245577.us-central1.run.app";
+const API_BASE_URL = "https://veo-api-856765593724.us-central1.run.app";
 const TEST_TIMEOUT = 120000; // 2 minutes for generation operations
 
 // Test state - stores generated assets for cleanup
