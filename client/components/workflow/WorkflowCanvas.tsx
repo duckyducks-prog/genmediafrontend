@@ -1162,6 +1162,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
             nodesDraggable={!isReadOnly}
             nodesConnectable={!isReadOnly}
             edgesFocusable={!isReadOnly}
+            edgesUpdatable={!isReadOnly}
             minZoom={0.1}
             maxZoom={4}
             defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
