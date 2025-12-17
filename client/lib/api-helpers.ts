@@ -35,7 +35,7 @@ export async function saveToLibrary(params: SaveToLibraryParams) {
   });
 
   const response = await fetch(
-    "https://veo-api-82187245577.us-central1.run.app/library/save",
+    "https://veo-api-856765593724.us-central1.run.app/library/save",
     {
       method: "POST",
       headers: {
