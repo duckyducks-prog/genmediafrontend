@@ -97,50 +97,16 @@ export function validateConnection(
   // Check if input accepts multiple connections
   if (!inputConnector.acceptsMultiple) {
     if (hasExistingConnection(targetNode.id, connection.targetHandle, edges)) {
-      return { 
-        valid: false, 
-        reason: `${inputConnector.label} only accepts one connection` 
+      return {
+        valid: false,
+        reason: `${inputConnector.label} only accepts one connection`
       };
     }
   }
 
-  // Check mutual exclusion for GenerateVideo nodes
-  if (targetNode.type === NodeType.GenerateVideo) {
-    // Build a map of what would be connected after this connection
-    const futureConnections: Record<string, any> = {};
-    
-    // Add existing connections
-    edges.forEach(edge => {
-      if (edge.target === targetNode.id) {
-        const handle = edge.targetHandle || 'default';
-        if (handle === 'reference_images') {
-          if (!futureConnections[handle]) {
-            futureConnections[handle] = [];
-          }
-          futureConnections[handle].push(true);
-        } else {
-          futureConnections[handle] = true;
-        }
-      }
-    });
-
-    // Add the new connection
-    const newHandle = connection.targetHandle || 'default';
-    if (newHandle === 'reference_images') {
-      if (!futureConnections[newHandle]) {
-        futureConnections[newHandle] = [];
-      }
-      futureConnections[newHandle].push(true);
-    } else {
-      futureConnections[newHandle] = true;
-    }
-
-    // Validate mutual exclusion
-    const validation = validateMutualExclusion(NodeType.GenerateVideo, futureConnections);
-    if (!validation.valid) {
-      return { valid: false, reason: validation.error };
-    }
-  }
+  // NOTE: Mutual exclusion for GenerateVideo (first_frame/last_frame vs reference_images)
+  // is now validated at EXECUTION time, not connection time.
+  // This allows users to create flexible workflows and only get errors when they try to run.
 
   return { valid: true };
 }
