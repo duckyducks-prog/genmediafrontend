@@ -1308,10 +1308,13 @@ export function useWorkflowExecution(
             throw new Error(`Dependency failed: ${result.error}`);
           }
 
-          updateNodeState(depNodeId, "completed", {
+          // Preserve outputs structure (same as main workflow execution)
+          const updateData = {
             ...result.data,
-            outputs: result.data,
-          });
+            outputs: result.data.outputs || result.data,
+          };
+
+          updateNodeState(depNodeId, "completed", updateData);
         }
 
         // Execute target node
@@ -1342,10 +1345,13 @@ export function useWorkflowExecution(
           return;
         }
 
-        updateNodeState(nodeId, "completed", {
+        // Preserve outputs structure (same as main workflow execution)
+        const updateData = {
           ...result.data,
-          outputs: result.data,
-        });
+          outputs: result.data.outputs || result.data,
+        };
+
+        updateNodeState(nodeId, "completed", updateData);
 
         toast({
           title: "Success",
