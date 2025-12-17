@@ -21,16 +21,8 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
   const isCompleted = status === 'completed';
   const isError = status === 'error';
   const videoUrl = (data as any).videoUrl;
-  const { getEdges } = useReactFlow();
-
-  // Check for conflicting connections (mutual exclusion)
-  const edges = getEdges() as WorkflowEdge[];
-  const hasFrameConnections = edges.some(
-    e => e.target === id && ['first_frame', 'last_frame'].includes(e.targetHandle || '')
-  );
-  const hasReferenceConnections = edges.some(
-    e => e.target === id && e.targetHandle === 'reference_images'
-  );
+  // Note: Mutual exclusion (first_frame/last_frame vs reference_images) is validated
+  // at execution time, not in the UI. All inputs are always enabled.
 
   const handleUpdate = (field: keyof GenerateVideoNodeData, value: any) => {
     // Block updates in read-only mode
@@ -124,17 +116,6 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
           const isRequired = input.required;
           const isMultiple = input.acceptsMultiple;
 
-          // Check if this handle should be disabled due to mutual exclusion
-          const isDisabled =
-            (input.id === 'reference_images' && hasFrameConnections) ||
-            (['first_frame', 'last_frame'].includes(input.id) && hasReferenceConnections);
-
-          const disabledMessage = isDisabled
-            ? input.id === 'reference_images'
-              ? 'Cannot use with first/last frame'
-              : 'Cannot use with reference images'
-            : '';
-
           return (
             <div key={input.id} className="flex items-center gap-2 relative h-6">
               <Handle
@@ -142,20 +123,12 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
                 position={Position.Left}
                 id={input.id}
                 data-connector-type={input.type}
-                className={`!w-3 !h-3 !border-2 !border-background !-left-[18px] !absolute !top-1/2 !-translate-y-1/2 ${
-                  isDisabled
-                    ? 'react-flow__handle-disabled'
-                    : ''
-                }`}
-                title={isDisabled ? disabledMessage : ''}
+                className="!w-3 !h-3 !border-2 !border-background !-left-[18px] !absolute !top-1/2 !-translate-y-1/2"
               />
-              <div className={`text-xs font-medium ${
-                isDisabled ? 'text-muted-foreground/50 line-through' : 'text-muted-foreground'
-              }`}>
+              <div className="text-xs font-medium text-muted-foreground">
                 {input.label}
-                {isRequired && !isDisabled && <span className="text-red-500 ml-1">*</span>}
-                {isMultiple && !isDisabled && <span className="text-blue-500 ml-1">(multi)</span>}
-                {isDisabled && <span className="text-amber-500 ml-1 text-[10px]">⚠ {disabledMessage}</span>}
+                {isRequired && <span className="text-red-500 ml-1">*</span>}
+                {isMultiple && <span className="text-blue-500 ml-1">(multi)</span>}
               </div>
             </div>
           );
