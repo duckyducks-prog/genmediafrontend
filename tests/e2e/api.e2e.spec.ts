@@ -257,6 +257,54 @@ describe("API E2E Tests", () => {
       },
       TEST_TIMEOUT * 3,
     ); // 6 minutes - generating 5 images sequentially
+
+    it(
+      "should generate image with reference images",
+      async () => {
+        if (!authToken) return;
+
+        console.log("Step 1: Generating reference image...");
+
+        // First generate a reference image
+        const refResponse = await apiRequest("/generate/image", {
+          method: "POST",
+          body: JSON.stringify({
+            prompt: "A simple geometric pattern - reference image",
+            aspect_ratio: "1:1",
+          }),
+        });
+
+        expect(refResponse.status).toBe(200);
+        const refData = await refResponse.json();
+        expect(refData.images).toBeDefined();
+        expect(refData.images[0]).toBeDefined();
+
+        const refImage = cleanBase64(refData.images[0]);
+        console.log("✓ Reference image generated, size:", refImage.length, "chars");
+
+        console.log("Step 2: Generating image with reference...");
+
+        // Generate with reference
+        const response = await apiRequest("/generate/image", {
+          method: "POST",
+          body: JSON.stringify({
+            prompt: "A colorful variation based on the reference pattern",
+            aspect_ratio: "1:1",
+            reference_images: [refImage],
+          }),
+        });
+
+        expect(response.status).toBe(200);
+        const data = await response.json();
+        expect(data.images).toBeDefined();
+        expect(data.images[0]).toBeDefined();
+        expect(typeof data.images[0]).toBe("string");
+        expect(data.images[0].length).toBeGreaterThan(100);
+
+        console.log("✓ Generated image with reference successfully");
+      },
+      TEST_TIMEOUT * 2,
+    ); // 4 minutes - generating 2 images sequentially
   });
 
   describe("Image Upscaling", () => {
