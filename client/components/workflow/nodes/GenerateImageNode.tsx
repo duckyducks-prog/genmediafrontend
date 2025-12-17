@@ -107,7 +107,7 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
       const token = await user?.getIdToken();
 
       const response = await fetch(
-        "https://veo-api-82187245577.us-central1.run.app/generate/upscale",
+        "https://veo-api-856765593724.us-central1.run.app/generate/upscale",
         {
           method: "POST",
           headers: {
