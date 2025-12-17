@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { GenerateImageNodeData, NODE_CONFIGURATIONS, NodeType } from "../types";
+import { API_ENDPOINTS } from "@/lib/api-config";
 import {
   Sparkles,
   Loader2,
