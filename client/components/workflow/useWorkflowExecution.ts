@@ -1277,6 +1277,7 @@ export function useWorkflowExecution(
           // Check if this dependency already has outputs - if so, skip execution
           const hasExistingOutputs = depNode.data.outputs && Object.keys(depNode.data.outputs).length > 0;
           const isCompleted = depNode.data.status === 'completed';
+          const isInputNode = depNode.type === NodeType.Prompt || depNode.type === NodeType.ImageInput;
 
           console.log(
             `[Single Node Execution] Checking dependency ${depNodeId}:`,
@@ -1287,15 +1288,18 @@ export function useWorkflowExecution(
               outputsKeys: depNode.data.outputs ? Object.keys(depNode.data.outputs) : [],
               hasExistingOutputs,
               isCompleted,
-              willSkip: hasExistingOutputs && isCompleted,
+              isInputNode,
+              willSkip: hasExistingOutputs && (isCompleted || isInputNode),
               allDataKeys: Object.keys(depNode.data),
             }
           );
 
-          if (hasExistingOutputs && isCompleted) {
+          // Skip if: (1) has outputs AND completed, OR (2) has outputs AND is an input node
+          // Input nodes (Prompt, ImageInput) set outputs when user enters data, but don't have "completed" status
+          if (hasExistingOutputs && (isCompleted || isInputNode)) {
             console.log(
               `[Single Node Execution] ✓ Skipping ${depNodeId} - already has outputs`,
-              { outputs: depNode.data.outputs }
+              { outputs: depNode.data.outputs, reason: isInputNode ? 'input node with data' : 'completed node' }
             );
             continue; // Skip this dependency, use existing outputs
           }
@@ -1303,9 +1307,10 @@ export function useWorkflowExecution(
           console.log(
             `[Single Node Execution] ⚠️ Re-executing dependency ${depNodeId}`,
             {
-              reason: !hasExistingOutputs ? 'no outputs' : 'not completed',
+              reason: !hasExistingOutputs ? 'no outputs' : 'not completed and not input node',
               hasOutputs: hasExistingOutputs,
-              isCompleted
+              isCompleted,
+              isInputNode
             }
           );
 
