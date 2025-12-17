@@ -456,6 +456,250 @@ export async function renderWithPixi(
 }
 
 /**
+ * Blend mode mapping from user-friendly names to PixiJS BLEND_MODES
+ */
+const BLEND_MODE_MAP: Record<string, number> = {
+  normal: BLEND_MODES.NORMAL,
+  multiply: BLEND_MODES.MULTIPLY,
+  screen: BLEND_MODES.SCREEN,
+  add: BLEND_MODES.ADD,
+  // Note: overlay, darken, lighten are not directly available in Pixi v8
+  // Using closest approximations or fallback to NORMAL
+  overlay: BLEND_MODES.NORMAL, // Would need custom shader for true overlay
+  darken: BLEND_MODES.NORMAL,  // Would need custom shader
+  lighten: BLEND_MODES.NORMAL, // Would need custom shader
+};
+
+/**
+ * Internal function that performs the actual composite rendering.
+ * Should only be called through the render queue to prevent concurrent access.
+ */
+async function performComposite(
+  imageSources: string[],
+  blendMode: string,
+  opacity: number,
+  filterConfigs: FilterConfig[],
+): Promise<string> {
+  console.log("[performComposite] Starting composite:", {
+    imageCount: imageSources.length,
+    blendMode,
+    opacity,
+    filterCount: filterConfigs.length,
+  });
+
+  // Validate inputs
+  if (!imageSources || imageSources.length < 2) {
+    throw new Error("Composite requires at least 2 images");
+  }
+
+  // 1. Get shared PixiJS application (reuses WebGL context)
+  let app;
+  try {
+    app = await getSharedApp();
+    console.log("[performComposite] Pixi app obtained successfully");
+  } catch (error) {
+    console.error("[performComposite] Failed to get Pixi app:", error);
+    throw error;
+  }
+
+  // Check for WebGL context loss before attempting render
+  if ((app.renderer as any).gl?.isContextLost?.()) {
+    disposeSharedPixiApp();
+    throw new Error(
+      "WebGL context was lost (GPU reset or too many contexts). " +
+        "The app will automatically recover on the next render attempt. " +
+        "If this persists, try refreshing the page.",
+    );
+  }
+
+  // 2. Load all images into HTMLImageElements
+  const images: HTMLImageElement[] = [];
+  console.log("[performComposite] Loading images");
+
+  for (let i = 0; i < imageSources.length; i++) {
+    const imageSource = imageSources[i];
+    const img = new Image();
+
+    // Set crossOrigin for remote URLs
+    if (!imageSource.startsWith("data:")) {
+      img.crossOrigin = "anonymous";
+    }
+
+    try {
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+      await Promise.race([
+        new Promise<void>((resolve, reject) => {
+          img.onload = () => {
+            if (timeoutId !== null) {
+              clearTimeout(timeoutId);
+              timeoutId = null;
+            }
+            resolve();
+          };
+          img.onerror = (e) => {
+            if (timeoutId !== null) {
+              clearTimeout(timeoutId);
+              timeoutId = null;
+            }
+            reject(new Error(`Failed to load image ${i + 1}`));
+          };
+          img.src = imageSource;
+        }),
+        new Promise<void>((_, reject) => {
+          timeoutId = setTimeout(() => {
+            reject(new Error(`Image ${i + 1} load timeout (10s)`));
+          }, 10000);
+        }),
+      ]);
+
+      images.push(img);
+      console.log(`[performComposite] Image ${i + 1}/${imageSources.length} loaded`);
+    } catch (error) {
+      console.error(`[performComposite] Failed to load image ${i + 1}:`, error);
+      throw error;
+    }
+  }
+
+  // 3. Determine canvas size based on first image
+  const MAX_DIMENSION = 4096;
+  let width = images[0].width || 1024;
+  let height = images[0].height || 1024;
+
+  if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+    const scale = Math.min(MAX_DIMENSION / width, MAX_DIMENSION / height);
+    width = Math.floor(width * scale);
+    height = Math.floor(height * scale);
+    console.warn(
+      `[performComposite] Canvas dimensions exceed ${MAX_DIMENSION}px, scaling down to ${width}x${height}`,
+    );
+  }
+
+  // Resize app to match dimensions
+  app.renderer.resize(width, height);
+
+  // 4. Clear the stage from previous renders
+  app.stage.removeChildren();
+
+  // 5. Create sprites for each image and layer them with blend modes
+  const sprites: Sprite[] = [];
+  const blendModeValue = BLEND_MODE_MAP[blendMode] || BLEND_MODES.NORMAL;
+
+  for (let i = 0; i < images.length; i++) {
+    const img = images[i];
+    const texture = Texture.from(img);
+
+    if (!texture || !texture.source) {
+      throw new Error(`Failed to create texture from image ${i + 1}`);
+    }
+
+    const sprite = new Sprite(texture);
+    sprite.width = width;
+    sprite.height = height;
+
+    // First image (base layer) uses normal blend mode and full opacity
+    // Subsequent images use the selected blend mode and opacity
+    if (i === 0) {
+      sprite.blendMode = BLEND_MODES.NORMAL;
+      sprite.alpha = 1.0;
+    } else {
+      sprite.blendMode = blendModeValue;
+      sprite.alpha = opacity;
+    }
+
+    sprites.push(sprite);
+    app.stage.addChild(sprite);
+    console.log(`[performComposite] Sprite ${i + 1} added with blendMode=${sprite.blendMode}, alpha=${sprite.alpha}`);
+  }
+
+  // 6. Apply filters to the entire composite if provided
+  if (filterConfigs.length > 0) {
+    const filters = filterConfigs.map((config) => createFilterFromConfig(config));
+    app.stage.filters = filters;
+    console.log(`[performComposite] Applied ${filters.length} filters to composite`);
+  }
+
+  // 7. Render the composite
+  app.renderer.render(app.stage);
+
+  // 8. Extract as base64
+  let dataURL: string;
+
+  try {
+    dataURL = await app.renderer.extract.base64(app.stage);
+    console.log("[performComposite] Successfully extracted composite image");
+  } catch (extractError) {
+    if (
+      extractError instanceof DOMException &&
+      extractError.name === "SecurityError"
+    ) {
+      throw new Error(
+        "Canvas extraction blocked by CORS policy. " +
+          "The image server must send Access-Control-Allow-Origin header, " +
+          "or use a proxied/local image. Error: " +
+          extractError.message,
+      );
+    }
+
+    throw new Error(
+      `Failed to extract canvas: ${extractError instanceof Error ? extractError.message : "Unknown error"}`,
+    );
+  }
+
+  // 9. Cleanup resources
+  if (app.stage.filters && Array.isArray(app.stage.filters)) {
+    app.stage.filters.forEach((filter) => {
+      if (filter && typeof filter.destroy === "function") {
+        try {
+          filter.destroy();
+        } catch (error) {
+          console.warn("Failed to destroy filter:", error);
+        }
+      }
+    });
+    app.stage.filters = null;
+  }
+
+  sprites.forEach((sprite) => {
+    sprite.destroy({ children: true, texture: false });
+  });
+
+  images.forEach((img, i) => {
+    const texture = Texture.from(img);
+    if (texture) {
+      texture.destroy(true);
+    }
+  });
+
+  return dataURL;
+}
+
+/**
+ * Renders a composite of multiple images with PixiJS (PUBLIC API).
+ * Uses a queue to serialize renders and prevent concurrent access to shared app.
+ *
+ * @param imageSources - Array of base64 data URIs or URLs (minimum 2)
+ * @param blendMode - Blend mode to apply (normal, multiply, screen, add, etc.)
+ * @param opacity - Opacity for layers 2+ (0.0 to 1.0)
+ * @param filterConfigs - Optional array of filter configs to apply to final composite
+ * @returns Promise<string> - Base64 data URI of composited result
+ */
+export async function renderCompositeWithPixi(
+  imageSources: string[],
+  blendMode: string = "normal",
+  opacity: number = 1.0,
+  filterConfigs: FilterConfig[] = [],
+): Promise<string> {
+  // Enqueue this render to prevent concurrent modification of shared app
+  return new Promise<string>((resolve, reject) => {
+    renderQueue = renderQueue
+      .then(() => performComposite(imageSources, blendMode, opacity, filterConfigs))
+      .then(resolve)
+      .catch(reject);
+  });
+}
+
+/**
  * Utility to check if PixiJS/WebGL is supported
  */
 export function isPixiSupported(): boolean {
