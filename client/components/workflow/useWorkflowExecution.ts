@@ -322,7 +322,10 @@ export function useWorkflowExecution(
               const apiData = await response.json();
               return {
                 success: true,
-                data: { response: apiData.response },
+                data: {
+                  response: apiData.response,
+                  outputs: { response: apiData.response }
+                },
               };
             } catch (error) {
               return {
