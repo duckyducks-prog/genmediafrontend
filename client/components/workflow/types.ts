@@ -557,6 +557,36 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
     ],
   },
 
+  [NodeType.ImageComposite]: {
+    type: NodeType.ImageComposite,
+    label: "Image Composite",
+    category: "modifier",
+    description: "Blend multiple images together",
+    inputConnectors: [
+      {
+        id: "images",
+        label: "Images",
+        type: ConnectorType.Images,
+        required: true,
+        acceptsMultiple: true,
+      },
+      {
+        id: "filters",
+        label: "Filters",
+        type: ConnectorType.Any,
+        required: false,
+        acceptsMultiple: false,
+      },
+    ],
+    outputConnectors: [
+      {
+        id: "image",
+        label: "Composite Image",
+        type: ConnectorType.Image,
+      },
+    ],
+  },
+
   // ========== ACTION NODES ==========
   [NodeType.GenerateVideo]: {
     type: NodeType.GenerateVideo,
