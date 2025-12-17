@@ -7,6 +7,7 @@ import {
   BlurFilter,
   NoiseFilter,
   Rectangle,
+  BLEND_MODES,
 } from "pixi.js";
 import { AdjustmentFilter } from "pixi-filters";
 import { FilterConfig, FILTER_DEFINITIONS } from "./pixi-filter-configs";
