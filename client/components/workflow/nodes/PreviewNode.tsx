@@ -172,10 +172,13 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
           <Eye className="w-4 h-4 text-accent" />
           <div className="font-semibold text-sm">{data.label || "Preview"}</div>
         </div>
-        {isExecuting && (
-          <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />
-        )}
-        {isCompleted && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+        <div className="flex items-center gap-1">
+          <NodeLockToggle locked={!!data.locked} onToggle={toggleLock} disabled={data.readOnly} />
+          {isExecuting && (
+            <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />
+          )}
+          {isCompleted && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+        </div>
       </div>
 
       {/* Input Handles */}
