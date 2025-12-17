@@ -161,7 +161,7 @@ export default function NodePalette({ onAddNode }: NodePaletteProps) {
   };
 
   return (
-    <div className="w-64 bg-card border-r border-border pl-4 pt-4 pb-4 space-y-6 overflow-y-auto h-full">
+    <div className="w-64 bg-card border-r border-border pl-4 pt-4 pb-4 space-y-4 overflow-y-auto h-full flex flex-col">
       <div>
         <h3 className="font-semibold text-sm mb-3 flex items-center gap-2 pr-4">
           <Sparkles className="w-4 h-4 text-primary" />
@@ -170,6 +170,27 @@ export default function NodePalette({ onAddNode }: NodePaletteProps) {
         <p className="text-xs text-muted-foreground mb-4 pr-4">
           Drag nodes onto the canvas to build your AI workflow
         </p>
+      </div>
+
+      <div className="relative pr-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search nodes..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 pr-8 h-9 text-sm"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Input Nodes */}
