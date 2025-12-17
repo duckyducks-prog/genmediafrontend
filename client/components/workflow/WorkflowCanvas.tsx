@@ -59,6 +59,7 @@ import NoiseNode from "./nodes/NoiseNode";
 import VignetteNode from "./nodes/VignetteNode";
 import CropNode from "./nodes/CropNode";
 import ImageCompositeNode from "./nodes/ImageCompositeNode";
+import ExtractLastFrameNode from "./nodes/ExtractLastFrameNode";
 
 const nodeTypes: NodeTypes = {
   // Input nodes
