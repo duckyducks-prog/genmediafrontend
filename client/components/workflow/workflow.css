@@ -228,6 +228,12 @@
   border: 1px solid hsl(var(--primary));
 }
 
+/* Hide node selection rectangle (the box that appears around selected nodes) */
+.react-flow__nodesselection,
+.react-flow__nodesselection-rect {
+  display: none !important;
+}
+
 /* Panel */
 .react-flow__panel {
   color: hsl(var(--foreground));
