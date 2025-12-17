@@ -255,16 +255,20 @@ function ImageCompositeNode({ data, id }: NodeProps<ImageCompositeNodeData>) {
             onChange={(e) =>
               handleUpdate("opacity", parseInt(e.target.value) / 100)
             }
+            onPointerDown={(e) => {
+              // Prevent ReactFlow from starting node drag when interacting with slider
+              e.stopPropagation();
+            }}
             disabled={data.readOnly}
-            className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer 
-                     [&::-webkit-slider-thumb]:appearance-none 
-                     [&::-webkit-slider-thumb]:w-4 
-                     [&::-webkit-slider-thumb]:h-4 
-                     [&::-webkit-slider-thumb]:rounded-full 
+            className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer
+                     [&::-webkit-slider-thumb]:appearance-none
+                     [&::-webkit-slider-thumb]:w-4
+                     [&::-webkit-slider-thumb]:h-4
+                     [&::-webkit-slider-thumb]:rounded-full
                      [&::-webkit-slider-thumb]:bg-primary
-                     [&::-moz-range-thumb]:w-4 
-                     [&::-moz-range-thumb]:h-4 
-                     [&::-moz-range-thumb]:rounded-full 
+                     [&::-moz-range-thumb]:w-4
+                     [&::-moz-range-thumb]:h-4
+                     [&::-moz-range-thumb]:rounded-full
                      [&::-moz-range-thumb]:bg-primary
                      [&::-moz-range-thumb]:border-0"
           />

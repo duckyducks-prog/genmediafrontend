@@ -13,6 +13,10 @@ const Slider = React.forwardRef<
       "relative flex w-full touch-none select-none items-center",
       className,
     )}
+    onPointerDown={(e) => {
+      // Prevent ReactFlow from starting node drag when interacting with slider
+      e.stopPropagation();
+    }}
     {...props}
   >
     <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full bg-secondary">
