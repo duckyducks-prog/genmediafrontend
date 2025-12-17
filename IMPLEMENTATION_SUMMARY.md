@@ -3,7 +3,9 @@
 ## ✅ Task 1: Centralized API Configuration
 
 ### Problem Solved
+
 Previously, the Veo API URL was hardcoded in 15+ files across the codebase:
+
 - `client/pages/Index.tsx`
 - `client/components/workflow/useWorkflowExecution.ts`
 - `client/components/workflow/executionHelpers.ts`
@@ -45,7 +47,7 @@ export const API_ENDPOINTS = {
     delete: (id: string) => `${VEO_API_BASE_URL}/workflows/${id}`,
     clone: (id: string) => `${VEO_API_BASE_URL}/workflows/${id}/clone`,
   },
-  
+
   generate: {
     image: `${VEO_API_BASE_URL}/generate/image`,
     video: `${VEO_API_BASE_URL}/generate/video`,
@@ -53,7 +55,7 @@ export const API_ENDPOINTS = {
     text: `${VEO_API_BASE_URL}/generate/text`,
     upscale: `${VEO_API_BASE_URL}/generate/upscale`,
   },
-  
+
   library: {
     save: `${VEO_API_BASE_URL}/library/save`,
     list: (assetType?: string) => ...,
@@ -78,15 +80,18 @@ export const API_ENDPOINTS = {
 ### How to Change the API URL
 
 **Before (manual, error-prone):**
+
 ```bash
 # Search and replace in 15+ files
 sed -i 's/veo-api-82187245577/veo-api-new-project-id/g' **/*.ts
 ```
 
 **After (single change):**
+
 ```typescript
 // client/lib/api-config.ts - Edit ONE line:
-export const VEO_API_BASE_URL = "https://veo-api-new-project-id.us-central1.run.app";
+export const VEO_API_BASE_URL =
+  "https://veo-api-new-project-id.us-central1.run.app";
 ```
 
 All requests will automatically use the new URL! ✨
@@ -102,43 +107,51 @@ Comprehensive test suite covering the Firestore migration with 13+ test cases:
 ### Test Categories
 
 #### 1. **Workflows with Firestore Metadata** (4 tests)
+
 - ✅ Create workflow with asset references
 - ✅ List workflows - verify Firestore metadata fields
 - ✅ Get workflow - verify asset URL resolution
 - ✅ List public workflows - verify `is_public` filter
 
 **Tests cover:**
+
 - Asset references (imageRef, videoRef, assetRef) instead of base64
 - Firestore metadata: user_id, user_email, is_public, created_at, updated_at
 - Backend resolves asset IDs to GCS URLs
 - Correct filtering by scope (my, public)
 
 #### 2. **Asset Library with Firestore Metadata** (4 tests)
+
 - ✅ List assets - verify Firestore metadata
 - ✅ List assets by type - verify asset_type filter
 - ✅ Get asset - verify GCS URL resolution
 - ✅ Delete asset - verify operation succeeds
 
 **Tests cover:**
+
 - Asset metadata: user_id, asset_type, blob_path, mime_type, source
 - GCS URL format: `https://storage.googleapis.com/genmedia-assets-remarkablenotion/...`
 - Asset filtering by type (image, video)
 - Asset lifecycle (create, read, delete)
 
 #### 3. **Auto-save Feature** (2 tests)
+
 - ✅ Generate image - verify auto-save to library
 - ✅ Generate video - verify auto-save to library
 
 **Tests cover:**
+
 - Generated assets automatically saved with `source="generated"`
 - Prompt stored with generated assets
 - Assets accessible in library after generation
 
 #### 4. **Access Control** (2 tests)
+
 - ✅ User can only see their own workflows
 - ✅ User can see public workflows from others
 
 **Tests cover:**
+
 - Firestore query filtering by user_id
 - Public workflows readable by all users
 - Private workflows not visible to other users
@@ -146,7 +159,9 @@ Comprehensive test suite covering the Firestore migration with 13+ test cases:
 ### Test Features
 
 #### Detailed Logging
+
 Each test includes structured console logging:
+
 ```javascript
 console.log("✓ Workflow created with ID:", data.id);
 console.log("✓ Assets have correct Firestore metadata");
@@ -154,7 +169,9 @@ console.log("✓ Generated image auto-saved to library");
 ```
 
 #### Graceful Skipping
+
 If prerequisites aren't met (e.g., no assets to delete), tests skip gracefully:
+
 ```javascript
 if (data.workflows.length === 0) {
   console.log("⊘ No workflows found, skipping...");
@@ -163,13 +180,16 @@ if (data.workflows.length === 0) {
 ```
 
 #### Timeout Handling
+
 Long-running tests (video generation) poll with appropriate timeouts:
+
 ```javascript
 const TEST_TIMEOUT = 120000; // 2 minutes
 // Video tests: poll with 10s waits, max 5 attempts = 50s total
 ```
 
 #### Helper Functions
+
 - `getAuthToken()` - Retrieves Firebase test token
 - `apiRequest()` - Makes API calls with auth headers
 
@@ -242,10 +262,12 @@ curl https://veo-api-856765593724.us-central1.run.app/workflows -H "Authorizatio
 ## Summary of Changes
 
 ### Files Created
+
 1. `client/lib/api-config.ts` - Centralized API endpoints
 2. `tests/e2e/firestore-migration.spec.ts` - Comprehensive test suite
 
 ### Files Modified (9)
+
 1. `client/components/workflow/useWorkflowExecution.ts`
 2. `client/components/workflow/executionHelpers.ts`
 3. `client/components/workflow/nodes/GenerateImageNode.tsx`
@@ -257,6 +279,7 @@ curl https://veo-api-856765593724.us-central1.run.app/workflows -H "Authorizatio
 9. `tests/e2e/video-debug.spec.ts`
 
 ### Key Metrics
+
 - **Lines of code added**: ~600 (tests) + 60 (config)
 - **API endpoints centralized**: 15+ URLs consolidated into 1 source
 - **Test coverage**: 13 test cases covering Firestore migration
@@ -291,11 +314,13 @@ curl https://veo-api-856765593724.us-central1.run.app/workflows -H "Authorizatio
 ## Quick Reference
 
 ### Import the Config
+
 ```typescript
 import { API_ENDPOINTS } from "@/lib/api-config";
 ```
 
 ### Use Endpoints
+
 ```typescript
 // Image generation
 fetch(API_ENDPOINTS.generate.image, { body: JSON.stringify({ prompt: "..." }) })
@@ -314,6 +339,7 @@ fetch(API_ENDPOINTS.workflows.list("my"))  // List my workflows
 ```
 
 ### Change API URL
+
 ```typescript
 // In client/lib/api-config.ts, line 8:
 export const VEO_API_BASE_URL = "https://new-api.us-central1.run.app";

@@ -35,22 +35,19 @@ export async function saveToLibrary(params: SaveToLibraryParams) {
     promptLength: params.prompt.length,
   });
 
-  const response = await fetch(
-    API_ENDPOINTS.library.save,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        data: base64Data,
-        prompt: params.prompt,
-        asset_type: params.assetType,
-        mime_type: mimeType,
-      }),
+  const response = await fetch(API_ENDPOINTS.library.save, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
-  );
+    body: JSON.stringify({
+      data: base64Data,
+      prompt: params.prompt,
+      asset_type: params.assetType,
+      mime_type: mimeType,
+    }),
+  });
 
   if (!response.ok) {
     const errorText = await response.text();

@@ -27,7 +27,7 @@ async function apiRequest(
   endpoint: string,
   method: "GET" | "POST" | "PUT" | "DELETE" = "GET",
   body?: any,
-  token?: string
+  token?: string,
 ) {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -103,7 +103,7 @@ describe("Firestore Migration - Workflows", () => {
         API_ENDPOINTS.workflows.save,
         "POST",
         workflowData,
-        authToken
+        authToken,
       );
 
       expect(response.status).toBe(200);
@@ -113,7 +113,7 @@ describe("Firestore Migration - Workflows", () => {
 
       console.log("✓ Workflow created with ID:", data.id);
     },
-    { timeout: TEST_TIMEOUT }
+    { timeout: TEST_TIMEOUT },
   );
 
   it(
@@ -123,7 +123,7 @@ describe("Firestore Migration - Workflows", () => {
         API_ENDPOINTS.workflows.list("my"),
         "GET",
         undefined,
-        authToken
+        authToken,
       );
 
       expect(response.status).toBe(200);
@@ -145,7 +145,7 @@ describe("Firestore Migration - Workflows", () => {
         console.log("✓ Workflows have correct Firestore metadata");
       }
     },
-    { timeout: TEST_TIMEOUT }
+    { timeout: TEST_TIMEOUT },
   );
 
   it(
@@ -156,7 +156,7 @@ describe("Firestore Migration - Workflows", () => {
         API_ENDPOINTS.workflows.list("my"),
         "GET",
         undefined,
-        authToken
+        authToken,
       );
 
       const workflows = (await listResponse.json()).workflows;
@@ -172,7 +172,7 @@ describe("Firestore Migration - Workflows", () => {
         API_ENDPOINTS.workflows.get(workflowId),
         "GET",
         undefined,
-        authToken
+        authToken,
       );
 
       expect(response.status).toBe(200);
@@ -186,18 +186,18 @@ describe("Firestore Migration - Workflows", () => {
             // After resolution, should have imageUrl
             if (node.data.imageUrl) {
               expect(node.data.imageUrl).toMatch(
-                /^https:\/\/storage\.googleapis\.com\//
+                /^https:\/\/storage\.googleapis\.com\//,
               );
               console.log(
                 "✓ Asset reference resolved to URL:",
-                node.data.imageUrl
+                node.data.imageUrl,
               );
             }
           }
         }
       }
     },
-    { timeout: TEST_TIMEOUT }
+    { timeout: TEST_TIMEOUT },
   );
 
   it(
@@ -207,7 +207,7 @@ describe("Firestore Migration - Workflows", () => {
         API_ENDPOINTS.workflows.list("public"),
         "GET",
         undefined,
-        authToken
+        authToken,
       );
 
       expect(response.status).toBe(200);
@@ -222,7 +222,7 @@ describe("Firestore Migration - Workflows", () => {
         console.log("✓ Public workflows filtered correctly");
       }
     },
-    { timeout: TEST_TIMEOUT }
+    { timeout: TEST_TIMEOUT },
   );
 });
 
@@ -243,7 +243,7 @@ describe("Firestore Migration - Asset Library", () => {
         API_ENDPOINTS.library.list(),
         "GET",
         undefined,
-        authToken
+        authToken,
       );
 
       expect(response.status).toBe(200);
@@ -264,7 +264,7 @@ describe("Firestore Migration - Asset Library", () => {
         console.log("✓ Assets have correct Firestore metadata");
       }
     },
-    { timeout: TEST_TIMEOUT }
+    { timeout: TEST_TIMEOUT },
   );
 
   it(
@@ -275,7 +275,7 @@ describe("Firestore Migration - Asset Library", () => {
         API_ENDPOINTS.library.list("image"),
         "GET",
         undefined,
-        authToken
+        authToken,
       );
 
       expect(imageResponse.status).toBe(200);
@@ -290,7 +290,7 @@ describe("Firestore Migration - Asset Library", () => {
         console.log("✓ Assets filtered by type correctly");
       }
     },
-    { timeout: TEST_TIMEOUT }
+    { timeout: TEST_TIMEOUT },
   );
 
   it(
@@ -301,7 +301,7 @@ describe("Firestore Migration - Asset Library", () => {
         API_ENDPOINTS.library.list(),
         "GET",
         undefined,
-        authToken
+        authToken,
       );
 
       const assets = (await listResponse.json()).assets;
@@ -317,7 +317,7 @@ describe("Firestore Migration - Asset Library", () => {
         API_ENDPOINTS.library.get(assetId),
         "GET",
         undefined,
-        authToken
+        authToken,
       );
 
       expect(response.status).toBe(200);
@@ -330,7 +330,7 @@ describe("Firestore Migration - Asset Library", () => {
 
       console.log("✓ Asset URL resolved correctly");
     },
-    { timeout: TEST_TIMEOUT }
+    { timeout: TEST_TIMEOUT },
   );
 
   it(
@@ -341,7 +341,7 @@ describe("Firestore Migration - Asset Library", () => {
         API_ENDPOINTS.generate.image,
         "POST",
         { prompt: "A test image for deletion" },
-        authToken
+        authToken,
       );
 
       if (generateResponse.status !== 200) {
@@ -354,7 +354,7 @@ describe("Firestore Migration - Asset Library", () => {
         API_ENDPOINTS.library.list("image"),
         "GET",
         undefined,
-        authToken
+        authToken,
       );
 
       const assets = (await listResponse.json()).assets;
@@ -370,7 +370,7 @@ describe("Firestore Migration - Asset Library", () => {
         API_ENDPOINTS.library.delete(assetId),
         "DELETE",
         undefined,
-        authToken
+        authToken,
       );
 
       expect(deleteResponse.status).toBe(200);
@@ -381,13 +381,13 @@ describe("Firestore Migration - Asset Library", () => {
         API_ENDPOINTS.library.get(assetId),
         "GET",
         undefined,
-        authToken
+        authToken,
       );
 
       expect(getResponse.status).toBe(404);
       console.log("✓ Deleted asset no longer found");
     },
-    { timeout: TEST_TIMEOUT }
+    { timeout: TEST_TIMEOUT },
   );
 });
 
@@ -409,17 +409,18 @@ describe("Firestore Migration - Auto-save Feature", () => {
         API_ENDPOINTS.library.list("image"),
         "GET",
         undefined,
-        authToken
+        authToken,
       );
 
-      const initialCount = (await initialListResponse.json()).assets?.length || 0;
+      const initialCount =
+        (await initialListResponse.json()).assets?.length || 0;
 
       // Generate an image
       const generateResponse = await apiRequest(
         API_ENDPOINTS.generate.image,
         "POST",
         { prompt: "A beautiful sunset" },
-        authToken
+        authToken,
       );
 
       expect(generateResponse.status).toBe(200);
@@ -434,7 +435,7 @@ describe("Firestore Migration - Auto-save Feature", () => {
         API_ENDPOINTS.library.list("image"),
         "GET",
         undefined,
-        authToken
+        authToken,
       );
 
       const updatedAssets = (await updatedListResponse.json()).assets || [];
@@ -453,7 +454,7 @@ describe("Firestore Migration - Auto-save Feature", () => {
         console.log("✓ Generated image auto-saved to library");
       }
     },
-    { timeout: TEST_TIMEOUT }
+    { timeout: TEST_TIMEOUT },
   );
 
   it(
@@ -464,10 +465,11 @@ describe("Firestore Migration - Auto-save Feature", () => {
         API_ENDPOINTS.library.list("video"),
         "GET",
         undefined,
-        authToken
+        authToken,
       );
 
-      const initialCount = (await initialListResponse.json()).assets?.length || 0;
+      const initialCount =
+        (await initialListResponse.json()).assets?.length || 0;
 
       // Generate a video
       const generateResponse = await apiRequest(
@@ -478,7 +480,7 @@ describe("Firestore Migration - Auto-save Feature", () => {
           aspect_ratio: "16:9",
           duration_seconds: 4,
         },
-        authToken
+        authToken,
       );
 
       if (generateResponse.status !== 200) {
@@ -502,12 +504,15 @@ describe("Firestore Migration - Auto-save Feature", () => {
           API_ENDPOINTS.generate.videoStatus,
           "POST",
           { operation_name: generatedVideo.operation_name },
-          authToken
+          authToken,
         );
 
         if (statusResponse.status === 200) {
           const statusData = await statusResponse.json();
-          if (statusData.status === "complete" || statusData.status === "completed") {
+          if (
+            statusData.status === "complete" ||
+            statusData.status === "completed"
+          ) {
             isComplete = true;
           }
         }
@@ -523,7 +528,7 @@ describe("Firestore Migration - Auto-save Feature", () => {
         API_ENDPOINTS.library.list("video"),
         "GET",
         undefined,
-        authToken
+        authToken,
       );
 
       const updatedAssets = (await updatedListResponse.json()).assets || [];
@@ -540,7 +545,7 @@ describe("Firestore Migration - Auto-save Feature", () => {
         console.log("✓ Generated video auto-saved to library");
       }
     },
-    { timeout: TEST_TIMEOUT }
+    { timeout: TEST_TIMEOUT },
   );
 });
 
@@ -561,7 +566,7 @@ describe("Firestore Migration - Access Control", () => {
         API_ENDPOINTS.workflows.list("my"),
         "GET",
         undefined,
-        authToken
+        authToken,
       );
 
       expect(response.status).toBe(200);
@@ -576,7 +581,7 @@ describe("Firestore Migration - Access Control", () => {
         console.log("✓ User can see own workflows");
       }
     },
-    { timeout: TEST_TIMEOUT }
+    { timeout: TEST_TIMEOUT },
   );
 
   it(
@@ -586,7 +591,7 @@ describe("Firestore Migration - Access Control", () => {
         API_ENDPOINTS.workflows.list("public"),
         "GET",
         undefined,
-        authToken
+        authToken,
       );
 
       expect(response.status).toBe(200);
@@ -600,6 +605,6 @@ describe("Firestore Migration - Access Control", () => {
         console.log("✓ User can see public workflows");
       }
     },
-    { timeout: TEST_TIMEOUT }
+    { timeout: TEST_TIMEOUT },
   );
 });

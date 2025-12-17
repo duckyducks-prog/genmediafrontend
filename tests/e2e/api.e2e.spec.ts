@@ -280,7 +280,11 @@ describe("API E2E Tests", () => {
         expect(refData.images[0]).toBeDefined();
 
         const refImage = cleanBase64(refData.images[0]);
-        console.log("✓ Reference image generated, size:", refImage.length, "chars");
+        console.log(
+          "✓ Reference image generated, size:",
+          refImage.length,
+          "chars",
+        );
 
         console.log("Step 2: Generating image with reference...");
 

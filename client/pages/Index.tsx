@@ -88,19 +88,16 @@ export default function Index() {
       const currentUser = auth.currentUser;
       const token = await currentUser?.getIdToken();
 
-      const response = await fetch(
-        API_ENDPOINTS.generate.image,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            prompt: imagePrompt,
-          }),
+      const response = await fetch(API_ENDPOINTS.generate.image, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({
+          prompt: imagePrompt,
+        }),
+      });
 
       if (response.status === 403) {
         toast({
@@ -142,19 +139,16 @@ export default function Index() {
       const currentUser = auth.currentUser;
       const token = await currentUser?.getIdToken();
 
-      const response = await fetch(
-        API_ENDPOINTS.generate.video,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            prompt: videoPrompt,
-          }),
+      const response = await fetch(API_ENDPOINTS.generate.video, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({
+          prompt: videoPrompt,
+        }),
+      });
 
       if (response.status === 403) {
         toast({
@@ -173,17 +167,14 @@ export default function Index() {
         await new Promise((resolve) => setTimeout(resolve, 10000));
 
         const statusToken = await currentUser?.getIdToken();
-        const statusResponse = await fetch(
-          API_ENDPOINTS.generate.videoStatus,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${statusToken}`,
-            },
-            body: JSON.stringify({ operation_name: operationName }),
+        const statusResponse = await fetch(API_ENDPOINTS.generate.videoStatus, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${statusToken}`,
           },
-        );
+          body: JSON.stringify({ operation_name: operationName }),
+        });
         const statusData = await statusResponse.json();
 
         if (statusData.status === "complete") {
@@ -365,9 +356,13 @@ export default function Index() {
                   // Then load workflow after a small delay to ensure canvas is ready
                   setTimeout(() => {
                     if (workflowCanvasRef.current?.loadWorkflow) {
-                      workflowCanvasRef.current.loadWorkflow(workflow, { readOnly });
+                      workflowCanvasRef.current.loadWorkflow(workflow, {
+                        readOnly,
+                      });
                     } else {
-                      console.error('[Index] Failed to load workflow - canvas not ready');
+                      console.error(
+                        "[Index] Failed to load workflow - canvas not ready",
+                      );
                     }
                   }, 100);
                 }}

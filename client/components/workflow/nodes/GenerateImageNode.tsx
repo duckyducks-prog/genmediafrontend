@@ -107,20 +107,17 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
       const user = auth.currentUser;
       const token = await user?.getIdToken();
 
-      const response = await fetch(
-        API_ENDPOINTS.generate.upscale,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            image: base64Image,
-            upscale_factor: upscaleFactor,
-          }),
+      const response = await fetch(API_ENDPOINTS.generate.upscale, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({
+          image: base64Image,
+          upscale_factor: upscaleFactor,
+        }),
+      });
 
       if (response.status === 403) {
         toast({

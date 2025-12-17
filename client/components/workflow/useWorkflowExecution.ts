@@ -296,22 +296,19 @@ export function useWorkflowExecution(
               const user = auth.currentUser;
               const token = await user?.getIdToken();
 
-              const response = await fetch(
-                API_ENDPOINTS.generate.text,
-                {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                  },
-                  body: JSON.stringify({
-                    prompt,
-                    system_prompt: systemPrompt,
-                    context,
-                    temperature,
-                  }),
+              const response = await fetch(API_ENDPOINTS.generate.text, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
                 },
-              );
+                body: JSON.stringify({
+                  prompt,
+                  system_prompt: systemPrompt,
+                  context,
+                  temperature,
+                }),
+              });
 
               if (response.status === 403) {
                 return {
@@ -482,17 +479,14 @@ export function useWorkflowExecution(
                     : 0,
               });
 
-              const response = await fetch(
-                API_ENDPOINTS.generate.image,
-                {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                  },
-                  body: JSON.stringify(requestBody),
+              const response = await fetch(API_ENDPOINTS.generate.image, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
                 },
-              );
+                body: JSON.stringify(requestBody),
+              });
 
               if (response.status === 403) {
                 return {
@@ -854,17 +848,14 @@ export function useWorkflowExecution(
                 generate_audio: requestBody.generate_audio,
               });
 
-              const response = await fetch(
-                API_ENDPOINTS.generate.video,
-                {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                  },
-                  body: JSON.stringify(requestBody),
+              const response = await fetch(API_ENDPOINTS.generate.video, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
                 },
-              );
+                body: JSON.stringify(requestBody),
+              });
 
               if (response.status === 403) {
                 return {

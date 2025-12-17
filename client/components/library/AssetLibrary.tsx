@@ -161,15 +161,12 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
         const user = auth.currentUser;
         const token = await user?.getIdToken();
 
-        const response = await fetch(
-          API_ENDPOINTS.library.delete(id),
-          {
-            method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+        const response = await fetch(API_ENDPOINTS.library.delete(id), {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
-        );
+        });
 
         if (!response.ok) {
           throw new Error(`Failed to delete asset: ${response.status}`);

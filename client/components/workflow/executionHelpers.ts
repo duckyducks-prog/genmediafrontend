@@ -387,17 +387,14 @@ export async function pollVideoStatus(
       const user = auth.currentUser;
       const token = await user?.getIdToken();
 
-      const statusResponse = await fetch(
-        API_ENDPOINTS.generate.videoStatus,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ operation_name: operationName }),
+      const statusResponse = await fetch(API_ENDPOINTS.generate.videoStatus, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({ operation_name: operationName }),
+      });
 
       if (!statusResponse.ok) {
         console.warn(
