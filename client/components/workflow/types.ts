@@ -632,7 +632,7 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "prompt",
         label: "Prompt",
         type: ConnectorType.Text,
-        required: true,
+        required: false,
         acceptsMultiple: false,
       },
       {
