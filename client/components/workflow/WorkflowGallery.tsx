@@ -269,12 +269,17 @@ export default function WorkflowGallery({
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onLoadWorkflow(workflow);
+                  handleLoadWorkflow();
                 }}
+                disabled={isLoadingWorkflow}
                 className="shadow-lg"
               >
-                <WorkflowIcon className="w-4 h-4 mr-1" />
-                Open
+                {isLoadingWorkflow ? (
+                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                ) : (
+                  <WorkflowIcon className="w-4 h-4 mr-1" />
+                )}
+                {isLoadingWorkflow ? "Loading..." : "Open"}
               </Button>
 
               {showDelete && (
