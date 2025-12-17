@@ -136,10 +136,23 @@ interface NodePaletteProps {
 }
 
 export default function NodePalette({ onAddNode }: NodePaletteProps) {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredNodes = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return paletteNodes;
+    }
+    const query = searchQuery.toLowerCase();
+    return paletteNodes.filter((node) =>
+      node.label.toLowerCase().includes(query) ||
+      node.description.toLowerCase().includes(query)
+    );
+  }, [searchQuery]);
+
   const categories = {
-    input: paletteNodes.filter((n) => n.category === "input"),
-    modifier: paletteNodes.filter((n) => n.category === "modifier"),
-    action: paletteNodes.filter((n) => n.category === "action"),
+    input: filteredNodes.filter((n) => n.category === "input"),
+    modifier: filteredNodes.filter((n) => n.category === "modifier"),
+    action: filteredNodes.filter((n) => n.category === "action"),
   };
 
   const handleDragStart = (event: React.DragEvent, nodeType: NodeType) => {
