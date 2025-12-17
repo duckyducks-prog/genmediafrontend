@@ -1,7 +1,7 @@
 import { memo, useMemo } from 'react';
-import { Handle, Position, NodeProps, useReactFlow } from 'reactflow';
+import { Handle, Position, NodeProps } from 'reactflow';
 import { Button } from '@/components/ui/button';
-import { GenerateVideoNodeData, NODE_CONFIGURATIONS, NodeType, WorkflowEdge } from '../types';
+import { GenerateVideoNodeData, NODE_CONFIGURATIONS, NodeType } from '../types';
 import {
   Sparkles,
   Loader2,
