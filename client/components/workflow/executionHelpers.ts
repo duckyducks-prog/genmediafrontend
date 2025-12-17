@@ -21,7 +21,9 @@ export function gatherNodeInputs(
 
   // Find all edges that connect TO this node
   const incomingEdges = edges.filter((edge) => edge.target === node.id);
-  console.log(`[gatherNodeInputs] Found ${incomingEdges.length} incoming edges`);
+  console.log(
+    `[gatherNodeInputs] Found ${incomingEdges.length} incoming edges`,
+  );
 
   incomingEdges.forEach((edge) => {
     const sourceNode = allNodes.find((n) => n.id === edge.source);
@@ -30,17 +32,25 @@ export function gatherNodeInputs(
       edgeId: edge.id,
       source: edge.source,
       target: edge.target,
-      sourceHandle: edge.sourceHandle || 'default',
-      targetHandle: edge.targetHandle || 'default',
+      sourceHandle: edge.sourceHandle || "default",
+      targetHandle: edge.targetHandle || "default",
       hasSourceNode: !!sourceNode,
       sourceNodeType: sourceNode?.type,
       sourceNodeHasOutputs: !!sourceNode?.data?.outputs,
-      sourceNodeOutputKeys: sourceNode?.data?.outputs ? Object.keys(sourceNode.data.outputs) : [],
-      sourceNodeTopLevelKeys: sourceNode?.data ? Object.keys(sourceNode.data).filter(k => !['label', 'status', 'isGenerating'].includes(k)) : [],
+      sourceNodeOutputKeys: sourceNode?.data?.outputs
+        ? Object.keys(sourceNode.data.outputs)
+        : [],
+      sourceNodeTopLevelKeys: sourceNode?.data
+        ? Object.keys(sourceNode.data).filter(
+            (k) => !["label", "status", "isGenerating"].includes(k),
+          )
+        : [],
     });
 
     if (!sourceNode) {
-      console.warn(`[gatherNodeInputs] ⚠️ Skipping edge - source node not found`);
+      console.warn(
+        `[gatherNodeInputs] ⚠️ Skipping edge - source node not found`,
+      );
       return;
     }
 
@@ -55,7 +65,10 @@ export function gatherNodeInputs(
       valueType: typeof outputValue,
       isArray: Array.isArray(outputValue),
       valueLength: outputValue?.length || 0,
-      valuePreview: typeof outputValue === 'string' ? outputValue.substring(0, 50) + '...' : outputValue,
+      valuePreview:
+        typeof outputValue === "string"
+          ? outputValue.substring(0, 50) + "..."
+          : outputValue,
       fullOutputsObject: sourceNode.data.outputs,
     });
 
@@ -63,20 +76,27 @@ export function gatherNodeInputs(
     if (outputValue === undefined && sourceNode.data) {
       outputValue = sourceNode.data[sourceHandle];
       if (outputValue !== undefined) {
-        console.warn(`[gatherNodeInputs] ⚠️ Using fallback from node.data["${sourceHandle}"] (not in outputs)`, {
-          valueType: typeof outputValue,
-          valueLength: outputValue?.length || 0,
-        });
+        console.warn(
+          `[gatherNodeInputs] ⚠️ Using fallback from node.data["${sourceHandle}"] (not in outputs)`,
+          {
+            valueType: typeof outputValue,
+            valueLength: outputValue?.length || 0,
+          },
+        );
       }
     }
 
     // If still not found, check common aliases
-    if (outputValue === undefined && sourceHandle === 'image') {
-      outputValue = sourceNode.data.outputs?.imageUrl || sourceNode.data.imageUrl;
+    if (outputValue === undefined && sourceHandle === "image") {
+      outputValue =
+        sourceNode.data.outputs?.imageUrl || sourceNode.data.imageUrl;
       if (outputValue !== undefined) {
-        console.warn(`[gatherNodeInputs] ⚠️ Using alias: imageUrl for image handle`, {
-          valueLength: outputValue?.length || 0,
-        });
+        console.warn(
+          `[gatherNodeInputs] ⚠️ Using alias: imageUrl for image handle`,
+          {
+            valueLength: outputValue?.length || 0,
+          },
+        );
       }
     }
 
@@ -98,28 +118,41 @@ export function gatherNodeInputs(
           // Flatten it into the target array
           const beforeCount = inputs[targetHandle].length;
           inputs[targetHandle].push(...outputValue);
-          console.log(`[gatherNodeInputs] ✓ Flattened array into inputs["${targetHandle}"]`, {
-            sourceOutputWasArray: true,
-            itemsAdded: outputValue.length,
-            totalItemsNow: inputs[targetHandle].length,
-            exampleItem: typeof outputValue[0] === 'string' ? outputValue[0]?.substring(0, 50) + '...' : outputValue[0],
-          });
+          console.log(
+            `[gatherNodeInputs] ✓ Flattened array into inputs["${targetHandle}"]`,
+            {
+              sourceOutputWasArray: true,
+              itemsAdded: outputValue.length,
+              totalItemsNow: inputs[targetHandle].length,
+              exampleItem:
+                typeof outputValue[0] === "string"
+                  ? outputValue[0]?.substring(0, 50) + "..."
+                  : outputValue[0],
+            },
+          );
         } else {
           // Source outputs a single value
           inputs[targetHandle].push(outputValue);
-          console.log(`[gatherNodeInputs] ✓ Added single item to inputs["${targetHandle}"]`, {
-            sourceOutputWasArray: false,
-            itemType: typeof outputValue,
-            totalItemsNow: inputs[targetHandle].length,
-          });
+          console.log(
+            `[gatherNodeInputs] ✓ Added single item to inputs["${targetHandle}"]`,
+            {
+              sourceOutputWasArray: false,
+              itemType: typeof outputValue,
+              totalItemsNow: inputs[targetHandle].length,
+            },
+          );
         }
       } else {
         // Single value
         inputs[targetHandle] = outputValue;
-        console.log(`[gatherNodeInputs] ✓ Set inputs["${targetHandle}"] = ${typeof outputValue}`);
+        console.log(
+          `[gatherNodeInputs] ✓ Set inputs["${targetHandle}"] = ${typeof outputValue}`,
+        );
       }
     } else {
-      console.warn(`[gatherNodeInputs] ⚠️ Output value is undefined for handle "${sourceHandle}"`);
+      console.warn(
+        `[gatherNodeInputs] ⚠️ Output value is undefined for handle "${sourceHandle}"`,
+      );
     }
   });
 
@@ -377,45 +410,54 @@ export async function pollVideoStatus(
 
       // Check if video is ready
       if (statusData.status === "complete") {
-        console.log('[pollVideoStatus] Video generation complete! Response data:', {
-          hasVideo_base64: !!statusData.video_base64,
-          hasVideoBase64: !!statusData.videoBase64,
-          hasVideo_url: !!statusData.video_url,
-          hasVideoUrl: !!statusData.videoUrl,
-          hasVideo: !!statusData.video,
-          allKeys: Object.keys(statusData),
-          fullResponse: statusData,
-        });
+        console.log(
+          "[pollVideoStatus] Video generation complete! Response data:",
+          {
+            hasVideo_base64: !!statusData.video_base64,
+            hasVideoBase64: !!statusData.videoBase64,
+            hasVideo_url: !!statusData.video_url,
+            hasVideoUrl: !!statusData.videoUrl,
+            hasVideo: !!statusData.video,
+            allKeys: Object.keys(statusData),
+            fullResponse: statusData,
+          },
+        );
 
         // Try multiple possible field names for the video data
-        const videoData = statusData.video_base64 ||
-                         statusData.videoBase64 ||
-                         statusData.video_url ||
-                         statusData.videoUrl ||
-                         statusData.video;
+        const videoData =
+          statusData.video_base64 ||
+          statusData.videoBase64 ||
+          statusData.video_url ||
+          statusData.videoUrl ||
+          statusData.video;
 
         if (videoData) {
           // If it's already a data URI, use it directly
-          if (typeof videoData === 'string' && videoData.startsWith('data:')) {
+          if (typeof videoData === "string" && videoData.startsWith("data:")) {
             return {
               success: true,
               videoUrl: videoData,
             };
           }
           // If it's base64, convert to data URI
-          if (typeof videoData === 'string') {
+          if (typeof videoData === "string") {
             return {
               success: true,
               videoUrl: `data:video/mp4;base64,${videoData}`,
             };
           }
           // Unknown format
-          console.error('[pollVideoStatus] Video data is not a string:', typeof videoData, videoData);
+          console.error(
+            "[pollVideoStatus] Video data is not a string:",
+            typeof videoData,
+            videoData,
+          );
         }
 
         return {
           success: false,
-          error: "Video generation completed but no video data returned. Check console for response details.",
+          error:
+            "Video generation completed but no video data returned. Check console for response details.",
         };
       }
 
@@ -424,7 +466,7 @@ export async function pollVideoStatus(
         // Properly extract error message from various formats
         let errorMsg = "Unknown error";
         if (statusData.error) {
-          if (typeof statusData.error === 'string') {
+          if (typeof statusData.error === "string") {
             errorMsg = statusData.error;
           } else if (statusData.error.message) {
             errorMsg = statusData.error.message;
@@ -432,7 +474,7 @@ export async function pollVideoStatus(
             errorMsg = JSON.stringify(statusData.error);
           }
         }
-        console.error('[pollVideoStatus] Video generation error:', statusData);
+        console.error("[pollVideoStatus] Video generation error:", statusData);
         return {
           success: false,
           error: `Video generation failed: ${errorMsg}`,

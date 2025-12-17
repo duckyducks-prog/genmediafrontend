@@ -150,7 +150,9 @@ export function useWorkflowExecution(
               oldDataKeys: Object.keys(node.data),
               newDataKeys: Object.keys(updatedData),
               hasOutputs: !!updatedData.outputs,
-              outputsKeys: updatedData.outputs ? Object.keys(updatedData.outputs) : [],
+              outputsKeys: updatedData.outputs
+                ? Object.keys(updatedData.outputs)
+                : [],
               topLevelHasImage: !!updatedData.image,
               topLevelHasImageUrl: !!updatedData.imageUrl,
               outputsHasImage: !!updatedData.outputs?.image,
@@ -163,7 +165,9 @@ export function useWorkflowExecution(
             // Dispatch node-update event to trigger output propagation to downstream nodes
             // This is crucial for nodes like ImageComposite to propagate their outputs to Preview nodes
             if (status === "completed" && updatedData.outputs) {
-              console.log("[updateNodeState] Dispatching node-update event for output propagation");
+              console.log(
+                "[updateNodeState] Dispatching node-update event for output propagation",
+              );
               setTimeout(() => {
                 const event = new CustomEvent("node-update", {
                   detail: {
@@ -324,7 +328,7 @@ export function useWorkflowExecution(
                 success: true,
                 data: {
                   response: apiData.response,
-                  outputs: { response: apiData.response }
+                  outputs: { response: apiData.response },
                 },
               };
             } catch (error) {
@@ -349,12 +353,20 @@ export function useWorkflowExecution(
             }
 
             // Always append aspect ratio to prompt (from format connector or node dropdown)
-            const aspectRatio = formatData?.aspect_ratio || node.data.aspectRatio || "1:1";
-            const aspectRatioLabel = aspectRatio === "16:9" ? "landscape" :
-                                    aspectRatio === "9:16" ? "portrait" :
-                                    aspectRatio === "1:1" ? "square" :
-                                    aspectRatio === "3:4" ? "portrait" :
-                                    aspectRatio === "4:3" ? "landscape" : "";
+            const aspectRatio =
+              formatData?.aspect_ratio || node.data.aspectRatio || "1:1";
+            const aspectRatioLabel =
+              aspectRatio === "16:9"
+                ? "landscape"
+                : aspectRatio === "9:16"
+                  ? "portrait"
+                  : aspectRatio === "1:1"
+                    ? "square"
+                    : aspectRatio === "3:4"
+                      ? "portrait"
+                      : aspectRatio === "4:3"
+                        ? "landscape"
+                        : "";
             prompt = `${prompt}, ${aspectRatio} aspect ratio${aspectRatioLabel ? ` (${aspectRatioLabel})` : ""}`;
 
             console.log("[GenerateImage] Execution inputs:", {
@@ -435,7 +447,11 @@ export function useWorkflowExecution(
               hasReferenceImages: !!referenceImages,
               type: typeof referenceImages,
               isArray: Array.isArray(referenceImages),
-              count: Array.isArray(referenceImages) ? referenceImages.length : (referenceImages ? 1 : 0),
+              count: Array.isArray(referenceImages)
+                ? referenceImages.length
+                : referenceImages
+                  ? 1
+                  : 0,
             });
 
             try {
@@ -445,7 +461,8 @@ export function useWorkflowExecution(
               // Build request body - include reference_images if available
               const requestBody: any = {
                 prompt,
-                aspect_ratio: formatData?.aspect_ratio || node.data.aspectRatio || "1:1",
+                aspect_ratio:
+                  formatData?.aspect_ratio || node.data.aspectRatio || "1:1",
               };
 
               // Add reference_images if we have valid data
@@ -459,7 +476,9 @@ export function useWorkflowExecution(
                 hasReferenceImages: !!requestBody.reference_images,
                 referenceImageCount: Array.isArray(requestBody.reference_images)
                   ? requestBody.reference_images.length
-                  : (requestBody.reference_images ? 1 : 0),
+                  : requestBody.reference_images
+                    ? 1
+                    : 0,
               });
 
               const response = await fetch(
@@ -531,9 +550,9 @@ export function useWorkflowExecution(
                   image: firstImage,
                   imageUrl: firstImage,
                   outputs: {
-                    images: images,    // For connecting to reference_images (array)
-                    image: firstImage  // For connecting to first_frame/last_frame (single)
-                  }
+                    images: images, // For connecting to reference_images (array)
+                    image: firstImage, // For connecting to first_frame/last_frame (single)
+                  },
                 };
 
                 console.log("[GenerateImage] Returning result data:", {
@@ -541,7 +560,9 @@ export function useWorkflowExecution(
                   hasImage: !!resultData.image,
                   hasImageUrl: !!resultData.imageUrl,
                   hasOutputs: !!resultData.outputs,
-                  outputsKeys: resultData.outputs ? Object.keys(resultData.outputs) : [],
+                  outputsKeys: resultData.outputs
+                    ? Object.keys(resultData.outputs)
+                    : [],
                   imageUrlLength: resultData.imageUrl?.length || 0,
                 });
 
@@ -570,7 +591,7 @@ export function useWorkflowExecution(
           }
 
           case NodeType.GenerateVideo: {
-            console.log('[GenerateVideo] Starting execution with inputs:', {
+            console.log("[GenerateVideo] Starting execution with inputs:", {
               inputKeys: Object.keys(inputs),
               hasPrompt: !!inputs.prompt,
               hasFirstFrame: !!inputs.first_frame,
@@ -580,7 +601,10 @@ export function useWorkflowExecution(
               hasFilters: !!inputs.filters,
               firstFrameType: typeof inputs.first_frame,
               firstFrameLength: inputs.first_frame?.length || 0,
-              firstFramePreview: typeof inputs.first_frame === 'string' ? inputs.first_frame.substring(0, 50) + '...' : inputs.first_frame,
+              firstFramePreview:
+                typeof inputs.first_frame === "string"
+                  ? inputs.first_frame.substring(0, 50) + "..."
+                  : inputs.first_frame,
             });
 
             let prompt = inputs.prompt || "";
@@ -594,24 +618,30 @@ export function useWorkflowExecution(
             if (!prompt && !firstFrame && !lastFrame && !referenceImages) {
               return {
                 success: false,
-                error: "Video generation requires at least a prompt or image inputs (first frame, last frame, or reference images)",
+                error:
+                  "Video generation requires at least a prompt or image inputs (first frame, last frame, or reference images)",
               };
             }
 
             // Get aspect ratio for both prompt enhancement and logging
-            const aspectRatio = formatData?.aspect_ratio || node.data.aspectRatio || "16:9";
+            const aspectRatio =
+              formatData?.aspect_ratio || node.data.aspectRatio || "16:9";
 
             // Append aspect ratio to prompt if prompt exists
             if (prompt) {
-              const aspectRatioLabel = aspectRatio === "16:9" ? "landscape" :
-                                      aspectRatio === "9:16" ? "portrait" : "";
+              const aspectRatioLabel =
+                aspectRatio === "16:9"
+                  ? "landscape"
+                  : aspectRatio === "9:16"
+                    ? "portrait"
+                    : "";
               prompt = `${prompt}, ${aspectRatio} aspect ratio${aspectRatioLabel ? ` (${aspectRatioLabel})` : ""}`;
             } else {
               // Use a default prompt when only images are provided
               prompt = "Generate a video from the provided images";
             }
 
-            console.log('[GenerateVideo] After variable assignment:', {
+            console.log("[GenerateVideo] After variable assignment:", {
               originalPrompt: inputs.prompt,
               finalPrompt: prompt,
               hasFirstFrame: !!firstFrame,
@@ -622,7 +652,6 @@ export function useWorkflowExecution(
               formatData: formatData,
               aspectRatio: aspectRatio,
             });
-
 
             // NEW: Apply filters before sending to API (Layer 3 integration)
             if (filters.length > 0) {
@@ -725,7 +754,9 @@ export function useWorkflowExecution(
                 };
               }
 
-              console.log(`[GenerateVideo] Reference images count: ${referenceImages.length}/3`);
+              console.log(
+                `[GenerateVideo] Reference images count: ${referenceImages.length}/3`,
+              );
             }
 
             // Validate mutual exclusion
@@ -746,20 +777,30 @@ export function useWorkflowExecution(
               const user = auth.currentUser;
               const token = await user?.getIdToken();
 
-              console.log('[GenerateVideo] Preparing request body (will use first_frame_image/last_frame_image API fields):', {
-                hasPrompt: !!prompt,
-                hasFirstFrame: !!firstFrame,
-                hasLastFrame: !!lastFrame,
-                hasReferenceImages: !!referenceImages,
-                firstFrameLength: typeof firstFrame === 'string' ? firstFrame.length : 0,
-                lastFrameLength: typeof lastFrame === 'string' ? lastFrame.length : 0,
-              });
+              console.log(
+                "[GenerateVideo] Preparing request body (will use first_frame_image/last_frame_image API fields):",
+                {
+                  hasPrompt: !!prompt,
+                  hasFirstFrame: !!firstFrame,
+                  hasLastFrame: !!lastFrame,
+                  hasReferenceImages: !!referenceImages,
+                  firstFrameLength:
+                    typeof firstFrame === "string" ? firstFrame.length : 0,
+                  lastFrameLength:
+                    typeof lastFrame === "string" ? lastFrame.length : 0,
+                },
+              );
 
               // Build request body - only include optional fields if we have valid data
               const requestBody: any = {
-                aspect_ratio: formatData?.aspect_ratio || node.data.aspectRatio || "16:9",
-                duration_seconds: formatData?.duration_seconds || node.data.durationSeconds || 8,
-                generate_audio: formatData?.generate_audio ?? node.data.generateAudio ?? true,
+                aspect_ratio:
+                  formatData?.aspect_ratio || node.data.aspectRatio || "16:9",
+                duration_seconds:
+                  formatData?.duration_seconds ||
+                  node.data.durationSeconds ||
+                  8,
+                generate_audio:
+                  formatData?.generate_audio ?? node.data.generateAudio ?? true,
               };
 
               // Only include prompt if provided
@@ -771,21 +812,37 @@ export function useWorkflowExecution(
               // NOTE: The Veo API expects "first_frame_image" and "last_frame_image", not "first_frame" and "last_frame"
               if (firstFrame) {
                 requestBody.first_frame_image = firstFrame;
-                console.log('[GenerateVideo] ✓ Including first_frame_image in request (base64 length:', firstFrame.length, ')');
+                console.log(
+                  "[GenerateVideo] ✓ Including first_frame_image in request (base64 length:",
+                  firstFrame.length,
+                  ")",
+                );
               }
               if (lastFrame) {
                 requestBody.last_frame_image = lastFrame;
-                console.log('[GenerateVideo] ✓ Including last_frame_image in request (base64 length:', lastFrame.length, ')');
+                console.log(
+                  "[GenerateVideo] ✓ Including last_frame_image in request (base64 length:",
+                  lastFrame.length,
+                  ")",
+                );
               }
               if (referenceImages) {
                 requestBody.reference_images = referenceImages;
-                console.log('[GenerateVideo] ✓ Including reference_images in request (count:', Array.isArray(referenceImages) ? referenceImages.length : 1, ')');
+                console.log(
+                  "[GenerateVideo] ✓ Including reference_images in request (count:",
+                  Array.isArray(referenceImages) ? referenceImages.length : 1,
+                  ")",
+                );
               }
 
-              console.log('[GenerateVideo] Full request body (truncated):', {
+              console.log("[GenerateVideo] Full request body (truncated):", {
                 prompt: requestBody.prompt?.substring(0, 50),
-                first_frame_image: requestBody.first_frame_image ? `${typeof requestBody.first_frame_image} (${requestBody.first_frame_image.length} chars)` : null,
-                last_frame_image: requestBody.last_frame_image ? `${typeof requestBody.last_frame_image} (${requestBody.last_frame_image.length} chars)` : null,
+                first_frame_image: requestBody.first_frame_image
+                  ? `${typeof requestBody.first_frame_image} (${requestBody.first_frame_image.length} chars)`
+                  : null,
+                last_frame_image: requestBody.last_frame_image
+                  ? `${typeof requestBody.last_frame_image} (${requestBody.last_frame_image.length} chars)`
+                  : null,
                 reference_images: requestBody.reference_images
                   ? Array.isArray(requestBody.reference_images)
                     ? `array (${requestBody.reference_images.length} images)`
@@ -821,21 +878,30 @@ export function useWorkflowExecution(
                 try {
                   const errorData = await response.json();
                   if (errorData.error) {
-                    errorMessage = typeof errorData.error === 'string'
-                      ? errorData.error
-                      : JSON.stringify(errorData.error);
+                    errorMessage =
+                      typeof errorData.error === "string"
+                        ? errorData.error
+                        : JSON.stringify(errorData.error);
                   } else if (errorData.detail) {
-                    errorMessage = typeof errorData.detail === 'string'
-                      ? errorData.detail
-                      : JSON.stringify(errorData.detail);
+                    errorMessage =
+                      typeof errorData.detail === "string"
+                        ? errorData.detail
+                        : JSON.stringify(errorData.detail);
                   } else if (errorData.message) {
-                    errorMessage = typeof errorData.message === 'string'
-                      ? errorData.message
-                      : JSON.stringify(errorData.message);
+                    errorMessage =
+                      typeof errorData.message === "string"
+                        ? errorData.message
+                        : JSON.stringify(errorData.message);
                   }
-                  console.error('[GenerateVideo] API error response:', errorData);
+                  console.error(
+                    "[GenerateVideo] API error response:",
+                    errorData,
+                  );
                 } catch (parseError) {
-                  console.error('[GenerateVideo] Could not parse error response:', parseError);
+                  console.error(
+                    "[GenerateVideo] Could not parse error response:",
+                    parseError,
+                  );
                 }
                 throw new Error(errorMessage);
               }
@@ -884,17 +950,21 @@ export function useWorkflowExecution(
                 };
               }
             } catch (error) {
-              console.error('[GenerateVideo] Error during execution:', error);
+              console.error("[GenerateVideo] Error during execution:", error);
               let errorMessage = "Video generation failed";
 
               if (error instanceof Error) {
                 errorMessage = error.message;
-              } else if (typeof error === 'string') {
+              } else if (typeof error === "string") {
                 errorMessage = error;
-              } else if (error && typeof error === 'object') {
+              } else if (error && typeof error === "object") {
                 // Handle error objects that might have message, error, or detail properties
                 const errorObj = error as any;
-                errorMessage = errorObj.message || errorObj.error || errorObj.detail || JSON.stringify(error);
+                errorMessage =
+                  errorObj.message ||
+                  errorObj.error ||
+                  errorObj.detail ||
+                  JSON.stringify(error);
               }
 
               return {
@@ -1055,7 +1125,6 @@ export function useWorkflowExecution(
     // Group nodes by execution level for parallel execution
     const levels = groupNodesByLevel(executionOrder, nodes, edges);
 
-
     try {
       let totalCompleted = 0;
       let totalFailed = 0;
@@ -1188,11 +1257,15 @@ export function useWorkflowExecution(
                   },
                   outputs: {
                     hasOutputs: !!updateData.outputs,
-                    outputsKeys: updateData.outputs ? Object.keys(updateData.outputs) : [],
+                    outputsKeys: updateData.outputs
+                      ? Object.keys(updateData.outputs)
+                      : [],
                     outputsHasImage: !!updateData.outputs?.image,
                     outputsHasImages: !!updateData.outputs?.images,
                     outputsHasImageUrl: !!updateData.outputs?.imageUrl,
-                    outputsImagePreview: updateData.outputs?.image ? updateData.outputs.image.substring(0, 50) : 'none',
+                    outputsImagePreview: updateData.outputs?.image
+                      ? updateData.outputs.image.substring(0, 50)
+                      : "none",
                   },
                 },
               });
@@ -1310,9 +1383,13 @@ export function useWorkflowExecution(
           if (!depNode) continue;
 
           // Check if this dependency already has outputs - if so, skip execution
-          const hasExistingOutputs = depNode.data.outputs && Object.keys(depNode.data.outputs).length > 0;
-          const isCompleted = depNode.data.status === 'completed';
-          const isInputNode = depNode.type === NodeType.Prompt || depNode.type === NodeType.ImageInput;
+          const hasExistingOutputs =
+            depNode.data.outputs &&
+            Object.keys(depNode.data.outputs).length > 0;
+          const isCompleted = depNode.data.status === "completed";
+          const isInputNode =
+            depNode.type === NodeType.Prompt ||
+            depNode.type === NodeType.ImageInput;
 
           console.log(
             `[Single Node Execution] Checking dependency ${depNodeId}:`,
@@ -1320,13 +1397,15 @@ export function useWorkflowExecution(
               nodeType: depNode.type,
               status: depNode.data.status,
               hasOutputsProperty: !!depNode.data.outputs,
-              outputsKeys: depNode.data.outputs ? Object.keys(depNode.data.outputs) : [],
+              outputsKeys: depNode.data.outputs
+                ? Object.keys(depNode.data.outputs)
+                : [],
               hasExistingOutputs,
               isCompleted,
               isInputNode,
               willSkip: hasExistingOutputs && (isCompleted || isInputNode),
               allDataKeys: Object.keys(depNode.data),
-            }
+            },
           );
 
           // Skip if: (1) has outputs AND completed, OR (2) has outputs AND is an input node
@@ -1334,7 +1413,10 @@ export function useWorkflowExecution(
           if (hasExistingOutputs && (isCompleted || isInputNode)) {
             console.log(
               `[Single Node Execution] ✓ Skipping ${depNodeId} - already has outputs`,
-              { outputs: depNode.data.outputs, reason: isInputNode ? 'input node with data' : 'completed node' }
+              {
+                outputs: depNode.data.outputs,
+                reason: isInputNode ? "input node with data" : "completed node",
+              },
             );
             continue; // Skip this dependency, use existing outputs
           }
@@ -1342,11 +1424,13 @@ export function useWorkflowExecution(
           console.log(
             `[Single Node Execution] ⚠️ Re-executing dependency ${depNodeId}`,
             {
-              reason: !hasExistingOutputs ? 'no outputs' : 'not completed and not input node',
+              reason: !hasExistingOutputs
+                ? "no outputs"
+                : "not completed and not input node",
               hasOutputs: hasExistingOutputs,
               isCompleted,
-              isInputNode
-            }
+              isInputNode,
+            },
           );
 
           updateNodeState(depNodeId, "executing");

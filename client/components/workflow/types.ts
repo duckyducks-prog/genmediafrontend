@@ -172,7 +172,14 @@ export interface CropNodeData extends BaseNodeData {
 
 // IMAGE COMPOSITE node
 export interface ImageCompositeNodeData extends BaseNodeData {
-  blendMode: "normal" | "multiply" | "screen" | "overlay" | "add" | "darken" | "lighten";
+  blendMode:
+    | "normal"
+    | "multiply"
+    | "screen"
+    | "overlay"
+    | "add"
+    | "darken"
+    | "lighten";
   opacity: number; // 0-1 for the top layers
   compositePreview?: string; // Preview of the composited result
 }
@@ -670,7 +677,8 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
     type: NodeType.GenerateImage,
     label: "Generate Image",
     category: "action",
-    description: "Generate or edit images using Gemini (supports reference images with newer models)",
+    description:
+      "Generate or edit images using Gemini (supports reference images with newer models)",
     inputConnectors: [
       {
         id: "prompt",
