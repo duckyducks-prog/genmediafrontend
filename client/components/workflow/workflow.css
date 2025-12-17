@@ -35,11 +35,11 @@
 
 .react-flow__edge.connector-type-image .react-flow__edge-path,
 .react-flow__edge.connector-type-images .react-flow__edge-path {
-  stroke: #6DD3CE !important;
+  stroke: #B9CDBE !important;
 }
 
 .react-flow__edge.connector-type-video .react-flow__edge-path {
-  stroke: #C96DD8 !important;
+  stroke: #FF4800 !important;
 }
 
 .react-flow__edge.connector-type-format .react-flow__edge-path {
