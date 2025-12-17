@@ -884,12 +884,22 @@ export function useWorkflowExecution(
                 };
               }
             } catch (error) {
+              console.error('[GenerateVideo] Error during execution:', error);
+              let errorMessage = "Video generation failed";
+
+              if (error instanceof Error) {
+                errorMessage = error.message;
+              } else if (typeof error === 'string') {
+                errorMessage = error;
+              } else if (error && typeof error === 'object') {
+                // Handle error objects that might have message, error, or detail properties
+                const errorObj = error as any;
+                errorMessage = errorObj.message || errorObj.error || errorObj.detail || JSON.stringify(error);
+              }
+
               return {
                 success: false,
-                error:
-                  error instanceof Error
-                    ? error.message
-                    : "Video generation failed",
+                error: errorMessage,
               };
             }
           }
