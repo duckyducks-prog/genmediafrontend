@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Trash2,
   ZoomIn,
@@ -88,8 +89,12 @@ export default function WorkflowToolbar({
         className="h-8 bg-[#F3C5DB] hover:bg-[#D6C2D9] text-[#46062B] px-3"
         title="Run All Nodes"
       >
-        <Play className="w-3.5 h-3.5 mr-1" />
-        {isExecuting ? `${progressPercentage}%` : "Run All"}
+        {isExecuting ? (
+          <Spinner size={16} className="mr-1" />
+        ) : (
+          <Play className="w-3.5 h-3.5 mr-1" />
+        )}
+        {isExecuting ? "Running" : "Run All"}
       </Button>
 
       {isExecuting && (
