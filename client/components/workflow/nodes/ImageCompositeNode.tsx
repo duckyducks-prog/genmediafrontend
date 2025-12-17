@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { Handle, Position, NodeProps } from "reactflow";
-import { ImageCompositeNodeData, NODE_CONFIGURATIONS, NodeType } from "../types";
-import { Layers, ChevronDown } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { Handle, Position, NodeProps, useReactFlow } from "reactflow";
+import { ImageCompositeNodeData, NODE_CONFIGURATIONS, NodeType, WorkflowNode, WorkflowEdge } from "../types";
+import { Layers, ChevronDown, Loader2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -9,10 +9,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { gatherNodeInputs } from "../executionHelpers";
+import { renderCompositeWithPixi } from "@/lib/pixi-renderer";
 
 function ImageCompositeNode({ data, id }: NodeProps<ImageCompositeNodeData>) {
   const config = NODE_CONFIGURATIONS[NodeType.ImageComposite];
   const status = data.status || "ready";
+  const { getNodes, getEdges } = useReactFlow();
+  const [isRendering, setIsRendering] = useState(false);
+  const renderRequestId = useRef(0);
 
   const handleUpdate = (field: string, value: any) => {
     if (data.readOnly) return;
@@ -25,6 +30,122 @@ function ImageCompositeNode({ data, id }: NodeProps<ImageCompositeNodeData>) {
     });
     window.dispatchEvent(event);
   };
+
+  // Real-time execution: Update composite whenever inputs or blend settings change
+  useEffect(() => {
+    const nodes = getNodes() as WorkflowNode[];
+    const edges = getEdges() as WorkflowEdge[];
+    const currentNode = nodes.find((n) => n.id === id);
+
+    if (!currentNode || data.readOnly) return;
+
+    // Gather inputs from connected nodes
+    const inputs = gatherNodeInputs(currentNode, nodes, edges);
+    const imageInputs = inputs.images;
+    const filters = inputs.filters || [];
+
+    console.log("[ImageCompositeNode] Live update triggered:", {
+      imageCount: Array.isArray(imageInputs) ? imageInputs.length : 0,
+      blendMode: data.blendMode,
+      opacity: data.opacity,
+      filterCount: filters.length,
+    });
+
+    // Validate at least 2 images
+    if (!Array.isArray(imageInputs) || imageInputs.length < 2) {
+      // Clear outputs if not enough images
+      if ((data as any).image) {
+        const event = new CustomEvent("node-update", {
+          detail: {
+            id,
+            data: {
+              ...data,
+              image: undefined,
+              compositePreview: undefined,
+              outputs: {},
+              error: undefined,
+            },
+          },
+        });
+        window.dispatchEvent(event);
+      }
+      return;
+    }
+
+    // Increment request ID to track this render
+    const currentRequestId = ++renderRequestId.current;
+    setIsRendering(true);
+
+    // Execute composite rendering
+    const executeComposite = async () => {
+      try {
+        console.log(
+          `[ImageCompositeNode] Starting composite render (request #${currentRequestId})`,
+        );
+
+        const compositeResult = await renderCompositeWithPixi(
+          imageInputs,
+          data.blendMode,
+          data.opacity,
+          filters,
+        );
+
+        // Only update if this is still the latest request
+        if (currentRequestId === renderRequestId.current) {
+          console.log(
+            `[ImageCompositeNode] Composite completed (request #${currentRequestId})`,
+          );
+
+          const event = new CustomEvent("node-update", {
+            detail: {
+              id,
+              data: {
+                ...data,
+                image: compositeResult,
+                compositePreview: `${imageInputs.length} layers blended`,
+                outputs: { image: compositeResult },
+                error: undefined,
+              },
+            },
+          });
+          window.dispatchEvent(event);
+        } else {
+          console.log(
+            `[ImageCompositeNode] Discarding stale render (request #${currentRequestId})`,
+          );
+        }
+      } catch (error) {
+        // Only handle error if this is still the latest request
+        if (currentRequestId === renderRequestId.current) {
+          console.error(
+            `[ImageCompositeNode] Composite failed (request #${currentRequestId}):`,
+            error,
+          );
+
+          const event = new CustomEvent("node-update", {
+            detail: {
+              id,
+              data: {
+                ...data,
+                error:
+                  error instanceof Error
+                    ? error.message
+                    : "Image compositing failed",
+              },
+            },
+          });
+          window.dispatchEvent(event);
+        }
+      } finally {
+        // Only clear rendering flag if this is still the latest request
+        if (currentRequestId === renderRequestId.current) {
+          setIsRendering(false);
+        }
+      }
+    };
+
+    executeComposite();
+  }, [id, data.blendMode, data.opacity, data.readOnly, getNodes, getEdges]);
 
   const getBorderColor = () => {
     if (status === "executing") return "border-yellow-500";
@@ -45,10 +166,10 @@ function ImageCompositeNode({ data, id }: NodeProps<ImageCompositeNodeData>) {
             {data.label || "Image Composite"}
           </div>
         </div>
-        {status === "executing" && (
-          <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
+        {(isRendering || status === "executing") && (
+          <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />
         )}
-        {status === "completed" && (
+        {!isRendering && status === "completed" && (
           <div className="text-green-500 text-xs">✓</div>
         )}
         {status === "error" && (
