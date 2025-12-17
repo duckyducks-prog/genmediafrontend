@@ -217,6 +217,7 @@ export type WorkflowNodeData =
   | VignetteNodeData
   | CropNodeData
   | ImageCompositeNodeData
+  | ExtractLastFrameNodeData
   | GenerateVideoNodeData
   | GenerateImageNodeData
   | LLMNodeData
