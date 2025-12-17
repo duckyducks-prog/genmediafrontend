@@ -1108,8 +1108,8 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
             multiSelectionKeyCode="Shift"
             selectionKeyCode="Shift"
             deleteKeyCode={isReadOnly ? null : "Delete"}
-            selectionOnDrag={!isReadOnly}
-            panOnDrag={[1, 2]}
+            selectionOnDrag={true}
+            panOnDrag={true}
             selectNodesOnDrag={!isReadOnly}
             nodesDraggable={!isReadOnly}
             nodesConnectable={!isReadOnly}
@@ -1125,6 +1125,9 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               [-5000, -5000],
               [5000, 5000],
             ]}
+            zoomOnScroll={true}
+            zoomOnPinch={true}
+            panOnScroll={false}
           >
             <Background className="bg-background" />
             <Controls className="bg-card border border-border" />
