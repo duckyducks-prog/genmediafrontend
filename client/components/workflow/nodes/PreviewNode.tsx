@@ -148,8 +148,6 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
   }, [data, id]); // React to any data changes
 
   const getBorderColor = () => {
-    if (isExecuting) return "border-yellow-500";
-    if (isCompleted) return "border-green-500";
     return "border-border";
   };
 

@@ -46,8 +46,6 @@ function PromptConcatenatorNode({ data, id }: NodeProps<PromptConcatenatorNodeDa
   }, [id, data.separator, getNodes, getEdges]);
 
   const getBorderColor = () => {
-    if (status === 'executing') return 'border-yellow-500';
-    if (status === 'completed') return 'border-green-500';
     if (status === 'error') return 'border-red-500';
     return 'border-border';
   };

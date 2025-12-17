@@ -12,8 +12,6 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
   const downloaded = (data as any).downloaded || false;
 
   const getBorderColor = () => {
-    if (isExecuting) return "border-yellow-500";
-    if (isCompleted) return "border-green-500";
     return "border-border";
   };
 

@@ -92,8 +92,6 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
   }, [incomingImageUrl, filters]);
 
   const getBorderColor = () => {
-    if (isExecuting) return "border-yellow-500";
-    if (isCompleted) return "border-green-500";
     return "border-border";
   };
 

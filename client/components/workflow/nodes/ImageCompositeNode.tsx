@@ -153,8 +153,6 @@ function ImageCompositeNode({ data, id }: NodeProps<ImageCompositeNodeData>) {
   }, [id, data.blendMode, data.opacity, data.readOnly, getNodes, getEdges]);
 
   const getBorderColor = () => {
-    if (status === "executing") return "border-yellow-500";
-    if (status === "completed") return "border-green-500";
     if (status === "error") return "border-red-500";
     return "border-border";
   };

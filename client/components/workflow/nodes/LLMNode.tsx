@@ -11,8 +11,6 @@ function LLMNode({ data, id }: NodeProps<LLMNodeData>) {
   const isGenerating = data.isGenerating || status === 'executing';
 
   const getBorderColor = () => {
-    if (isGenerating) return 'border-yellow-500';
-    if (status === 'completed') return 'border-green-500';
     if (status === 'error') return 'border-red-500';
     return 'border-border';
   };

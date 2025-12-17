@@ -33,8 +33,6 @@ function PromptInputNode({ data, id }: NodeProps<PromptNodeData>) {
   const isCompleted = status === "completed";
 
   const getBorderColor = () => {
-    if (isExecuting) return "border-yellow-500";
-    if (isCompleted) return "border-green-500";
     return "border-border";
   };
 
