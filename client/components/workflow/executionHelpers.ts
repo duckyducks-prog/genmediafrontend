@@ -392,9 +392,21 @@ export async function pollVideoStatus(
 
       // Check for errors
       if (statusData.status === "error" || statusData.error) {
+        // Properly extract error message from various formats
+        let errorMsg = "Unknown error";
+        if (statusData.error) {
+          if (typeof statusData.error === 'string') {
+            errorMsg = statusData.error;
+          } else if (statusData.error.message) {
+            errorMsg = statusData.error.message;
+          } else {
+            errorMsg = JSON.stringify(statusData.error);
+          }
+        }
+        console.error('[pollVideoStatus] Video generation error:', statusData);
         return {
           success: false,
-          error: `Video generation failed: ${statusData.error || "Unknown error"}`,
+          error: `Video generation failed: ${errorMsg}`,
         };
       }
 
