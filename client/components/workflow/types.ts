@@ -81,6 +81,7 @@ export interface BaseNodeData {
   error?: string;
   outputs?: Record<string, any>; // Store output values from execution
   readOnly?: boolean; // Indicates if node is in read-only mode (for templates)
+  locked?: boolean; // Indicates if node position is locked (prevents accidental dragging)
 }
 
 // IMAGE INPUT node
