@@ -434,23 +434,8 @@ export function useWorkflowExecution(
                   firstImagePreview: firstImage.substring(0, 50),
                 });
 
-                // Save first image to library
-                try {
-                  await saveToLibrary({
-                    imageUrl: firstImage,
-                    prompt: prompt,
-                    assetType: "image",
-                  });
-                  console.log("[useWorkflowExecution] Image saved to library");
-                } catch (error) {
-                  console.error(
-                    "[useWorkflowExecution] Failed to save image to library:",
-                    error,
-                  );
-                  // Don't fail the workflow if save fails, just log it
-                }
-
-                // Notify that an asset was generated
+                // ✅ Backend auto-saves images to library with prompt metadata
+                // Notify that an asset was generated to refresh the library
                 if (onAssetGenerated) {
                   console.log(
                     "[useWorkflowExecution] Image generated, triggering asset refresh",
