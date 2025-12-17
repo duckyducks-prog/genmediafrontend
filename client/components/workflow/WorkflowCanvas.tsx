@@ -18,6 +18,8 @@ import ReactFlow, {
   ConnectionMode,
   ReactFlowProvider,
   ReactFlowInstance,
+  getNodesBounds,
+  getViewportForBounds,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import "./workflow.css";
@@ -924,29 +926,77 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
 
     // Capture thumbnail of the canvas
     const captureThumbnail = useCallback(async (): Promise<string | null> => {
-      if (!reactFlowWrapper.current) {
-        console.warn('[WorkflowCanvas] Cannot capture thumbnail - wrapper ref not available');
+      if (!reactFlowWrapper.current || !reactFlowInstance) {
+        console.warn('[WorkflowCanvas] Cannot capture thumbnail - wrapper/instance not available');
         return null;
       }
 
       try {
         console.log('[WorkflowCanvas] Capturing thumbnail...');
 
+        // If no nodes, return null
+        if (nodes.length === 0) {
+          console.warn('[WorkflowCanvas] No nodes to capture');
+          return null;
+        }
+
+        // Calculate bounds of all nodes
+        const nodesBounds = getNodesBounds(nodes);
+
+        // Add padding around nodes (100px on each side)
+        const padding = 100;
+        const viewportWidth = 1600;
+        const viewportHeight = 900;
+
+        // Calculate the viewport that fits all nodes with padding
+        const viewport = getViewportForBounds(
+          {
+            x: nodesBounds.x - padding,
+            y: nodesBounds.y - padding,
+            width: nodesBounds.width + padding * 2,
+            height: nodesBounds.height + padding * 2,
+          },
+          viewportWidth,
+          viewportHeight,
+          0.5, // min zoom
+          2,   // max zoom
+          0.1  // default padding
+        );
+
+        console.log('[WorkflowCanvas] Calculated viewport for thumbnail:', {
+          nodesBounds,
+          viewport,
+        });
+
+        // Temporarily set the viewport to show all nodes
+        const originalTransform = reactFlowInstance.getViewport();
+        reactFlowInstance.setViewport({
+          x: viewport.x,
+          y: viewport.y,
+          zoom: viewport.zoom,
+        });
+
+        // Wait for viewport to update
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         // Find the ReactFlow viewport element
-        const viewport = reactFlowWrapper.current.querySelector('.react-flow__viewport');
-        if (!viewport) {
+        const viewportElement = reactFlowWrapper.current.querySelector('.react-flow__viewport');
+        if (!viewportElement) {
           console.warn('[WorkflowCanvas] Cannot find .react-flow__viewport element');
           return null;
         }
 
         // Capture with html2canvas
-        const canvas = await html2canvas(viewport as HTMLElement, {
+        const canvas = await html2canvas(viewportElement as HTMLElement, {
           backgroundColor: '#0a0a0a', // Match dark background
           scale: 0.5, // Reduce resolution for smaller file size
           logging: false,
-          width: 1600,
-          height: 900,
+          width: viewportWidth,
+          height: viewportHeight,
         });
+
+        // Restore original viewport
+        reactFlowInstance.setViewport(originalTransform);
 
         // Convert to PNG data URL
         const dataUrl = canvas.toDataURL('image/png', 0.8);
@@ -961,7 +1011,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
         console.error('[WorkflowCanvas] Failed to capture thumbnail:', error);
         return null;
       }
-    }, []);
+    }, [nodes, reactFlowInstance]);
 
     // Expose loadWorkflow and captureThumbnail methods to parent
     useImperativeHandle(
