@@ -76,6 +76,7 @@ const nodeTypes: NodeTypes = {
   [NodeType.Vignette]: VignetteNode,
   [NodeType.Crop]: CropNode,
   [NodeType.ImageComposite]: ImageCompositeNode,
+  [NodeType.ExtractLastFrame]: ExtractLastFrameNode,
 
   // Action nodes
   [NodeType.GenerateImage]: GenerateImageNode,
