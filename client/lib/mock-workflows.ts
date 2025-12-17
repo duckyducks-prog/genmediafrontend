@@ -11,7 +11,7 @@ export const MOCK_WORKFLOW_TEMPLATES: SavedWorkflow[] = [
     name: "Camera Angles",
     description: "A workflow template demonstrating different camera angle techniques for video production",
     is_public: true,
-    background_image: "https://cdn.builder.io/api/v1/image/assets%2Fb1d3bf7cc0eb4f0daca65fdc5a7d5179%2Ff1205ea241814241af2b6084f80acbc7?format=webp&width=800",
+    thumbnail: "https://cdn.builder.io/api/v1/image/assets%2Fb1d3bf7cc0eb4f0daca65fdc5a7d5179%2Ff1205ea241814241af2b6084f80acbc7?format=webp&width=800",
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     nodes: [
