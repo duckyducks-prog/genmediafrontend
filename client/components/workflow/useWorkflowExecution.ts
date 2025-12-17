@@ -735,23 +735,8 @@ export function useWorkflowExecution(
               );
 
               if (result.success && result.videoUrl) {
-                // Save video to library
-                try {
-                  await saveToLibrary({
-                    imageUrl: result.videoUrl,
-                    prompt: prompt,
-                    assetType: "video",
-                  });
-                  console.log("[useWorkflowExecution] Video saved to library");
-                } catch (error) {
-                  console.error(
-                    "[useWorkflowExecution] Failed to save video to library:",
-                    error,
-                  );
-                  // Don't fail the workflow if save fails, just log it
-                }
-
-                // Notify that an asset was generated
+                // ✅ Backend auto-saves videos to library with prompt metadata
+                // Notify that an asset was generated to refresh the library
                 if (onAssetGenerated) {
                   console.log(
                     "[useWorkflowExecution] Video generated, triggering asset refresh",
