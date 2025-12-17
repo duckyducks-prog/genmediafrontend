@@ -113,7 +113,7 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
       const token = await user?.getIdToken();
 
       const response = await fetch(
-        "https://veo-api-856765593724.us-central1.run.app/generate/upscale",
+        API_ENDPOINTS.generate.upscale,
         {
           method: "POST",
           headers: {
