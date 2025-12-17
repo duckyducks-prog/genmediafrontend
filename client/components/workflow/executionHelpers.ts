@@ -377,17 +377,46 @@ export async function pollVideoStatus(
 
       // Check if video is ready
       if (statusData.status === "complete") {
-        if (statusData.video_base64) {
-          return {
-            success: true,
-            videoUrl: `data:video/mp4;base64,${statusData.video_base64}`,
-          };
-        } else {
-          return {
-            success: false,
-            error: "Video generation completed but no video data returned",
-          };
+        console.log('[pollVideoStatus] Video generation complete! Response data:', {
+          hasVideo_base64: !!statusData.video_base64,
+          hasVideoBase64: !!statusData.videoBase64,
+          hasVideo_url: !!statusData.video_url,
+          hasVideoUrl: !!statusData.videoUrl,
+          hasVideo: !!statusData.video,
+          allKeys: Object.keys(statusData),
+          fullResponse: statusData,
+        });
+
+        // Try multiple possible field names for the video data
+        const videoData = statusData.video_base64 ||
+                         statusData.videoBase64 ||
+                         statusData.video_url ||
+                         statusData.videoUrl ||
+                         statusData.video;
+
+        if (videoData) {
+          // If it's already a data URI, use it directly
+          if (typeof videoData === 'string' && videoData.startsWith('data:')) {
+            return {
+              success: true,
+              videoUrl: videoData,
+            };
+          }
+          // If it's base64, convert to data URI
+          if (typeof videoData === 'string') {
+            return {
+              success: true,
+              videoUrl: `data:video/mp4;base64,${videoData}`,
+            };
+          }
+          // Unknown format
+          console.error('[pollVideoStatus] Video data is not a string:', typeof videoData, videoData);
         }
+
+        return {
+          success: false,
+          error: "Video generation completed but no video data returned. Check console for response details.",
+        };
       }
 
       // Check for errors
