@@ -88,7 +88,7 @@ export default function Index() {
       const token = await currentUser?.getIdToken();
 
       const response = await fetch(
-        "https://veo-api-856765593724.us-central1.run.app/generate/image",
+        API_ENDPOINTS.generate.image,
         {
           method: "POST",
           headers: {
@@ -142,7 +142,7 @@ export default function Index() {
       const token = await currentUser?.getIdToken();
 
       const response = await fetch(
-        "https://veo-api-856765593724.us-central1.run.app/generate/video",
+        API_ENDPOINTS.generate.video,
         {
           method: "POST",
           headers: {
@@ -173,7 +173,7 @@ export default function Index() {
 
         const statusToken = await currentUser?.getIdToken();
         const statusResponse = await fetch(
-          "https://veo-api-856765593724.us-central1.run.app/generate/video/status",
+          API_ENDPOINTS.generate.videoStatus,
           {
             method: "POST",
             headers: {
