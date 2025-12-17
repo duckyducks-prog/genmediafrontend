@@ -218,6 +218,37 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
       return () => window.removeEventListener("node-update", handleNodeUpdate);
     }, [setNodes, edges]);
 
+    // Keyboard zoom controls (Cmd+/Cmd- or Ctrl+/Ctrl-)
+    useEffect(() => {
+      const handleKeyDown = (event: KeyboardEvent) => {
+        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+        const cmdOrCtrl = isMac ? event.metaKey : event.ctrlKey;
+
+        if (!cmdOrCtrl || !reactFlowInstance) return;
+
+        // Cmd/Ctrl + = or + (zoom in)
+        if (event.key === '=' || event.key === '+') {
+          event.preventDefault();
+          const currentZoom = reactFlowInstance.getZoom();
+          reactFlowInstance.zoomTo(currentZoom * 1.2, { duration: 200 });
+        }
+        // Cmd/Ctrl + - (zoom out)
+        else if (event.key === '-') {
+          event.preventDefault();
+          const currentZoom = reactFlowInstance.getZoom();
+          reactFlowInstance.zoomTo(currentZoom / 1.2, { duration: 200 });
+        }
+        // Cmd/Ctrl + 0 (reset zoom to 100%)
+        else if (event.key === '0') {
+          event.preventDefault();
+          reactFlowInstance.zoomTo(1, { duration: 200 });
+        }
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [reactFlowInstance]);
+
     // Handle new connections between nodes
     const onConnect = useCallback(
       (params: Connection | Edge) => {
