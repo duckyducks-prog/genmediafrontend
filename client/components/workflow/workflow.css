@@ -84,7 +84,6 @@
 
 .react-flow__node.selected {
   border: 2px solid #FCC3DC !important;
-  box-shadow: 0 0 0 2px #FCC3DC / 0.2;
 }
 
 .react-flow__node:active {
