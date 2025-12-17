@@ -1,9 +1,17 @@
-import { test, expect } from "@playwright/test";
-import { VEO_API_BASE_URL, API_ENDPOINTS } from "@/lib/api-config";
+import { describe, it, expect, beforeAll } from "vitest";
+import { API_ENDPOINTS } from "@/lib/api-config";
 
 /**
  * Tests for Firestore Migration
- * 
+ *
+ * Run tests:
+ * - All tests: npm test tests/e2e/firestore-migration.spec.ts
+ * - Single test: npm test tests/e2e/firestore-migration.spec.ts -t "workflows"
+ * - Watch mode: npm run test:e2e:watch -- firestore-migration
+ *
+ * Setup:
+ * 1. Set environment variable: FIREBASE_TEST_TOKEN=<your-firebase-id-token>
+ *
  * Covers:
  * 1. Workflows with asset references (assetRef, imageRef, videoRef)
  * 2. Firestore metadata queries (by user_id, is_public, created_at)
@@ -13,15 +21,6 @@ import { VEO_API_BASE_URL, API_ENDPOINTS } from "@/lib/api-config";
  */
 
 const TEST_TIMEOUT = 120000; // 2 minutes
-
-// Helper to get auth token
-async function getAuthToken(context: any): Promise<string> {
-  const token = process.env.FIREBASE_TEST_TOKEN;
-  if (!token) {
-    throw new Error("FIREBASE_TEST_TOKEN not set");
-  }
-  return token;
-}
 
 // Helper to make API requests
 async function apiRequest(
@@ -51,15 +50,17 @@ async function apiRequest(
   return response;
 }
 
-test.describe("Firestore Migration - Workflows", () => {
+describe("Firestore Migration - Workflows", () => {
   let authToken: string;
 
-  test.beforeAll(async () => {
-    // Note: In a real scenario, get token from login
+  beforeAll(async () => {
     authToken = process.env.FIREBASE_TEST_TOKEN || "";
+    if (!authToken) {
+      throw new Error("FIREBASE_TEST_TOKEN not set");
+    }
   });
 
-  test(
+  it(
     "Create workflow with asset references",
     async () => {
       const workflowData = {
@@ -112,10 +113,10 @@ test.describe("Firestore Migration - Workflows", () => {
 
       console.log("✓ Workflow created with ID:", data.id);
     },
-    TEST_TIMEOUT
+    { timeout: TEST_TIMEOUT }
   );
 
-  test(
+  it(
     "List workflows - verify Firestore metadata",
     async () => {
       const response = await apiRequest(
@@ -144,10 +145,10 @@ test.describe("Firestore Migration - Workflows", () => {
         console.log("✓ Workflows have correct Firestore metadata");
       }
     },
-    TEST_TIMEOUT
+    { timeout: TEST_TIMEOUT }
   );
 
-  test(
+  it(
     "Get workflow - verify asset URL resolution",
     async () => {
       // First, list to get a workflow ID
@@ -196,10 +197,10 @@ test.describe("Firestore Migration - Workflows", () => {
         }
       }
     },
-    TEST_TIMEOUT
+    { timeout: TEST_TIMEOUT }
   );
 
-  test(
+  it(
     "List public workflows - verify is_public filter",
     async () => {
       const response = await apiRequest(
@@ -221,18 +222,21 @@ test.describe("Firestore Migration - Workflows", () => {
         console.log("✓ Public workflows filtered correctly");
       }
     },
-    TEST_TIMEOUT
+    { timeout: TEST_TIMEOUT }
   );
 });
 
-test.describe("Firestore Migration - Asset Library", () => {
+describe("Firestore Migration - Asset Library", () => {
   let authToken: string;
 
-  test.beforeAll(async () => {
+  beforeAll(async () => {
     authToken = process.env.FIREBASE_TEST_TOKEN || "";
+    if (!authToken) {
+      throw new Error("FIREBASE_TEST_TOKEN not set");
+    }
   });
 
-  test(
+  it(
     "List assets - verify Firestore metadata",
     async () => {
       const response = await apiRequest(
@@ -260,10 +264,10 @@ test.describe("Firestore Migration - Asset Library", () => {
         console.log("✓ Assets have correct Firestore metadata");
       }
     },
-    TEST_TIMEOUT
+    { timeout: TEST_TIMEOUT }
   );
 
-  test(
+  it(
     "List assets by type - verify asset_type filter",
     async () => {
       // List images
@@ -286,10 +290,10 @@ test.describe("Firestore Migration - Asset Library", () => {
         console.log("✓ Assets filtered by type correctly");
       }
     },
-    TEST_TIMEOUT
+    { timeout: TEST_TIMEOUT }
   );
 
-  test(
+  it(
     "Get asset - verify GCS URL resolution",
     async () => {
       // List assets first
@@ -326,10 +330,10 @@ test.describe("Firestore Migration - Asset Library", () => {
 
       console.log("✓ Asset URL resolved correctly");
     },
-    TEST_TIMEOUT
+    { timeout: TEST_TIMEOUT }
   );
 
-  test(
+  it(
     "Delete asset - verify operation succeeds",
     async () => {
       // First create a test asset by generating an image
@@ -383,18 +387,21 @@ test.describe("Firestore Migration - Asset Library", () => {
       expect(getResponse.status).toBe(404);
       console.log("✓ Deleted asset no longer found");
     },
-    TEST_TIMEOUT
+    { timeout: TEST_TIMEOUT }
   );
 });
 
-test.describe("Firestore Migration - Auto-save Feature", () => {
+describe("Firestore Migration - Auto-save Feature", () => {
   let authToken: string;
 
-  test.beforeAll(async () => {
+  beforeAll(async () => {
     authToken = process.env.FIREBASE_TEST_TOKEN || "";
+    if (!authToken) {
+      throw new Error("FIREBASE_TEST_TOKEN not set");
+    }
   });
 
-  test(
+  it(
     "Generate image - verify auto-save to library",
     async () => {
       // Get initial asset count
@@ -446,10 +453,10 @@ test.describe("Firestore Migration - Auto-save Feature", () => {
         console.log("✓ Generated image auto-saved to library");
       }
     },
-    TEST_TIMEOUT
+    { timeout: TEST_TIMEOUT }
   );
 
-  test(
+  it(
     "Generate video - verify auto-save to library",
     async () => {
       // Get initial video count
@@ -533,18 +540,21 @@ test.describe("Firestore Migration - Auto-save Feature", () => {
         console.log("✓ Generated video auto-saved to library");
       }
     },
-    TEST_TIMEOUT
+    { timeout: TEST_TIMEOUT }
   );
 });
 
-test.describe("Firestore Migration - Access Control", () => {
+describe("Firestore Migration - Access Control", () => {
   let authToken: string;
 
-  test.beforeAll(async () => {
+  beforeAll(async () => {
     authToken = process.env.FIREBASE_TEST_TOKEN || "";
+    if (!authToken) {
+      throw new Error("FIREBASE_TEST_TOKEN not set");
+    }
   });
 
-  test(
+  it(
     "User can only see their own workflows",
     async () => {
       const response = await apiRequest(
@@ -566,10 +576,10 @@ test.describe("Firestore Migration - Access Control", () => {
         console.log("✓ User can see own workflows");
       }
     },
-    TEST_TIMEOUT
+    { timeout: TEST_TIMEOUT }
   );
 
-  test(
+  it(
     "User can see public workflows from others",
     async () => {
       const response = await apiRequest(
@@ -590,6 +600,6 @@ test.describe("Firestore Migration - Access Control", () => {
         console.log("✓ User can see public workflows");
       }
     },
-    TEST_TIMEOUT
+    { timeout: TEST_TIMEOUT }
   );
 });
