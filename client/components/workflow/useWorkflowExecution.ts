@@ -1121,9 +1121,12 @@ export function useWorkflowExecution(
             if (result.value.success) {
               progress.set(node.id, "completed");
 
+              // CRITICAL FIX: Preserve the outputs structure from result.value.data
+              // If the execution result already has an outputs property (like GenerateImage does),
+              // use that. Otherwise, use the entire data object as outputs for backward compatibility.
               const updateData = {
                 ...result.value.data,
-                outputs: result.value.data,
+                outputs: result.value.data.outputs || result.value.data,
               };
 
               console.log("[Workflow] Updating node state:", {
