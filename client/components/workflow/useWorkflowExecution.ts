@@ -15,7 +15,7 @@ import {
   findUpstreamDependencies,
 } from "./executionHelpers";
 import { auth } from "@/lib/firebase";
-import { renderWithPixi } from "@/lib/pixi-renderer";
+import { renderWithPixi, renderCompositeWithPixi } from "@/lib/pixi-renderer";
 import { FilterConfig } from "@/lib/pixi-filter-configs";
 
 interface ExecutionResult {
