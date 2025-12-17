@@ -69,9 +69,7 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
       async (assetType?: "image" | "video") => {
         setIsLoading(true);
         try {
-          const url = assetType
-            ? `https://veo-api-856765593724.us-central1.run.app/library?asset_type=${assetType}`
-            : "https://veo-api-856765593724.us-central1.run.app/library";
+          const url = API_ENDPOINTS.library.list(assetType);
 
           console.log("[DEBUG] Fetching assets from:", url);
 
@@ -163,7 +161,7 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
         const token = await user?.getIdToken();
 
         const response = await fetch(
-          `https://veo-api-856765593724.us-central1.run.app/library/${id}`,
+          API_ENDPOINTS.library.delete(id),
           {
             method: "DELETE",
             headers: {
