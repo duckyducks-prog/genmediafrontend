@@ -848,9 +848,14 @@ export function useWorkflowExecution(
               };
 
               // Add seed if provided (for consistent voice/style)
-              if (formatData?.seed !== undefined && formatData?.seed !== null) {
+              // Priority: node.data.seed (if useConsistentVoice is true) > formatData.seed
+              const nodeData = node.data as any;
+              if (nodeData.useConsistentVoice && nodeData.seed !== undefined && nodeData.seed !== null) {
+                requestBody.seed = nodeData.seed;
+                console.log("[GenerateVideo] ✓ Using seed from node:", nodeData.seed, "for consistent generation");
+              } else if (formatData?.seed !== undefined && formatData?.seed !== null) {
                 requestBody.seed = formatData.seed;
-                console.log("[GenerateVideo] ✓ Using seed:", formatData.seed, "for consistent generation");
+                console.log("[GenerateVideo] ✓ Using seed from format:", formatData.seed, "for consistent generation");
               }
 
               // Only include prompt if provided
