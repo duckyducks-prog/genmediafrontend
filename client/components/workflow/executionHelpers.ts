@@ -93,9 +93,38 @@ export function gatherNodeInputs(
         sourceNode.data.outputs?.imageUrl || sourceNode.data.imageUrl;
       if (outputValue !== undefined) {
         console.warn(
-          `[gatherNodeInputs] ⚠️ Using alias: imageUrl for image handle`,
+          `[gatherNodeInputs] ⚠️ Found via imageUrl alias`,
+        );
+      } else if (sourceNode.data.imageRef) {
+        console.error(
+          `[gatherNodeInputs] ❌ CRITICAL: Node has imageRef but no imageUrl!`,
           {
-            valueLength: outputValue?.length || 0,
+            nodeId: sourceNode.id,
+            imageRef: sourceNode.data.imageRef,
+            suggestion: 'Asset resolution needed - workflow was likely saved/reloaded',
+          },
+        );
+      }
+    }
+
+    // Video handle alias
+    if (outputValue === undefined && sourceHandle === "video") {
+      outputValue =
+        sourceNode.data.outputs?.videoUrl ||
+        sourceNode.data.outputs?.video ||
+        sourceNode.data.videoUrl ||
+        sourceNode.data.video;
+      if (outputValue !== undefined) {
+        console.warn(
+          `[gatherNodeInputs] ⚠️ Found via video alias`,
+        );
+      } else if (sourceNode.data.videoRef) {
+        console.error(
+          `[gatherNodeInputs] ❌ CRITICAL: Node has videoRef but no videoUrl!`,
+          {
+            nodeId: sourceNode.id,
+            videoRef: sourceNode.data.videoRef,
+            suggestion: 'Asset resolution needed',
           },
         );
       }
