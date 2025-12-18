@@ -847,6 +847,12 @@ export function useWorkflowExecution(
                   formatData?.generate_audio ?? node.data.generateAudio ?? true,
               };
 
+              // Add seed if provided (for consistent voice/style)
+              if (formatData?.seed !== undefined && formatData?.seed !== null) {
+                requestBody.seed = formatData.seed;
+                console.log("[GenerateVideo] ✓ Using seed:", formatData.seed, "for consistent generation");
+              }
+
               // Only include prompt if provided
               if (prompt) {
                 requestBody.prompt = prompt;
