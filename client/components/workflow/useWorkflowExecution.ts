@@ -16,6 +16,7 @@ import {
   groupNodesByLevel,
   findUpstreamDependencies,
   resolveAssetToDataUrl,
+  extractLastFrameFromVideo,
 } from "./executionHelpers";
 import { auth } from "@/lib/firebase";
 import { renderWithPixi, renderCompositeWithPixi } from "@/lib/pixi-renderer";
