@@ -12,6 +12,7 @@ export enum NodeType {
 
   // MODIFIER nodes (both input and output connectors)
   PromptConcatenator = "promptConcatenator",
+  TextIterator = "textIterator",
 
   // IMAGE MODIFIER nodes (PixiJS filters)
   BrightnessContrast = "brightnessContrast",
@@ -105,6 +106,17 @@ export interface PromptNodeData extends BaseNodeData {
 export interface PromptConcatenatorNodeData extends BaseNodeData {
   separator: "Space" | "Comma" | "Newline" | "Period";
   combinedPreview?: string; // Shows preview of combined text
+}
+
+// TEXT ITERATOR node
+export interface TextIteratorNodeData extends BaseNodeData {
+  fixedSection: string; // Fixed text applied to all outputs
+  variableItems: string[]; // Array of variable texts (dialogue lines)
+  batchInput: string; // Text area input for pasting multiple lines
+  separator: "Newline" | "Custom"; // How to split batch input
+  customSeparator?: string; // Custom separator if selected
+  itemPreviews?: string[]; // Preview of combined prompts
+  dynamicOutputCount: number; // Number of output handles to render
 }
 
 // GENERATE VIDEO node
@@ -268,6 +280,7 @@ export type WorkflowNodeData =
   | ImageInputNodeData
   | PromptNodeData
   | PromptConcatenatorNodeData
+  | TextIteratorNodeData
   | BrightnessContrastNodeData
   | BlurNodeData
   | SharpenNodeData
