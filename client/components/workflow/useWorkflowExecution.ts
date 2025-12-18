@@ -206,7 +206,34 @@ export function useWorkflowExecution(
           }
 
           case NodeType.ImageInput: {
-            const imageUrl = (node.data as any).imageUrl || null;
+            let imageUrl = (node.data as any).imageUrl || null;
+
+            // Resolve imageRef if imageUrl is missing
+            if (!imageUrl && (node.data as any).imageRef) {
+              console.log('[ImageInput] ⚠️ imageUrl missing, resolving imageRef:',
+                (node.data as any).imageRef);
+              try {
+                imageUrl = await resolveAssetToDataUrl((node.data as any).imageRef);
+                console.log('[ImageInput] ✓ Resolved to data URL, length:', imageUrl.length);
+
+                // Update node with resolved URL
+                updateNodeState(node.id, node.data.status || 'ready', {
+                  imageUrl,
+                  outputs: { image: imageUrl },
+                });
+              } catch (error) {
+                console.error('[ImageInput] ❌ Resolution failed:', error);
+                return {
+                  success: false,
+                  error: `Failed to load image: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                };
+              }
+            }
+
+            if (!imageUrl) {
+              console.warn('[ImageInput] ⚠️ No imageUrl or imageRef available');
+            }
+
             return { success: true, data: { image: imageUrl } };
           }
 
