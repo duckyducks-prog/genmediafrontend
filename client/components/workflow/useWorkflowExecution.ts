@@ -1371,6 +1371,14 @@ export function useWorkflowExecution(
 
               updateNodeState(node.id, "completed", updateData);
 
+              // Verify state update timing
+              console.log('[Execution] State update timing check:', {
+                nodeId: node.id,
+                immediateNodeData: nodes.find(n => n.id === node.id)?.data?.outputs,
+                updateDataOutputs: updateData.outputs,
+                areEqual: JSON.stringify(nodes.find(n => n.id === node.id)?.data?.outputs) === JSON.stringify(updateData.outputs),
+              });
+
               // Diagnostic log for data flow verification
               console.log(`[Execution] ✓ Node completed:`, {
                 nodeId: node.id,
