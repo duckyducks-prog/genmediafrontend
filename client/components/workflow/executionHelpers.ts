@@ -12,11 +12,11 @@ import { API_ENDPOINTS } from "@/lib/api-config";
  * Fetches from asset library API and converts to base64 data URI
  */
 export async function resolveAssetToDataUrl(assetRef: string): Promise<string> {
-  console.log('[resolveAssetToDataUrl] Resolving asset:', assetRef);
+  console.log("[resolveAssetToDataUrl] Resolving asset:", assetRef);
 
   try {
     // Import dynamically to avoid circular dependencies
-    const { auth } = await import('@/lib/firebase');
+    const { auth } = await import("@/lib/firebase");
 
     // Get asset metadata from library
     const user = auth.currentUser;
@@ -39,15 +39,15 @@ export async function resolveAssetToDataUrl(assetRef: string): Promise<string> {
       throw new Error(`Asset not found: ${assetRef}`);
     }
 
-    console.log('[resolveAssetToDataUrl] Asset URL:', asset.url);
+    console.log("[resolveAssetToDataUrl] Asset URL:", asset.url);
 
     // If already a data URL, return as-is
-    if (asset.url.startsWith('data:')) {
+    if (asset.url.startsWith("data:")) {
       return asset.url;
     }
 
     // Fetch the asset content and convert to data URL
-    const assetResponse = await fetch(asset.url, { mode: 'cors' });
+    const assetResponse = await fetch(asset.url, { mode: "cors" });
     if (!assetResponse.ok) {
       throw new Error(`Failed to fetch asset content: ${assetResponse.status}`);
     }
@@ -59,14 +59,18 @@ export async function resolveAssetToDataUrl(assetRef: string): Promise<string> {
       const reader = new FileReader();
       reader.onload = () => {
         const dataUrl = reader.result as string;
-        console.log('[resolveAssetToDataUrl] Converted to data URL, length:', dataUrl.length);
+        console.log(
+          "[resolveAssetToDataUrl] Converted to data URL, length:",
+          dataUrl.length,
+        );
         resolve(dataUrl);
       };
-      reader.onerror = () => reject(new Error('Failed to convert blob to data URL'));
+      reader.onerror = () =>
+        reject(new Error("Failed to convert blob to data URL"));
       reader.readAsDataURL(blob);
     });
   } catch (error) {
-    console.error('[resolveAssetToDataUrl] Failed:', error);
+    console.error("[resolveAssetToDataUrl] Failed:", error);
     throw error;
   }
 }
@@ -74,10 +78,12 @@ export async function resolveAssetToDataUrl(assetRef: string): Promise<string> {
 /**
  * Extract the last frame from a video as a data URL
  */
-export async function extractLastFrameFromVideo(videoDataUrl: string): Promise<string> {
+export async function extractLastFrameFromVideo(
+  videoDataUrl: string,
+): Promise<string> {
   return new Promise((resolve, reject) => {
-    const video = document.createElement('video');
-    video.crossOrigin = 'anonymous';
+    const video = document.createElement("video");
+    video.crossOrigin = "anonymous";
     video.src = videoDataUrl;
     video.muted = true;
 
@@ -88,25 +94,25 @@ export async function extractLastFrameFromVideo(videoDataUrl: string): Promise<s
 
     video.onseeked = () => {
       try {
-        const canvas = document.createElement('canvas');
+        const canvas = document.createElement("canvas");
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext("2d");
 
         if (!ctx) {
-          reject(new Error('Could not get canvas context'));
+          reject(new Error("Could not get canvas context"));
           return;
         }
 
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const frameDataUrl = canvas.toDataURL('image/png');
+        const frameDataUrl = canvas.toDataURL("image/png");
         resolve(frameDataUrl);
       } catch (error) {
         reject(error);
       }
     };
 
-    video.onerror = () => reject(new Error('Failed to load video'));
+    video.onerror = () => reject(new Error("Failed to load video"));
   });
 }
 
@@ -136,8 +142,8 @@ export function gatherNodeInputs(
       edgeId: edge.id,
       source: edge.source,
       target: edge.target,
-      sourceHandle: edge.sourceHandle || "DEFAULT",  // ⚠️ Should NOT be default
-      targetHandle: edge.targetHandle || "DEFAULT",  // ⚠️ Should NOT be default
+      sourceHandle: edge.sourceHandle || "DEFAULT", // ⚠️ Should NOT be default
+      targetHandle: edge.targetHandle || "DEFAULT", // ⚠️ Should NOT be default
       hasSourceNode: !!sourceNode,
       sourceNodeType: sourceNode?.type,
       sourceNodeHasOutputs: !!sourceNode?.data?.outputs,
@@ -195,16 +201,15 @@ export function gatherNodeInputs(
       outputValue =
         sourceNode.data.outputs?.imageUrl || sourceNode.data.imageUrl;
       if (outputValue !== undefined) {
-        console.warn(
-          `[gatherNodeInputs] ⚠️ Found via imageUrl alias`,
-        );
+        console.warn(`[gatherNodeInputs] ⚠️ Found via imageUrl alias`);
       } else if (sourceNode.data.imageRef) {
         console.error(
           `[gatherNodeInputs] ❌ CRITICAL: Node has imageRef but no imageUrl!`,
           {
             nodeId: sourceNode.id,
             imageRef: sourceNode.data.imageRef,
-            suggestion: 'Asset resolution needed - workflow was likely saved/reloaded',
+            suggestion:
+              "Asset resolution needed - workflow was likely saved/reloaded",
           },
         );
       }
@@ -218,16 +223,14 @@ export function gatherNodeInputs(
         sourceNode.data.videoUrl ||
         sourceNode.data.video;
       if (outputValue !== undefined) {
-        console.warn(
-          `[gatherNodeInputs] ⚠️ Found via video alias`,
-        );
+        console.warn(`[gatherNodeInputs] ⚠️ Found via video alias`);
       } else if (sourceNode.data.videoRef) {
         console.error(
           `[gatherNodeInputs] ❌ CRITICAL: Node has videoRef but no videoUrl!`,
           {
             nodeId: sourceNode.id,
             videoRef: sourceNode.data.videoRef,
-            suggestion: 'Asset resolution needed',
+            suggestion: "Asset resolution needed",
           },
         );
       }
@@ -283,18 +286,17 @@ export function gatherNodeInputs(
         );
       }
     } else {
-      console.error(
-        `[gatherNodeInputs] ❌ No value found for edge`,
-        {
-          sourceNode: sourceNode.id,
-          sourceHandle,
-          targetHandle,
-          availableOutputKeys: sourceNode.data.outputs ? Object.keys(sourceNode.data.outputs) : [],
-          availableDataKeys: Object.keys(sourceNode.data).filter(k =>
-            !['label', 'status', 'isGenerating', 'error'].includes(k)
-          ),
-        },
-      );
+      console.error(`[gatherNodeInputs] ❌ No value found for edge`, {
+        sourceNode: sourceNode.id,
+        sourceHandle,
+        targetHandle,
+        availableOutputKeys: sourceNode.data.outputs
+          ? Object.keys(sourceNode.data.outputs)
+          : [],
+        availableDataKeys: Object.keys(sourceNode.data).filter(
+          (k) => !["label", "status", "isGenerating", "error"].includes(k),
+        ),
+      });
     }
   });
 

@@ -211,28 +211,35 @@ export function useWorkflowExecution(
 
             // Resolve imageRef if imageUrl is missing
             if (!imageUrl && (node.data as any).imageRef) {
-              console.log('[ImageInput] ⚠️ imageUrl missing, resolving imageRef:',
-                (node.data as any).imageRef);
+              console.log(
+                "[ImageInput] ⚠️ imageUrl missing, resolving imageRef:",
+                (node.data as any).imageRef,
+              );
               try {
-                imageUrl = await resolveAssetToDataUrl((node.data as any).imageRef);
-                console.log('[ImageInput] ✓ Resolved to data URL, length:', imageUrl.length);
+                imageUrl = await resolveAssetToDataUrl(
+                  (node.data as any).imageRef,
+                );
+                console.log(
+                  "[ImageInput] ✓ Resolved to data URL, length:",
+                  imageUrl.length,
+                );
 
                 // Update node with resolved URL
-                updateNodeState(node.id, node.data.status || 'ready', {
+                updateNodeState(node.id, node.data.status || "ready", {
                   imageUrl,
                   outputs: { image: imageUrl },
                 });
               } catch (error) {
-                console.error('[ImageInput] ❌ Resolution failed:', error);
+                console.error("[ImageInput] ❌ Resolution failed:", error);
                 return {
                   success: false,
-                  error: `Failed to load image: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                  error: `Failed to load image: ${error instanceof Error ? error.message : "Unknown error"}`,
                 };
               }
             }
 
             if (!imageUrl) {
-              console.warn('[ImageInput] ⚠️ No imageUrl or imageRef available');
+              console.warn("[ImageInput] ⚠️ No imageUrl or imageRef available");
             }
 
             return { success: true, data: { image: imageUrl } };
@@ -976,8 +983,8 @@ export function useWorkflowExecution(
                     video: result.videoUrl,
                     videoUrl: result.videoUrl,
                     outputs: {
-                      video: result.videoUrl,  // ✓ Explicit for downstream connections
-                    }
+                      video: result.videoUrl, // ✓ Explicit for downstream connections
+                    },
                   },
                 };
               } else {
@@ -1017,18 +1024,26 @@ export function useWorkflowExecution(
             if (!videoInput) {
               return {
                 success: false,
-                error: "No video connected to Extract Last Frame node"
+                error: "No video connected to Extract Last Frame node",
               };
             }
 
             try {
-              console.log('[ExtractLastFrame] Extracting last frame from video, length:',
-                typeof videoInput === 'string' ? videoInput.length : 'not a string');
+              console.log(
+                "[ExtractLastFrame] Extracting last frame from video, length:",
+                typeof videoInput === "string"
+                  ? videoInput.length
+                  : "not a string",
+              );
 
               // Extract last frame from video
-              const extractedFrame = await extractLastFrameFromVideo(videoInput);
+              const extractedFrame =
+                await extractLastFrameFromVideo(videoInput);
 
-              console.log('[ExtractLastFrame] ✓ Frame extracted, length:', extractedFrame.length);
+              console.log(
+                "[ExtractLastFrame] ✓ Frame extracted, length:",
+                extractedFrame.length,
+              );
 
               return {
                 success: true,
@@ -1037,14 +1052,17 @@ export function useWorkflowExecution(
                   extractedFrameUrl: extractedFrame,
                   outputs: {
                     image: extractedFrame, // Output extracted frame
-                  }
-                }
+                  },
+                },
               };
             } catch (error) {
-              console.error('[ExtractLastFrame] ❌ Failed:', error);
+              console.error("[ExtractLastFrame] ❌ Failed:", error);
               return {
                 success: false,
-                error: error instanceof Error ? error.message : "Failed to extract frame"
+                error:
+                  error instanceof Error
+                    ? error.message
+                    : "Failed to extract frame",
               };
             }
           }
@@ -1253,7 +1271,7 @@ export function useWorkflowExecution(
             if (result.success && result.data) {
               const updatedOutputs = result.data.outputs || result.data;
 
-              nodes = nodes.map(n =>
+              nodes = nodes.map((n) =>
                 n.id === node.id
                   ? {
                       ...n,
@@ -1262,16 +1280,19 @@ export function useWorkflowExecution(
                         outputs: updatedOutputs,
                         // Also set top-level fields for backward compatibility
                         ...updatedOutputs,
-                      }
+                      },
                     }
-                  : n
+                  : n,
               );
 
-              console.log('[Execution] ✓ Synchronously updated non-API node outputs:', {
-                nodeId: node.id,
-                nodeType: node.type,
-                outputKeys: Object.keys(updatedOutputs),
-              });
+              console.log(
+                "[Execution] ✓ Synchronously updated non-API node outputs:",
+                {
+                  nodeId: node.id,
+                  nodeType: node.type,
+                  outputKeys: Object.keys(updatedOutputs),
+                },
+              );
             }
 
             return {
@@ -1294,23 +1315,34 @@ export function useWorkflowExecution(
           console.log(`[Execution] Gathered inputs for ${node.type}:`, {
             nodeId: node.id,
             inputKeys: Object.keys(inputs),
-            first_frame: inputs.first_frame ? {
-              type: typeof inputs.first_frame,
-              length: inputs.first_frame?.length || 0,
-              preview: typeof inputs.first_frame === 'string'
-                ? inputs.first_frame.substring(0, 50) + '...'
-                : inputs.first_frame,
-              isDataUrl: typeof inputs.first_frame === 'string' && inputs.first_frame.startsWith('data:'),
-            } : 'MISSING',
-            last_frame: inputs.last_frame ? 'present' : 'missing',
-            reference_images: inputs.reference_images ?
-              (Array.isArray(inputs.reference_images) ? `array[${inputs.reference_images.length}]` : 'single')
-              : 'missing',
-            video: inputs.video ? {
-              type: typeof inputs.video,
-              length: inputs.video?.length || 0,
-              isDataUrl: typeof inputs.video === 'string' && inputs.video.startsWith('data:'),
-            } : 'missing',
+            first_frame: inputs.first_frame
+              ? {
+                  type: typeof inputs.first_frame,
+                  length: inputs.first_frame?.length || 0,
+                  preview:
+                    typeof inputs.first_frame === "string"
+                      ? inputs.first_frame.substring(0, 50) + "..."
+                      : inputs.first_frame,
+                  isDataUrl:
+                    typeof inputs.first_frame === "string" &&
+                    inputs.first_frame.startsWith("data:"),
+                }
+              : "MISSING",
+            last_frame: inputs.last_frame ? "present" : "missing",
+            reference_images: inputs.reference_images
+              ? Array.isArray(inputs.reference_images)
+                ? `array[${inputs.reference_images.length}]`
+                : "single"
+              : "missing",
+            video: inputs.video
+              ? {
+                  type: typeof inputs.video,
+                  length: inputs.video?.length || 0,
+                  isDataUrl:
+                    typeof inputs.video === "string" &&
+                    inputs.video.startsWith("data:"),
+                }
+              : "missing",
           });
 
           const validation = validateNodeInputs(node, inputs);
@@ -1332,9 +1364,10 @@ export function useWorkflowExecution(
               // ✅ CRITICAL FIX: Update nodes array synchronously for API nodes
               // This ensures downstream nodes see the latest outputs immediately
               if (execResult.success && execResult.data) {
-                const updatedOutputs = execResult.data.outputs || execResult.data;
+                const updatedOutputs =
+                  execResult.data.outputs || execResult.data;
 
-                nodes = nodes.map(n =>
+                nodes = nodes.map((n) =>
                   n.id === node.id
                     ? {
                         ...n,
@@ -1343,16 +1376,19 @@ export function useWorkflowExecution(
                           outputs: updatedOutputs,
                           // Also set top-level fields for backward compatibility
                           ...updatedOutputs,
-                        }
+                        },
                       }
-                    : n
+                    : n,
                 );
 
-                console.log('[Execution] ✓ Synchronously updated API node outputs:', {
-                  nodeId: node.id,
-                  nodeType: node.type,
-                  outputKeys: Object.keys(updatedOutputs),
-                });
+                console.log(
+                  "[Execution] ✓ Synchronously updated API node outputs:",
+                  {
+                    nodeId: node.id,
+                    nodeType: node.type,
+                    outputKeys: Object.keys(updatedOutputs),
+                  },
+                );
               }
 
               result = {
@@ -1426,11 +1462,15 @@ export function useWorkflowExecution(
               updateNodeState(node.id, "completed", updateData);
 
               // Verify state update timing
-              console.log('[Execution] State update timing check:', {
+              console.log("[Execution] State update timing check:", {
                 nodeId: node.id,
-                immediateNodeData: nodes.find(n => n.id === node.id)?.data?.outputs,
+                immediateNodeData: nodes.find((n) => n.id === node.id)?.data
+                  ?.outputs,
                 updateDataOutputs: updateData.outputs,
-                areEqual: JSON.stringify(nodes.find(n => n.id === node.id)?.data?.outputs) === JSON.stringify(updateData.outputs),
+                areEqual:
+                  JSON.stringify(
+                    nodes.find((n) => n.id === node.id)?.data?.outputs,
+                  ) === JSON.stringify(updateData.outputs),
               });
 
               // Diagnostic log for data flow verification
@@ -1438,11 +1478,14 @@ export function useWorkflowExecution(
                 nodeId: node.id,
                 nodeType: node.type,
                 hasOutputs: !!updateData.outputs,
-                outputKeys: updateData.outputs ? Object.keys(updateData.outputs) : [],
-                outputSample: updateData.outputs?.image?.substring(0, 50) ||
-                              updateData.outputs?.video?.substring(0, 50) ||
-                              (updateData.outputs?.images?.[0]?.substring(0, 50)) ||
-                              'No image/video output',
+                outputKeys: updateData.outputs
+                  ? Object.keys(updateData.outputs)
+                  : [],
+                outputSample:
+                  updateData.outputs?.image?.substring(0, 50) ||
+                  updateData.outputs?.video?.substring(0, 50) ||
+                  updateData.outputs?.images?.[0]?.substring(0, 50) ||
+                  "No image/video output",
               });
 
               totalCompleted++;
