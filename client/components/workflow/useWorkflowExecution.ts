@@ -1192,6 +1192,30 @@ export function useWorkflowExecution(
           setExecutionProgress(new Map(progress));
 
           const inputs = getNodeInputs(node.id);
+
+          // Diagnostic log for input gathering verification
+          console.log(`[Execution] Gathered inputs for ${node.type}:`, {
+            nodeId: node.id,
+            inputKeys: Object.keys(inputs),
+            first_frame: inputs.first_frame ? {
+              type: typeof inputs.first_frame,
+              length: inputs.first_frame?.length || 0,
+              preview: typeof inputs.first_frame === 'string'
+                ? inputs.first_frame.substring(0, 50) + '...'
+                : inputs.first_frame,
+              isDataUrl: typeof inputs.first_frame === 'string' && inputs.first_frame.startsWith('data:'),
+            } : 'MISSING',
+            last_frame: inputs.last_frame ? 'present' : 'missing',
+            reference_images: inputs.reference_images ?
+              (Array.isArray(inputs.reference_images) ? `array[${inputs.reference_images.length}]` : 'single')
+              : 'missing',
+            video: inputs.video ? {
+              type: typeof inputs.video,
+              length: inputs.video?.length || 0,
+              isDataUrl: typeof inputs.video === 'string' && inputs.video.startsWith('data:'),
+            } : 'missing',
+          });
+
           const validation = validateNodeInputs(node, inputs);
 
           let result;
