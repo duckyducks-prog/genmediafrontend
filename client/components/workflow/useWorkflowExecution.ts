@@ -1276,6 +1276,19 @@ export function useWorkflowExecution(
               });
 
               updateNodeState(node.id, "completed", updateData);
+
+              // Diagnostic log for data flow verification
+              console.log(`[Execution] ✓ Node completed:`, {
+                nodeId: node.id,
+                nodeType: node.type,
+                hasOutputs: !!updateData.outputs,
+                outputKeys: updateData.outputs ? Object.keys(updateData.outputs) : [],
+                outputSample: updateData.outputs?.image?.substring(0, 50) ||
+                              updateData.outputs?.video?.substring(0, 50) ||
+                              (updateData.outputs?.images?.[0]?.substring(0, 50)) ||
+                              'No image/video output',
+              });
+
               totalCompleted++;
             } else {
               progress.set(node.id, "error");
