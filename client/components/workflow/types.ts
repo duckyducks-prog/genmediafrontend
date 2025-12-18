@@ -89,8 +89,11 @@ export interface BaseNodeData {
 
 // IMAGE INPUT node
 export interface ImageInputNodeData extends BaseNodeData {
-  imageUrl: string | null;
-  file: File | null;
+  // Asset reference pattern (Firestore migration)
+  imageRef?: string; // Asset ID reference (stored in Firestore)
+  imageUrl?: string | null; // Resolved URL (computed by backend)
+  imageRefExists?: boolean; // Asset existence flag
+  file?: File | null; // For new uploads (not persisted)
 }
 
 // PROMPT node
@@ -109,7 +112,25 @@ export interface GenerateVideoNodeData extends BaseNodeData {
   isGenerating: boolean;
   operationName?: string;
   pollAttempts?: number;
-  videoUrl?: string;
+
+  // Asset reference pattern (Firestore migration)
+  videoRef?: string; // Generated video asset ID
+  videoUrl?: string; // Resolved URL (computed by backend)
+  videoRefExists?: boolean; // Asset existence flag
+
+  // Frame references for frame bridging
+  firstFrameRef?: string; // First frame asset ID
+  firstFrameUrl?: string; // Resolved URL (computed by backend)
+  firstFrameRefExists?: boolean;
+
+  lastFrameRef?: string; // Last frame asset ID
+  lastFrameUrl?: string; // Resolved URL (computed by backend)
+  lastFrameRefExists?: boolean;
+
+  // Reference images
+  referenceImageRefs?: string[]; // Reference image asset IDs
+  referenceImageUrls?: string[]; // Resolved URLs (computed by backend)
+
   aspectRatio: "16:9" | "9:16";
   generateAudio: boolean;
   durationSeconds: 4 | 6 | 8;
@@ -118,8 +139,20 @@ export interface GenerateVideoNodeData extends BaseNodeData {
 // GENERATE IMAGE node
 export interface GenerateImageNodeData extends BaseNodeData {
   isGenerating: boolean;
-  imageUrl?: string;
-  images?: string[];
+
+  // Asset reference pattern (Firestore migration)
+  imageRef?: string; // Primary generated image asset ID
+  imageUrl?: string; // Resolved URL (computed by backend)
+  imageRefExists?: boolean; // Asset existence flag
+
+  // Multiple generated images (for batch generation)
+  imageRefs?: string[]; // Asset IDs for all generated images
+  images?: string[]; // Resolved URLs or base64 (for immediate display)
+
+  // Reference images
+  referenceImageRefs?: string[]; // Reference image asset IDs
+  referenceImageUrls?: string[]; // Resolved URLs (computed by backend)
+
   aspectRatio: "1:1" | "16:9" | "9:16" | "3:4" | "4:3";
 }
 
@@ -186,14 +219,28 @@ export interface ImageCompositeNodeData extends BaseNodeData {
 
 // EXTRACT LAST FRAME node
 export interface ExtractLastFrameNodeData extends BaseNodeData {
-  videoUrl?: string;
-  extractedFrameUrl?: string;
+  // Input video reference
+  videoRef?: string; // Input video asset ID
+  videoUrl?: string; // Resolved URL (computed by backend)
+  videoRefExists?: boolean;
+
+  // Extracted frame reference
+  extractedFrameRef?: string; // Extracted frame asset ID
+  extractedFrameUrl?: string; // Resolved URL (computed by backend)
+  extractedFrameRefExists?: boolean;
 }
 
 // PREVIEW node
 export interface PreviewNodeData extends BaseNodeData {
+  // Asset references
+  imageRef?: string;
   imageUrl?: string;
+  imageRefExists?: boolean;
+
+  videoRef?: string;
   videoUrl?: string;
+  videoRefExists?: boolean;
+
   textContent?: string;
 }
 
@@ -201,6 +248,11 @@ export interface PreviewNodeData extends BaseNodeData {
 export interface OutputNodeData extends BaseNodeData {
   result: string | null;
   type: "image" | "video";
+
+  // Asset references (for persisted outputs)
+  assetRef?: string; // Asset ID
+  assetUrl?: string; // Resolved URL (computed by backend)
+  assetRefExists?: boolean;
 }
 
 export interface DownloadNodeData extends BaseNodeData {
