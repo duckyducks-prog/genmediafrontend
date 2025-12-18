@@ -56,7 +56,7 @@ function TextIteratorNode({ data, id }: NodeProps<TextIteratorNodeData>) {
       connectedItemsArray = connectedItems.flatMap((item) =>
         typeof item === "string"
           ? parseBatchInput(item, resolvedSeparator)
-          : [item]
+          : [item],
       );
     }
 

@@ -444,9 +444,7 @@ export function executeTextIterator(
   } else if (Array.isArray(connectedItems)) {
     // Multiple connections - split each string and flatten
     connectedItemsArray = connectedItems.flatMap((item) =>
-      typeof item === "string"
-        ? parseBatchInput(item, separator)
-        : [item]
+      typeof item === "string" ? parseBatchInput(item, separator) : [item],
     );
   }
 
