@@ -15,6 +15,7 @@ import {
   pollVideoStatus,
   groupNodesByLevel,
   findUpstreamDependencies,
+  resolveAssetToDataUrl,
 } from "./executionHelpers";
 import { auth } from "@/lib/firebase";
 import { renderWithPixi, renderCompositeWithPixi } from "@/lib/pixi-renderer";
