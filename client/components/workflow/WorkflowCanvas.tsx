@@ -517,6 +517,8 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               aspectRatio: "16:9",
               generateAudio: true,
               durationSeconds: 8,
+              useConsistentVoice: false,
+              seed: 42,
               outputs: {},
             };
             break;
