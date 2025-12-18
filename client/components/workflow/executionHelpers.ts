@@ -428,19 +428,29 @@ export function executeTextIterator(
 ): Record<string, string> {
   const fixedSection = inputs.fixed_section || nodeData.fixedSection || "";
 
-  // Get variable items from connected nodes or batch input
-  const connectedItems = inputs.variable_items || [];
-  const connectedItemsArray = Array.isArray(connectedItems)
-    ? connectedItems
-    : connectedItems
-      ? [connectedItems]
-      : [];
-
-  // Parse batch input
+  // Resolve separator first (needed for both connected items and batch input)
   const separator =
     nodeData.separator === "Custom"
       ? nodeData.customSeparator || ","
       : nodeData.separator || "Newline";
+
+  // Get variable items from connected nodes and split if they're text strings
+  const connectedItems = inputs.variable_items || [];
+  let connectedItemsArray: string[] = [];
+
+  if (typeof connectedItems === "string") {
+    // Single connected text - split it using the separator
+    connectedItemsArray = parseBatchInput(connectedItems, separator);
+  } else if (Array.isArray(connectedItems)) {
+    // Multiple connections - split each string and flatten
+    connectedItemsArray = connectedItems.flatMap((item) =>
+      typeof item === "string"
+        ? parseBatchInput(item, separator)
+        : [item]
+    );
+  }
+
+  // Parse batch input
   const batchItems = parseBatchInput(nodeData.batchInput || "", separator);
 
   // Batch input takes precedence if not empty
