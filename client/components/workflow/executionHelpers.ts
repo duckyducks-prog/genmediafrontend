@@ -29,12 +29,12 @@ export function gatherNodeInputs(
   incomingEdges.forEach((edge) => {
     const sourceNode = allNodes.find((n) => n.id === edge.source);
 
-    console.log(`[gatherNodeInputs] Edge details:`, {
+    console.log(`[gatherNodeInputs] Processing edge:`, {
       edgeId: edge.id,
       source: edge.source,
       target: edge.target,
-      sourceHandle: edge.sourceHandle || "default",
-      targetHandle: edge.targetHandle || "default",
+      sourceHandle: edge.sourceHandle || "DEFAULT",  // ⚠️ Should NOT be default
+      targetHandle: edge.targetHandle || "DEFAULT",  // ⚠️ Should NOT be default
       hasSourceNode: !!sourceNode,
       sourceNodeType: sourceNode?.type,
       sourceNodeHasOutputs: !!sourceNode?.data?.outputs,
