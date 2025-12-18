@@ -8,6 +8,70 @@ import {
 import { API_ENDPOINTS } from "@/lib/api-config";
 
 /**
+ * Resolve an asset reference (imageRef, videoRef) to a data URL
+ * Fetches from asset library API and converts to base64 data URI
+ */
+export async function resolveAssetToDataUrl(assetRef: string): Promise<string> {
+  console.log('[resolveAssetToDataUrl] Resolving asset:', assetRef);
+
+  try {
+    // Import dynamically to avoid circular dependencies
+    const { auth } = await import('@/lib/firebase');
+
+    // Get asset metadata from library
+    const user = auth.currentUser;
+    const token = await user?.getIdToken();
+
+    const response = await fetch(`${API_ENDPOINTS.library.list}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch assets: ${response.status}`);
+    }
+
+    const assets = await response.json();
+    const asset = assets.find((a: any) => a.id === assetRef);
+
+    if (!asset?.url) {
+      throw new Error(`Asset not found: ${assetRef}`);
+    }
+
+    console.log('[resolveAssetToDataUrl] Asset URL:', asset.url);
+
+    // If already a data URL, return as-is
+    if (asset.url.startsWith('data:')) {
+      return asset.url;
+    }
+
+    // Fetch the asset content and convert to data URL
+    const assetResponse = await fetch(asset.url, { mode: 'cors' });
+    if (!assetResponse.ok) {
+      throw new Error(`Failed to fetch asset content: ${assetResponse.status}`);
+    }
+
+    const blob = await assetResponse.blob();
+
+    // Convert blob to data URL
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        console.log('[resolveAssetToDataUrl] Converted to data URL, length:', dataUrl.length);
+        resolve(dataUrl);
+      };
+      reader.onerror = () => reject(new Error('Failed to convert blob to data URL'));
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error('[resolveAssetToDataUrl] Failed:', error);
+    throw error;
+  }
+}
+
+/**
  * Gather inputs for a node by following connections backwards
  */
 export function gatherNodeInputs(
