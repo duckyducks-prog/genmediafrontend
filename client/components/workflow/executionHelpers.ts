@@ -72,6 +72,45 @@ export async function resolveAssetToDataUrl(assetRef: string): Promise<string> {
 }
 
 /**
+ * Extract the last frame from a video as a data URL
+ */
+export async function extractLastFrameFromVideo(videoDataUrl: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement('video');
+    video.crossOrigin = 'anonymous';
+    video.src = videoDataUrl;
+    video.muted = true;
+
+    video.onloadedmetadata = () => {
+      // Seek to last frame (duration - 0.1s for safety)
+      video.currentTime = Math.max(0, video.duration - 0.1);
+    };
+
+    video.onseeked = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+
+        if (!ctx) {
+          reject(new Error('Could not get canvas context'));
+          return;
+        }
+
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const frameDataUrl = canvas.toDataURL('image/png');
+        resolve(frameDataUrl);
+      } catch (error) {
+        reject(error);
+      }
+    };
+
+    video.onerror = () => reject(new Error('Failed to load video'));
+  });
+}
+
+/**
  * Gather inputs for a node by following connections backwards
  */
 export function gatherNodeInputs(
