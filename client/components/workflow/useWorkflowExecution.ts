@@ -1328,6 +1328,33 @@ export function useWorkflowExecution(
           } else {
             try {
               const execResult = await executeNode(node, inputs);
+
+              // ✅ CRITICAL FIX: Update nodes array synchronously for API nodes
+              // This ensures downstream nodes see the latest outputs immediately
+              if (execResult.success && execResult.data) {
+                const updatedOutputs = execResult.data.outputs || execResult.data;
+
+                nodes = nodes.map(n =>
+                  n.id === node.id
+                    ? {
+                        ...n,
+                        data: {
+                          ...n.data,
+                          outputs: updatedOutputs,
+                          // Also set top-level fields for backward compatibility
+                          ...updatedOutputs,
+                        }
+                      }
+                    : n
+                );
+
+                console.log('[Execution] ✓ Synchronously updated API node outputs:', {
+                  nodeId: node.id,
+                  nodeType: node.type,
+                  outputKeys: Object.keys(updatedOutputs),
+                });
+              }
+
               result = {
                 status: "fulfilled" as const,
                 value: {
