@@ -1247,6 +1247,33 @@ export function useWorkflowExecution(
             }
 
             const result = await executeNode(node, inputs);
+
+            // ✅ CRITICAL FIX: Update nodes array synchronously
+            // This ensures downstream nodes see the latest outputs immediately
+            if (result.success && result.data) {
+              const updatedOutputs = result.data.outputs || result.data;
+
+              nodes = nodes.map(n =>
+                n.id === node.id
+                  ? {
+                      ...n,
+                      data: {
+                        ...n.data,
+                        outputs: updatedOutputs,
+                        // Also set top-level fields for backward compatibility
+                        ...updatedOutputs,
+                      }
+                    }
+                  : n
+              );
+
+              console.log('[Execution] ✓ Synchronously updated non-API node outputs:', {
+                nodeId: node.id,
+                nodeType: node.type,
+                outputKeys: Object.keys(updatedOutputs),
+              });
+            }
+
             return {
               nodeId: node.id,
               ...result,
