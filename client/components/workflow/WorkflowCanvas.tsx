@@ -93,7 +93,10 @@ const nodeTypes: NodeTypes = {
 };
 
 export interface WorkflowCanvasRef {
-  loadWorkflow: (workflow: SavedWorkflow, options?: { readOnly?: boolean }) => void;
+  loadWorkflow: (
+    workflow: SavedWorkflow,
+    options?: { readOnly?: boolean },
+  ) => void;
   captureThumbnail: () => Promise<string | null>;
 }
 
@@ -104,9 +107,8 @@ interface WorkflowCanvasProps {
 
 const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
   ({ onAssetGenerated, onLoadWorkflowRequest }, ref) => {
-    const [nodes, setNodes, onNodesChangeBase] = useNodesState<WorkflowNodeData>(
-      [],
-    );
+    const [nodes, setNodes, onNodesChangeBase] =
+      useNodesState<WorkflowNodeData>([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [reactFlowInstance, setReactFlowInstance] =
       useState<ReactFlowInstance | null>(null);
@@ -139,16 +141,17 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
       );
     }, [setNodes, isReadOnly]);
 
-
     // Listen for node update events from node components
     useEffect(() => {
       const handleNodeUpdate = (event: any) => {
         const { id, data } = event.detail;
 
         // Block updates if in read-only mode (except status updates from execution)
-        const isStatusUpdate = data && ('status' in data || 'isGenerating' in data || 'error' in data);
+        const isStatusUpdate =
+          data &&
+          ("status" in data || "isGenerating" in data || "error" in data);
         if (isReadOnly && !isStatusUpdate) {
-          console.log('[WorkflowCanvas] Ignoring node update - read-only mode');
+          console.log("[WorkflowCanvas] Ignoring node update - read-only mode");
           return;
         }
 
@@ -227,47 +230,56 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
       const handleKeyDown = (event: KeyboardEvent) => {
         if (!reactFlowInstance) return;
 
-        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+        const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
         const cmdOrCtrl = isMac ? event.metaKey : event.ctrlKey;
 
         if (!cmdOrCtrl) return;
 
         // Cmd/Ctrl + = or + (zoom in)
-        if (event.key === '=' || event.key === '+') {
+        if (event.key === "=" || event.key === "+") {
           event.preventDefault();
           event.stopPropagation();
           const currentZoom = reactFlowInstance.getZoom();
-          reactFlowInstance.setViewport({
-            x: reactFlowInstance.getViewport().x,
-            y: reactFlowInstance.getViewport().y,
-            zoom: currentZoom * 1.2
-          }, { duration: 200 });
+          reactFlowInstance.setViewport(
+            {
+              x: reactFlowInstance.getViewport().x,
+              y: reactFlowInstance.getViewport().y,
+              zoom: currentZoom * 1.2,
+            },
+            { duration: 200 },
+          );
         }
         // Cmd/Ctrl + - (zoom out)
-        else if (event.key === '-' || event.key === '_') {
+        else if (event.key === "-" || event.key === "_") {
           event.preventDefault();
           event.stopPropagation();
           const currentZoom = reactFlowInstance.getZoom();
-          reactFlowInstance.setViewport({
-            x: reactFlowInstance.getViewport().x,
-            y: reactFlowInstance.getViewport().y,
-            zoom: currentZoom / 1.2
-          }, { duration: 200 });
+          reactFlowInstance.setViewport(
+            {
+              x: reactFlowInstance.getViewport().x,
+              y: reactFlowInstance.getViewport().y,
+              zoom: currentZoom / 1.2,
+            },
+            { duration: 200 },
+          );
         }
         // Cmd/Ctrl + 0 (reset zoom to 100%)
-        else if (event.key === '0') {
+        else if (event.key === "0") {
           event.preventDefault();
           event.stopPropagation();
-          reactFlowInstance.setViewport({
-            x: reactFlowInstance.getViewport().x,
-            y: reactFlowInstance.getViewport().y,
-            zoom: 1
-          }, { duration: 200 });
+          reactFlowInstance.setViewport(
+            {
+              x: reactFlowInstance.getViewport().x,
+              y: reactFlowInstance.getViewport().y,
+              zoom: 1,
+            },
+            { duration: 200 },
+          );
         }
       };
 
-      document.addEventListener('keydown', handleKeyDown, true);
-      return () => document.removeEventListener('keydown', handleKeyDown, true);
+      document.addEventListener("keydown", handleKeyDown, true);
+      return () => document.removeEventListener("keydown", handleKeyDown, true);
     }, [reactFlowInstance]);
 
     // Handle new connections between nodes
@@ -283,7 +295,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           return;
         }
 
-        console.log('[onConnect] Creating edge:', {
+        console.log("[onConnect] Creating edge:", {
           source: params.source,
           target: params.target,
           sourceHandle: params.sourceHandle,
@@ -292,11 +304,13 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
 
         // Get the source node to determine connector type
         const sourceNode = nodes.find((n) => n.id === params.source);
-        console.log('[onConnect] Source node:', {
+        console.log("[onConnect] Source node:", {
           found: !!sourceNode,
           type: sourceNode?.type,
           hasOutputs: !!sourceNode?.data?.outputs,
-          outputKeys: sourceNode?.data?.outputs ? Object.keys(sourceNode.data.outputs) : [],
+          outputKeys: sourceNode?.data?.outputs
+            ? Object.keys(sourceNode.data.outputs)
+            : [],
         });
 
         if (sourceNode) {
@@ -311,7 +325,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
             className: `connector-type-${connectorType || "any"}`,
             data: { connectorType: connectorType || "any" },
           };
-          console.log('[onConnect] Edge created with handles:', {
+          console.log("[onConnect] Edge created with handles:", {
             sourceHandle: newEdge.sourceHandle,
             targetHandle: newEdge.targetHandle,
           });
@@ -390,7 +404,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               label: "Image Input",
               outputs: {}, // Ensure outputs is always initialized
             };
-            console.log('[addNode] Created ImageInput node with data:', data);
+            console.log("[addNode] Created ImageInput node with data:", data);
             break;
 
           // Modifier nodes
@@ -574,27 +588,30 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
     };
 
     // Handle drag over for drop zone
-    const onDragOver = useCallback((event: React.DragEvent) => {
-      event.preventDefault();
+    const onDragOver = useCallback(
+      (event: React.DragEvent) => {
+        event.preventDefault();
 
-      // Block drag-drop in read-only mode
-      if (isReadOnly) {
-        event.dataTransfer.dropEffect = "none";
-        return;
-      }
+        // Block drag-drop in read-only mode
+        if (isReadOnly) {
+          event.dataTransfer.dropEffect = "none";
+          return;
+        }
 
-      // Check if dragging files or nodes
-      const hasFiles = event.dataTransfer.types.includes("Files");
-      const hasReactFlow = event.dataTransfer.types.includes(
-        "application/reactflow",
-      );
+        // Check if dragging files or nodes
+        const hasFiles = event.dataTransfer.types.includes("Files");
+        const hasReactFlow = event.dataTransfer.types.includes(
+          "application/reactflow",
+        );
 
-      if (hasFiles) {
-        event.dataTransfer.dropEffect = "copy";
-      } else if (hasReactFlow) {
-        event.dataTransfer.dropEffect = "move";
-      }
-    }, [isReadOnly]);
+        if (hasFiles) {
+          event.dataTransfer.dropEffect = "copy";
+        } else if (hasReactFlow) {
+          event.dataTransfer.dropEffect = "move";
+        }
+      },
+      [isReadOnly],
+    );
 
     // Handle drop to add node or create image input nodes from files
     const onDrop = useCallback(
@@ -726,7 +743,14 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           }
         }
       },
-      [reactFlowInstance, addNode, setNodes, toast, validateImageFile, readFileAsDataURL],
+      [
+        reactFlowInstance,
+        addNode,
+        setNodes,
+        toast,
+        validateImageFile,
+        readFileAsDataURL,
+      ],
     );
 
     // Clear canvas
@@ -749,7 +773,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
     // Load a workflow
     const loadWorkflow = useCallback(
       (workflow: SavedWorkflow, options?: { readOnly?: boolean }) => {
-        console.log('[WorkflowCanvas] Loading workflow:', {
+        console.log("[WorkflowCanvas] Loading workflow:", {
           id: workflow.id,
           name: workflow.name,
           nodeCount: workflow.nodes?.length || 0,
@@ -761,7 +785,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
         setIsReadOnly(readOnly);
 
         // Propagate readOnly to all nodes
-        const nodesWithReadOnly = (workflow.nodes || []).map(node => ({
+        const nodesWithReadOnly = (workflow.nodes || []).map((node) => ({
           ...node,
           data: { ...node.data, readOnly },
         }));
@@ -990,16 +1014,18 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
     // Capture thumbnail of the canvas
     const captureThumbnail = useCallback(async (): Promise<string | null> => {
       if (!reactFlowWrapper.current || !reactFlowInstance) {
-        console.warn('[WorkflowCanvas] Cannot capture thumbnail - wrapper/instance not available');
+        console.warn(
+          "[WorkflowCanvas] Cannot capture thumbnail - wrapper/instance not available",
+        );
         return null;
       }
 
       try {
-        console.log('[WorkflowCanvas] Capturing thumbnail...');
+        console.log("[WorkflowCanvas] Capturing thumbnail...");
 
         // If no nodes, return null
         if (nodes.length === 0) {
-          console.warn('[WorkflowCanvas] No nodes to capture');
+          console.warn("[WorkflowCanvas] No nodes to capture");
           return null;
         }
 
@@ -1022,11 +1048,11 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           viewportWidth,
           viewportHeight,
           0.5, // min zoom
-          2,   // max zoom
-          0.1  // default padding
+          2, // max zoom
+          0.1, // default padding
         );
 
-        console.log('[WorkflowCanvas] Calculated viewport for thumbnail:', {
+        console.log("[WorkflowCanvas] Calculated viewport for thumbnail:", {
           nodesBounds,
           viewport,
         });
@@ -1040,18 +1066,22 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
         });
 
         // Wait for viewport to update
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
         // Find the ReactFlow viewport element
-        const viewportElement = reactFlowWrapper.current.querySelector('.react-flow__viewport');
+        const viewportElement = reactFlowWrapper.current.querySelector(
+          ".react-flow__viewport",
+        );
         if (!viewportElement) {
-          console.warn('[WorkflowCanvas] Cannot find .react-flow__viewport element');
+          console.warn(
+            "[WorkflowCanvas] Cannot find .react-flow__viewport element",
+          );
           return null;
         }
 
         // Capture with html2canvas
         const canvas = await html2canvas(viewportElement as HTMLElement, {
-          backgroundColor: '#0a0a0a', // Match dark background
+          backgroundColor: "#0a0a0a", // Match dark background
           scale: 0.5, // Reduce resolution for smaller file size
           logging: false,
           width: viewportWidth,
@@ -1062,16 +1092,16 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
         reactFlowInstance.setViewport(originalTransform);
 
         // Convert to PNG data URL
-        const dataUrl = canvas.toDataURL('image/png', 0.8);
+        const dataUrl = canvas.toDataURL("image/png", 0.8);
 
-        console.log('[WorkflowCanvas] Thumbnail captured:', {
+        console.log("[WorkflowCanvas] Thumbnail captured:", {
           size: `${Math.round(dataUrl.length / 1024)}KB`,
           dimensions: `${canvas.width}x${canvas.height}`,
         });
 
         return dataUrl;
       } catch (error) {
-        console.error('[WorkflowCanvas] Failed to capture thumbnail:', error);
+        console.error("[WorkflowCanvas] Failed to capture thumbnail:", error);
         return null;
       }
     }, [nodes, reactFlowInstance]);
@@ -1114,12 +1144,23 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           {/* Read-Only Mode Banner */}
           {isReadOnly && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-purple-600/95 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-3">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                  clipRule="evenodd"
+                />
               </svg>
               <div>
                 <p className="text-sm font-semibold">Read-Only Template</p>
-                <p className="text-xs">Clone this template to make it editable</p>
+                <p className="text-xs">
+                  Clone this template to make it editable
+                </p>
               </div>
               <Button
                 size="sm"
@@ -1137,12 +1178,16 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
                     await cloneWorkflow(currentWorkflowId);
                     toast({
                       title: "Workflow Cloned",
-                      description: "The template has been cloned to your workflows. Check My Workflows.",
+                      description:
+                        "The template has been cloned to your workflows. Check My Workflows.",
                     });
                   } catch (error) {
                     toast({
                       title: "Clone Failed",
-                      description: error instanceof Error ? error.message : "Unknown error",
+                      description:
+                        error instanceof Error
+                          ? error.message
+                          : "Unknown error",
                       variant: "destructive",
                     });
                   }

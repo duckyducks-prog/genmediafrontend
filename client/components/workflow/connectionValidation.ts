@@ -1,13 +1,13 @@
-import { Connection } from 'reactflow';
-import { 
-  WorkflowNode, 
-  WorkflowEdge, 
-  NODE_CONFIGURATIONS, 
-  canConnect, 
+import { Connection } from "reactflow";
+import {
+  WorkflowNode,
+  WorkflowEdge,
+  NODE_CONFIGURATIONS,
+  canConnect,
   validateMutualExclusion,
   ConnectorType,
-  NodeType
-} from './types';
+  NodeType,
+} from "./types";
 
 export interface ValidationResult {
   valid: boolean;
@@ -20,20 +20,26 @@ export interface ValidationResult {
 export function getConnectorType(
   node: WorkflowNode,
   handleId: string | null | undefined,
-  isSource: boolean
+  isSource: boolean,
 ): ConnectorType | null {
   const config = NODE_CONFIGURATIONS[node.type as NodeType];
   if (!config) return null;
 
-  const connectors = isSource ? config.outputConnectors : config.inputConnectors;
-  const handle = handleId || 'default';
+  const connectors = isSource
+    ? config.outputConnectors
+    : config.inputConnectors;
+  const handle = handleId || "default";
 
   // Special case: Text Iterator has dynamic output handles (output_0, output_1, etc.)
-  if (node.type === NodeType.TextIterator && isSource && handle.startsWith('output_')) {
+  if (
+    node.type === NodeType.TextIterator &&
+    isSource &&
+    handle.startsWith("output_")
+  ) {
     return ConnectorType.Text;
   }
 
-  const connector = connectors.find(c => c.id === handle);
+  const connector = connectors.find((c) => c.id === handle);
   return connector ? connector.type : null;
 }
 
@@ -43,11 +49,12 @@ export function getConnectorType(
 export function hasExistingConnection(
   nodeId: string,
   handleId: string | null | undefined,
-  edges: WorkflowEdge[]
+  edges: WorkflowEdge[],
 ): boolean {
-  const handle = handleId || 'default';
+  const handle = handleId || "default";
   return edges.some(
-    edge => edge.target === nodeId && (edge.targetHandle || 'default') === handle
+    (edge) =>
+      edge.target === nodeId && (edge.targetHandle || "default") === handle,
   );
 }
 
@@ -57,14 +64,14 @@ export function hasExistingConnection(
 export function validateConnection(
   connection: Connection,
   nodes: WorkflowNode[],
-  edges: WorkflowEdge[]
+  edges: WorkflowEdge[],
 ): ValidationResult {
   // Find source and target nodes
-  const sourceNode = nodes.find(n => n.id === connection.source);
-  const targetNode = nodes.find(n => n.id === connection.target);
+  const sourceNode = nodes.find((n) => n.id === connection.source);
+  const targetNode = nodes.find((n) => n.id === connection.target);
 
   if (!sourceNode || !targetNode) {
-    return { valid: false, reason: 'Source or target node not found' };
+    return { valid: false, reason: "Source or target node not found" };
   }
 
   // Get node configurations
@@ -72,31 +79,41 @@ export function validateConnection(
   const targetConfig = NODE_CONFIGURATIONS[targetNode.type as NodeType];
 
   if (!sourceConfig || !targetConfig) {
-    return { valid: false, reason: 'Node configuration not found' };
+    return { valid: false, reason: "Node configuration not found" };
   }
 
   // Get connector types
-  const sourceType = getConnectorType(sourceNode, connection.sourceHandle, true);
-  const targetType = getConnectorType(targetNode, connection.targetHandle, false);
+  const sourceType = getConnectorType(
+    sourceNode,
+    connection.sourceHandle,
+    true,
+  );
+  const targetType = getConnectorType(
+    targetNode,
+    connection.targetHandle,
+    false,
+  );
 
   if (!sourceType || !targetType) {
-    return { valid: false, reason: 'Connector not found' };
+    return { valid: false, reason: "Connector not found" };
   }
 
   // Check type compatibility
   if (!canConnect(sourceType, targetType)) {
-    return { 
-      valid: false, 
-      reason: `Cannot connect ${sourceType} to ${targetType}` 
+    return {
+      valid: false,
+      reason: `Cannot connect ${sourceType} to ${targetType}`,
     };
   }
 
   // Find the input connector configuration
-  const targetHandle = connection.targetHandle || 'default';
-  const inputConnector = targetConfig.inputConnectors.find(c => c.id === targetHandle);
+  const targetHandle = connection.targetHandle || "default";
+  const inputConnector = targetConfig.inputConnectors.find(
+    (c) => c.id === targetHandle,
+  );
 
   if (!inputConnector) {
-    return { valid: false, reason: 'Input connector not found' };
+    return { valid: false, reason: "Input connector not found" };
   }
 
   // Check if input accepts multiple connections
@@ -104,7 +121,7 @@ export function validateConnection(
     if (hasExistingConnection(targetNode.id, connection.targetHandle, edges)) {
       return {
         valid: false,
-        reason: `${inputConnector.label} only accepts one connection`
+        reason: `${inputConnector.label} only accepts one connection`,
       };
     }
   }

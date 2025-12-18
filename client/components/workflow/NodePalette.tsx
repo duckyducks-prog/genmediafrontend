@@ -1,4 +1,27 @@
-import { Type, Image, Sparkles, Settings, Combine, Brain, Upload, Video, Download, Eye, Sun, Blend, Focus, Palette, Radio, Circle, Crop, Layers, Search, X, Film, List } from "lucide-react";
+import {
+  Type,
+  Image,
+  Sparkles,
+  Settings,
+  Combine,
+  Brain,
+  Upload,
+  Video,
+  Download,
+  Eye,
+  Sun,
+  Blend,
+  Focus,
+  Palette,
+  Radio,
+  Circle,
+  Crop,
+  Layers,
+  Search,
+  X,
+  Film,
+  List,
+} from "lucide-react";
 import { NodeType, NODE_CONFIGURATIONS } from "./types";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
@@ -157,9 +180,10 @@ export default function NodePalette({ onAddNode }: NodePaletteProps) {
       return paletteNodes;
     }
     const query = searchQuery.toLowerCase();
-    return paletteNodes.filter((node) =>
-      node.label.toLowerCase().includes(query) ||
-      node.description.toLowerCase().includes(query)
+    return paletteNodes.filter(
+      (node) =>
+        node.label.toLowerCase().includes(query) ||
+        node.description.toLowerCase().includes(query),
     );
   }, [searchQuery]);
 
@@ -214,7 +238,9 @@ export default function NodePalette({ onAddNode }: NodePaletteProps) {
             <h4 className="text-xs font-medium text-muted-foreground uppercase mb-2 tracking-wide">
               Inputs
             </h4>
-            <p className="text-xs text-muted-foreground/70 mb-3">Source nodes with only outputs</p>
+            <p className="text-xs text-muted-foreground/70 mb-3">
+              Source nodes with only outputs
+            </p>
             <div className="space-y-2">
               {categories.input.map((node) => (
                 <button
@@ -224,7 +250,9 @@ export default function NodePalette({ onAddNode }: NodePaletteProps) {
                   onClick={() => onAddNode(node.type)}
                   className="w-full flex items-start gap-2 p-3 rounded-lg bg-secondary/50 hover:bg-secondary border border-border transition-colors cursor-grab active:cursor-grabbing group"
                 >
-                  <div className="text-primary mt-0.5 group-hover:scale-110 transition-transform">{node.icon}</div>
+                  <div className="text-primary mt-0.5 group-hover:scale-110 transition-transform">
+                    {node.icon}
+                  </div>
                   <div className="flex-1 text-left">
                     <div className="text-sm font-medium">{node.label}</div>
                     <div className="text-xs text-muted-foreground">
@@ -243,7 +271,9 @@ export default function NodePalette({ onAddNode }: NodePaletteProps) {
             <h4 className="text-xs font-medium text-muted-foreground uppercase mb-2 tracking-wide">
               Modifiers
             </h4>
-            <p className="text-xs text-muted-foreground/70 mb-3">Transform and configure data</p>
+            <p className="text-xs text-muted-foreground/70 mb-3">
+              Transform and configure data
+            </p>
             <div className="space-y-2">
               {categories.modifier.map((node) => (
                 <button
@@ -253,7 +283,9 @@ export default function NodePalette({ onAddNode }: NodePaletteProps) {
                   onClick={() => onAddNode(node.type)}
                   className="w-full flex items-start gap-2 p-3 rounded-lg bg-secondary/50 hover:bg-secondary border border-border transition-colors cursor-grab active:cursor-grabbing group"
                 >
-                  <div className="text-primary mt-0.5 group-hover:scale-110 transition-transform">{node.icon}</div>
+                  <div className="text-primary mt-0.5 group-hover:scale-110 transition-transform">
+                    {node.icon}
+                  </div>
                   <div className="flex-1 text-left">
                     <div className="text-sm font-medium">{node.label}</div>
                     <div className="text-xs text-muted-foreground">
@@ -272,7 +304,9 @@ export default function NodePalette({ onAddNode }: NodePaletteProps) {
             <h4 className="text-xs font-medium text-muted-foreground uppercase mb-2 tracking-wide">
               Actions
             </h4>
-            <p className="text-xs text-muted-foreground/70 mb-3">Execute AI operations</p>
+            <p className="text-xs text-muted-foreground/70 mb-3">
+              Execute AI operations
+            </p>
             <div className="space-y-2">
               {categories.action.map((node) => (
                 <button
@@ -282,7 +316,9 @@ export default function NodePalette({ onAddNode }: NodePaletteProps) {
                   onClick={() => onAddNode(node.type)}
                   className="w-full flex items-start gap-2 p-3 rounded-lg bg-secondary/50 hover:bg-secondary border border-border transition-colors cursor-grab active:cursor-grabbing group"
                 >
-                  <div className="text-primary mt-0.5 group-hover:scale-110 transition-transform">{node.icon}</div>
+                  <div className="text-primary mt-0.5 group-hover:scale-110 transition-transform">
+                    {node.icon}
+                  </div>
                   <div className="flex-1 text-left">
                     <div className="text-sm font-medium">{node.label}</div>
                     <div className="text-xs text-muted-foreground">

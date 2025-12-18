@@ -308,7 +308,8 @@ export function executeTextIterator(
   const outputs: Record<string, string> = {};
 
   variableItems.forEach((item: string, index: number) => {
-    const combined = `${fixedSection}${fixedSection && item ? " " : ""}${item}`.trim();
+    const combined =
+      `${fixedSection}${fixedSection && item ? " " : ""}${item}`.trim();
     outputs[`output_${index}`] = combined;
   });
 

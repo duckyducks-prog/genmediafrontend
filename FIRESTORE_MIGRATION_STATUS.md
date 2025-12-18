@@ -8,12 +8,14 @@
 ## ✅ Completed Implementation
 
 ### 1. API Configuration Centralized
+
 - **File**: `client/lib/api-config.ts`
 - **Status**: ✅ Complete
 - **Details**: Single source of truth for all API endpoints
 - **Current API**: `https://veo-api-856765593724.us-central1.run.app`
 
 ### 2. Workflow API Client Updated
+
 - **File**: `client/lib/workflow-api.ts`
 - **Status**: ✅ Complete
 - **Implemented**:
@@ -24,14 +26,16 @@
   - Proper error handling with `handleApiError()`
 
 ### 3. Asset Library Updated
+
 - **File**: `client/components/library/AssetLibrary.tsx`
 - **Status**: ✅ Complete
-- **Details**: 
+- **Details**:
   - Uses `asset.url` field instead of deprecated `blob_path`
   - Fetches from `API_ENDPOINTS.library.list()`
   - Properly handles asset metadata (id, user_id, asset_type, mime_type, created_at)
 
 ### 4. API Helpers
+
 - **File**: `client/lib/api-helpers.ts`
 - **Status**: ✅ Complete
 - **Details**:
@@ -39,6 +43,7 @@
   - Sends base64 data with proper metadata (asset_type, mime_type, prompt)
 
 ### 5. Test Suite Updated
+
 - **File**: `tests/e2e/firestore-migration.spec.ts`
 - **Status**: ✅ Complete
 - **Details**:
@@ -57,11 +62,13 @@
 **Current State**: Node types use direct URLs (`imageUrl`, `videoUrl`)
 
 **Migration Guide Requirement**: Nodes should store asset references with this pattern:
+
 - `*Ref` fields (e.g., `imageRef`, `videoRef`) - store asset IDs
 - `*Url` fields (e.g., `imageUrl`, `videoUrl`) - resolved URLs from backend (read-only)
 - `*RefExists` fields (e.g., `imageRefExists`) - boolean flags indicating if asset still exists
 
 **Affected Files**:
+
 - `client/components/workflow/types.ts` - Type definitions
 - `client/components/workflow/nodes/ImageUploadNode.tsx`
 - `client/components/workflow/nodes/GenerateImageNode.tsx`
@@ -74,14 +81,15 @@
 **Required Changes**:
 
 1. **Update Type Definitions** (`types.ts`):
+
    ```typescript
    export interface ImageInputNodeData extends BaseNodeData {
-     imageRef?: string;  // Asset ID reference
-     imageUrl?: string;  // Resolved URL (computed by backend)
-     imageRefExists?: boolean;  // Asset existence flag
-     file?: File;  // For new uploads
+     imageRef?: string; // Asset ID reference
+     imageUrl?: string; // Resolved URL (computed by backend)
+     imageRefExists?: boolean; // Asset existence flag
+     file?: File; // For new uploads
    }
-   
+
    export interface GenerateVideoNodeData extends BaseNodeData {
      // ... existing fields ...
      videoRef?: string;
@@ -94,7 +102,7 @@
      lastFrameUrl?: string;
      lastFrameRefExists?: boolean;
    }
-   
+
    export interface GenerateImageNodeData extends BaseNodeData {
      // ... existing fields ...
      imageRef?: string;
@@ -113,15 +121,16 @@
    - Show warnings when `*RefExists` is false (asset was deleted)
 
 3. **Asset Selection Flow**:
+
    ```typescript
    // When user selects asset from library:
-   node.data.imageRef = selectedAsset.id;  // Store reference
+   node.data.imageRef = selectedAsset.id; // Store reference
    // Don't store imageUrl - backend will resolve it when loading
-   
+
    // When displaying node:
-   const imageUrl = node.data.imageUrl;  // Use resolved URL
+   const imageUrl = node.data.imageUrl; // Use resolved URL
    const imageExists = node.data.imageRefExists;
-   
+
    if (!imageExists) {
      // Show "Asset deleted" warning
    }
@@ -132,6 +141,7 @@
 ## 🔍 Verification Checklist
 
 ### Already Verified ✅
+
 - [x] API endpoints centralized in `api-config.ts`
 - [x] `blob_path` replaced with `url` in Asset interface
 - [x] Workflow metadata includes new Firestore fields
@@ -142,6 +152,7 @@
 - [x] Test suite updated for Firestore migration
 
 ### Pending User Approval ⏳
+
 - [ ] Node data types updated with asset reference pattern (`*Ref`, `*Url`, `*Exists`)
 - [ ] Node components updated to use asset references
 - [ ] Asset selection flow updated
@@ -155,6 +166,7 @@
 **Current Backend**: Firestore + GCS (assumed based on migration guide)
 
 **API Compatibility**:
+
 - ✅ `/library` endpoints return `url` field
 - ✅ `/workflows` endpoints support asset references
 - ✅ Backend resolves `*Ref` to `*Url` when fetching workflows

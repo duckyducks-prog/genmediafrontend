@@ -13,6 +13,7 @@
 All node data types now support the asset reference pattern:
 
 #### Asset Reference Pattern
+
 ```typescript
 // Pattern applied to all node types:
 {
@@ -22,14 +23,14 @@ All node data types now support the asset reference pattern:
   firstFrameRef?: string;
   lastFrameRef?: string;
   extractedFrameRef?: string;
-  
+
   // Resolved URLs (computed by backend when fetching workflows, not persisted)
   imageUrl?: string;
   videoUrl?: string;
   firstFrameUrl?: string;
   lastFrameUrl?: string;
   extractedFrameUrl?: string;
-  
+
   // Existence flags (computed by backend, indicates if asset still exists)
   imageRefExists?: boolean;
   videoRefExists?: boolean;
@@ -42,6 +43,7 @@ All node data types now support the asset reference pattern:
 #### Updated Node Types
 
 **ImageInputNodeData**:
+
 ```typescript
 export interface ImageInputNodeData extends BaseNodeData {
   imageRef?: string; // Asset ID reference
@@ -52,24 +54,25 @@ export interface ImageInputNodeData extends BaseNodeData {
 ```
 
 **GenerateVideoNodeData**:
+
 ```typescript
 export interface GenerateVideoNodeData extends BaseNodeData {
   // ... existing fields ...
-  
+
   // Generated video
   videoRef?: string;
   videoUrl?: string;
   videoRefExists?: boolean;
-  
+
   // Frame bridging
   firstFrameRef?: string;
   firstFrameUrl?: string;
   firstFrameRefExists?: boolean;
-  
+
   lastFrameRef?: string;
   lastFrameUrl?: string;
   lastFrameRefExists?: boolean;
-  
+
   // Reference images
   referenceImageRefs?: string[];
   referenceImageUrls?: string[];
@@ -77,19 +80,20 @@ export interface GenerateVideoNodeData extends BaseNodeData {
 ```
 
 **GenerateImageNodeData**:
+
 ```typescript
 export interface GenerateImageNodeData extends BaseNodeData {
   // ... existing fields ...
-  
+
   // Primary generated image
   imageRef?: string;
   imageUrl?: string;
   imageRefExists?: boolean;
-  
+
   // Multiple generated images
   imageRefs?: string[];
   images?: string[]; // For immediate display (base64 or URLs)
-  
+
   // Reference images
   referenceImageRefs?: string[];
   referenceImageUrls?: string[];
@@ -97,13 +101,14 @@ export interface GenerateImageNodeData extends BaseNodeData {
 ```
 
 **ExtractLastFrameNodeData**:
+
 ```typescript
 export interface ExtractLastFrameNodeData extends BaseNodeData {
   // Input video
   videoRef?: string;
   videoUrl?: string;
   videoRefExists?: boolean;
-  
+
   // Extracted frame
   extractedFrameRef?: string;
   extractedFrameUrl?: string;
@@ -112,26 +117,28 @@ export interface ExtractLastFrameNodeData extends BaseNodeData {
 ```
 
 **PreviewNodeData**:
+
 ```typescript
 export interface PreviewNodeData extends BaseNodeData {
   imageRef?: string;
   imageUrl?: string;
   imageRefExists?: boolean;
-  
+
   videoRef?: string;
   videoUrl?: string;
   videoRefExists?: boolean;
-  
+
   textContent?: string;
 }
 ```
 
 **OutputNodeData**:
+
 ```typescript
 export interface OutputNodeData extends BaseNodeData {
   result: string | null;
   type: "image" | "video";
-  
+
   assetRef?: string;
   assetUrl?: string;
   assetRefExists?: boolean;
@@ -163,6 +170,7 @@ The `client/lib/workflow-api.ts` already has:
 - ✅ Proper type definitions for `WorkflowMetadata` and `WorkflowListItem`
 
 **Example usage**:
+
 ```typescript
 // When saving workflow:
 const cleanWorkflow = cleanWorkflowForSave(workflow);
@@ -231,12 +239,14 @@ When an asset is deleted:
 According to the migration guide, the backend should:
 
 1. **Image Generation** (`POST /generation/image`):
+
    ```json
    {
      "images": ["base64..."],
      "asset_ids": ["asset-abc123", "asset-def456"]
    }
    ```
+
    - Backend auto-saves generated images to library
    - Returns both base64 (for immediate display) and asset IDs
 
@@ -248,6 +258,7 @@ According to the migration guide, the backend should:
      "asset_id": "asset-xyz789"
    }
    ```
+
    - Backend auto-saves completed video to library
    - Returns both base64 and asset ID
 
@@ -281,16 +292,16 @@ return {
 
 ## 🎯 Current State vs. Migration Guide
 
-| Feature | Migration Guide | Current Implementation | Status |
-|---------|----------------|----------------------|--------|
-| Asset reference types (`*Ref`, `*Url`, `*RefExists`) | Required | ✅ Implemented | Complete |
-| `stripResolvedUrls()` before save | Required | ✅ Implemented | Complete |
-| Backend resolves refs on load | Required | ⏳ Backend implementation | Pending backend |
-| Deleted asset warnings | Required | ✅ Component created | Complete |
-| Auto-save during generation | Required | ⏳ Backend implementation | Pending backend |
-| Asset ID storage in nodes | Required | 🔄 Ready for backend | Ready when backend provides IDs |
-| List workflows (metadata only) | Required | ✅ Implemented | Complete |
-| Get workflow (with resolved URLs) | Required | ⏳ Backend implementation | Pending backend |
+| Feature                                              | Migration Guide | Current Implementation    | Status                          |
+| ---------------------------------------------------- | --------------- | ------------------------- | ------------------------------- |
+| Asset reference types (`*Ref`, `*Url`, `*RefExists`) | Required        | ✅ Implemented            | Complete                        |
+| `stripResolvedUrls()` before save                    | Required        | ✅ Implemented            | Complete                        |
+| Backend resolves refs on load                        | Required        | ⏳ Backend implementation | Pending backend                 |
+| Deleted asset warnings                               | Required        | ✅ Component created      | Complete                        |
+| Auto-save during generation                          | Required        | ⏳ Backend implementation | Pending backend                 |
+| Asset ID storage in nodes                            | Required        | 🔄 Ready for backend      | Ready when backend provides IDs |
+| List workflows (metadata only)                       | Required        | ✅ Implemented            | Complete                        |
+| Get workflow (with resolved URLs)                    | Required        | ⏳ Backend implementation | Pending backend                 |
 
 ---
 

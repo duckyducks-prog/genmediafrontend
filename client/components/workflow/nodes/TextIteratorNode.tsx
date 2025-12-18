@@ -57,15 +57,15 @@ function TextIteratorNode({ data, id }: NodeProps<TextIteratorNodeData>) {
       batchItems.length > 0 ? batchItems : connectedItemsArray;
 
     // Get fixed section from input or node data
-    const fixedSection =
-      inputs.fixed_section || data.fixedSection || "";
+    const fixedSection = inputs.fixed_section || data.fixedSection || "";
 
     // Combine fixed + each variable to create outputs
     const outputs: Record<string, string> = {};
     const previews: string[] = [];
 
     variableItems.forEach((item: string, index: number) => {
-      const combined = `${fixedSection}${fixedSection && item ? " " : ""}${item}`.trim();
+      const combined =
+        `${fixedSection}${fixedSection && item ? " " : ""}${item}`.trim();
       outputs[`output_${index}`] = combined;
       previews.push(combined);
     });
@@ -163,7 +163,10 @@ function TextIteratorNode({ data, id }: NodeProps<TextIteratorNodeData>) {
           const isMultiple = input.acceptsMultiple;
 
           return (
-            <div key={input.id} className="flex items-center gap-2 relative h-6">
+            <div
+              key={input.id}
+              className="flex items-center gap-2 relative h-6"
+            >
               <Handle
                 type="target"
                 position={Position.Left}
@@ -277,9 +280,7 @@ function TextIteratorNode({ data, id }: NodeProps<TextIteratorNodeData>) {
           <div className="bg-muted/30 p-3 rounded border border-dashed border-border">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <AlertCircle className="w-4 h-4" />
-              <span>
-                Add variable items to see preview
-              </span>
+              <span>Add variable items to see preview</span>
             </div>
           </div>
         )}
