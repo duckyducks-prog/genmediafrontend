@@ -325,9 +325,14 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
             className: `connector-type-${connectorType || "any"}`,
             data: { connectorType: connectorType || "any" },
           };
-          console.log("[onConnect] Edge created with handles:", {
-            sourceHandle: newEdge.sourceHandle,
-            targetHandle: newEdge.targetHandle,
+          console.log("[onConnect] ✓ Edge created:", {
+            id: newEdge.id,
+            source: newEdge.source,
+            target: newEdge.target,
+            sourceHandle: newEdge.sourceHandle,  // Should be "image", "video", etc.
+            targetHandle: newEdge.targetHandle,  // Should be "first_frame", "video", etc.
+            sourceHasOutputs: !!sourceNode?.data?.outputs,
+            sourceOutputKeys: sourceNode?.data?.outputs ? Object.keys(sourceNode.data.outputs) : [],
           });
           setEdges((eds) => addEdge(newEdge, eds));
 
