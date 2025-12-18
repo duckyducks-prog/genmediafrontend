@@ -822,7 +822,7 @@ export function useWorkflowExecution(
               const token = await user?.getIdToken();
 
               console.log(
-                "[GenerateVideo] Preparing request body (will use first_frame_image/last_frame_image API fields):",
+                "[GenerateVideo] Preparing request body (backend API fields: first_frame/last_frame):",
                 {
                   hasPrompt: !!prompt,
                   hasFirstFrame: !!firstFrame,
@@ -853,19 +853,19 @@ export function useWorkflowExecution(
               }
 
               // Only add image fields if we have valid data (not null or empty)
-              // NOTE: The Veo API expects "first_frame_image" and "last_frame_image", not "first_frame" and "last_frame"
+              // Backend API expects "first_frame" and "last_frame" fields
               if (firstFrame) {
-                requestBody.first_frame_image = firstFrame;
+                requestBody.first_frame = firstFrame;
                 console.log(
-                  "[GenerateVideo] ✓ Including first_frame_image in request (base64 length:",
+                  "[GenerateVideo] ✓ Including first_frame in request (base64 length:",
                   firstFrame.length,
                   ")",
                 );
               }
               if (lastFrame) {
-                requestBody.last_frame_image = lastFrame;
+                requestBody.last_frame = lastFrame;
                 console.log(
-                  "[GenerateVideo] ✓ Including last_frame_image in request (base64 length:",
+                  "[GenerateVideo] ✓ Including last_frame in request (base64 length:",
                   lastFrame.length,
                   ")",
                 );
@@ -881,11 +881,11 @@ export function useWorkflowExecution(
 
               console.log("[GenerateVideo] Full request body (truncated):", {
                 prompt: requestBody.prompt?.substring(0, 50),
-                first_frame_image: requestBody.first_frame_image
-                  ? `${typeof requestBody.first_frame_image} (${requestBody.first_frame_image.length} chars)`
+                first_frame: requestBody.first_frame
+                  ? `${typeof requestBody.first_frame} (${requestBody.first_frame.length} chars)`
                   : null,
-                last_frame_image: requestBody.last_frame_image
-                  ? `${typeof requestBody.last_frame_image} (${requestBody.last_frame_image.length} chars)`
+                last_frame: requestBody.last_frame
+                  ? `${typeof requestBody.last_frame} (${requestBody.last_frame.length} chars)`
                   : null,
                 reference_images: requestBody.reference_images
                   ? Array.isArray(requestBody.reference_images)
