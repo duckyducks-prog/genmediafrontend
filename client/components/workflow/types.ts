@@ -394,6 +394,33 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
     ],
   },
 
+  [NodeType.TextIterator]: {
+    type: NodeType.TextIterator,
+    label: "Text Iterator",
+    category: "modifier",
+    description: "Combine fixed prompt with multiple variable texts",
+    inputConnectors: [
+      {
+        id: "fixed_section",
+        label: "Fixed Section",
+        type: ConnectorType.Text,
+        required: false,
+        acceptsMultiple: false,
+      },
+      {
+        id: "variable_items",
+        label: "Variable Items",
+        type: ConnectorType.Text,
+        required: false,
+        acceptsMultiple: true, // Can accept multiple Prompt nodes
+      },
+    ],
+    outputConnectors: [
+      // Dynamic outputs will be created at runtime
+      // Format: output_0, output_1, output_2, etc.
+    ],
+  },
+
   // ========== IMAGE MODIFIER NODES (PixiJS filters) ==========
   [NodeType.BrightnessContrast]: {
     type: NodeType.BrightnessContrast,
