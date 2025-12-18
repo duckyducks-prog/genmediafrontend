@@ -258,6 +258,64 @@ export function executeConcatenator(
 }
 
 /**
+ * Parse batch input text into array based on separator
+ */
+function parseBatchInput(input: string, separator: string): string[] {
+  if (!input?.trim()) return [];
+
+  const sep = separator === "Newline" ? "\n" : separator;
+  return input
+    .split(sep)
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+}
+
+/**
+ * Execute text iterator logic (frontend only, no API call)
+ * Combines fixed section with multiple variable items to create array of prompts
+ */
+export function executeTextIterator(
+  inputs: Record<string, any>,
+  nodeData: {
+    fixedSection: string;
+    batchInput: string;
+    separator: string;
+    customSeparator?: string;
+  },
+): Record<string, string> {
+  const fixedSection = inputs.fixed_section || nodeData.fixedSection || "";
+
+  // Get variable items from connected nodes or batch input
+  const connectedItems = inputs.variable_items || [];
+  const connectedItemsArray = Array.isArray(connectedItems)
+    ? connectedItems
+    : connectedItems
+      ? [connectedItems]
+      : [];
+
+  // Parse batch input
+  const separator =
+    nodeData.separator === "Custom"
+      ? nodeData.customSeparator || ","
+      : nodeData.separator || "Newline";
+  const batchItems = parseBatchInput(nodeData.batchInput || "", separator);
+
+  // Batch input takes precedence if not empty
+  const variableItems =
+    batchItems.length > 0 ? batchItems : connectedItemsArray;
+
+  // Combine fixed + each variable to create outputs
+  const outputs: Record<string, string> = {};
+
+  variableItems.forEach((item: string, index: number) => {
+    const combined = `${fixedSection}${fixedSection && item ? " " : ""}${item}`.trim();
+    outputs[`output_${index}`] = combined;
+  });
+
+  return outputs;
+}
+
+/**
  * Group nodes by execution level for parallel execution
  * Level 0: nodes with no dependencies
  * Level N: nodes whose all dependencies are in levels < N
