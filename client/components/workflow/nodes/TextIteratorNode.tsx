@@ -48,9 +48,17 @@ function TextIteratorNode({ data, id }: NodeProps<TextIteratorNodeData>) {
     const connectedItems = inputs.variable_items || [];
     let connectedItemsArray: string[] = [];
 
+    console.log('[TextIterator] Processing connected items:', {
+      connectedItemsType: typeof connectedItems,
+      isArray: Array.isArray(connectedItems),
+      connectedItems: connectedItems,
+      separator: resolvedSeparator,
+    });
+
     if (typeof connectedItems === "string") {
       // Single connected text - split it using the resolved separator
       connectedItemsArray = parseBatchInput(connectedItems, resolvedSeparator);
+      console.log('[TextIterator] Split single string into', connectedItemsArray.length, 'items');
     } else if (Array.isArray(connectedItems)) {
       // Multiple connections - split each string and flatten
       connectedItemsArray = connectedItems.flatMap((item) =>
@@ -58,6 +66,7 @@ function TextIteratorNode({ data, id }: NodeProps<TextIteratorNodeData>) {
           ? parseBatchInput(item, resolvedSeparator)
           : [item],
       );
+      console.log('[TextIterator] Split array into', connectedItemsArray.length, 'items');
     }
 
     // Parse batch input using resolved separator
