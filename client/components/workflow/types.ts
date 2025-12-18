@@ -146,6 +146,8 @@ export interface GenerateVideoNodeData extends BaseNodeData {
   aspectRatio: "16:9" | "9:16";
   generateAudio: boolean;
   durationSeconds: 4 | 6 | 8;
+  useConsistentVoice: boolean; // Enable consistent voice using seed
+  seed?: number; // Seed value for consistent generation (voice/style)
 }
 
 // GENERATE IMAGE node
