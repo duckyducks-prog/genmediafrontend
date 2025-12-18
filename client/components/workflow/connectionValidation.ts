@@ -27,7 +27,12 @@ export function getConnectorType(
 
   const connectors = isSource ? config.outputConnectors : config.inputConnectors;
   const handle = handleId || 'default';
-  
+
+  // Special case: Text Iterator has dynamic output handles (output_0, output_1, etc.)
+  if (node.type === NodeType.TextIterator && isSource && handle.startsWith('output_')) {
+    return ConnectorType.Text;
+  }
+
   const connector = connectors.find(c => c.id === handle);
   return connector ? connector.type : null;
 }
