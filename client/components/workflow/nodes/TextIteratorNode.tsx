@@ -38,18 +38,32 @@ function TextIteratorNode({ data, id }: NodeProps<TextIteratorNodeData>) {
     // Gather inputs from connected nodes
     const inputs = gatherNodeInputs(currentNode, nodes, edges);
 
-    // Get connected variable items (array if multiple connections)
-    const connectedItems = inputs.variable_items || [];
-    const connectedItemsArray = Array.isArray(connectedItems)
-      ? connectedItems
-      : connectedItems
-        ? [connectedItems]
-        : [];
+    // Resolve separator (handle "Custom" separator properly)
+    const resolvedSeparator =
+      data.separator === "Custom"
+        ? data.customSeparator || ","
+        : data.separator || "Newline";
 
-    // Parse batch input
+    // Get connected variable items and split if they're text strings
+    const connectedItems = inputs.variable_items || [];
+    let connectedItemsArray: string[] = [];
+
+    if (typeof connectedItems === "string") {
+      // Single connected text - split it using the resolved separator
+      connectedItemsArray = parseBatchInput(connectedItems, resolvedSeparator);
+    } else if (Array.isArray(connectedItems)) {
+      // Multiple connections - split each string and flatten
+      connectedItemsArray = connectedItems.flatMap((item) =>
+        typeof item === "string"
+          ? parseBatchInput(item, resolvedSeparator)
+          : [item]
+      );
+    }
+
+    // Parse batch input using resolved separator
     const batchItems = parseBatchInput(
       data.batchInput || "",
-      data.separator || "Newline",
+      resolvedSeparator,
     );
 
     // Combine (batch input takes precedence if not empty)
