@@ -1,7 +1,7 @@
-import { memo, useMemo } from 'react';
-import { Handle, Position, NodeProps } from 'reactflow';
-import { Button } from '@/components/ui/button';
-import { GenerateVideoNodeData, NODE_CONFIGURATIONS, NodeType } from '../types';
+import { memo, useMemo } from "react";
+import { Handle, Position, NodeProps } from "reactflow";
+import { Button } from "@/components/ui/button";
+import { GenerateVideoNodeData, NODE_CONFIGURATIONS, NodeType } from "../types";
 import {
   Sparkles,
   Loader2,
@@ -12,14 +12,14 @@ import {
   AlertTriangle,
   Play,
   ChevronDown,
-} from 'lucide-react';
+} from "lucide-react";
 
 function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
   const config = NODE_CONFIGURATIONS[NodeType.GenerateVideo];
-  const status = data.status || 'ready';
-  const isGenerating = data.isGenerating || status === 'executing';
-  const isCompleted = status === 'completed';
-  const isError = status === 'error';
+  const status = data.status || "ready";
+  const isGenerating = data.isGenerating || status === "executing";
+  const isCompleted = status === "completed";
+  const isError = status === "error";
   const videoUrl = (data as any).videoUrl;
   // Note: Mutual exclusion (first_frame/last_frame vs reference_images) is validated
   // at execution time, not in the UI. All inputs are always enabled.
@@ -28,7 +28,7 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
     // Block updates in read-only mode
     if (data.readOnly) return;
 
-    const event = new CustomEvent('node-update', {
+    const event = new CustomEvent("node-update", {
       detail: {
         id,
         data: {
@@ -41,8 +41,8 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
   };
 
   const getBorderColor = () => {
-    if (isError) return 'border-red-500';
-    return 'border-border';
+    if (isError) return "border-red-500";
+    return "border-border";
   };
 
   const getStatusText = () => {
@@ -50,19 +50,19 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
       if (data.pollAttempts) {
         return `Generating... (${data.pollAttempts * 10}s)`;
       }
-      return 'Generating...';
+      return "Generating...";
     }
-    if (isCompleted) return 'Completed';
-    if (isError) return 'Error';
-    return 'Ready';
+    if (isCompleted) return "Completed";
+    if (isError) return "Error";
+    return "Ready";
   };
 
   const handleDownload = async () => {
     if (!videoUrl) return;
 
     try {
-      if (videoUrl.startsWith('data:')) {
-        const link = document.createElement('a');
+      if (videoUrl.startsWith("data:")) {
+        const link = document.createElement("a");
         link.href = videoUrl;
         link.download = `generated-video-${Date.now()}.mp4`;
         document.body.appendChild(link);
@@ -72,10 +72,10 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
       }
 
       try {
-        const response = await fetch(videoUrl, { mode: 'cors' });
+        const response = await fetch(videoUrl, { mode: "cors" });
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.href = url;
         link.download = `generated-video-${Date.now()}.mp4`;
         document.body.appendChild(link);
@@ -83,11 +83,11 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
       } catch (fetchError) {
-        window.open(videoUrl, '_blank');
+        window.open(videoUrl, "_blank");
       }
     } catch (error) {
-      console.error('Download failed:', error);
-      window.open(videoUrl, '_blank');
+      console.error("Download failed:", error);
+      window.open(videoUrl, "_blank");
     }
   };
 
@@ -99,10 +99,14 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
         <div className="flex items-center gap-2">
           <VideoIcon className="w-4 h-4 text-primary" />
-          <div className="font-semibold text-sm">{data.label || 'Generate Video'}</div>
+          <div className="font-semibold text-sm">
+            {data.label || "Generate Video"}
+          </div>
         </div>
         <div className="flex items-center gap-1">
-          {isGenerating && <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />}
+          {isGenerating && (
+            <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />
+          )}
           {isCompleted && <CheckCircle2 className="w-4 h-4 text-green-500" />}
           {isError && <AlertCircle className="w-4 h-4 text-red-500" />}
         </div>
@@ -115,7 +119,10 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
           const isMultiple = input.acceptsMultiple;
 
           return (
-            <div key={input.id} className="flex items-center gap-2 relative h-6">
+            <div
+              key={input.id}
+              className="flex items-center gap-2 relative h-6"
+            >
               <Handle
                 type="target"
                 position={Position.Left}
@@ -126,7 +133,9 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
               <div className="text-xs font-medium text-muted-foreground">
                 {input.label}
                 {isRequired && <span className="text-red-500 ml-1">*</span>}
-                {isMultiple && <span className="text-blue-500 ml-1">(multi)</span>}
+                {isMultiple && (
+                  <span className="text-blue-500 ml-1">(multi)</span>
+                )}
               </div>
             </div>
           );
@@ -143,7 +152,7 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
           <div className="relative">
             <select
               value={data.aspectRatio}
-              onChange={(e) => handleUpdate('aspectRatio', e.target.value)}
+              onChange={(e) => handleUpdate("aspectRatio", e.target.value)}
               className="w-full px-3 py-2 text-sm bg-background border border-border rounded-md appearance-none pr-8"
               disabled={isGenerating || data.readOnly}
             >
@@ -162,7 +171,9 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
           <div className="relative">
             <select
               value={data.durationSeconds}
-              onChange={(e) => handleUpdate('durationSeconds', parseInt(e.target.value))}
+              onChange={(e) =>
+                handleUpdate("durationSeconds", parseInt(e.target.value))
+              }
               className="w-full px-3 py-2 text-sm bg-background border border-border rounded-md appearance-none pr-8"
               disabled={isGenerating || data.readOnly}
             >
@@ -180,7 +191,7 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
             <input
               type="checkbox"
               checked={data.generateAudio}
-              onChange={(e) => handleUpdate('generateAudio', e.target.checked)}
+              onChange={(e) => handleUpdate("generateAudio", e.target.checked)}
               disabled={isGenerating || data.readOnly}
               className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
             />
@@ -196,7 +207,9 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
             <input
               type="checkbox"
               checked={data.useConsistentVoice}
-              onChange={(e) => handleUpdate('useConsistentVoice', e.target.checked)}
+              onChange={(e) =>
+                handleUpdate("useConsistentVoice", e.target.checked)
+              }
               disabled={isGenerating || data.readOnly}
               className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
             />
@@ -215,7 +228,9 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
             <input
               type="number"
               value={data.seed ?? 42}
-              onChange={(e) => handleUpdate('seed', parseInt(e.target.value) || 42)}
+              onChange={(e) =>
+                handleUpdate("seed", parseInt(e.target.value) || 42)
+              }
               disabled={isGenerating || data.readOnly}
               className="w-full px-3 py-2 text-sm bg-background border border-border rounded-md"
               placeholder="42"
@@ -235,7 +250,7 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
         </div>
 
         {/* Mutual Exclusion Warning */}
-        {data.error?.includes('mutual exclusion') && (
+        {data.error?.includes("mutual exclusion") && (
           <div className="flex items-start gap-2 text-xs text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-950/20 p-2 rounded">
             <AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />
             <div>{data.error}</div>
@@ -265,7 +280,7 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
             {/* Run Node Button */}
             <Button
               onClick={() => {
-                const event = new CustomEvent('node-execute', {
+                const event = new CustomEvent("node-execute", {
                   detail: { nodeId: id },
                 });
                 window.dispatchEvent(event);
@@ -296,17 +311,17 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
             <div className="flex flex-col items-center justify-center h-[150px] border-2 border-dashed border-border rounded-lg bg-muted/30">
               <VideoIcon className="w-8 h-8 text-muted-foreground mb-2" />
               <p className="text-xs text-muted-foreground">
-                {isGenerating ? 'Generating...' : 'No video yet'}
+                {isGenerating ? "Generating..." : "No video yet"}
               </p>
               <p className="text-xs text-muted-foreground">
-                {!isGenerating && 'Run workflow to generate'}
+                {!isGenerating && "Run workflow to generate"}
               </p>
             </div>
 
             {/* Run Node Button */}
             <Button
               onClick={() => {
-                const event = new CustomEvent('node-execute', {
+                const event = new CustomEvent("node-execute", {
                   detail: { nodeId: id },
                 });
                 window.dispatchEvent(event);
@@ -332,7 +347,7 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
         )}
 
         {/* Error Display */}
-        {isError && data.error && !data.error.includes('mutual exclusion') && (
+        {isError && data.error && !data.error.includes("mutual exclusion") && (
           <div className="text-xs text-red-500 bg-red-50 dark:bg-red-950/20 p-2 rounded">
             {data.error}
           </div>
@@ -346,7 +361,7 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
         id="video"
         data-connector-type={config.outputConnectors[0]?.type}
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: '50%', transform: 'translateY(-50%)' }}
+        style={{ top: "50%", transform: "translateY(-50%)" }}
       />
     </div>
   );
