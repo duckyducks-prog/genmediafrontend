@@ -180,8 +180,17 @@ export function gatherNodeInputs(
         );
       }
     } else {
-      console.warn(
-        `[gatherNodeInputs] ⚠️ Output value is undefined for handle "${sourceHandle}"`,
+      console.error(
+        `[gatherNodeInputs] ❌ No value found for edge`,
+        {
+          sourceNode: sourceNode.id,
+          sourceHandle,
+          targetHandle,
+          availableOutputKeys: sourceNode.data.outputs ? Object.keys(sourceNode.data.outputs) : [],
+          availableDataKeys: Object.keys(sourceNode.data).filter(k =>
+            !['label', 'status', 'isGenerating', 'error'].includes(k)
+          ),
+        },
       );
     }
   });
