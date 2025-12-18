@@ -974,6 +974,9 @@ export function useWorkflowExecution(
                   data: {
                     video: result.videoUrl,
                     videoUrl: result.videoUrl,
+                    outputs: {
+                      video: result.videoUrl,  // ✓ Explicit for downstream connections
+                    }
                   },
                 };
               } else {
