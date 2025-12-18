@@ -438,14 +438,23 @@ export function executeTextIterator(
   const connectedItems = inputs.variable_items || [];
   let connectedItemsArray: string[] = [];
 
+  console.log('[executeTextIterator] Processing connected items:', {
+    connectedItemsType: typeof connectedItems,
+    isArray: Array.isArray(connectedItems),
+    connectedItems: connectedItems,
+    separator: separator,
+  });
+
   if (typeof connectedItems === "string") {
     // Single connected text - split it using the separator
     connectedItemsArray = parseBatchInput(connectedItems, separator);
+    console.log('[executeTextIterator] Split single string into', connectedItemsArray.length, 'items');
   } else if (Array.isArray(connectedItems)) {
     // Multiple connections - split each string and flatten
     connectedItemsArray = connectedItems.flatMap((item) =>
       typeof item === "string" ? parseBatchInput(item, separator) : [item],
     );
+    console.log('[executeTextIterator] Split array into', connectedItemsArray.length, 'items');
   }
 
   // Parse batch input
