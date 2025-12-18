@@ -1,4 +1,4 @@
-import { Type, Image, Sparkles, Settings, Combine, Brain, Upload, Video, Download, Eye, Sun, Blend, Focus, Palette, Radio, Circle, Crop, Layers, Search, X, Film } from "lucide-react";
+import { Type, Image, Sparkles, Settings, Combine, Brain, Upload, Video, Download, Eye, Sun, Blend, Focus, Palette, Radio, Circle, Crop, Layers, Search, X, Film, List } from "lucide-react";
 import { NodeType, NODE_CONFIGURATIONS } from "./types";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo } from "react";
@@ -35,6 +35,13 @@ const paletteNodes: PaletteNode[] = [
     icon: <Combine className="w-4 h-4" />,
     category: "modifier",
     description: "Combine multiple prompts",
+  },
+  {
+    type: NodeType.TextIterator,
+    label: "Text Iterator",
+    icon: <List className="w-4 h-4" />,
+    category: "modifier",
+    description: "Combine fixed text with multiple variables",
   },
   {
     type: NodeType.BrightnessContrast,
