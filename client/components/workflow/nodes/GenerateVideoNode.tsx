@@ -190,6 +190,40 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
           </label>
         </div>
 
+        {/* Use Consistent Voice Checkbox */}
+        <div>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={data.useConsistentVoice}
+              onChange={(e) => handleUpdate('useConsistentVoice', e.target.checked)}
+              disabled={isGenerating || data.readOnly}
+              className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+            />
+            <span className="text-xs font-medium text-muted-foreground">
+              Use consistent voice (seed)
+            </span>
+          </label>
+        </div>
+
+        {/* Seed Input (shown when useConsistentVoice is checked) */}
+        {data.useConsistentVoice && (
+          <div>
+            <label className="text-xs font-medium text-muted-foreground block mb-1">
+              Seed Value
+            </label>
+            <input
+              type="number"
+              value={data.seed ?? 42}
+              onChange={(e) => handleUpdate('seed', parseInt(e.target.value) || 42)}
+              disabled={isGenerating || data.readOnly}
+              className="w-full px-3 py-2 text-sm bg-background border border-border rounded-md"
+              placeholder="42"
+              min="0"
+            />
+          </div>
+        )}
+
         {/* Status */}
         <div className="text-xs text-muted-foreground">
           Status: <span className="font-medium">{getStatusText()}</span>
