@@ -11,6 +11,7 @@ import {
   gatherNodeInputs,
   validateNodeInputs,
   executeConcatenator,
+  executeTextIterator,
   pollVideoStatus,
   groupNodesByLevel,
   findUpstreamDependencies,
@@ -213,6 +214,18 @@ export function useWorkflowExecution(
             const separator = (node.data as any).separator || "Space";
             const combined = executeConcatenator(inputs, separator);
             return { success: true, data: { combined } };
+          }
+
+          case NodeType.TextIterator: {
+            const outputs = executeTextIterator(inputs, node.data as any);
+            return {
+              success: true,
+              data: {
+                outputs,
+                itemPreviews: Object.values(outputs),
+                dynamicOutputCount: Object.keys(outputs).length,
+              },
+            };
           }
 
           case NodeType.ImageComposite: {
