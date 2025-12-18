@@ -256,7 +256,8 @@ describe("Firestore Migration - Asset Library", () => {
         expect(asset.id).toBeDefined();
         expect(asset.user_id).toBeDefined();
         expect(asset.asset_type).toMatch(/^(image|video)$/);
-        expect(asset.blob_path).toBeDefined();
+        expect(asset.url).toBeDefined(); // ✅ Use 'url' instead of deprecated 'blob_path'
+        expect(asset.url).toMatch(/^https:\/\//); // Should be a valid URL
         expect(asset.mime_type).toBeDefined();
         expect(asset.created_at).toBeDefined();
         expect(asset.source).toMatch(/^(upload|generated)$/);
