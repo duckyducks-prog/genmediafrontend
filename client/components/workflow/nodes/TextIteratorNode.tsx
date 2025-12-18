@@ -139,7 +139,7 @@ function TextIteratorNode({ data, id }: NodeProps<TextIteratorNodeData>) {
 
   return (
     <div
-      className={`bg-card border-2 rounded-lg p-4 min-w-[320px] shadow-lg transition-colors ${getBorderColor()}`}
+      className={`bg-card border-2 rounded-lg p-4 min-w-[320px] max-w-[400px] shadow-lg transition-colors ${getBorderColor()}`}
     >
       {/* Node Header */}
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
@@ -264,7 +264,7 @@ function TextIteratorNode({ data, id }: NodeProps<TextIteratorNodeData>) {
               {data.itemPreviews.map((preview, i) => (
                 <div
                   key={i}
-                  className="text-xs font-mono leading-relaxed truncate"
+                  className="text-xs font-mono leading-relaxed break-words line-clamp-2"
                   title={preview}
                 >
                   <span className="text-muted-foreground mr-2">{i + 1}.</span>
