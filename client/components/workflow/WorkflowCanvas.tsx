@@ -49,6 +49,7 @@ import ImageOutputNode from "./nodes/ImageOutputNode";
 import VideoOutputNode from "./nodes/VideoOutputNode";
 import DownloadNode from "./nodes/DownloadNode";
 import PromptConcatenatorNode from "./nodes/PromptConcatenatorNode";
+import TextIteratorNode from "./nodes/TextIteratorNode";
 import LLMNode from "./nodes/LLMNode";
 import PreviewNode from "./nodes/PreviewNode";
 import BrightnessContrastNode from "./nodes/BrightnessContrastNode";
@@ -68,6 +69,7 @@ const nodeTypes: NodeTypes = {
 
   // Modifier nodes
   [NodeType.PromptConcatenator]: PromptConcatenatorNode,
+  [NodeType.TextIterator]: TextIteratorNode,
   [NodeType.BrightnessContrast]: BrightnessContrastNode,
   [NodeType.Blur]: BlurNode,
   [NodeType.Sharpen]: SharpenNode,
