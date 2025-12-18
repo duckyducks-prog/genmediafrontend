@@ -1011,6 +1011,44 @@ export function useWorkflowExecution(
             }
           }
 
+          case NodeType.ExtractLastFrame: {
+            const videoInput = inputs.video;
+
+            if (!videoInput) {
+              return {
+                success: false,
+                error: "No video connected to Extract Last Frame node"
+              };
+            }
+
+            try {
+              console.log('[ExtractLastFrame] Extracting last frame from video, length:',
+                typeof videoInput === 'string' ? videoInput.length : 'not a string');
+
+              // Extract last frame from video
+              const extractedFrame = await extractLastFrameFromVideo(videoInput);
+
+              console.log('[ExtractLastFrame] ✓ Frame extracted, length:', extractedFrame.length);
+
+              return {
+                success: true,
+                data: {
+                  videoUrl: videoInput, // Pass through input video
+                  extractedFrameUrl: extractedFrame,
+                  outputs: {
+                    image: extractedFrame, // Output extracted frame
+                  }
+                }
+              };
+            } catch (error) {
+              console.error('[ExtractLastFrame] ❌ Failed:', error);
+              return {
+                success: false,
+                error: error instanceof Error ? error.message : "Failed to extract frame"
+              };
+            }
+          }
+
           case NodeType.ImageOutput: {
             // Get image from input - support both "image" and legacy names
             const imageUrl = inputs["image-input"] || inputs.image || null;
