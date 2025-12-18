@@ -401,6 +401,17 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               outputs: {},
             };
             break;
+          case NodeType.TextIterator:
+            data = {
+              fixedSection: "",
+              variableItems: [],
+              batchInput: "",
+              separator: "Newline",
+              dynamicOutputCount: 0,
+              label: "Text Iterator",
+              outputs: {},
+            };
+            break;
           case NodeType.BrightnessContrast:
             data = {
               brightness: 0,
