@@ -47,7 +47,7 @@ export const API_ENDPOINTS = {
  * How to use:
  *
  * Instead of:
- *   fetch('https://veo-api-856765593724.us-central1.run.app/generate/image', ...)
+ *   fetch('https://veo-api-otfo2ctxma-uc.a.run.app/generate/image', ...)
  *
  * Use:
  *   import { API_ENDPOINTS } from '@/lib/api-config'
