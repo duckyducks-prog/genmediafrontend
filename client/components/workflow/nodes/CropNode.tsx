@@ -524,12 +524,34 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
           {imageDimensions && (() => {
             const rect = imageRef.current?.getBoundingClientRect();
             if (!rect) return null;
-            
-            const scaleX = rect.width / imageDimensions.width;
-            const scaleY = rect.height / imageDimensions.height;
-            
-            const cropLeft = data.x * scaleX;
-            const cropTop = data.y * scaleY;
+
+            // Calculate actual rendered image size with object-contain
+            const containerWidth = rect.width;
+            const containerHeight = rect.height;
+            const imageAspect = imageDimensions.width / imageDimensions.height;
+            const containerAspect = containerWidth / containerHeight;
+
+            let renderedWidth, renderedHeight, offsetX, offsetY;
+
+            if (imageAspect > containerAspect) {
+              // Image is wider - letterbox top/bottom
+              renderedWidth = containerWidth;
+              renderedHeight = containerWidth / imageAspect;
+              offsetX = 0;
+              offsetY = (containerHeight - renderedHeight) / 2;
+            } else {
+              // Image is taller - letterbox left/right
+              renderedHeight = containerHeight;
+              renderedWidth = containerHeight * imageAspect;
+              offsetX = (containerWidth - renderedWidth) / 2;
+              offsetY = 0;
+            }
+
+            const scaleX = renderedWidth / imageDimensions.width;
+            const scaleY = renderedHeight / imageDimensions.height;
+
+            const cropLeft = offsetX + data.x * scaleX;
+            const cropTop = offsetY + data.y * scaleY;
             const cropWidth = data.width * scaleX;
             const cropHeight = data.height * scaleY;
 
@@ -537,59 +559,62 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
               <>
                 {/* Dark overlay - 4 rectangles around crop box */}
                 {/* Top */}
-                <div 
+                <div
                   className="absolute bg-black/60 pointer-events-none"
                   style={{
-                    left: 0,
-                    top: 0,
-                    width: `${rect.width}px`,
-                    height: `${cropTop}px`,
+                    left: offsetX,
+                    top: offsetY,
+                    width: renderedWidth,
+                    height: cropTop - offsetY,
                   }}
                 />
                 {/* Bottom */}
-                <div 
+                <div
                   className="absolute bg-black/60 pointer-events-none"
                   style={{
-                    left: 0,
-                    top: `${cropTop + cropHeight}px`,
-                    width: `${rect.width}px`,
-                    height: `${rect.height - cropTop - cropHeight}px`,
+                    left: offsetX,
+                    top: cropTop + cropHeight,
+                    width: renderedWidth,
+                    height: offsetY + renderedHeight - cropTop - cropHeight,
                   }}
                 />
                 {/* Left */}
-                <div 
+                <div
                   className="absolute bg-black/60 pointer-events-none"
                   style={{
-                    left: 0,
-                    top: `${cropTop}px`,
-                    width: `${cropLeft}px`,
-                    height: `${cropHeight}px`,
+                    left: offsetX,
+                    top: cropTop,
+                    width: cropLeft - offsetX,
+                    height: cropHeight,
                   }}
                 />
                 {/* Right */}
-                <div 
+                <div
                   className="absolute bg-black/60 pointer-events-none"
                   style={{
-                    left: `${cropLeft + cropWidth}px`,
-                    top: `${cropTop}px`,
-                    width: `${rect.width - cropLeft - cropWidth}px`,
-                    height: `${cropHeight}px`,
+                    left: cropLeft + cropWidth,
+                    top: cropTop,
+                    width: offsetX + renderedWidth - cropLeft - cropWidth,
+                    height: cropHeight,
                   }}
                 />
 
                 {/* Crop box border and drag area */}
                 <div
                   className={`nodrag absolute select-none transition-all ${
-                    isDragging
-                      ? "cursor-grabbing"
-                      : "cursor-grab"
+                    isDragging ? "cursor-grabbing" : "cursor-grab"
                   }`}
-                  style={getCropOverlayStyle()}
+                  style={{
+                    left: cropLeft,
+                    top: cropTop,
+                    width: cropWidth,
+                    height: cropHeight,
+                  }}
                   onMouseDown={handleCropMouseDown}
                 >
                   {/* Border */}
                   <div className="absolute inset-0 border-2 border-white pointer-events-none" />
-                  
+
                   {/* Rule of thirds grid */}
                   <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.3 }}>
                     <line x1="33.33%" y1="0" x2="33.33%" y2="100%" stroke="white" strokeWidth="1" />
@@ -602,22 +627,22 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
                 {/* Resize handles */}
                 <div
                   className="nodrag absolute w-3 h-3 bg-white rounded-full cursor-nwse-resize -translate-x-1/2 -translate-y-1/2 border-2 border-primary shadow-md hover:scale-125 transition-transform"
-                  style={getHandleStyle('topLeft')}
+                  style={{ left: cropLeft, top: cropTop }}
                   onMouseDown={(e) => handleResizeMouseDown(e, 'topLeft')}
                 />
                 <div
                   className="nodrag absolute w-3 h-3 bg-white rounded-full cursor-nesw-resize -translate-x-1/2 -translate-y-1/2 border-2 border-primary shadow-md hover:scale-125 transition-transform"
-                  style={getHandleStyle('topRight')}
+                  style={{ left: cropLeft + cropWidth, top: cropTop }}
                   onMouseDown={(e) => handleResizeMouseDown(e, 'topRight')}
                 />
                 <div
                   className="nodrag absolute w-3 h-3 bg-white rounded-full cursor-nesw-resize -translate-x-1/2 -translate-y-1/2 border-2 border-primary shadow-md hover:scale-125 transition-transform"
-                  style={getHandleStyle('bottomLeft')}
+                  style={{ left: cropLeft, top: cropTop + cropHeight }}
                   onMouseDown={(e) => handleResizeMouseDown(e, 'bottomLeft')}
                 />
                 <div
                   className="nodrag absolute w-3 h-3 bg-white rounded-full cursor-nwse-resize -translate-x-1/2 -translate-y-1/2 border-2 border-primary shadow-md hover:scale-125 transition-transform"
-                  style={getHandleStyle('bottomRight')}
+                  style={{ left: cropLeft + cropWidth, top: cropTop + cropHeight }}
                   onMouseDown={(e) => handleResizeMouseDown(e, 'bottomRight')}
                 />
               </>
