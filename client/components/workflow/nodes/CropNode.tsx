@@ -22,7 +22,12 @@ const ASPECT_RATIOS = {
   custom: { ratio: 0, width: 0, height: 0 },
 };
 
-type ResizeHandle = 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight' | null;
+type ResizeHandle =
+  | "topLeft"
+  | "topRight"
+  | "bottomLeft"
+  | "bottomRight"
+  | null;
 
 function CropNode({ data, id }: NodeProps<CropNodeData>) {
   const imageInput = (data as any).image || (data as any).imageInput;
@@ -34,8 +39,15 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
   } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState<ResizeHandle>(null);
-  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
-  const [cropStart, setCropStart] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(
+    null,
+  );
+  const [cropStart, setCropStart] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
   const imageContainerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
 
@@ -165,7 +177,10 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
       let newHeight = aspectConfig.height;
 
       // Check if standard dimensions fit within the image
-      if (newWidth > imageDimensions.width || newHeight > imageDimensions.height) {
+      if (
+        newWidth > imageDimensions.width ||
+        newHeight > imageDimensions.height
+      ) {
         // Scale down proportionally to fit
         const scaleX = imageDimensions.width / newWidth;
         const scaleY = imageDimensions.height / newHeight;
@@ -217,7 +232,10 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
     window.dispatchEvent(updateEvent);
   };
 
-  const handleDimensionChange = (dimension: "width" | "height", value: string) => {
+  const handleDimensionChange = (
+    dimension: "width" | "height",
+    value: string,
+  ) => {
     const numValue = parseInt(value) || 1;
     const updateEvent = new CustomEvent("node-update", {
       detail: {
@@ -308,7 +326,12 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
 
     setIsDragging(true);
     setDragStart({ x: clickX - data.x, y: clickY - data.y });
-    setCropStart({ x: data.x, y: data.y, width: data.width, height: data.height });
+    setCropStart({
+      x: data.x,
+      y: data.y,
+      width: data.width,
+      height: data.height,
+    });
   };
 
   // Handle resize handle drag
@@ -348,7 +371,12 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
 
     setIsResizing(handle);
     setDragStart({ x: clickX, y: clickY });
-    setCropStart({ x: data.x, y: data.y, width: data.width, height: data.height });
+    setCropStart({
+      x: data.x,
+      y: data.y,
+      width: data.width,
+      height: data.height,
+    });
   };
 
   // Global mouse move handler
@@ -356,7 +384,8 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
     if (!isDragging && !isResizing) return;
 
     const handleGlobalMouseMove = (e: MouseEvent) => {
-      if (!imageRef.current || !imageDimensions || !dragStart || !cropStart) return;
+      if (!imageRef.current || !imageDimensions || !dragStart || !cropStart)
+        return;
 
       const rect = imageRef.current.getBoundingClientRect();
 
@@ -417,24 +446,33 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
         let newW = cropStart.width;
         let newH = cropStart.height;
 
-        const aspectRatio = data.aspectRatio !== "custom" && data.aspectRatio
-          ? ASPECT_RATIOS[data.aspectRatio].ratio
-          : null;
+        const aspectRatio =
+          data.aspectRatio !== "custom" && data.aspectRatio
+            ? ASPECT_RATIOS[data.aspectRatio].ratio
+            : null;
 
-        if (isResizing === 'bottomRight') {
+        if (isResizing === "bottomRight") {
           newW = Math.max(50, cropStart.width + dx);
-          newH = aspectRatio ? newW / aspectRatio : Math.max(50, cropStart.height + dy);
-        } else if (isResizing === 'bottomLeft') {
+          newH = aspectRatio
+            ? newW / aspectRatio
+            : Math.max(50, cropStart.height + dy);
+        } else if (isResizing === "bottomLeft") {
           newW = Math.max(50, cropStart.width - dx);
-          newH = aspectRatio ? newW / aspectRatio : Math.max(50, cropStart.height + dy);
+          newH = aspectRatio
+            ? newW / aspectRatio
+            : Math.max(50, cropStart.height + dy);
           newX = cropStart.x + cropStart.width - newW;
-        } else if (isResizing === 'topRight') {
+        } else if (isResizing === "topRight") {
           newW = Math.max(50, cropStart.width + dx);
-          newH = aspectRatio ? newW / aspectRatio : Math.max(50, cropStart.height - dy);
+          newH = aspectRatio
+            ? newW / aspectRatio
+            : Math.max(50, cropStart.height - dy);
           newY = cropStart.y + cropStart.height - newH;
-        } else if (isResizing === 'topLeft') {
+        } else if (isResizing === "topLeft") {
           newW = Math.max(50, cropStart.width - dx);
-          newH = aspectRatio ? newW / aspectRatio : Math.max(50, cropStart.height - dy);
+          newH = aspectRatio
+            ? newW / aspectRatio
+            : Math.max(50, cropStart.height - dy);
           newX = cropStart.x + cropStart.width - newW;
           newY = cropStart.y + cropStart.height - newH;
         }
@@ -494,7 +532,9 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
   };
 
   // Get handle positions
-  const getHandleStyle = (handle: 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight') => {
+  const getHandleStyle = (
+    handle: "topLeft" | "topRight" | "bottomLeft" | "bottomRight",
+  ) => {
     if (!imageDimensions || !imageRef.current) return {};
 
     const rect = imageRef.current.getBoundingClientRect();
@@ -502,19 +542,19 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
     const scaleY = rect.height / imageDimensions.height;
 
     const cropStyle = getCropOverlayStyle();
-    const left = parseFloat(cropStyle.left as string || '0');
-    const top = parseFloat(cropStyle.top as string || '0');
-    const width = parseFloat(cropStyle.width as string || '0');
-    const height = parseFloat(cropStyle.height as string || '0');
+    const left = parseFloat((cropStyle.left as string) || "0");
+    const top = parseFloat((cropStyle.top as string) || "0");
+    const width = parseFloat((cropStyle.width as string) || "0");
+    const height = parseFloat((cropStyle.height as string) || "0");
 
     switch (handle) {
-      case 'topLeft':
+      case "topLeft":
         return { left: `${left}px`, top: `${top}px` };
-      case 'topRight':
+      case "topRight":
         return { left: `${left + width}px`, top: `${top}px` };
-      case 'bottomLeft':
+      case "bottomLeft":
         return { left: `${left}px`, top: `${top + height}px` };
-      case 'bottomRight':
+      case "bottomRight":
         return { left: `${left + width}px`, top: `${top + height}px` };
     }
   };
@@ -568,7 +608,7 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
 
       {/* Image Preview with Crop Overlay */}
       {imagePreview ? (
-        <div 
+        <div
           ref={imageContainerRef}
           className="nodrag mb-3 rounded-lg overflow-hidden bg-muted border border-border relative"
         >
@@ -582,133 +622,169 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
             }
           />
           {/* Crop overlay with cutout effect */}
-          {imageDimensions && (() => {
-            const rect = imageRef.current?.getBoundingClientRect();
-            if (!rect) return null;
+          {imageDimensions &&
+            (() => {
+              const rect = imageRef.current?.getBoundingClientRect();
+              if (!rect) return null;
 
-            // Calculate actual rendered image size with object-contain
-            const containerWidth = rect.width;
-            const containerHeight = rect.height;
-            const imageAspect = imageDimensions.width / imageDimensions.height;
-            const containerAspect = containerWidth / containerHeight;
+              // Calculate actual rendered image size with object-contain
+              const containerWidth = rect.width;
+              const containerHeight = rect.height;
+              const imageAspect =
+                imageDimensions.width / imageDimensions.height;
+              const containerAspect = containerWidth / containerHeight;
 
-            let renderedWidth, renderedHeight, offsetX, offsetY;
+              let renderedWidth, renderedHeight, offsetX, offsetY;
 
-            if (imageAspect > containerAspect) {
-              // Image is wider - letterbox top/bottom
-              renderedWidth = containerWidth;
-              renderedHeight = containerWidth / imageAspect;
-              offsetX = 0;
-              offsetY = (containerHeight - renderedHeight) / 2;
-            } else {
-              // Image is taller - letterbox left/right
-              renderedHeight = containerHeight;
-              renderedWidth = containerHeight * imageAspect;
-              offsetX = (containerWidth - renderedWidth) / 2;
-              offsetY = 0;
-            }
+              if (imageAspect > containerAspect) {
+                // Image is wider - letterbox top/bottom
+                renderedWidth = containerWidth;
+                renderedHeight = containerWidth / imageAspect;
+                offsetX = 0;
+                offsetY = (containerHeight - renderedHeight) / 2;
+              } else {
+                // Image is taller - letterbox left/right
+                renderedHeight = containerHeight;
+                renderedWidth = containerHeight * imageAspect;
+                offsetX = (containerWidth - renderedWidth) / 2;
+                offsetY = 0;
+              }
 
-            const scaleX = renderedWidth / imageDimensions.width;
-            const scaleY = renderedHeight / imageDimensions.height;
+              const scaleX = renderedWidth / imageDimensions.width;
+              const scaleY = renderedHeight / imageDimensions.height;
 
-            const cropLeft = offsetX + data.x * scaleX;
-            const cropTop = offsetY + data.y * scaleY;
-            const cropWidth = data.width * scaleX;
-            const cropHeight = data.height * scaleY;
+              const cropLeft = offsetX + data.x * scaleX;
+              const cropTop = offsetY + data.y * scaleY;
+              const cropWidth = data.width * scaleX;
+              const cropHeight = data.height * scaleY;
 
-            return (
-              <>
-                {/* Dark overlay - 4 rectangles around crop box */}
-                {/* Top */}
-                <div
-                  className="absolute bg-black/60 pointer-events-none"
-                  style={{
-                    left: offsetX,
-                    top: offsetY,
-                    width: renderedWidth,
-                    height: cropTop - offsetY,
-                  }}
-                />
-                {/* Bottom */}
-                <div
-                  className="absolute bg-black/60 pointer-events-none"
-                  style={{
-                    left: offsetX,
-                    top: cropTop + cropHeight,
-                    width: renderedWidth,
-                    height: offsetY + renderedHeight - cropTop - cropHeight,
-                  }}
-                />
-                {/* Left */}
-                <div
-                  className="absolute bg-black/60 pointer-events-none"
-                  style={{
-                    left: offsetX,
-                    top: cropTop,
-                    width: cropLeft - offsetX,
-                    height: cropHeight,
-                  }}
-                />
-                {/* Right */}
-                <div
-                  className="absolute bg-black/60 pointer-events-none"
-                  style={{
-                    left: cropLeft + cropWidth,
-                    top: cropTop,
-                    width: offsetX + renderedWidth - cropLeft - cropWidth,
-                    height: cropHeight,
-                  }}
-                />
+              return (
+                <>
+                  {/* Dark overlay - 4 rectangles around crop box */}
+                  {/* Top */}
+                  <div
+                    className="absolute bg-black/60 pointer-events-none"
+                    style={{
+                      left: offsetX,
+                      top: offsetY,
+                      width: renderedWidth,
+                      height: cropTop - offsetY,
+                    }}
+                  />
+                  {/* Bottom */}
+                  <div
+                    className="absolute bg-black/60 pointer-events-none"
+                    style={{
+                      left: offsetX,
+                      top: cropTop + cropHeight,
+                      width: renderedWidth,
+                      height: offsetY + renderedHeight - cropTop - cropHeight,
+                    }}
+                  />
+                  {/* Left */}
+                  <div
+                    className="absolute bg-black/60 pointer-events-none"
+                    style={{
+                      left: offsetX,
+                      top: cropTop,
+                      width: cropLeft - offsetX,
+                      height: cropHeight,
+                    }}
+                  />
+                  {/* Right */}
+                  <div
+                    className="absolute bg-black/60 pointer-events-none"
+                    style={{
+                      left: cropLeft + cropWidth,
+                      top: cropTop,
+                      width: offsetX + renderedWidth - cropLeft - cropWidth,
+                      height: cropHeight,
+                    }}
+                  />
 
-                {/* Crop box border and drag area */}
-                <div
-                  className={`nodrag absolute select-none transition-all ${
-                    isDragging ? "cursor-grabbing" : "cursor-grab"
-                  }`}
-                  style={{
-                    left: cropLeft,
-                    top: cropTop,
-                    width: cropWidth,
-                    height: cropHeight,
-                  }}
-                  onMouseDown={handleCropMouseDown}
-                >
-                  {/* Border */}
-                  <div className="absolute inset-0 border-2 border-white pointer-events-none" />
+                  {/* Crop box border and drag area */}
+                  <div
+                    className={`nodrag absolute select-none transition-all ${
+                      isDragging ? "cursor-grabbing" : "cursor-grab"
+                    }`}
+                    style={{
+                      left: cropLeft,
+                      top: cropTop,
+                      width: cropWidth,
+                      height: cropHeight,
+                    }}
+                    onMouseDown={handleCropMouseDown}
+                  >
+                    {/* Border */}
+                    <div className="absolute inset-0 border-2 border-white pointer-events-none" />
 
-                  {/* Rule of thirds grid */}
-                  <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.3 }}>
-                    <line x1="33.33%" y1="0" x2="33.33%" y2="100%" stroke="white" strokeWidth="1" />
-                    <line x1="66.66%" y1="0" x2="66.66%" y2="100%" stroke="white" strokeWidth="1" />
-                    <line x1="0" y1="33.33%" x2="100%" y2="33.33%" stroke="white" strokeWidth="1" />
-                    <line x1="0" y1="66.66%" x2="100%" y2="66.66%" stroke="white" strokeWidth="1" />
-                  </svg>
-                </div>
+                    {/* Rule of thirds grid */}
+                    <svg
+                      className="absolute inset-0 w-full h-full pointer-events-none"
+                      style={{ opacity: 0.3 }}
+                    >
+                      <line
+                        x1="33.33%"
+                        y1="0"
+                        x2="33.33%"
+                        y2="100%"
+                        stroke="white"
+                        strokeWidth="1"
+                      />
+                      <line
+                        x1="66.66%"
+                        y1="0"
+                        x2="66.66%"
+                        y2="100%"
+                        stroke="white"
+                        strokeWidth="1"
+                      />
+                      <line
+                        x1="0"
+                        y1="33.33%"
+                        x2="100%"
+                        y2="33.33%"
+                        stroke="white"
+                        strokeWidth="1"
+                      />
+                      <line
+                        x1="0"
+                        y1="66.66%"
+                        x2="100%"
+                        y2="66.66%"
+                        stroke="white"
+                        strokeWidth="1"
+                      />
+                    </svg>
+                  </div>
 
-                {/* Resize handles */}
-                <div
-                  className="nodrag absolute w-3 h-3 bg-white rounded-full cursor-nwse-resize -translate-x-1/2 -translate-y-1/2 border-2 border-primary shadow-md hover:scale-125 transition-transform"
-                  style={{ left: cropLeft, top: cropTop }}
-                  onMouseDown={(e) => handleResizeMouseDown(e, 'topLeft')}
-                />
-                <div
-                  className="nodrag absolute w-3 h-3 bg-white rounded-full cursor-nesw-resize -translate-x-1/2 -translate-y-1/2 border-2 border-primary shadow-md hover:scale-125 transition-transform"
-                  style={{ left: cropLeft + cropWidth, top: cropTop }}
-                  onMouseDown={(e) => handleResizeMouseDown(e, 'topRight')}
-                />
-                <div
-                  className="nodrag absolute w-3 h-3 bg-white rounded-full cursor-nesw-resize -translate-x-1/2 -translate-y-1/2 border-2 border-primary shadow-md hover:scale-125 transition-transform"
-                  style={{ left: cropLeft, top: cropTop + cropHeight }}
-                  onMouseDown={(e) => handleResizeMouseDown(e, 'bottomLeft')}
-                />
-                <div
-                  className="nodrag absolute w-3 h-3 bg-white rounded-full cursor-nwse-resize -translate-x-1/2 -translate-y-1/2 border-2 border-primary shadow-md hover:scale-125 transition-transform"
-                  style={{ left: cropLeft + cropWidth, top: cropTop + cropHeight }}
-                  onMouseDown={(e) => handleResizeMouseDown(e, 'bottomRight')}
-                />
-              </>
-            );
-          })()}
+                  {/* Resize handles */}
+                  <div
+                    className="nodrag absolute w-3 h-3 bg-white rounded-full cursor-nwse-resize -translate-x-1/2 -translate-y-1/2 border-2 border-primary shadow-md hover:scale-125 transition-transform"
+                    style={{ left: cropLeft, top: cropTop }}
+                    onMouseDown={(e) => handleResizeMouseDown(e, "topLeft")}
+                  />
+                  <div
+                    className="nodrag absolute w-3 h-3 bg-white rounded-full cursor-nesw-resize -translate-x-1/2 -translate-y-1/2 border-2 border-primary shadow-md hover:scale-125 transition-transform"
+                    style={{ left: cropLeft + cropWidth, top: cropTop }}
+                    onMouseDown={(e) => handleResizeMouseDown(e, "topRight")}
+                  />
+                  <div
+                    className="nodrag absolute w-3 h-3 bg-white rounded-full cursor-nesw-resize -translate-x-1/2 -translate-y-1/2 border-2 border-primary shadow-md hover:scale-125 transition-transform"
+                    style={{ left: cropLeft, top: cropTop + cropHeight }}
+                    onMouseDown={(e) => handleResizeMouseDown(e, "bottomLeft")}
+                  />
+                  <div
+                    className="nodrag absolute w-3 h-3 bg-white rounded-full cursor-nwse-resize -translate-x-1/2 -translate-y-1/2 border-2 border-primary shadow-md hover:scale-125 transition-transform"
+                    style={{
+                      left: cropLeft + cropWidth,
+                      top: cropTop + cropHeight,
+                    }}
+                    onMouseDown={(e) => handleResizeMouseDown(e, "bottomRight")}
+                  />
+                </>
+              );
+            })()}
         </div>
       ) : (
         <div className="mb-3 flex items-center justify-center h-[150px] border-2 border-dashed border-border rounded-lg bg-muted/30">
