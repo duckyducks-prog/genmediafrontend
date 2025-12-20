@@ -279,11 +279,32 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
     e.preventDefault();
 
     const rect = imageRef.current.getBoundingClientRect();
-    const scaleX = imageDimensions.width / rect.width;
-    const scaleY = imageDimensions.height / rect.height;
 
-    const clickX = (e.clientX - rect.left) * scaleX;
-    const clickY = (e.clientY - rect.top) * scaleY;
+    // Calculate object-contain offset
+    const containerWidth = rect.width;
+    const containerHeight = rect.height;
+    const imageAspect = imageDimensions.width / imageDimensions.height;
+    const containerAspect = containerWidth / containerHeight;
+
+    let renderedWidth, renderedHeight, offsetX, offsetY;
+
+    if (imageAspect > containerAspect) {
+      renderedWidth = containerWidth;
+      renderedHeight = containerWidth / imageAspect;
+      offsetX = 0;
+      offsetY = (containerHeight - renderedHeight) / 2;
+    } else {
+      renderedHeight = containerHeight;
+      renderedWidth = containerHeight * imageAspect;
+      offsetX = (containerWidth - renderedWidth) / 2;
+      offsetY = 0;
+    }
+
+    const scaleX = imageDimensions.width / renderedWidth;
+    const scaleY = imageDimensions.height / renderedHeight;
+
+    const clickX = (e.clientX - rect.left - offsetX) * scaleX;
+    const clickY = (e.clientY - rect.top - offsetY) * scaleY;
 
     setIsDragging(true);
     setDragStart({ x: clickX - data.x, y: clickY - data.y });
@@ -298,11 +319,32 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
     e.preventDefault();
 
     const rect = imageRef.current.getBoundingClientRect();
-    const scaleX = imageDimensions.width / rect.width;
-    const scaleY = imageDimensions.height / rect.height;
 
-    const clickX = (e.clientX - rect.left) * scaleX;
-    const clickY = (e.clientY - rect.top) * scaleY;
+    // Calculate object-contain offset
+    const containerWidth = rect.width;
+    const containerHeight = rect.height;
+    const imageAspect = imageDimensions.width / imageDimensions.height;
+    const containerAspect = containerWidth / containerHeight;
+
+    let renderedWidth, renderedHeight, offsetX, offsetY;
+
+    if (imageAspect > containerAspect) {
+      renderedWidth = containerWidth;
+      renderedHeight = containerWidth / imageAspect;
+      offsetX = 0;
+      offsetY = (containerHeight - renderedHeight) / 2;
+    } else {
+      renderedHeight = containerHeight;
+      renderedWidth = containerHeight * imageAspect;
+      offsetX = (containerWidth - renderedWidth) / 2;
+      offsetY = 0;
+    }
+
+    const scaleX = imageDimensions.width / renderedWidth;
+    const scaleY = imageDimensions.height / renderedHeight;
+
+    const clickX = (e.clientX - rect.left - offsetX) * scaleX;
+    const clickY = (e.clientY - rect.top - offsetY) * scaleY;
 
     setIsResizing(handle);
     setDragStart({ x: clickX, y: clickY });
@@ -317,14 +359,34 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
       if (!imageRef.current || !imageDimensions || !dragStart || !cropStart) return;
 
       const rect = imageRef.current.getBoundingClientRect();
-      const scaleX = imageDimensions.width / rect.width;
-      const scaleY = imageDimensions.height / rect.height;
 
-      const mouseX = (e.clientX - rect.left) * scaleX;
-      const mouseY = (e.clientY - rect.top) * scaleY;
+      // Calculate object-contain offset
+      const containerWidth = rect.width;
+      const containerHeight = rect.height;
+      const imageAspect = imageDimensions.width / imageDimensions.height;
+      const containerAspect = containerWidth / containerHeight;
+
+      let renderedWidth, renderedHeight, offsetX, offsetY;
+
+      if (imageAspect > containerAspect) {
+        renderedWidth = containerWidth;
+        renderedHeight = containerWidth / imageAspect;
+        offsetX = 0;
+        offsetY = (containerHeight - renderedHeight) / 2;
+      } else {
+        renderedHeight = containerHeight;
+        renderedWidth = containerHeight * imageAspect;
+        offsetX = (containerWidth - renderedWidth) / 2;
+        offsetY = 0;
+      }
+
+      const scaleX = imageDimensions.width / renderedWidth;
+      const scaleY = imageDimensions.height / renderedHeight;
+
+      const mouseX = (e.clientX - rect.left - offsetX) * scaleX;
+      const mouseY = (e.clientY - rect.top - offsetY) * scaleY;
 
       if (isDragging) {
-        // Move the crop box
         const newX = Math.max(
           0,
           Math.min(mouseX - dragStart.x, imageDimensions.width - data.width),
@@ -347,7 +409,6 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
         });
         window.dispatchEvent(updateEvent);
       } else if (isResizing) {
-        // Resize the crop box
         const dx = mouseX - dragStart.x;
         const dy = mouseY - dragStart.y;
 
