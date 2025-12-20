@@ -24,35 +24,6 @@ const ASPECT_RATIOS = {
 
 type ResizeHandle = 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight' | null;
 
-// Helper function to calculate rendered image bounds with object-contain
-function getRenderedImageBounds(
-  containerWidth: number,
-  containerHeight: number,
-  imageWidth: number,
-  imageHeight: number
-) {
-  const imageAspect = imageWidth / imageHeight;
-  const containerAspect = containerWidth / containerHeight;
-
-  let renderedWidth, renderedHeight, offsetX, offsetY;
-
-  if (imageAspect > containerAspect) {
-    // Image is wider than container - fit to width, letterbox top/bottom
-    renderedWidth = containerWidth;
-    renderedHeight = containerWidth / imageAspect;
-    offsetX = 0;
-    offsetY = (containerHeight - renderedHeight) / 2;
-  } else {
-    // Image is taller than container - fit to height, letterbox left/right
-    renderedHeight = containerHeight;
-    renderedWidth = containerHeight * imageAspect;
-    offsetX = (containerWidth - renderedWidth) / 2;
-    offsetY = 0;
-  }
-
-  return { renderedWidth, renderedHeight, offsetX, offsetY };
-}
-
 function CropNode({ data, id }: NodeProps<CropNodeData>) {
   const imageInput = (data as any).image || (data as any).imageInput;
   const upstreamFiltersRaw = (data as any).filters || [];
@@ -65,9 +36,8 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
   const [isResizing, setIsResizing] = useState<ResizeHandle>(null);
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
   const [cropStart, setCropStart] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const imageContainerRef = useRef<HTMLDivElement>(null);
-  const imageRef = useRef<HTMLImageElement>(null);
+  const [containerSize, setContainerSize] = useState<{ width: number; height: number } | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const upstreamFiltersKey = JSON.stringify(
     upstreamFiltersRaw.map((f: FilterConfig) => ({
@@ -122,7 +92,6 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
   useEffect(() => {
     if (imageInput) {
       setImagePreview(imageInput);
-      setImageLoaded(false);
 
       const img = new Image();
       img.onload = () => {
@@ -157,9 +126,25 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
     } else {
       setImagePreview(null);
       setImageDimensions(null);
-      setImageLoaded(false);
     }
   }, [imageInput, id]);
+
+  // Measure container
+  useEffect(() => {
+    if (!containerRef.current) return;
+    
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerSize({
+          width: entry.contentRect.width,
+          height: entry.contentRect.width, // Will be recalculated based on image
+        });
+      }
+    });
+    
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   // Update outputs whenever crop parameters change
   useEffect(() => {
@@ -172,10 +157,6 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
       updateOutputsRef.current(data.x, data.y, data.width, data.height);
     }
   }, [data.x, data.y, data.width, data.height, imageInput, upstreamFiltersKey]);
-
-  const handleImageLoad = () => {
-    setImageLoaded(true);
-  };
 
   const handleAspectRatioChange = (value: string) => {
     const aspectRatio = value as CropNodeData["aspectRatio"];
@@ -300,26 +281,45 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
     }
   };
 
+  // Calculate display dimensions (fit image to container while maintaining aspect ratio)
+  const getDisplayDimensions = () => {
+    if (!imageDimensions || !containerRef.current) return null;
+    
+    const containerWidth = containerRef.current.clientWidth;
+    const maxHeight = 220;
+    
+    const imageAspect = imageDimensions.width / imageDimensions.height;
+    
+    let displayWidth = containerWidth;
+    let displayHeight = containerWidth / imageAspect;
+    
+    if (displayHeight > maxHeight) {
+      displayHeight = maxHeight;
+      displayWidth = maxHeight * imageAspect;
+    }
+    
+    return {
+      width: displayWidth,
+      height: displayHeight,
+      scaleX: displayWidth / imageDimensions.width,
+      scaleY: displayHeight / imageDimensions.height,
+    };
+  };
+
+  const displayDimensions = getDisplayDimensions();
+
   // Handle drag on crop box center
   const handleCropMouseDown = (e: React.MouseEvent) => {
-    if (!imageRef.current || !imageDimensions) return;
+    if (!displayDimensions || !imageDimensions) return;
 
     e.stopPropagation();
     e.preventDefault();
 
-    const rect = imageRef.current.getBoundingClientRect();
-    const { renderedWidth, renderedHeight, offsetX, offsetY } = getRenderedImageBounds(
-      rect.width,
-      rect.height,
-      imageDimensions.width,
-      imageDimensions.height
-    );
+    const rect = (e.currentTarget as HTMLElement).closest('.crop-preview-area')?.getBoundingClientRect();
+    if (!rect) return;
 
-    const scaleX = imageDimensions.width / renderedWidth;
-    const scaleY = imageDimensions.height / renderedHeight;
-
-    const clickX = (e.clientX - rect.left - offsetX) * scaleX;
-    const clickY = (e.clientY - rect.top - offsetY) * scaleY;
+    const clickX = (e.clientX - rect.left) / displayDimensions.scaleX;
+    const clickY = (e.clientY - rect.top) / displayDimensions.scaleY;
 
     setIsDragging(true);
     setDragStart({ x: clickX - data.x, y: clickY - data.y });
@@ -328,24 +328,16 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
 
   // Handle resize handle drag
   const handleResizeMouseDown = (e: React.MouseEvent, handle: ResizeHandle) => {
-    if (!imageRef.current || !imageDimensions) return;
+    if (!displayDimensions || !imageDimensions) return;
 
     e.stopPropagation();
     e.preventDefault();
 
-    const rect = imageRef.current.getBoundingClientRect();
-    const { renderedWidth, renderedHeight, offsetX, offsetY } = getRenderedImageBounds(
-      rect.width,
-      rect.height,
-      imageDimensions.width,
-      imageDimensions.height
-    );
+    const rect = (e.currentTarget as HTMLElement).closest('.crop-preview-area')?.getBoundingClientRect();
+    if (!rect) return;
 
-    const scaleX = imageDimensions.width / renderedWidth;
-    const scaleY = imageDimensions.height / renderedHeight;
-
-    const clickX = (e.clientX - rect.left - offsetX) * scaleX;
-    const clickY = (e.clientY - rect.top - offsetY) * scaleY;
+    const clickX = (e.clientX - rect.left) / displayDimensions.scaleX;
+    const clickY = (e.clientY - rect.top) / displayDimensions.scaleY;
 
     setIsResizing(handle);
     setDragStart({ x: clickX, y: clickY });
@@ -357,21 +349,15 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
     if (!isDragging && !isResizing) return;
 
     const handleGlobalMouseMove = (e: MouseEvent) => {
-      if (!imageRef.current || !imageDimensions || !dragStart || !cropStart) return;
+      if (!displayDimensions || !imageDimensions || !dragStart || !cropStart) return;
 
-      const rect = imageRef.current.getBoundingClientRect();
-      const { renderedWidth, renderedHeight, offsetX, offsetY } = getRenderedImageBounds(
-        rect.width,
-        rect.height,
-        imageDimensions.width,
-        imageDimensions.height
-      );
+      const previewArea = document.querySelector('.crop-preview-area');
+      if (!previewArea) return;
+      
+      const rect = previewArea.getBoundingClientRect();
 
-      const scaleX = imageDimensions.width / renderedWidth;
-      const scaleY = imageDimensions.height / renderedHeight;
-
-      const mouseX = (e.clientX - rect.left - offsetX) * scaleX;
-      const mouseY = (e.clientY - rect.top - offsetY) * scaleY;
+      const mouseX = (e.clientX - rect.left) / displayDimensions.scaleX;
+      const mouseY = (e.clientY - rect.top) / displayDimensions.scaleY;
 
       if (isDragging) {
         const newX = Math.max(
@@ -461,116 +447,7 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
       window.removeEventListener("mousemove", handleGlobalMouseMove);
       window.removeEventListener("mouseup", handleGlobalMouseUp);
     };
-  }, [isDragging, isResizing, dragStart, cropStart, imageDimensions, data, id]);
-
-  // Render the crop overlay
-  const renderCropOverlay = () => {
-    if (!imageDimensions || !imageRef.current || !imageLoaded) return null;
-
-    const rect = imageRef.current.getBoundingClientRect();
-    const { renderedWidth, renderedHeight, offsetX, offsetY } = getRenderedImageBounds(
-      rect.width,
-      rect.height,
-      imageDimensions.width,
-      imageDimensions.height
-    );
-
-    const scaleX = renderedWidth / imageDimensions.width;
-    const scaleY = renderedHeight / imageDimensions.height;
-
-    const cropLeft = offsetX + data.x * scaleX;
-    const cropTop = offsetY + data.y * scaleY;
-    const cropWidth = data.width * scaleX;
-    const cropHeight = data.height * scaleY;
-
-    return (
-      <>
-        {/* Dark overlay - 4 rectangles around crop box */}
-        {/* Top */}
-        <div
-          className="absolute bg-black/60 pointer-events-none"
-          style={{
-            left: `${offsetX}px`,
-            top: `${offsetY}px`,
-            width: `${renderedWidth}px`,
-            height: `${Math.max(0, cropTop - offsetY)}px`,
-          }}
-        />
-        {/* Bottom */}
-        <div
-          className="absolute bg-black/60 pointer-events-none"
-          style={{
-            left: `${offsetX}px`,
-            top: `${cropTop + cropHeight}px`,
-            width: `${renderedWidth}px`,
-            height: `${Math.max(0, offsetY + renderedHeight - cropTop - cropHeight)}px`,
-          }}
-        />
-        {/* Left */}
-        <div
-          className="absolute bg-black/60 pointer-events-none"
-          style={{
-            left: `${offsetX}px`,
-            top: `${cropTop}px`,
-            width: `${Math.max(0, cropLeft - offsetX)}px`,
-            height: `${cropHeight}px`,
-          }}
-        />
-        {/* Right */}
-        <div
-          className="absolute bg-black/60 pointer-events-none"
-          style={{
-            left: `${cropLeft + cropWidth}px`,
-            top: `${cropTop}px`,
-            width: `${Math.max(0, offsetX + renderedWidth - cropLeft - cropWidth)}px`,
-            height: `${cropHeight}px`,
-          }}
-        />
-
-        {/* Crop box border and drag area */}
-        <div
-          className={`nodrag absolute select-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
-          style={{
-            left: `${cropLeft}px`,
-            top: `${cropTop}px`,
-            width: `${cropWidth}px`,
-            height: `${cropHeight}px`,
-          }}
-          onMouseDown={handleCropMouseDown}
-        >
-          <div className="absolute inset-0 border-2 border-white pointer-events-none" />
-          <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.3 }}>
-            <line x1="33.33%" y1="0" x2="33.33%" y2="100%" stroke="white" strokeWidth="1" />
-            <line x1="66.66%" y1="0" x2="66.66%" y2="100%" stroke="white" strokeWidth="1" />
-            <line x1="0" y1="33.33%" x2="100%" y2="33.33%" stroke="white" strokeWidth="1" />
-            <line x1="0" y1="66.66%" x2="100%" y2="66.66%" stroke="white" strokeWidth="1" />
-          </svg>
-        </div>
-
-        {/* Resize handles */}
-        <div
-          className="nodrag absolute w-3 h-3 bg-white rounded-full cursor-nwse-resize -translate-x-1/2 -translate-y-1/2 border-2 border-primary shadow-md hover:scale-125 transition-transform"
-          style={{ left: `${cropLeft}px`, top: `${cropTop}px` }}
-          onMouseDown={(e) => handleResizeMouseDown(e, 'topLeft')}
-        />
-        <div
-          className="nodrag absolute w-3 h-3 bg-white rounded-full cursor-nesw-resize -translate-x-1/2 -translate-y-1/2 border-2 border-primary shadow-md hover:scale-125 transition-transform"
-          style={{ left: `${cropLeft + cropWidth}px`, top: `${cropTop}px` }}
-          onMouseDown={(e) => handleResizeMouseDown(e, 'topRight')}
-        />
-        <div
-          className="nodrag absolute w-3 h-3 bg-white rounded-full cursor-nesw-resize -translate-x-1/2 -translate-y-1/2 border-2 border-primary shadow-md hover:scale-125 transition-transform"
-          style={{ left: `${cropLeft}px`, top: `${cropTop + cropHeight}px` }}
-          onMouseDown={(e) => handleResizeMouseDown(e, 'bottomLeft')}
-        />
-        <div
-          className="nodrag absolute w-3 h-3 bg-white rounded-full cursor-nwse-resize -translate-x-1/2 -translate-y-1/2 border-2 border-primary shadow-md hover:scale-125 transition-transform"
-          style={{ left: `${cropLeft + cropWidth}px`, top: `${cropTop + cropHeight}px` }}
-          onMouseDown={(e) => handleResizeMouseDown(e, 'bottomRight')}
-        />
-      </>
-    );
-  };
+  }, [isDragging, isResizing, dragStart, cropStart, imageDimensions, data, id, displayDimensions]);
 
   return (
     <div className="bg-card border-2 rounded-lg p-4 min-w-[340px] shadow-lg">
@@ -620,29 +497,130 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
       />
 
       {/* Image Preview with Crop Overlay */}
-      {imagePreview ? (
-        <div
-          ref={imageContainerRef}
-          className="nodrag mb-3 rounded-lg overflow-hidden bg-muted border border-border relative"
-        >
-          <img
-            ref={imageRef}
-            src={imagePreview}
-            alt="Crop preview"
-            className="w-full h-auto max-h-[220px] object-contain"
-            crossOrigin={imagePreview?.startsWith("data:") ? undefined : "anonymous"}
-            onLoad={handleImageLoad}
-          />
-          {renderCropOverlay()}
-        </div>
-      ) : (
-        <div className="mb-3 flex items-center justify-center h-[150px] border-2 border-dashed border-border rounded-lg bg-muted/30">
-          <div className="text-center text-muted-foreground">
-            <Crop className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p className="text-xs">No image connected</p>
+      <div ref={containerRef} className="nodrag mb-3">
+        {imagePreview && displayDimensions ? (
+          <div 
+            className="crop-preview-area relative mx-auto rounded-lg overflow-hidden border border-border"
+            style={{
+              width: `${displayDimensions.width}px`,
+              height: `${displayDimensions.height}px`,
+            }}
+          >
+            {/* The actual image */}
+            <img
+              src={imagePreview}
+              alt="Crop preview"
+              className="absolute inset-0 w-full h-full"
+              crossOrigin={imagePreview?.startsWith("data:") ? undefined : "anonymous"}
+            />
+
+            {/* Dark overlay - Top */}
+            <div
+              className="absolute bg-black/60 pointer-events-none"
+              style={{
+                left: 0,
+                top: 0,
+                width: '100%',
+                height: `${data.y * displayDimensions.scaleY}px`,
+              }}
+            />
+            {/* Dark overlay - Bottom */}
+            <div
+              className="absolute bg-black/60 pointer-events-none"
+              style={{
+                left: 0,
+                top: `${(data.y + data.height) * displayDimensions.scaleY}px`,
+                width: '100%',
+                height: `${(imageDimensions!.height - data.y - data.height) * displayDimensions.scaleY}px`,
+              }}
+            />
+            {/* Dark overlay - Left */}
+            <div
+              className="absolute bg-black/60 pointer-events-none"
+              style={{
+                left: 0,
+                top: `${data.y * displayDimensions.scaleY}px`,
+                width: `${data.x * displayDimensions.scaleX}px`,
+                height: `${data.height * displayDimensions.scaleY}px`,
+              }}
+            />
+            {/* Dark overlay - Right */}
+            <div
+              className="absolute bg-black/60 pointer-events-none"
+              style={{
+                left: `${(data.x + data.width) * displayDimensions.scaleX}px`,
+                top: `${data.y * displayDimensions.scaleY}px`,
+                width: `${(imageDimensions!.width - data.x - data.width) * displayDimensions.scaleX}px`,
+                height: `${data.height * displayDimensions.scaleY}px`,
+              }}
+            />
+
+            {/* Crop box */}
+            <div
+              className={`absolute select-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
+              style={{
+                left: `${data.x * displayDimensions.scaleX}px`,
+                top: `${data.y * displayDimensions.scaleY}px`,
+                width: `${data.width * displayDimensions.scaleX}px`,
+                height: `${data.height * displayDimensions.scaleY}px`,
+              }}
+              onMouseDown={handleCropMouseDown}
+            >
+              {/* Border */}
+              <div className="absolute inset-0 border-2 border-white pointer-events-none" />
+              
+              {/* Rule of thirds grid */}
+              <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.3 }}>
+                <line x1="33.33%" y1="0" x2="33.33%" y2="100%" stroke="white" strokeWidth="1" />
+                <line x1="66.66%" y1="0" x2="66.66%" y2="100%" stroke="white" strokeWidth="1" />
+                <line x1="0" y1="33.33%" x2="100%" y2="33.33%" stroke="white" strokeWidth="1" />
+                <line x1="0" y1="66.66%" x2="100%" y2="66.66%" stroke="white" strokeWidth="1" />
+              </svg>
+            </div>
+
+            {/* Resize handles */}
+            <div
+              className="nodrag absolute w-3 h-3 bg-white rounded-full cursor-nwse-resize -translate-x-1/2 -translate-y-1/2 border-2 border-primary shadow-md hover:scale-125 transition-transform z-10"
+              style={{
+                left: `${data.x * displayDimensions.scaleX}px`,
+                top: `${data.y * displayDimensions.scaleY}px`,
+              }}
+              onMouseDown={(e) => handleResizeMouseDown(e, 'topLeft')}
+            />
+            <div
+              className="nodrag absolute w-3 h-3 bg-white rounded-full cursor-nesw-resize -translate-x-1/2 -translate-y-1/2 border-2 border-primary shadow-md hover:scale-125 transition-transform z-10"
+              style={{
+                left: `${(data.x + data.width) * displayDimensions.scaleX}px`,
+                top: `${data.y * displayDimensions.scaleY}px`,
+              }}
+              onMouseDown={(e) => handleResizeMouseDown(e, 'topRight')}
+            />
+            <div
+              className="nodrag absolute w-3 h-3 bg-white rounded-full cursor-nesw-resize -translate-x-1/2 -translate-y-1/2 border-2 border-primary shadow-md hover:scale-125 transition-transform z-10"
+              style={{
+                left: `${data.x * displayDimensions.scaleX}px`,
+                top: `${(data.y + data.height) * displayDimensions.scaleY}px`,
+              }}
+              onMouseDown={(e) => handleResizeMouseDown(e, 'bottomLeft')}
+            />
+            <div
+              className="nodrag absolute w-3 h-3 bg-white rounded-full cursor-nwse-resize -translate-x-1/2 -translate-y-1/2 border-2 border-primary shadow-md hover:scale-125 transition-transform z-10"
+              style={{
+                left: `${(data.x + data.width) * displayDimensions.scaleX}px`,
+                top: `${(data.y + data.height) * displayDimensions.scaleY}px`,
+              }}
+              onMouseDown={(e) => handleResizeMouseDown(e, 'bottomRight')}
+            />
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="flex items-center justify-center h-[150px] border-2 border-dashed border-border rounded-lg bg-muted/30">
+            <div className="text-center text-muted-foreground">
+              <Crop className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <p className="text-xs">No image connected</p>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Controls */}
       <div className="space-y-3">
