@@ -5,8 +5,13 @@ import { Upload, X, Film, Play, FolderOpen } from "lucide-react";
 import { VideoInputNodeData } from "../types";
 
 function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
-  const [videoUrl, setVideoUrl] = useState<string | null>(data.videoUrl || null);
-  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(data.thumbnailUrl || null);
+  // Initialize from data, which may be pre-populated from library
+  const [videoUrl, setVideoUrl] = useState<string | null>(
+    data.videoUrl || (data as any).url || null
+  );
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(
+    data.thumbnailUrl || (data as any).thumbnailUrl || null
+  );
   const [showPreview, setShowPreview] = useState(false);
   const [duration, setDuration] = useState<number | null>(data.duration || null);
   const videoRef = useRef<HTMLVideoElement>(null);
