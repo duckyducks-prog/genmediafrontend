@@ -397,9 +397,9 @@ export default function WorkflowGallery({
           {publicWorkflows.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
               <WorkflowIcon className="w-16 h-16 mb-4 opacity-50" />
-              <p className="text-lg font-medium">No workflow templates yet</p>
+              <p className="text-lg font-medium">Workflow Library is empty</p>
               <p className="text-sm">
-                Check back later for community templates
+                Check back later for more workflows
               </p>
             </div>
           ) : (
