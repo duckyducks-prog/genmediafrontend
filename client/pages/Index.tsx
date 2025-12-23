@@ -435,18 +435,18 @@ export default function Index() {
 
                       <div className="space-y-2">
                         <label className="block text-sm font-medium">
-                          Reference images:
+                          Reference images: ({referenceImages.length}/9)
                         </label>
-                        {referenceImage ? (
-                          <div className="flex gap-3">
-                            <div className="relative rounded-lg overflow-hidden border border-[#3D2D4F] bg-[#2A1A3F] w-24 h-24">
+                        <div className="grid grid-cols-3 gap-2">
+                          {referenceImages.map((image, index) => (
+                            <div key={index} className="relative rounded-lg overflow-hidden border border-[#3D2D4F] bg-[#2A1A3F] aspect-square">
                               <img
-                                src={referenceImage}
-                                alt="Reference"
+                                src={image}
+                                alt={`Reference ${index + 1}`}
                                 className="w-full h-full object-cover"
                               />
                               <Button
-                                onClick={() => setReferenceImage(null)}
+                                onClick={() => handleRemoveReferenceImage(index)}
                                 variant="ghost"
                                 size="icon"
                                 className="absolute top-1 right-1 h-5 w-5 bg-black/50 hover:bg-black/70"
@@ -454,9 +454,11 @@ export default function Index() {
                                 <X className="w-3 h-3" />
                               </Button>
                             </div>
+                          ))}
+                          {referenceImages.length < 9 && (
                             <label
                               htmlFor="reference-image"
-                              className="flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
+                              className="flex flex-col items-center justify-center aspect-square border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
                             >
                               <Upload className="w-5 h-5 text-gray-400" />
                               <input
@@ -467,27 +469,8 @@ export default function Index() {
                                 onChange={handleReferenceImageUpload}
                               />
                             </label>
-                          </div>
-                        ) : (
-                          <label
-                            htmlFor="reference-image"
-                            className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
-                          >
-                            <div className="flex flex-col items-center justify-center">
-                              <Upload className="w-5 h-5 mb-1 text-gray-400" />
-                              <p className="text-xs text-gray-400">
-                                Click to upload
-                              </p>
-                            </div>
-                            <input
-                              id="reference-image"
-                              type="file"
-                              className="hidden"
-                              accept="image/*"
-                              onChange={handleReferenceImageUpload}
-                            />
-                          </label>
-                        )}
+                          )}
+                        </div>
                       </div>
 
                       <div className="space-y-2">
