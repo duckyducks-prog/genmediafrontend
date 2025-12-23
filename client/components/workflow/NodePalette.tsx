@@ -174,6 +174,15 @@ const paletteNodes: PaletteNode[] = [
     category: "action",
     description: "Download media result",
   },
+
+  // UTILITY NODES
+  {
+    type: NodeType.StickyNote,
+    label: "Sticky Note",
+    icon: <MessageSquare className="w-4 h-4" />,
+    category: "output",
+    description: "Add documentation and notes to explain workflow steps",
+  },
 ];
 
 interface NodePaletteProps {
