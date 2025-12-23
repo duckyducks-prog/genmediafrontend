@@ -405,10 +405,10 @@ export default function Index() {
             </TabsContent>
 
             <TabsContent value="image" className="h-full p-6">
-              <div className="grid grid-cols-2 gap-8 h-full">
+              <div className="grid gap-8 h-full" style={{ gridTemplateColumns: 'minmax(320px, 380px) 1fr' }}>
                 {/* Left Grid Area - Input Controls Card */}
                 <div className="flex items-start">
-                  <Card className="bg-[#41204E] border-[#41204E] p-5 space-y-3 w-full" style={{ aspectRatio: '16/9' }}>
+                  <Card className="bg-[#41204E] border-[#41204E] p-5 space-y-3 w-full">
                     <div className="space-y-1.5">
                       <label
                         htmlFor="image-prompt"
@@ -520,11 +520,11 @@ export default function Index() {
                 {/* Right Grid Area - Result */}
                 {imageResult && (
                   <div className="flex flex-col items-center justify-center space-y-4">
-                    <div className="relative rounded-lg overflow-hidden bg-[#2A1A3F] border border-[#3D2D4F]">
+                    <div className="relative rounded-lg overflow-hidden bg-[#2A1A3F] border border-[#3D2D4F] max-w-2xl">
                       <img
                         src={imageResult}
                         alt="Generated"
-                        className="max-w-full max-h-[600px] object-contain"
+                        className="w-full h-auto object-contain"
                       />
                       <Button
                         onClick={() => setImageResult(null)}
