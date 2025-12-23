@@ -293,6 +293,8 @@ export interface DownloadNodeData extends BaseNodeData {
 export interface StickyNoteNodeData extends BaseNodeData {
   content: string; // The note text content
   color?: string; // Color theme: "yellow", "blue", "pink", "purple"
+  width?: number; // Width in pixels (default: 256)
+  height?: number; // Height in pixels (default: 256)
 }
 
 // ============================================================================
