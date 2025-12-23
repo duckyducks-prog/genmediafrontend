@@ -202,12 +202,16 @@ export function useWorkflowNodes() {
 export function useWorkflowEdges() {
   const { state, dispatch } = useWorkflow();
 
+  // Create stable setEdges function that reads current state when called
   const setEdges = useCallback(
     (edges: Edge[] | ((prev: Edge[]) => Edge[])) => {
-      const newEdges = typeof edges === "function" ? edges(state.edges) : edges;
-      dispatch({ type: "SET_EDGES", payload: newEdges });
+      if (typeof edges === "function") {
+        dispatch({ type: "UPDATE_EDGES_WITH_FUNCTION", payload: edges });
+      } else {
+        dispatch({ type: "SET_EDGES", payload: edges });
+      }
     },
-    [state.edges, dispatch]
+    [dispatch] // Only depend on dispatch, which is stable
   );
 
   return [state.edges, setEdges] as const;
