@@ -168,8 +168,8 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
         {videoUrl ? (
           <div className="relative group">
             {/* Thumbnail with play overlay */}
-            <div 
-              className="relative rounded-lg overflow-hidden border border-border bg-muted cursor-pointer"
+            <div
+              className="relative rounded-lg overflow-hidden border border-border bg-muted cursor-pointer flex items-center justify-center h-48"
               onMouseEnter={() => setShowPreview(true)}
               onMouseLeave={() => setShowPreview(false)}
             >
@@ -180,15 +180,25 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
                   autoPlay
                   loop
                   muted
-                  className="w-full h-32 object-cover"
+                  className="max-w-full max-h-full object-contain"
                 />
               ) : (
                 <>
-                  <img 
-                    src={thumbnailUrl || ''} 
-                    alt="Video thumbnail"
-                    className="w-full h-32 object-cover"
-                  />
+                  {thumbnailUrl ? (
+                    <img
+                      src={thumbnailUrl}
+                      alt="Video thumbnail"
+                      className="max-w-full max-h-full object-contain"
+                      onError={(e) => {
+                        console.error('[VideoUploadNode] Thumbnail failed to load');
+                        (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="112"%3E%3Crect fill="%23333" width="200" height="112"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23999" font-size="14" dominant-baseline="middle"%3EVideo Thumbnail%3C/text%3E%3C/svg%3E';
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-muted">
+                      <Film className="w-8 h-8 text-muted-foreground" />
+                    </div>
+                  )}
                   <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                     <Play className="w-12 h-12 text-white/90" fill="white" />
                   </div>
