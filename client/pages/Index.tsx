@@ -252,6 +252,26 @@ export default function Index() {
     return () => window.removeEventListener("browse-library", handleBrowseLibrary);
   }, []);
 
+  // Handle adding asset from library to workflow
+  const handleAddAssetNode = (asset: any) => {
+    console.log("[Index] Adding asset to workflow:", asset);
+
+    // Dispatch event to WorkflowCanvas with asset data
+    window.dispatchEvent(
+      new CustomEvent("add-asset-node", {
+        detail: {
+          assetId: asset.id,
+          assetType: asset.asset_type,
+          url: asset.url,
+          mimeType: asset.mime_type,
+        },
+      })
+    );
+
+    // Switch to workflow tab
+    setCurrentTab("workflow");
+  };
+
   // Show loading state
   if (loading) {
     return (
