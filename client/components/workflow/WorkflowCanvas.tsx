@@ -43,6 +43,7 @@ import { Copy } from "lucide-react";
 // Import all custom node components
 import PromptInputNode from "./nodes/PromptInputNode";
 import ImageUploadNode from "./nodes/ImageUploadNode";
+import VideoUploadNode from "./nodes/VideoUploadNode";
 import GenerateImageNode from "./nodes/GenerateImageNode";
 import GenerateVideoNode from "./nodes/GenerateVideoNode";
 import ImageOutputNode from "./nodes/ImageOutputNode";
