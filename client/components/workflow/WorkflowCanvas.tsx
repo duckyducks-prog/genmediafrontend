@@ -100,6 +100,9 @@ const nodeTypes: NodeTypes = {
   // Output nodes
   [NodeType.ImageOutput]: ImageOutputNode,
   [NodeType.VideoOutput]: VideoOutputNode,
+
+  // Documentation/Utility nodes
+  [NodeType.StickyNote]: StickyNoteNode,
 };
 
 export interface WorkflowCanvasRef {
