@@ -8,7 +8,7 @@ import {
   Play,
   RotateCcw,
   Save,
-  FolderOpen,
+  Download,
   StopCircle,
 } from "lucide-react";
 import { useReactFlow } from "reactflow";
