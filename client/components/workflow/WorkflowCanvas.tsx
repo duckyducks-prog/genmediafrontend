@@ -853,7 +853,10 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
       setNodes([]);
       setEdges([]);
       setCurrentWorkflowId(null);
-    }, [setNodes, setEdges, isReadOnly, toast]);
+
+      // Mark as saved since we're starting fresh
+      dispatch({ type: "MARK_SAVED" });
+    }, [setNodes, setEdges, isReadOnly, toast, dispatch]);
 
     // Load a workflow
     const loadWorkflow = useCallback(
