@@ -20,7 +20,9 @@ export interface WorkflowState {
 // Actions
 export type WorkflowAction =
   | { type: "SET_NODES"; payload: Node[] }
+  | { type: "UPDATE_NODES_WITH_FUNCTION"; payload: (nodes: Node[]) => Node[] }
   | { type: "SET_EDGES"; payload: Edge[] }
+  | { type: "UPDATE_EDGES_WITH_FUNCTION"; payload: (edges: Edge[]) => Edge[] }
   | { type: "SET_VIEWPORT"; payload: { x: number; y: number; zoom: number } }
   | { type: "UPDATE_NODE"; payload: { id: string; data: any } }
   | { type: "ADD_NODE"; payload: Node }
@@ -46,8 +48,14 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
     case "SET_NODES":
       return { ...state, nodes: action.payload, isDirty: true };
 
+    case "UPDATE_NODES_WITH_FUNCTION":
+      return { ...state, nodes: action.payload(state.nodes), isDirty: true };
+
     case "SET_EDGES":
       return { ...state, edges: action.payload, isDirty: true };
+
+    case "UPDATE_EDGES_WITH_FUNCTION":
+      return { ...state, edges: action.payload(state.edges), isDirty: true };
 
     case "SET_VIEWPORT":
       return { ...state, viewport: action.payload };
@@ -173,16 +181,18 @@ export function useWorkflow() {
 export function useWorkflowNodes() {
   const { state, dispatch } = useWorkflow();
 
+  // Create stable setNodes function that reads current state when called
   const setNodes = useCallback(
     (nodes: Node[] | ((prev: Node[]) => Node[])) => {
+      // We need to handle both direct values and updater functions
+      // For updater functions, we need the current state which we can get via a custom action
       if (typeof nodes === "function") {
-        // Get current nodes from the context state at call time
-        dispatch({ type: "SET_NODES", payload: nodes(state.nodes) });
+        dispatch({ type: "UPDATE_NODES_WITH_FUNCTION", payload: nodes });
       } else {
         dispatch({ type: "SET_NODES", payload: nodes });
       }
     },
-    [dispatch, state.nodes]
+    [dispatch] // Only depend on dispatch, which is stable
   );
 
   return [state.nodes, setNodes] as const;
