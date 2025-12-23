@@ -319,7 +319,8 @@ export type WorkflowNodeData =
   | LLMNodeData
   | PreviewNodeData
   | OutputNodeData
-  | DownloadNodeData;
+  | DownloadNodeData
+  | StickyNoteNodeData;
 
 // ============================================================================
 // CUSTOM NODE & EDGE TYPES
