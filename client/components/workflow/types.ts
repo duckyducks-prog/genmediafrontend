@@ -98,6 +98,17 @@ export interface ImageInputNodeData extends BaseNodeData {
   file?: File | null; // For new uploads (not persisted)
 }
 
+// VIDEO INPUT node
+export interface VideoInputNodeData extends BaseNodeData {
+  // Asset reference pattern (Firestore migration)
+  videoRef?: string; // Asset ID reference
+  videoUrl?: string | null; // Resolved URL or data URI
+  videoRefExists?: boolean; // Asset existence flag
+  file?: File | null; // For new uploads (not persisted)
+  thumbnailUrl?: string | null; // Preview thumbnail
+  duration?: number; // Video duration in seconds
+}
+
 // PROMPT node
 export interface PromptNodeData extends BaseNodeData {
   prompt: string;
