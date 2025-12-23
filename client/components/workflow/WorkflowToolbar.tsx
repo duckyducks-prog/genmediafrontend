@@ -61,7 +61,7 @@ export default function WorkflowToolbar({
         title="Load Workflow"
         aria-label="Load Workflow"
       >
-        <Download className="w-3.5 h-3.5" />
+        <List className="w-3.5 h-3.5" />
       </Button>
 
       <div className="w-px h-6 bg-border mx-0.5" />
