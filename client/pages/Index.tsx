@@ -404,8 +404,8 @@ export default function Index() {
               />
             </TabsContent>
 
-            <TabsContent value="image" className="h-full p-6">
-              <div className="grid gap-8 h-full" style={{ gridTemplateColumns: '340px 1fr' }}>
+            <TabsContent value="image" className="h-full p-0">
+              <div className="grid gap-8 h-full p-6" style={{ gridTemplateColumns: '340px 1fr' }}>
                 {/* Left Grid Area - Input Controls Card */}
                 <div className="flex">
                   <Card className="bg-[#41204E] border-[#41204E] p-6 w-full h-full flex flex-col">
