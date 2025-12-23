@@ -409,7 +409,7 @@ export default function Index() {
                 {/* Left Grid Area - Input Controls Card */}
                 <div className="flex items-start">
                   <Card className="bg-[#41204E] border-[#41204E] p-6 space-y-4 w-full h-auto">
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                       <label
                         htmlFor="image-prompt"
                         className="block text-sm font-medium"
@@ -421,7 +421,7 @@ export default function Index() {
                         placeholder="A man holding a book"
                         value={imagePrompt}
                         onChange={(e) => setImagePrompt(e.target.value)}
-                        className="min-h-[80px] bg-[#2A1A3F] border-[#3D2D4F] text-white placeholder:text-gray-400 resize-none"
+                        className="min-h-[100px] bg-[#2A1A3F] border-[#3D2D4F] text-white placeholder:text-gray-400 resize-none"
                       />
                     </div>
 
