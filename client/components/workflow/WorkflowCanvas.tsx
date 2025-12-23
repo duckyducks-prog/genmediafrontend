@@ -40,6 +40,8 @@ import { useToast } from "@/hooks/use-toast";
 import { SavedWorkflow, cloneWorkflow } from "@/lib/workflow-api";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
+import { useWorkflowNodes, useWorkflowEdges, useWorkflow } from "@/contexts/WorkflowContext";
+import { useUnsavedChangesWarning } from "@/hooks/useUnsavedChangesWarning";
 
 // Import all custom node components
 import PromptInputNode from "./nodes/PromptInputNode";
