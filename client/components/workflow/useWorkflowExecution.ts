@@ -1725,12 +1725,14 @@ export function useWorkflowExecution(
             },
           );
 
+          setEdgeAnimated(depNodeId, true, false);
           updateNodeState(depNodeId, "executing");
 
           const inputs = getNodeInputs(depNodeId);
           const validation = validateNodeInputs(depNode, inputs);
 
           if (!validation.valid) {
+            setEdgeAnimated(depNodeId, false, false);
             updateNodeState(depNodeId, "error", { error: validation.error });
             throw new Error(`Dependency failed: ${validation.error}`);
           }
@@ -1738,6 +1740,7 @@ export function useWorkflowExecution(
           const result = await executeNode(depNode, inputs);
 
           if (!result.success) {
+            setEdgeAnimated(depNodeId, false, false);
             updateNodeState(depNodeId, "error", { error: result.error });
             throw new Error(`Dependency failed: ${result.error}`);
           }
@@ -1748,16 +1751,22 @@ export function useWorkflowExecution(
             outputs: result.data.outputs || result.data,
           };
 
+          setEdgeAnimated(depNodeId, false, true);
           updateNodeState(depNodeId, "completed", updateData);
+          setTimeout(() => {
+            setEdgeAnimated(depNodeId, false, false);
+          }, 500);
         }
 
         // Execute target node
+        setEdgeAnimated(nodeId, true, false);
         updateNodeState(nodeId, "executing");
 
         const inputs = getNodeInputs(nodeId);
         const validation = validateNodeInputs(targetNode, inputs);
 
         if (!validation.valid) {
+          setEdgeAnimated(nodeId, false, false);
           updateNodeState(nodeId, "error", { error: validation.error });
           toast({
             title: "Validation Error",
@@ -1770,6 +1779,7 @@ export function useWorkflowExecution(
         const result = await executeNode(targetNode, inputs);
 
         if (!result.success) {
+          setEdgeAnimated(nodeId, false, false);
           updateNodeState(nodeId, "error", { error: result.error });
           toast({
             title: "Execution Failed",
@@ -1785,7 +1795,11 @@ export function useWorkflowExecution(
           outputs: result.data.outputs || result.data,
         };
 
+        setEdgeAnimated(nodeId, false, true);
         updateNodeState(nodeId, "completed", updateData);
+        setTimeout(() => {
+          setEdgeAnimated(nodeId, false, false);
+        }, 500);
 
         toast({
           title: "Success",
