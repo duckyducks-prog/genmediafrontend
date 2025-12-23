@@ -556,7 +556,7 @@ export default function Index() {
 
                 {/* Empty state when no result */}
                 {!imageResult && !isGeneratingImage && (
-                  <div className="flex items-center justify-center text-muted-foreground">
+                  <div className="h-full flex items-center justify-center text-muted-foreground">
                     <div className="text-center">
                       <ImageIcon className="w-16 h-16 mx-auto mb-4 opacity-20" />
                       <p className="text-sm">Generated image will appear here</p>
@@ -566,7 +566,7 @@ export default function Index() {
 
                 {/* Loading state */}
                 {isGeneratingImage && (
-                  <div className="flex items-center justify-center">
+                  <div className="h-full flex items-center justify-center">
                     <div className="text-center">
                       <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin text-primary" />
                       <p className="text-sm text-muted-foreground">Generating your image...</p>
