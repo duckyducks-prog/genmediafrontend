@@ -211,6 +211,23 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
       }
     };
 
+    // Handle asset drag start
+    const handleAssetDragStart = useCallback((event: React.DragEvent, asset: Asset) => {
+      const payload = {
+        type: 'asset-drop',
+        assetId: asset.id,
+        assetType: asset.asset_type,
+        url: asset.url,
+        mimeType: asset.mime_type,
+      };
+
+      // Set drag data
+      event.dataTransfer.setData('application/asset', JSON.stringify(payload));
+      event.dataTransfer.effectAllowed = 'copy';
+
+      console.log('[AssetLibrary] Drag started:', payload);
+    }, []);
+
     // Format date
     const formatDate = (dateString: string) => {
       const date = new Date(dateString);
