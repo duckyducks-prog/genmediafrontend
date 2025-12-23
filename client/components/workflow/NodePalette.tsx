@@ -349,6 +349,39 @@ export default function NodePalette({ onAddNode }: NodePaletteProps) {
           </div>
         )}
 
+        {/* Output/Utility Nodes */}
+        {categories.output.length > 0 && (
+          <div className="pr-4">
+            <h4 className="text-xs font-medium text-muted-foreground uppercase mb-2 tracking-wide">
+              Utilities
+            </h4>
+            <p className="text-xs text-muted-foreground/70 mb-3">
+              Documentation and tools
+            </p>
+            <div className="space-y-2">
+              {categories.output.map((node) => (
+                <button
+                  key={node.type}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, node.type)}
+                  onClick={() => onAddNode(node.type)}
+                  className="w-full flex items-start gap-2 p-3 rounded-lg bg-secondary/50 hover:bg-secondary border border-border transition-colors cursor-grab active:cursor-grabbing group"
+                >
+                  <div className="text-primary mt-0.5 group-hover:scale-110 transition-transform">
+                    {node.icon}
+                  </div>
+                  <div className="flex-1 text-left">
+                    <div className="text-sm font-medium">{node.label}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {node.description}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* No results message */}
         {searchQuery && filteredNodes.length === 0 && (
           <div className="pr-4 text-center py-8">
