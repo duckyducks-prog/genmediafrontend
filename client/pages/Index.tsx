@@ -27,6 +27,7 @@ import { logOut, auth } from "@/lib/firebase";
 import { API_ENDPOINTS } from "@/lib/api-config";
 import Login from "./Login";
 import { useToast } from "@/hooks/use-toast";
+import { WorkflowProvider } from "@/contexts/WorkflowContext";
 
 export default function Index() {
   const { user, loading } = useAuth();
