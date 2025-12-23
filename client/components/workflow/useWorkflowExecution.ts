@@ -46,6 +46,41 @@ export function useWorkflowExecution(
   const [totalNodes, setTotalNodes] = useState(0);
   const [abortRequested, setAbortRequested] = useState(false);
 
+  // Helper to animate edges connected to a node
+  const setEdgeAnimated = useCallback(
+    (nodeId: string, animated: boolean, isCompleted: boolean = false) => {
+      setEdges((eds) =>
+        eds.map((edge) => {
+          // Animate edges going INTO this node (target)
+          if (edge.target === nodeId) {
+            let className = edge.className || '';
+
+            // Remove existing animation classes
+            className = className
+              .replace(/\s*animated\s*/g, ' ')
+              .replace(/\s*edge-completed\s*/g, ' ')
+              .trim();
+
+            // Add appropriate class
+            if (animated) {
+              className = `${className} animated`.trim();
+            } else if (isCompleted) {
+              className = `${className} edge-completed`.trim();
+            }
+
+            return {
+              ...edge,
+              animated, // React Flow built-in animated property
+              className,
+            };
+          }
+          return edge;
+        })
+      );
+    },
+    [setEdges]
+  );
+
   // Build adjacency list for the graph
   const buildGraph = useCallback(() => {
     const adjacencyList = new Map<string, string[]>();
