@@ -241,6 +241,17 @@ export default function Index() {
     </button>
   );
 
+  // Listen for browse-library events from WorkflowCanvas
+  useEffect(() => {
+    const handleBrowseLibrary = () => {
+      console.log("[Index] Browse library event received");
+      setIsLibraryOpen(true);
+    };
+
+    window.addEventListener("browse-library", handleBrowseLibrary);
+    return () => window.removeEventListener("browse-library", handleBrowseLibrary);
+  }, []);
+
   // Show loading state
   if (loading) {
     return (
