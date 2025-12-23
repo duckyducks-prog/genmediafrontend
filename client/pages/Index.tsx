@@ -289,7 +289,8 @@ export default function Index() {
 
   // Show main app if authenticated
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/20 flex flex-col">
+    <WorkflowProvider>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/20 flex flex-col">
       <header className="border-b border-border">
         <div className="py-8 border-b border-border">
           <div className="px-4 flex items-center justify-between">
@@ -692,5 +693,6 @@ export default function Index() {
         onAddAssetNode={handleAddAssetNode}
       />
     </div>
+    </WorkflowProvider>
   );
 }
