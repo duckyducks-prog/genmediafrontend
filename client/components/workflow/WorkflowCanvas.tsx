@@ -67,6 +67,7 @@ const nodeTypes: NodeTypes = {
   // Input nodes
   [NodeType.Prompt]: PromptInputNode,
   [NodeType.ImageInput]: ImageUploadNode,
+  [NodeType.VideoInput]: VideoUploadNode,
 
   // Modifier nodes
   [NodeType.PromptConcatenator]: PromptConcatenatorNode,
