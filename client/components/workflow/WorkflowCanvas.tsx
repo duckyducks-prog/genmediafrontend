@@ -20,6 +20,10 @@ import ReactFlow, {
   ReactFlowInstance,
   getNodesBounds,
   getViewportForBounds,
+  applyNodeChanges,
+  applyEdgeChanges,
+  NodeChange,
+  EdgeChange,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import "./workflow.css";
