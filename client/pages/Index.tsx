@@ -566,156 +566,187 @@ export default function Index() {
               </div>
             </TabsContent>
 
-            <TabsContent value="video" className="space-y-6">
-              <div className="bg-card border border-border rounded-lg p-6 shadow-sm space-y-4">
-                <div>
-                  <label
-                    htmlFor="video-prompt"
-                    className="block text-sm font-medium mb-2"
-                  >
-                    Describe your video
-                  </label>
-                  <Textarea
-                    id="video-prompt"
-                    placeholder="A time-lapse of a bustling city transitioning from day to night..."
-                    value={videoPrompt}
-                    onChange={(e) => setVideoPrompt(e.target.value)}
-                    className="min-h-[100px]"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="first-frame"
-                    className="block text-sm font-medium mb-2"
-                  >
-                    First Frame (Optional)
-                  </label>
-                  {firstFrame ? (
-                    <div className="relative rounded-lg overflow-hidden border border-border bg-muted">
-                      <img
-                        src={firstFrame}
-                        alt="First Frame"
-                        className="w-full h-48 object-cover"
-                      />
-                      <Button
-                        onClick={() => setFirstFrame(null)}
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-2 right-2"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <label
-                      htmlFor="first-frame"
-                      className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-border rounded-lg cursor-pointer bg-muted/30 hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex flex-col items-center justify-center py-6">
-                        <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">
-                          Click to upload first frame
-                        </p>
+            <TabsContent value="video" className="h-full p-0">
+              <div className="grid gap-8 h-full p-6" style={{ gridTemplateColumns: '340px 1fr' }}>
+                {/* Left Grid Area - Input Controls Card */}
+                <div className="flex">
+                  <Card className="bg-[#41204E] border-[#41204E] p-6 w-full h-full flex flex-col">
+                    <div className="flex-1 space-y-4">
+                      <div className="space-y-2">
+                        <label
+                          htmlFor="video-prompt"
+                          className="block text-sm font-medium"
+                        >
+                          Describe your video:
+                        </label>
+                        <Textarea
+                          id="video-prompt"
+                          placeholder="A time-lapse of a bustling city transitioning from day to night..."
+                          value={videoPrompt}
+                          onChange={(e) => setVideoPrompt(e.target.value)}
+                          className="min-h-[100px] bg-[#2A1A3F] border-[#3D2D4F] text-white placeholder:text-gray-400 resize-none"
+                        />
                       </div>
-                      <input
-                        id="first-frame"
-                        type="file"
-                        className="hidden"
-                        accept="image/*"
-                        onChange={handleFirstFrameUpload}
-                      />
-                    </label>
-                  )}
-                </div>
 
-                <div>
-                  <label
-                    htmlFor="last-frame"
-                    className="block text-sm font-medium mb-2"
-                  >
-                    Last Frame (Optional)
-                  </label>
-                  {lastFrame ? (
-                    <div className="relative rounded-lg overflow-hidden border border-border bg-muted">
-                      <img
-                        src={lastFrame}
-                        alt="Last Frame"
-                        className="w-full h-48 object-cover"
-                      />
-                      <Button
-                        onClick={() => setLastFrame(null)}
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-2 right-2"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <label
-                      htmlFor="last-frame"
-                      className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-border rounded-lg cursor-pointer bg-muted/30 hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex flex-col items-center justify-center py-6">
-                        <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">
-                          Click to upload last frame
-                        </p>
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium">
+                          First Frame (Optional):
+                        </label>
+                        {firstFrame ? (
+                          <div className="relative rounded-lg overflow-hidden border border-[#3D2D4F] bg-[#2A1A3F] aspect-video">
+                            <img
+                              src={firstFrame}
+                              alt="First Frame"
+                              className="w-full h-full object-cover"
+                            />
+                            <Button
+                              onClick={() => setFirstFrame(null)}
+                              variant="ghost"
+                              size="icon"
+                              className="absolute top-1 right-1 h-5 w-5 bg-black/50 hover:bg-black/70"
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <label
+                            htmlFor="first-frame"
+                            className="flex flex-col items-center justify-center w-full aspect-video border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
+                          >
+                            <div className="flex flex-col items-center justify-center">
+                              <Upload className="w-5 h-5 mb-1 text-gray-400" />
+                              <p className="text-xs text-gray-400">
+                                Click to upload
+                              </p>
+                            </div>
+                            <input
+                              id="first-frame"
+                              type="file"
+                              className="hidden"
+                              accept="image/*"
+                              onChange={handleFirstFrameUpload}
+                            />
+                          </label>
+                        )}
                       </div>
-                      <input
-                        id="last-frame"
-                        type="file"
-                        className="hidden"
-                        accept="image/*"
-                        onChange={handleLastFrameUpload}
-                      />
-                    </label>
-                  )}
-                </div>
 
-                <Button
-                  onClick={handleGenerateVideo}
-                  disabled={!videoPrompt.trim() || isGeneratingVideo}
-                  className="w-full"
-                  size="lg"
-                >
-                  {isGeneratingVideo ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4" />
-                      Generate Video
-                    </>
-                  )}
-                </Button>
-              </div>
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium">
+                          Last Frame (Optional):
+                        </label>
+                        {lastFrame ? (
+                          <div className="relative rounded-lg overflow-hidden border border-[#3D2D4F] bg-[#2A1A3F] aspect-video">
+                            <img
+                              src={lastFrame}
+                              alt="Last Frame"
+                              className="w-full h-full object-cover"
+                            />
+                            <Button
+                              onClick={() => setLastFrame(null)}
+                              variant="ghost"
+                              size="icon"
+                              className="absolute top-1 right-1 h-5 w-5 bg-black/50 hover:bg-black/70"
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <label
+                            htmlFor="last-frame"
+                            className="flex flex-col items-center justify-center w-full aspect-video border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
+                          >
+                            <div className="flex flex-col items-center justify-center">
+                              <Upload className="w-5 h-5 mb-1 text-gray-400" />
+                              <p className="text-xs text-gray-400">
+                                Click to upload
+                              </p>
+                            </div>
+                            <input
+                              id="last-frame"
+                              type="file"
+                              className="hidden"
+                              accept="image/*"
+                              onChange={handleLastFrameUpload}
+                            />
+                          </label>
+                        )}
+                      </div>
+                    </div>
 
-              {videoResult && (
-                <div className="bg-card border border-border rounded-lg p-6 shadow-sm space-y-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-medium">Generated Video</h3>
                     <Button
-                      onClick={handleDownloadVideo}
-                      variant="outline"
-                      size="sm"
+                      onClick={handleGenerateVideo}
+                      disabled={!videoPrompt.trim() || isGeneratingVideo}
+                      className="w-full bg-[#9B6C94] hover:bg-[#8A5B84] text-white mt-4"
+                      size="lg"
                     >
-                      <Download className="w-4 h-4" />
-                      Download
+                      {isGeneratingVideo ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        "Generate Video"
+                      )}
                     </Button>
-                  </div>
-                  <div className="relative rounded-lg overflow-hidden bg-muted">
-                    <video
-                      src={videoResult}
-                      controls
-                      className="w-full h-auto"
-                    />
-                  </div>
+                  </Card>
                 </div>
-              )}
+
+                {/* Right Grid Area - Result */}
+                {videoResult && (
+                  <div className="h-full flex flex-col items-center justify-center gap-4">
+                    <div className="relative rounded-lg overflow-hidden bg-[#2A1A3F] border border-[#3D2D4F] max-w-full" style={{ maxHeight: 'calc(100% - 60px)' }}>
+                      <video
+                        src={videoResult}
+                        controls
+                        className="max-w-full max-h-full h-auto object-contain"
+                      />
+                      <Button
+                        onClick={() => setVideoResult(null)}
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-2 right-2 bg-black/50 hover:bg-black/70"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div className="flex gap-3">
+                      <Button
+                        onClick={handleDownloadVideo}
+                        className="bg-[#9B6C94] hover:bg-[#8A5B84] text-white px-8"
+                      >
+                        Download
+                      </Button>
+                      <Button
+                        onClick={handleGenerateVideo}
+                        disabled={isGeneratingVideo}
+                        className="bg-[#9B6C94] hover:bg-[#8A5B84] text-white px-8"
+                      >
+                        Regenerate
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Empty state when no result */}
+                {!videoResult && !isGeneratingVideo && (
+                  <div className="h-full flex items-center justify-center text-muted-foreground">
+                    <div className="text-center">
+                      <VideoIcon className="w-16 h-16 mx-auto mb-4 opacity-20" />
+                      <p className="text-sm">Generated video will appear here</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Loading state */}
+                {isGeneratingVideo && (
+                  <div className="h-full flex items-center justify-center">
+                    <div className="text-center">
+                      <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin text-primary" />
+                      <p className="text-sm text-muted-foreground">Generating your video...</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </TabsContent>
 
             <TabsContent value="workflow" className="h-[calc(100vh-180px)]">
