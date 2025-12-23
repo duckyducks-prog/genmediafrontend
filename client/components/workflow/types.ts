@@ -8,6 +8,7 @@ import { FilterConfig } from "@/lib/pixi-filter-configs";
 export enum NodeType {
   // INPUT nodes (no input connectors, only outputs)
   ImageInput = "imageInput",
+  VideoInput = "videoInput",
   Prompt = "prompt",
 
   // MODIFIER nodes (both input and output connectors)
