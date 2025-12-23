@@ -152,6 +152,28 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
     }));
   }, [id, data, setNodes]);
 
+  // Generate thumbnail for pre-loaded videos from library
+  useEffect(() => {
+    if (videoUrl && !thumbnailUrl) {
+      console.log('[VideoUploadNode] Generating thumbnail for pre-loaded video');
+      const tempVideo = document.createElement('video');
+      tempVideo.src = videoUrl;
+      tempVideo.muted = true;
+      tempVideo.crossOrigin = 'anonymous';
+
+      generateThumbnail(tempVideo)
+        .then((thumb) => {
+          if (thumb) {
+            console.log('[VideoUploadNode] Thumbnail generated successfully');
+            setThumbnailUrl(thumb);
+          }
+        })
+        .catch((err) => {
+          console.error('[VideoUploadNode] Error generating thumbnail:', err);
+        });
+    }
+  }, [videoUrl, thumbnailUrl, generateThumbnail]);
+
   const handleBrowseLibrary = useCallback(() => {
     // Dispatch event to open Asset Library with video filter
     window.dispatchEvent(new CustomEvent('open-asset-library', {
