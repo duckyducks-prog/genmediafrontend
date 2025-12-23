@@ -416,6 +416,16 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
             console.log("[addNode] Created ImageInput node with data:", data);
             break;
 
+          case NodeType.VideoInput:
+            data = {
+              videoUrl: null,
+              file: null,
+              label: "Video Input",
+              outputs: {}, // Ensure outputs is always initialized
+            };
+            console.log("[addNode] Created VideoInput node with data:", data);
+            break;
+
           // Modifier nodes
           case NodeType.PromptConcatenator:
             data = {
