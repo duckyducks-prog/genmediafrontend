@@ -34,6 +34,9 @@ export function useWorkflowExecution(
   setNodes: (
     nodes: WorkflowNode[] | ((nodes: WorkflowNode[]) => WorkflowNode[]),
   ) => void,
+  setEdges: (
+    edges: WorkflowEdge[] | ((edges: WorkflowEdge[]) => WorkflowEdge[]),
+  ) => void,
   onAssetGenerated?: () => void,
 ) {
   const [isExecuting, setIsExecuting] = useState(false);
