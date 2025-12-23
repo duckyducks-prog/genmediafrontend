@@ -44,6 +44,13 @@ const paletteNodes: PaletteNode[] = [
     description: "Upload or load an image",
   },
   {
+    type: NodeType.VideoInput,
+    label: "Video Input",
+    icon: <Video className="w-4 h-4" />,
+    category: "input",
+    description: "Upload or load a video file",
+  },
+  {
     type: NodeType.Prompt,
     label: "Prompt",
     icon: <Type className="w-4 h-4" />,
