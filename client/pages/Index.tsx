@@ -376,9 +376,9 @@ export default function Index() {
 
       <div className="flex flex-1 gap-0">
         <div
-          className={`flex-1 container mx-auto ${currentTab === "workflow" ? "max-w-none px-0 py-0" : "max-w-4xl px-4 py-8"}`}
+          className={`flex-1 ${currentTab === "workflow" || currentTab === "image" ? "max-w-none px-0 py-0" : "container mx-auto max-w-4xl px-4 py-8"}`}
         >
-          <Tabs value={currentTab} className="w-full">
+          <Tabs value={currentTab} className="w-full h-full">
             <TabsContent value="home" className="space-y-6">
               <WorkflowGallery
                 onLoadWorkflow={(workflow) => {
