@@ -619,13 +619,14 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           return;
         }
 
-        // Check if dragging files or nodes
+        // Check if dragging files, nodes, or assets
         const hasFiles = event.dataTransfer.types.includes("Files");
         const hasReactFlow = event.dataTransfer.types.includes(
           "application/reactflow",
         );
+        const hasAsset = event.dataTransfer.types.includes("application/asset");
 
-        if (hasFiles) {
+        if (hasFiles || hasAsset) {
           event.dataTransfer.dropEffect = "copy";
         } else if (hasReactFlow) {
           event.dataTransfer.dropEffect = "move";
@@ -665,6 +666,49 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
 
           addNode(type, position);
           return;
+        }
+
+        // Handle asset drops from library
+        const assetData = event.dataTransfer.getData("application/asset");
+        if (assetData) {
+          try {
+            const asset = JSON.parse(assetData);
+            const position = reactFlowInstance.screenToFlowPosition({
+              x: event.clientX,
+              y: event.clientY,
+            });
+
+            // Create appropriate input node based on asset type
+            const nodeType = asset.assetType === "video" ? NodeType.VideoInput : NodeType.ImageInput;
+            const newNode: WorkflowNode = {
+              id: `${nodeType}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              type: nodeType,
+              position,
+              data: {
+                ...(asset.assetType === "video" ? { videoUrl: asset.url } : { imageUrl: asset.url }),
+                label: asset.assetType === "video" ? "Video Input" : "Image Input",
+                outputs: { [asset.assetType]: asset.url },
+              },
+            };
+
+            setNodes((nds) => [...nds, newNode]);
+
+            toast({
+              title: "Asset added",
+              description: `${asset.assetType === "video" ? "Video" : "Image"} input node created from library`,
+            });
+
+            console.log("[WorkflowCanvas] Asset dropped:", asset);
+            return;
+          } catch (error) {
+            console.error("Failed to parse asset data:", error);
+            toast({
+              title: "Error",
+              description: "Failed to add asset from library",
+              variant: "destructive",
+            });
+            return;
+          }
         }
 
         // Handle file drops
