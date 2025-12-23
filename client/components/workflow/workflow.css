@@ -334,3 +334,35 @@
 .workflow-node-output {
   border-color: hsl(var(--muted));
 }
+
+/* Sticky Note Styles */
+.sticky-note-node {
+  font-family: inherit;
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: grab;
+}
+
+.sticky-note-node:active {
+  cursor: grabbing;
+}
+
+.sticky-note-node textarea {
+  font-family: inherit;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.sticky-note-node textarea:focus {
+  outline: none;
+}
+
+/* Prevent handles on sticky notes (no connections allowed) */
+.sticky-note-node .react-flow__handle {
+  display: none !important;
+}
+
+/* Sticky note hover effect */
+.sticky-note-node:hover {
+  transform: translateY(-2px);
+}
