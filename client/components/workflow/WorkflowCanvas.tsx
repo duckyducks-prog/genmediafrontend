@@ -139,10 +139,18 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
 
     // Custom onNodesChange handler that respects locked state
     const onNodesChange = useCallback(
-      (changes: any[]) => {
-        onNodesChangeBase(changes);
+      (changes: NodeChange[]) => {
+        setNodes((nds) => applyNodeChanges(changes, nds));
       },
-      [onNodesChangeBase],
+      [setNodes],
+    );
+
+    // Custom onEdgesChange handler
+    const onEdgesChange = useCallback(
+      (changes: EdgeChange[]) => {
+        setEdges((eds) => applyEdgeChanges(changes, eds));
+      },
+      [setEdges],
     );
 
     // Ensure nodes have draggable property set based on locked state
