@@ -579,6 +579,15 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           case NodeType.Download:
             data = { inputData: null, type: "image", label: "Download" };
             break;
+
+          // Documentation/Utility nodes
+          case NodeType.StickyNote:
+            data = {
+              label: "Sticky Note",
+              content: "Enter your note here...",
+              color: "yellow",
+            };
+            break;
         }
 
         const newNode: WorkflowNode = {
