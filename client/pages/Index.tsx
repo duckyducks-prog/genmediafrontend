@@ -425,13 +425,13 @@ export default function Index() {
                       />
                     </div>
 
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                       <label className="block text-sm font-medium">
                         Reference images:
                       </label>
                       {referenceImage ? (
-                        <div className="flex gap-2">
-                          <div className="relative rounded-lg overflow-hidden border border-[#3D2D4F] bg-[#2A1A3F] w-16 h-16">
+                        <div className="flex gap-3">
+                          <div className="relative rounded-lg overflow-hidden border border-[#3D2D4F] bg-[#2A1A3F] w-24 h-24">
                             <img
                               src={referenceImage}
                               alt="Reference"
@@ -448,9 +448,9 @@ export default function Index() {
                           </div>
                           <label
                             htmlFor="reference-image"
-                            className="flex flex-col items-center justify-center w-16 h-16 border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
+                            className="flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
                           >
-                            <Upload className="w-4 h-4 text-gray-400" />
+                            <Upload className="w-5 h-5 text-gray-400" />
                             <input
                               id="reference-image"
                               type="file"
@@ -463,10 +463,10 @@ export default function Index() {
                       ) : (
                         <label
                           htmlFor="reference-image"
-                          className="flex flex-col items-center justify-center w-full h-16 border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
+                          className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
                         >
                           <div className="flex flex-col items-center justify-center">
-                            <Upload className="w-4 h-4 mb-0.5 text-gray-400" />
+                            <Upload className="w-5 h-5 mb-1 text-gray-400" />
                             <p className="text-xs text-gray-400">
                               Click to upload
                             </p>
@@ -482,7 +482,7 @@ export default function Index() {
                       )}
                     </div>
 
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                       <label className="block text-sm font-medium">
                         Aspect Ratio
                       </label>
