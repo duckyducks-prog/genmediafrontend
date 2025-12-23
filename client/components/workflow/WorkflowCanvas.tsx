@@ -1201,6 +1201,51 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
       window.dispatchEvent(new CustomEvent("browse-library"));
     }, []);
 
+    // Listen for add-asset-node events from Index
+    useEffect(() => {
+      const handleAddAssetNode = (event: any) => {
+        const { assetType, url } = event.detail;
+
+        if (!reactFlowInstance) {
+          console.warn("[WorkflowCanvas] ReactFlow instance not available");
+          return;
+        }
+
+        // Get center of viewport for positioning
+        const { x, y, zoom } = reactFlowInstance.getViewport();
+        const centerPosition = reactFlowInstance.screenToFlowPosition({
+          x: window.innerWidth / 2,
+          y: window.innerHeight / 2,
+        });
+
+        // Create appropriate input node based on asset type
+        const nodeType = assetType === "video" ? NodeType.VideoInput : NodeType.ImageInput;
+        const newNode: WorkflowNode = {
+          id: `${nodeType}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          type: nodeType,
+          position: centerPosition,
+          data: {
+            ...(assetType === "video" ? { videoUrl: url } : { imageUrl: url }),
+            label: assetType === "video" ? "Video Input" : "Image Input",
+            outputs: { [assetType]: url },
+          },
+        };
+
+        setNodes((nds) => [...nds, newNode]);
+
+        toast({
+          title: "Asset added",
+          description: `${assetType === "video" ? "Video" : "Image"} input node created`,
+        });
+
+        console.log("[WorkflowCanvas] Asset node added:", nodeType);
+      };
+
+      window.addEventListener("add-asset-node", handleAddAssetNode);
+      return () =>
+        window.removeEventListener("add-asset-node", handleAddAssetNode);
+    }, [reactFlowInstance, setNodes, toast]);
+
     return (
       <div className="flex w-full h-full">
         {/* Node Palette - Always visible unless in read-only mode */}
