@@ -69,6 +69,7 @@ import VignetteNode from "./nodes/VignetteNode";
 import CropNode from "./nodes/CropNode";
 import ImageCompositeNode from "./nodes/ImageCompositeNode";
 import ExtractLastFrameNode from "./nodes/ExtractLastFrameNode";
+import StickyNoteNode from "./nodes/StickyNoteNode";
 
 const nodeTypes: NodeTypes = {
   // Input nodes
