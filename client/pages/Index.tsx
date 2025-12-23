@@ -521,12 +521,12 @@ export default function Index() {
 
                 {/* Right Grid Area - Result */}
                 {imageResult && (
-                  <div className="flex flex-col items-center justify-center space-y-4">
-                    <div className="relative rounded-lg overflow-hidden bg-[#2A1A3F] border border-[#3D2D4F] max-w-2xl">
+                  <div className="h-full flex flex-col items-center justify-center space-y-4">
+                    <div className="relative rounded-lg overflow-hidden bg-[#2A1A3F] border border-[#3D2D4F] flex-1 flex items-center justify-center max-h-full">
                       <img
                         src={imageResult}
                         alt="Generated"
-                        className="w-full h-auto object-contain"
+                        className="max-w-full max-h-full object-contain"
                       />
                       <Button
                         onClick={() => setImageResult(null)}
