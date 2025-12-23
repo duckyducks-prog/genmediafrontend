@@ -405,10 +405,10 @@ export default function Index() {
             </TabsContent>
 
             <TabsContent value="image" className="h-full p-6">
-              <div className="grid gap-8 h-full items-start" style={{ gridTemplateColumns: '340px 1fr' }}>
+              <div className="grid gap-8 h-full" style={{ gridTemplateColumns: '340px 1fr' }}>
                 {/* Left Grid Area - Input Controls Card */}
-                <div className="flex items-start">
-                  <Card className="bg-[#41204E] border-[#41204E] p-6 space-y-4 w-full h-auto">
+                <div className="flex">
+                  <Card className="bg-[#41204E] border-[#41204E] p-6 space-y-4 w-full h-full flex flex-col">
                     <div className="space-y-2">
                       <label
                         htmlFor="image-prompt"
