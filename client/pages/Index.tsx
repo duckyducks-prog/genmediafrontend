@@ -45,6 +45,7 @@ export default function Index() {
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState("1:1");
 
   const handleReferenceImageUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -402,111 +403,174 @@ export default function Index() {
               />
             </TabsContent>
 
-            <TabsContent value="image" className="space-y-6">
-              <div className="bg-card border border-border rounded-lg p-6 shadow-sm space-y-4">
-                <div>
-                  <label
-                    htmlFor="image-prompt"
-                    className="block text-sm font-medium mb-2"
+            <TabsContent value="image" className="h-full">
+              <div className="flex gap-6 h-full">
+                {/* Left Panel - Input Controls */}
+                <div className="w-80 space-y-4">
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="image-prompt"
+                      className="block text-sm font-medium"
+                    >
+                      Describe your image:
+                    </label>
+                    <Textarea
+                      id="image-prompt"
+                      placeholder="A man holding a book"
+                      value={imagePrompt}
+                      onChange={(e) => setImagePrompt(e.target.value)}
+                      className="min-h-[120px] bg-[#2A1A3F] border-[#3D2D4F] text-white placeholder:text-gray-400"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">
+                      Reference images:
+                    </label>
+                    {referenceImage ? (
+                      <div className="flex gap-2">
+                        <div className="relative rounded-lg overflow-hidden border border-[#3D2D4F] bg-[#2A1A3F] w-20 h-20">
+                          <img
+                            src={referenceImage}
+                            alt="Reference"
+                            className="w-full h-full object-cover"
+                          />
+                          <Button
+                            onClick={() => setReferenceImage(null)}
+                            variant="ghost"
+                            size="icon"
+                            className="absolute top-1 right-1 h-5 w-5 bg-black/50 hover:bg-black/70"
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                        <label
+                          htmlFor="reference-image"
+                          className="flex flex-col items-center justify-center w-20 h-20 border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
+                        >
+                          <Upload className="w-5 h-5 text-gray-400" />
+                          <input
+                            id="reference-image"
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleReferenceImageUpload}
+                          />
+                        </label>
+                      </div>
+                    ) : (
+                      <label
+                        htmlFor="reference-image"
+                        className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
+                      >
+                        <div className="flex flex-col items-center justify-center py-4">
+                          <Upload className="w-6 h-6 mb-1 text-gray-400" />
+                          <p className="text-xs text-gray-400">
+                            Click to upload
+                          </p>
+                        </div>
+                        <input
+                          id="reference-image"
+                          type="file"
+                          className="hidden"
+                          accept="image/*"
+                          onChange={handleReferenceImageUpload}
+                        />
+                      </label>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">
+                      Aspect Ratio
+                    </label>
+                    <select
+                      value={aspectRatio}
+                      onChange={(e) => setAspectRatio(e.target.value)}
+                      className="w-full px-3 py-2 bg-[#2A1A3F] border border-[#3D2D4F] rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      <option value="1:1">1:1 Square</option>
+                      <option value="16:9">16:9 Landscape</option>
+                      <option value="9:16">9:16 Portrait</option>
+                      <option value="4:3">4:3 Standard</option>
+                      <option value="3:2">3:2 Classic</option>
+                    </select>
+                  </div>
+
+                  <Button
+                    onClick={handleGenerateImage}
+                    disabled={!imagePrompt.trim() || isGeneratingImage}
+                    className="w-full bg-[#C084FC] hover:bg-[#A855F7] text-white"
+                    size="lg"
                   >
-                    Describe your image
-                  </label>
-                  <Textarea
-                    id="image-prompt"
-                    placeholder="A serene mountain landscape at sunset with vibrant colors..."
-                    value={imagePrompt}
-                    onChange={(e) => setImagePrompt(e.target.value)}
-                    className="min-h-[100px]"
-                  />
+                    {isGeneratingImage ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      "Generate Image"
+                    )}
+                  </Button>
                 </div>
 
-                <div>
-                  <label
-                    htmlFor="reference-image"
-                    className="block text-sm font-medium mb-2"
-                  >
-                    Reference Image (Optional)
-                  </label>
-                  {referenceImage ? (
-                    <div className="relative rounded-lg overflow-hidden border border-border bg-muted">
+                {/* Right Panel - Result */}
+                {imageResult && (
+                  <div className="flex-1 flex flex-col items-center justify-center space-y-4">
+                    <div className="relative rounded-lg overflow-hidden bg-[#2A1A3F] border border-[#3D2D4F]">
                       <img
-                        src={referenceImage}
-                        alt="Reference"
-                        className="w-full h-48 object-cover"
+                        src={imageResult}
+                        alt="Generated"
+                        className="max-w-full max-h-[600px] object-contain"
                       />
                       <Button
-                        onClick={() => setReferenceImage(null)}
-                        variant="destructive"
+                        onClick={() => setImageResult(null)}
+                        variant="ghost"
                         size="icon"
-                        className="absolute top-2 right-2"
+                        className="absolute top-2 right-2 bg-black/50 hover:bg-black/70"
                       >
                         <X className="w-4 h-4" />
                       </Button>
                     </div>
-                  ) : (
-                    <label
-                      htmlFor="reference-image"
-                      className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-border rounded-lg cursor-pointer bg-muted/30 hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex flex-col items-center justify-center py-6">
-                        <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">
-                          Click to upload reference image
-                        </p>
-                      </div>
-                      <input
-                        id="reference-image"
-                        type="file"
-                        className="hidden"
-                        accept="image/*"
-                        onChange={handleReferenceImageUpload}
-                      />
-                    </label>
-                  )}
-                </div>
+                    <div className="flex gap-3">
+                      <Button
+                        variant="outline"
+                        className="bg-[#2A1A3F] border-[#3D2D4F] hover:bg-[#3D2D4F] text-white"
+                      >
+                        Upscale
+                      </Button>
+                      <Button
+                        onClick={handleGenerateImage}
+                        disabled={isGeneratingImage}
+                        className="bg-[#2A1A3F] border-[#3D2D4F] hover:bg-[#3D2D4F] text-white"
+                        variant="outline"
+                      >
+                        Regenerate
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
-                <Button
-                  onClick={handleGenerateImage}
-                  disabled={!imagePrompt.trim() || isGeneratingImage}
-                  className="w-full"
-                  size="lg"
-                >
-                  {isGeneratingImage ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4" />
-                      Generate Image
-                    </>
-                  )}
-                </Button>
+                {/* Empty state when no result */}
+                {!imageResult && !isGeneratingImage && (
+                  <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                    <div className="text-center">
+                      <ImageIcon className="w-16 h-16 mx-auto mb-4 opacity-20" />
+                      <p className="text-sm">Generated image will appear here</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Loading state */}
+                {isGeneratingImage && (
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center">
+                      <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin text-primary" />
+                      <p className="text-sm text-muted-foreground">Generating your image...</p>
+                    </div>
+                  </div>
+                )}
               </div>
-
-              {imageResult && (
-                <div className="bg-card border border-border rounded-lg p-6 shadow-sm space-y-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-medium">Generated Image</h3>
-                    <Button
-                      onClick={handleDownloadImage}
-                      variant="outline"
-                      size="sm"
-                    >
-                      <Download className="w-4 h-4" />
-                      Download
-                    </Button>
-                  </div>
-                  <div className="relative rounded-lg overflow-hidden bg-muted">
-                    <img
-                      src={imageResult}
-                      alt="Generated"
-                      className="w-full h-auto"
-                    />
-                  </div>
-                </div>
-              )}
             </TabsContent>
 
             <TabsContent value="video" className="space-y-6">
