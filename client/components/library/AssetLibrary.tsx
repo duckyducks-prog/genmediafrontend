@@ -57,7 +57,7 @@ export interface AssetLibraryRef {
 }
 
 const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
-  ({ open, onOpenChange }, ref) => {
+  ({ open, onOpenChange, onAddAssetNode }, ref) => {
     const [assets, setAssets] = useState<Asset[]>([]);
     const [filteredAssets, setFilteredAssets] = useState<Asset[]>([]);
     const [filter, setFilter] = useState<"all" | "image" | "video">("all");
