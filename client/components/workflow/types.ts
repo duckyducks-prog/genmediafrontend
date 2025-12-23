@@ -40,6 +40,9 @@ export enum NodeType {
   // Legacy/utility nodes
   ImageOutput = "imageOutput",
   VideoOutput = "videoOutput",
+
+  // DOCUMENTATION/UTILITY nodes
+  StickyNote = "stickyNote",
 }
 
 // Re-export FilterConfig for convenience
