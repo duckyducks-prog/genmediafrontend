@@ -376,7 +376,7 @@ export default function WorkflowGallery({
       <Tabs defaultValue="templates" className="w-full">
         <TabsList className="grid w-full grid-cols-2 max-w-md">
           <TabsTrigger value="templates">
-            Workflow Templates
+            Workflow Library
             {publicWorkflows.length > 0 && (
               <span className="ml-2 text-xs bg-primary text-primary-foreground rounded-full px-2 py-0.5">
                 {publicWorkflows.length}
