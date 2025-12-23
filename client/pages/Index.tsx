@@ -405,11 +405,11 @@ export default function Index() {
             </TabsContent>
 
             <TabsContent value="image" className="h-full p-6">
-              <div className="grid grid-cols-2 gap-6 h-full">
+              <div className="grid grid-cols-2 gap-8 h-full">
                 {/* Left Grid Area - Input Controls Card */}
                 <div className="flex items-start">
-                  <Card className="bg-[#41204E] border-[#41204E] p-6 space-y-4 w-full" style={{ aspectRatio: '16/9' }}>
-                    <div className="space-y-2">
+                  <Card className="bg-[#41204E] border-[#41204E] p-5 space-y-3 w-full" style={{ aspectRatio: '16/9' }}>
+                    <div className="space-y-1.5">
                       <label
                         htmlFor="image-prompt"
                         className="block text-sm font-medium"
@@ -421,17 +421,17 @@ export default function Index() {
                         placeholder="A man holding a book"
                         value={imagePrompt}
                         onChange={(e) => setImagePrompt(e.target.value)}
-                        className="min-h-[100px] bg-[#2A1A3F] border-[#3D2D4F] text-white placeholder:text-gray-400"
+                        className="min-h-[80px] bg-[#2A1A3F] border-[#3D2D4F] text-white placeholder:text-gray-400 resize-none"
                       />
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       <label className="block text-sm font-medium">
                         Reference images:
                       </label>
                       {referenceImage ? (
                         <div className="flex gap-2">
-                          <div className="relative rounded-lg overflow-hidden border border-[#3D2D4F] bg-[#2A1A3F] w-20 h-20">
+                          <div className="relative rounded-lg overflow-hidden border border-[#3D2D4F] bg-[#2A1A3F] w-16 h-16">
                             <img
                               src={referenceImage}
                               alt="Reference"
@@ -448,9 +448,9 @@ export default function Index() {
                           </div>
                           <label
                             htmlFor="reference-image"
-                            className="flex flex-col items-center justify-center w-20 h-20 border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
+                            className="flex flex-col items-center justify-center w-16 h-16 border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
                           >
-                            <Upload className="w-5 h-5 text-gray-400" />
+                            <Upload className="w-4 h-4 text-gray-400" />
                             <input
                               id="reference-image"
                               type="file"
@@ -463,10 +463,10 @@ export default function Index() {
                       ) : (
                         <label
                           htmlFor="reference-image"
-                          className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
+                          className="flex flex-col items-center justify-center w-full h-16 border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
                         >
-                          <div className="flex flex-col items-center justify-center py-2">
-                            <Upload className="w-5 h-5 mb-1 text-gray-400" />
+                          <div className="flex flex-col items-center justify-center">
+                            <Upload className="w-4 h-4 mb-0.5 text-gray-400" />
                             <p className="text-xs text-gray-400">
                               Click to upload
                             </p>
@@ -482,7 +482,7 @@ export default function Index() {
                       )}
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       <label className="block text-sm font-medium">
                         Aspect Ratio
                       </label>
