@@ -358,18 +358,34 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
 
                           {/* Actions */}
                           <div className="flex gap-2">
+                            {onAddAssetNode && (
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => {
+                                  onAddAssetNode(asset);
+                                  toast({
+                                    title: "Added to workflow",
+                                    description: "Asset node created on the canvas",
+                                  });
+                                }}
+                                className="flex-1"
+                              >
+                                Add to Workflow
+                              </Button>
+                            )}
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => handleDownload(asset)}
-                              className="flex-1"
+                              className={onAddAssetNode ? "" : "flex-1"}
                             >
                               <Download className="w-3 h-3 mr-1" />
-                              Download
                             </Button>
                             <Button
                               size="sm"
                               variant="destructive"
+                              size="sm"
                               onClick={() => setDeleteId(asset.id)}
                             >
                               <Trash2 className="w-3 h-3" />
