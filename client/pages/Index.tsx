@@ -688,6 +688,7 @@ export default function Index() {
         ref={assetLibraryRef}
         open={isLibraryOpen}
         onOpenChange={setIsLibraryOpen}
+        onAddAssetNode={handleAddAssetNode}
       />
     </div>
   );
