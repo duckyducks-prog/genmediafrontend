@@ -521,12 +521,12 @@ export default function Index() {
 
                 {/* Right Grid Area - Result */}
                 {imageResult && (
-                  <div className="h-full flex flex-col items-center justify-center space-y-4">
-                    <div className="relative rounded-lg overflow-hidden bg-[#2A1A3F] border border-[#3D2D4F] flex-1 flex items-center justify-center max-h-full">
+                  <div className="h-full flex flex-col items-center justify-center gap-4">
+                    <div className="relative rounded-lg overflow-hidden bg-[#2A1A3F] border border-[#3D2D4F] max-w-full" style={{ maxHeight: 'calc(100% - 60px)' }}>
                       <img
                         src={imageResult}
                         alt="Generated"
-                        className="max-w-full max-h-full object-contain"
+                        className="max-w-full max-h-full h-auto object-contain"
                       />
                       <Button
                         onClick={() => setImageResult(null)}
@@ -539,14 +539,14 @@ export default function Index() {
                     </div>
                     <div className="flex gap-3">
                       <Button
-                        className="bg-[#9B6C94] hover:bg-[#8A5B84] text-white"
+                        className="bg-[#9B6C94] hover:bg-[#8A5B84] text-white px-8"
                       >
                         Upscale
                       </Button>
                       <Button
                         onClick={handleGenerateImage}
                         disabled={isGeneratingImage}
-                        className="bg-[#9B6C94] hover:bg-[#8A5B84] text-white"
+                        className="bg-[#9B6C94] hover:bg-[#8A5B84] text-white px-8"
                       >
                         Regenerate
                       </Button>
