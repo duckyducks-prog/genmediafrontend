@@ -973,6 +973,16 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
     ],
     outputConnectors: [],
   },
+
+  // ========== DOCUMENTATION NODES ==========
+  [NodeType.StickyNote]: {
+    type: NodeType.StickyNote,
+    label: "Sticky Note",
+    category: "output",
+    description: "Add notes and documentation to explain workflow steps",
+    inputConnectors: [],
+    outputConnectors: [],
+  },
 };
 
 // ============================================================================
