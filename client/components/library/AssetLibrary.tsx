@@ -385,7 +385,6 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
                             <Button
                               size="sm"
                               variant="destructive"
-                              size="sm"
                               onClick={() => setDeleteId(asset.id)}
                             >
                               <Trash2 className="w-3 h-3" />
