@@ -1480,6 +1480,8 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           edges={edges}
           onSaveSuccess={(workflowId) => {
             setCurrentWorkflowId(workflowId);
+            // Mark as saved since workflow was successfully saved to backend
+            dispatch({ type: "MARK_SAVED" });
           }}
           onCaptureThumbnail={captureThumbnail}
         />
