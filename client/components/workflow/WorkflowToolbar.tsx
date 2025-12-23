@@ -56,7 +56,27 @@ export default function WorkflowToolbar({
   };
 
   return (
-    <div className="absolute top-2 right-2 flex items-center gap-1 bg-card border border-border rounded-lg px-2 py-1.5 shadow-lg z-10">
+    <div className="absolute top-2 right-2 flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-1.5 shadow-lg z-10">
+      {/* Unsaved indicator and last saved time */}
+      <div className="flex items-center gap-2 text-xs">
+        {state.isDirty && (
+          <div
+            className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"
+            title="Unsaved changes"
+          />
+        )}
+        {getLastSavedText() && (
+          <span className="text-muted-foreground whitespace-nowrap">
+            {getLastSavedText()}
+          </span>
+        )}
+      </div>
+
+      {/* Separator */}
+      {(state.isDirty || getLastSavedText()) && (
+        <div className="w-px h-6 bg-border" />
+      )}
+
       <Button
         onClick={onSaveWorkflow}
         variant="default"
