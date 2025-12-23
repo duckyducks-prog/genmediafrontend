@@ -112,9 +112,13 @@ interface WorkflowCanvasProps {
 
 const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
   ({ onAssetGenerated, onLoadWorkflowRequest }, ref) => {
-    const [nodes, setNodes, onNodesChangeBase] =
-      useNodesState<WorkflowNodeData>([]);
-    const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+    // Use context for workflow state persistence
+    const { state: workflowState, dispatch } = useWorkflow();
+    const [nodes, setNodes] = useWorkflowNodes();
+    const [edges, setEdges] = useWorkflowEdges();
+
+    // Warn user before losing unsaved changes
+    useUnsavedChangesWarning();
     const [reactFlowInstance, setReactFlowInstance] =
       useState<ReactFlowInstance | null>(null);
     const reactFlowWrapper = useRef<HTMLDivElement>(null);
