@@ -1442,6 +1442,13 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           }}
           onCaptureThumbnail={captureThumbnail}
         />
+
+        {/* Load Workflow Dialog */}
+        <WorkflowLoadDialog
+          open={isLoadDialogOpen}
+          onOpenChange={setIsLoadDialogOpen}
+          onLoadWorkflow={loadWorkflow}
+        />
       </div>
     );
   },
