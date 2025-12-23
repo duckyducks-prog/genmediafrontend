@@ -52,13 +52,20 @@ export default function Index() {
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (file && referenceImages.length < 9) {
       const reader = new FileReader();
       reader.onload = (event) => {
-        setReferenceImage(event.target?.result as string);
+        const newImage = event.target?.result as string;
+        setReferenceImages(prev => [...prev, newImage]);
       };
       reader.readAsDataURL(file);
     }
+    // Reset input value to allow uploading the same file again
+    e.target.value = '';
+  };
+
+  const handleRemoveReferenceImage = (index: number) => {
+    setReferenceImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleFirstFrameUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
