@@ -40,6 +40,20 @@ export default function WorkflowToolbar({
   isReadOnly = false,
 }: WorkflowToolbarProps) {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
+  const { state } = useWorkflow();
+
+  // Format last saved time
+  const getLastSavedText = () => {
+    if (!state.lastSaved) return null;
+
+    const now = new Date();
+    const diff = Math.floor((now.getTime() - state.lastSaved.getTime()) / 1000);
+
+    if (diff < 60) return "Saved just now";
+    if (diff < 3600) return `Saved ${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `Saved ${Math.floor(diff / 3600)}h ago`;
+    return `Saved ${Math.floor(diff / 86400)}d ago`;
+  };
 
   return (
     <div className="absolute top-2 right-2 flex items-center gap-1 bg-card border border-border rounded-lg px-2 py-1.5 shadow-lg z-10">
