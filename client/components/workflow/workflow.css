@@ -341,10 +341,17 @@
   user-select: text;
   -webkit-user-select: text;
   cursor: grab;
+  position: relative;
+  overflow: hidden;
 }
 
 .sticky-note-node:active {
   cursor: grabbing;
+}
+
+.sticky-note-node.cursor-nwse-resize,
+.sticky-note-node.cursor-nwse-resize * {
+  cursor: nwse-resize !important;
 }
 
 .sticky-note-node textarea {
@@ -357,6 +364,11 @@
   outline: none;
 }
 
+.sticky-note-node textarea:disabled {
+  cursor: default;
+  background-color: transparent;
+}
+
 /* Prevent handles on sticky notes (no connections allowed) */
 .sticky-note-node .react-flow__handle {
   display: none !important;
@@ -365,4 +377,16 @@
 /* Sticky note hover effect */
 .sticky-note-node:hover {
   transform: translateY(-2px);
+}
+
+/* Resize handle styling */
+.sticky-note-node .resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  cursor: nwse-resize;
+  user-select: none;
+  -webkit-user-select: none;
 }
