@@ -289,6 +289,12 @@ export interface DownloadNodeData extends BaseNodeData {
   type: "image" | "video";
 }
 
+// STICKY NOTE node (documentation/explanation)
+export interface StickyNoteNodeData extends BaseNodeData {
+  content: string; // The note text content
+  color?: string; // Color theme: "yellow", "blue", "pink", "purple"
+}
+
 // ============================================================================
 // UNION TYPE FOR ALL NODE DATA
 // ============================================================================
