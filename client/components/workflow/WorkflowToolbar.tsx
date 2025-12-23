@@ -12,6 +12,7 @@ import {
   StopCircle,
 } from "lucide-react";
 import { useReactFlow } from "reactflow";
+import { useWorkflow } from "@/contexts/WorkflowContext";
 
 interface WorkflowToolbarProps {
   onClearCanvas: () => void;
