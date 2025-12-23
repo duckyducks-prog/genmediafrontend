@@ -292,6 +292,7 @@ export interface DownloadNodeData extends BaseNodeData {
 
 export type WorkflowNodeData =
   | ImageInputNodeData
+  | VideoInputNodeData
   | PromptNodeData
   | PromptConcatenatorNodeData
   | TextIteratorNodeData
