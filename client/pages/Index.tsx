@@ -383,7 +383,7 @@ export default function Index() {
 
       <div className="flex flex-1 gap-0">
         <div
-          className={`flex-1 ${currentTab === "workflow" || currentTab === "image" ? "max-w-none px-0 py-0" : "container mx-auto max-w-4xl px-4 py-8"}`}
+          className={`flex-1 ${currentTab === "workflow" || currentTab === "image" || currentTab === "video" ? "max-w-none px-0 py-0" : "container mx-auto max-w-4xl px-4 py-8"}`}
         >
           <Tabs value={currentTab} className="w-full h-full">
             <TabsContent value="home" className="space-y-6">
