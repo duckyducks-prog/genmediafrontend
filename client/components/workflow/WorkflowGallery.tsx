@@ -323,7 +323,7 @@ export default function WorkflowGallery({
         <div>
           <h2 className="text-3xl font-bold">Workflows</h2>
           <p className="text-muted-foreground">
-            Browse templates or manage your saved workflows
+            Browse the Workflow Library or manage your saved workflows
           </p>
         </div>
         <Button onClick={fetchWorkflows} variant="outline" size="sm">
