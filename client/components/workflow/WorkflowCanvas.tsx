@@ -586,7 +586,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
 
         setNodes((nds) => [...nds, newNode]);
       },
-      [setNodes],
+      [setNodes, isReadOnly, toast],
     );
 
     // Validate image file type and size
