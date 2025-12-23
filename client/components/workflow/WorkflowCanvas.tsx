@@ -117,6 +117,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
       useState<ReactFlowInstance | null>(null);
     const reactFlowWrapper = useRef<HTMLDivElement>(null);
     const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+    const [isLoadDialogOpen, setIsLoadDialogOpen] = useState(false);
     const [currentWorkflowId, setCurrentWorkflowId] = useState<string | null>(
       null,
     );
