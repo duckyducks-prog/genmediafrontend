@@ -129,11 +129,11 @@ function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
       {/* Node Content */}
       <div className="space-y-2">
         {imageUrl ? (
-          <div className="relative rounded-lg overflow-hidden border border-border bg-muted">
+          <div className="relative rounded-lg overflow-hidden border border-border bg-muted flex items-center justify-center h-48">
             <img
               src={imageUrl}
               alt="Upload preview"
-              className="w-full h-32 object-cover"
+              className="max-w-full max-h-full object-contain"
             />
             <Button
               onClick={handleRemove}
