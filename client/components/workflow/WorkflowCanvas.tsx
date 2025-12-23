@@ -900,15 +900,31 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
     const handleInit = useCallback(
       (instance: ReactFlowInstance) => {
         setReactFlowInstance(instance);
-        // Only fit view on initial load if there are nodes
-        if (!hasInitialized.current && nodes.length > 0) {
+        // Restore viewport from context if available
+        if (workflowState.viewport && workflowState.viewport.zoom !== 1) {
+          setTimeout(() => {
+            instance.setViewport(workflowState.viewport);
+          }, 50);
+        } else if (!hasInitialized.current && nodes.length > 0) {
+          // Only fit view on initial load if there are nodes
           setTimeout(() => {
             instance.fitView({ padding: 0.2, duration: 300 });
           }, 50);
-          hasInitialized.current = true;
+        }
+        hasInitialized.current = true;
+      },
+      [nodes.length, workflowState.viewport],
+    );
+
+    // Handle viewport changes (pan/zoom) to save to context
+    const handleMoveEnd = useCallback(
+      (event: any) => {
+        if (reactFlowInstance) {
+          const viewport = reactFlowInstance.getViewport();
+          dispatch({ type: "SET_VIEWPORT", payload: viewport });
         }
       },
-      [nodes.length],
+      [reactFlowInstance, dispatch],
     );
 
     // Save workflow handler
