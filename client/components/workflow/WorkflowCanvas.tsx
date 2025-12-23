@@ -898,13 +898,10 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
       setIsSaveDialogOpen(true);
     }, []);
 
-    // Load workflow handler (navigate to home)
+    // Load workflow handler
     const handleLoadWorkflow = useCallback(() => {
-      toast({
-        title: "Load workflow",
-        description: "Go to the Home tab to browse and load workflows",
-      });
-    }, [toast]);
+      setIsLoadDialogOpen(true);
+    }, []);
 
     // Workflow execution
     const {
