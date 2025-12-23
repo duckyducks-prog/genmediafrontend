@@ -518,10 +518,8 @@ export default function Index() {
                 </div>
 
                 {/* Right Grid Area - Result */}
-
-                {/* Right Panel - Result */}
                 {imageResult && (
-                  <div className="flex-1 flex flex-col items-center justify-center space-y-4">
+                  <div className="flex flex-col items-center justify-center space-y-4">
                     <div className="relative rounded-lg overflow-hidden bg-[#2A1A3F] border border-[#3D2D4F]">
                       <img
                         src={imageResult}
@@ -539,16 +537,14 @@ export default function Index() {
                     </div>
                     <div className="flex gap-3">
                       <Button
-                        variant="outline"
-                        className="bg-[#2A1A3F] border-[#3D2D4F] hover:bg-[#3D2D4F] text-white"
+                        className="bg-[#9B6C94] hover:bg-[#8A5B84] text-white"
                       >
                         Upscale
                       </Button>
                       <Button
                         onClick={handleGenerateImage}
                         disabled={isGeneratingImage}
-                        className="bg-[#2A1A3F] border-[#3D2D4F] hover:bg-[#3D2D4F] text-white"
-                        variant="outline"
+                        className="bg-[#9B6C94] hover:bg-[#8A5B84] text-white"
                       >
                         Regenerate
                       </Button>
@@ -558,7 +554,7 @@ export default function Index() {
 
                 {/* Empty state when no result */}
                 {!imageResult && !isGeneratingImage && (
-                  <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                  <div className="flex items-center justify-center text-muted-foreground">
                     <div className="text-center">
                       <ImageIcon className="w-16 h-16 mx-auto mb-4 opacity-20" />
                       <p className="text-sm">Generated image will appear here</p>
@@ -568,7 +564,7 @@ export default function Index() {
 
                 {/* Loading state */}
                 {isGeneratingImage && (
-                  <div className="flex-1 flex items-center justify-center">
+                  <div className="flex items-center justify-center">
                     <div className="text-center">
                       <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin text-primary" />
                       <p className="text-sm text-muted-foreground">Generating your image...</p>
