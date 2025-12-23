@@ -38,7 +38,7 @@ export default function Index() {
   const [currentTab, setCurrentTab] = useState("home");
   const [imagePrompt, setImagePrompt] = useState("");
   const [videoPrompt, setVideoPrompt] = useState("");
-  const [referenceImage, setReferenceImage] = useState<string | null>(null);
+  const [referenceImages, setReferenceImages] = useState<string[]>([]);
   const [firstFrame, setFirstFrame] = useState<string | null>(null);
   const [lastFrame, setLastFrame] = useState<string | null>(null);
   const [imageResult, setImageResult] = useState<string | null>(null);
