@@ -857,7 +857,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
       isExecuting,
       executionProgress,
       totalNodes,
-    } = useWorkflowExecution(nodes, edges, setNodes, onAssetGenerated);
+    } = useWorkflowExecution(nodes, edges, setNodes, setEdges, onAssetGenerated);
 
     // Copy selected nodes
     const copySelectedNodes = useCallback(() => {
