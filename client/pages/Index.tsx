@@ -408,49 +408,70 @@ export default function Index() {
               <div className="grid gap-8 h-full" style={{ gridTemplateColumns: '340px 1fr' }}>
                 {/* Left Grid Area - Input Controls Card */}
                 <div className="flex">
-                  <Card className="bg-[#41204E] border-[#41204E] p-6 space-y-4 w-full h-full flex flex-col">
-                    <div className="space-y-2">
-                      <label
-                        htmlFor="image-prompt"
-                        className="block text-sm font-medium"
-                      >
-                        Describe your image:
-                      </label>
-                      <Textarea
-                        id="image-prompt"
-                        placeholder="A man holding a book"
-                        value={imagePrompt}
-                        onChange={(e) => setImagePrompt(e.target.value)}
-                        className="min-h-[100px] bg-[#2A1A3F] border-[#3D2D4F] text-white placeholder:text-gray-400 resize-none"
-                      />
-                    </div>
+                  <Card className="bg-[#41204E] border-[#41204E] p-6 w-full h-full flex flex-col">
+                    <div className="flex-1 space-y-4">
+                      <div className="space-y-2">
+                        <label
+                          htmlFor="image-prompt"
+                          className="block text-sm font-medium"
+                        >
+                          Describe your image:
+                        </label>
+                        <Textarea
+                          id="image-prompt"
+                          placeholder="A man holding a book"
+                          value={imagePrompt}
+                          onChange={(e) => setImagePrompt(e.target.value)}
+                          className="min-h-[100px] bg-[#2A1A3F] border-[#3D2D4F] text-white placeholder:text-gray-400 resize-none"
+                        />
+                      </div>
 
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium">
-                        Reference images:
-                      </label>
-                      {referenceImage ? (
-                        <div className="flex gap-3">
-                          <div className="relative rounded-lg overflow-hidden border border-[#3D2D4F] bg-[#2A1A3F] w-24 h-24">
-                            <img
-                              src={referenceImage}
-                              alt="Reference"
-                              className="w-full h-full object-cover"
-                            />
-                            <Button
-                              onClick={() => setReferenceImage(null)}
-                              variant="ghost"
-                              size="icon"
-                              className="absolute top-1 right-1 h-5 w-5 bg-black/50 hover:bg-black/70"
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium">
+                          Reference images:
+                        </label>
+                        {referenceImage ? (
+                          <div className="flex gap-3">
+                            <div className="relative rounded-lg overflow-hidden border border-[#3D2D4F] bg-[#2A1A3F] w-24 h-24">
+                              <img
+                                src={referenceImage}
+                                alt="Reference"
+                                className="w-full h-full object-cover"
+                              />
+                              <Button
+                                onClick={() => setReferenceImage(null)}
+                                variant="ghost"
+                                size="icon"
+                                className="absolute top-1 right-1 h-5 w-5 bg-black/50 hover:bg-black/70"
+                              >
+                                <X className="w-3 h-3" />
+                              </Button>
+                            </div>
+                            <label
+                              htmlFor="reference-image"
+                              className="flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
                             >
-                              <X className="w-3 h-3" />
-                            </Button>
+                              <Upload className="w-5 h-5 text-gray-400" />
+                              <input
+                                id="reference-image"
+                                type="file"
+                                className="hidden"
+                                accept="image/*"
+                                onChange={handleReferenceImageUpload}
+                              />
+                            </label>
                           </div>
+                        ) : (
                           <label
                             htmlFor="reference-image"
-                            className="flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
+                            className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
                           >
-                            <Upload className="w-5 h-5 text-gray-400" />
+                            <div className="flex flex-col items-center justify-center">
+                              <Upload className="w-5 h-5 mb-1 text-gray-400" />
+                              <p className="text-xs text-gray-400">
+                                Click to upload
+                              </p>
+                            </div>
                             <input
                               id="reference-image"
                               type="file"
@@ -459,50 +480,31 @@ export default function Index() {
                               onChange={handleReferenceImageUpload}
                             />
                           </label>
-                        </div>
-                      ) : (
-                        <label
-                          htmlFor="reference-image"
-                          className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
-                        >
-                          <div className="flex flex-col items-center justify-center">
-                            <Upload className="w-5 h-5 mb-1 text-gray-400" />
-                            <p className="text-xs text-gray-400">
-                              Click to upload
-                            </p>
-                          </div>
-                          <input
-                            id="reference-image"
-                            type="file"
-                            className="hidden"
-                            accept="image/*"
-                            onChange={handleReferenceImageUpload}
-                          />
-                        </label>
-                      )}
-                    </div>
+                        )}
+                      </div>
 
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium">
-                        Aspect Ratio
-                      </label>
-                      <select
-                        value={aspectRatio}
-                        onChange={(e) => setAspectRatio(e.target.value)}
-                        className="w-full px-3 py-2 bg-[#2A1A3F] border border-[#3D2D4F] rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                      >
-                        <option value="1:1">1:1 Square</option>
-                        <option value="16:9">16:9 Landscape</option>
-                        <option value="9:16">9:16 Portrait</option>
-                        <option value="4:3">4:3 Standard</option>
-                        <option value="3:2">3:2 Classic</option>
-                      </select>
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium">
+                          Aspect Ratio
+                        </label>
+                        <select
+                          value={aspectRatio}
+                          onChange={(e) => setAspectRatio(e.target.value)}
+                          className="w-full px-3 py-2 bg-[#2A1A3F] border border-[#3D2D4F] rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        >
+                          <option value="1:1">1:1 Square</option>
+                          <option value="16:9">16:9 Landscape</option>
+                          <option value="9:16">9:16 Portrait</option>
+                          <option value="4:3">4:3 Standard</option>
+                          <option value="3:2">3:2 Classic</option>
+                        </select>
+                      </div>
                     </div>
 
                     <Button
                       onClick={handleGenerateImage}
                       disabled={!imagePrompt.trim() || isGeneratingImage}
-                      className="w-full bg-[#9B6C94] hover:bg-[#8A5B84] text-white"
+                      className="w-full bg-[#9B6C94] hover:bg-[#8A5B84] text-white mt-4"
                       size="lg"
                     >
                       {isGeneratingImage ? (
