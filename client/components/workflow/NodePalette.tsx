@@ -21,6 +21,7 @@ import {
   X,
   Film,
   List,
+  MessageSquare,
 } from "lucide-react";
 import { NodeType, NODE_CONFIGURATIONS } from "./types";
 import { Input } from "@/components/ui/input";
