@@ -305,7 +305,9 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
                       >
                         {/* Thumbnail */}
                         <div
-                          className="relative aspect-video bg-muted cursor-pointer"
+                          className="relative aspect-video bg-muted cursor-grab active:cursor-grabbing"
+                          draggable
+                          onDragStart={(e) => handleAssetDragStart(e, asset)}
                           onClick={() => setPreviewAsset(asset)}
                         >
                           {asset.asset_type === "image" ? (
