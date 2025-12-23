@@ -208,6 +208,7 @@ export default function NodePalette({ onAddNode }: NodePaletteProps) {
     input: filteredNodes.filter((n) => n.category === "input"),
     modifier: filteredNodes.filter((n) => n.category === "modifier"),
     action: filteredNodes.filter((n) => n.category === "action"),
+    output: filteredNodes.filter((n) => n.category === "output"),
   };
 
   const handleDragStart = (event: React.DragEvent, nodeType: NodeType) => {
