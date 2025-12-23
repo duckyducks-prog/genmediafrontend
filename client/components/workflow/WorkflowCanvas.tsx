@@ -1195,6 +1195,12 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
         window.removeEventListener("node-execute", handleNodeExecute);
     }, [executeSingleNode]);
 
+    // Dispatch browse library event (for external handlers to catch)
+    const handleBrowseLibrary = useCallback(() => {
+      console.log("[WorkflowCanvas] Dispatching browse-library event");
+      window.dispatchEvent(new CustomEvent("browse-library"));
+    }, []);
+
     return (
       <div className="flex w-full h-full">
         {/* Node Palette - Always visible unless in read-only mode */}
