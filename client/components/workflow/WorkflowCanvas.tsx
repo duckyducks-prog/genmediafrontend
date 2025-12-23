@@ -33,6 +33,7 @@ import {
 import NodePalette from "./NodePalette";
 import WorkflowToolbar from "./WorkflowToolbar";
 import SaveWorkflowDialog from "./SaveWorkflowDialog";
+import WorkflowLoadDialog from "./WorkflowLoadDialog";
 import { useWorkflowExecution } from "./useWorkflowExecution";
 import { validateConnection, getConnectorType } from "./connectionValidation";
 import { useToast } from "@/hooks/use-toast";
