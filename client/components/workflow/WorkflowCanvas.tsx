@@ -879,6 +879,9 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
         setEdges(workflow.edges || []);
         setCurrentWorkflowId(workflow.id || null);
 
+        // Mark as saved since we just loaded it
+        dispatch({ type: "MARK_SAVED" });
+
         toast({
           title: readOnly ? "Template loaded (Read-Only)" : "Workflow loaded",
           description: readOnly
@@ -893,7 +896,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           }
         }, 50);
       },
-      [setNodes, setEdges, toast, reactFlowInstance],
+      [setNodes, setEdges, toast, reactFlowInstance, dispatch],
     );
 
     // Handle ReactFlow initialization
