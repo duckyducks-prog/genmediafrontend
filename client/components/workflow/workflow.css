@@ -67,18 +67,50 @@
   stroke: #FCC3DC !important;
 }
 
+/* Base animation for all animated edges */
 .react-flow__edge.animated .react-flow__edge-path {
-  stroke-dasharray: 5;
+  stroke-dasharray: 8 4;
   animation: dashdraw 0.5s linear infinite;
+  transition: stroke 0.3s ease, stroke-width 0.3s ease, filter 0.3s ease;
 }
 
 @keyframes dashdraw {
-  from {
-    stroke-dashoffset: 10;
-  }
   to {
-    stroke-dashoffset: 0;
+    stroke-dashoffset: -12;
   }
+}
+
+/* Connector type colors when animated - with glow */
+.react-flow__edge.animated.connector-type-image .react-flow__edge-path {
+  stroke: #83D196 !important;
+  stroke-width: 2.5px;
+  filter: drop-shadow(0 0 6px #83D196) drop-shadow(0 0 12px #83D19666);
+}
+
+.react-flow__edge.animated.connector-type-text .react-flow__edge-path {
+  stroke: #FCC3DC !important;
+  stroke-width: 2.5px;
+  filter: drop-shadow(0 0 6px #FCC3DC) drop-shadow(0 0 12px #FCC3DC66);
+}
+
+.react-flow__edge.animated.connector-type-video .react-flow__edge-path {
+  stroke: #FCC3DC !important;
+  stroke-width: 2.5px;
+  filter: drop-shadow(0 0 6px #FCC3DC) drop-shadow(0 0 12px #FCC3DC66);
+}
+
+.react-flow__edge.animated.connector-type-any .react-flow__edge-path {
+  stroke: #6366f1 !important;
+  stroke-width: 2.5px;
+  filter: drop-shadow(0 0 6px #6366f1) drop-shadow(0 0 12px #6366f166);
+}
+
+/* Completion flash - green pulse */
+.react-flow__edge.edge-completed .react-flow__edge-path {
+  stroke: #10b981 !important;
+  stroke-width: 3px;
+  filter: drop-shadow(0 0 8px #10b981) drop-shadow(0 0 16px #10b98199);
+  transition: stroke 0.2s ease, stroke-width 0.2s ease, filter 0.2s ease;
 }
 
 /* Edge Labels */
