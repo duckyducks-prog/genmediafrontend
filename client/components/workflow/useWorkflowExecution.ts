@@ -1316,6 +1316,7 @@ export function useWorkflowExecution(
         const otherResults = await Promise.allSettled(
           otherNodes.map(async (node) => {
             progress.set(node.id, "executing");
+            setEdgeAnimated(node.id, true, false);
             updateNodeState(node.id, "executing");
 
             const inputs = getNodeInputs(node.id);
@@ -1370,6 +1371,7 @@ export function useWorkflowExecution(
         const apiResults = [];
         for (const node of apiNodes) {
           progress.set(node.id, "executing");
+          setEdgeAnimated(node.id, true, false);
           updateNodeState(node.id, "executing");
           setExecutionProgress(new Map(progress));
 
@@ -1523,7 +1525,14 @@ export function useWorkflowExecution(
                 },
               });
 
+              // Flash completion, then stop animation
+              setEdgeAnimated(node.id, false, true);
               updateNodeState(node.id, "completed", updateData);
+
+              // Clear completion flash after 500ms
+              setTimeout(() => {
+                setEdgeAnimated(node.id, false, false);
+              }, 500);
 
               // Verify state update timing
               console.log("[Execution] State update timing check:", {
@@ -1555,6 +1564,7 @@ export function useWorkflowExecution(
               totalCompleted++;
             } else {
               progress.set(node.id, "error");
+              setEdgeAnimated(node.id, false, false);
               updateNodeState(node.id, "error", { error: result.value.error });
               totalFailed++;
 
@@ -1567,6 +1577,7 @@ export function useWorkflowExecution(
           } else {
             // Promise rejected
             progress.set(node.id, "error");
+            setEdgeAnimated(node.id, false, false);
             updateNodeState(node.id, "error", { error: String(result.reason) });
             totalFailed++;
 
