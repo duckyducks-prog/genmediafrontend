@@ -175,10 +175,14 @@ export function useWorkflowNodes() {
 
   const setNodes = useCallback(
     (nodes: Node[] | ((prev: Node[]) => Node[])) => {
-      const newNodes = typeof nodes === "function" ? nodes(state.nodes) : nodes;
-      dispatch({ type: "SET_NODES", payload: newNodes });
+      if (typeof nodes === "function") {
+        // Get current nodes from the context state at call time
+        dispatch({ type: "SET_NODES", payload: nodes(state.nodes) });
+      } else {
+        dispatch({ type: "SET_NODES", payload: nodes });
+      }
     },
-    [state.nodes, dispatch]
+    [dispatch, state.nodes]
   );
 
   return [state.nodes, setNodes] as const;
