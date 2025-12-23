@@ -23,24 +23,42 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (!ctx) {
+        console.error('[VideoUploadNode] Failed to get canvas context');
         resolve('');
         return;
       }
 
-      // Wait for video to load metadata
-      videoElement.onloadedmetadata = () => {
-        canvas.width = videoElement.videoWidth;
-        canvas.height = videoElement.videoHeight;
-        
-        // Seek to 1 second (or 10% of duration, whichever is smaller)
-        const seekTime = Math.min(1, videoElement.duration * 0.1);
-        videoElement.currentTime = seekTime;
+      const handleLoadedMetadata = () => {
+        try {
+          canvas.width = videoElement.videoWidth;
+          canvas.height = videoElement.videoHeight;
+
+          // Seek to 1 second (or 10% of duration, whichever is smaller)
+          const seekTime = Math.min(1, videoElement.duration * 0.1);
+          videoElement.currentTime = seekTime;
+        } catch (err) {
+          console.error('[VideoUploadNode] Error loading metadata:', err);
+          resolve('');
+        }
       };
 
-      // Capture frame when seeked
-      videoElement.onseeked = () => {
-        ctx.drawImage(videoElement, 0, 0);
-        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      const handleSeeked = () => {
+        try {
+          ctx!.drawImage(videoElement, 0, 0);
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        } catch (err) {
+          console.error('[VideoUploadNode] Error capturing frame:', err);
+          resolve('');
+        }
+      };
+
+      videoElement.addEventListener('loadedmetadata', handleLoadedMetadata);
+      videoElement.addEventListener('seeked', handleSeeked);
+
+      // Cleanup on unmount
+      return () => {
+        videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        videoElement.removeEventListener('seeked', handleSeeked);
       };
     });
   }, []);
