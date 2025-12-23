@@ -404,11 +404,11 @@ export default function Index() {
               />
             </TabsContent>
 
-            <TabsContent value="image" className="h-full">
-              <div className="flex gap-6 h-full">
-                {/* Left Panel - Input Controls */}
-                <div className="w-96">
-                  <Card className="bg-[#3D2D4F]/30 border-[#3D2D4F] p-6 space-y-4">
+            <TabsContent value="image" className="h-full p-6">
+              <div className="grid grid-cols-2 gap-6 h-full">
+                {/* Left Grid Area - Input Controls Card */}
+                <div className="flex items-start">
+                  <Card className="bg-[#41204E] border-[#41204E] p-6 space-y-4 w-full" style={{ aspectRatio: '16/9' }}>
                     <div className="space-y-2">
                       <label
                         htmlFor="image-prompt"
@@ -421,7 +421,7 @@ export default function Index() {
                         placeholder="A man holding a book"
                         value={imagePrompt}
                         onChange={(e) => setImagePrompt(e.target.value)}
-                        className="min-h-[120px] bg-[#2A1A3F] border-[#3D2D4F] text-white placeholder:text-gray-400"
+                        className="min-h-[100px] bg-[#2A1A3F] border-[#3D2D4F] text-white placeholder:text-gray-400"
                       />
                     </div>
 
@@ -463,10 +463,10 @@ export default function Index() {
                       ) : (
                         <label
                           htmlFor="reference-image"
-                          className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
+                          className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
                         >
-                          <div className="flex flex-col items-center justify-center py-4">
-                            <Upload className="w-6 h-6 mb-1 text-gray-400" />
+                          <div className="flex flex-col items-center justify-center py-2">
+                            <Upload className="w-5 h-5 mb-1 text-gray-400" />
                             <p className="text-xs text-gray-400">
                               Click to upload
                             </p>
@@ -502,7 +502,7 @@ export default function Index() {
                     <Button
                       onClick={handleGenerateImage}
                       disabled={!imagePrompt.trim() || isGeneratingImage}
-                      className="w-full bg-[#C084FC] hover:bg-[#A855F7] text-white"
+                      className="w-full bg-[#9B6C94] hover:bg-[#8A5B84] text-white"
                       size="lg"
                     >
                       {isGeneratingImage ? (
@@ -516,6 +516,8 @@ export default function Index() {
                     </Button>
                   </Card>
                 </div>
+
+                {/* Right Grid Area - Result */}
 
                 {/* Right Panel - Result */}
                 {imageResult && (
