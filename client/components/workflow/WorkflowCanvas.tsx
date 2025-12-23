@@ -1357,6 +1357,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
             onInit={handleInit}
             onDrop={onDrop}
             onDragOver={onDragOver}
+            onMoveEnd={handleMoveEnd}
             isValidConnection={isValidConnection}
             nodeTypes={nodeTypes}
             connectionMode={ConnectionMode.Loose}
