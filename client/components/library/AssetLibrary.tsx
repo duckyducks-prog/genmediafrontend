@@ -49,6 +49,7 @@ interface Asset {
 interface AssetLibraryProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onAddAssetNode?: (asset: Asset) => void;
 }
 
 export interface AssetLibraryRef {
