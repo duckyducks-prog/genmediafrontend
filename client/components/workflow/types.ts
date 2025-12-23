@@ -348,6 +348,21 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
     ],
   },
 
+  [NodeType.VideoInput]: {
+    type: NodeType.VideoInput,
+    label: "Video Input",
+    category: "input",
+    description: "Upload or load a video file",
+    inputConnectors: [],
+    outputConnectors: [
+      {
+        id: "video",
+        label: "Video",
+        type: ConnectorType.Video,
+      },
+    ],
+  },
+
   [NodeType.Prompt]: {
     type: NodeType.Prompt,
     label: "Prompt",
