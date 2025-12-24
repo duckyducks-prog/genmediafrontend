@@ -321,6 +321,7 @@ export type WorkflowNodeData =
   | SharpenNodeData
   | HueSaturationNodeData
   | NoiseNodeData
+  | FilmGrainNodeData
   | VignetteNodeData
   | CropNodeData
   | ImageCompositeNodeData
