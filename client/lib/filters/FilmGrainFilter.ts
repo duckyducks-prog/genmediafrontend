@@ -63,10 +63,11 @@ float grain(vec2 pixelCoord, float seed) {
 
 void main() {
   vec4 color = texture(uTexture, vTextureCoord);
-  
+
   // Convert to actual pixel coordinates
-  vec2 pixelCoord = floor(vTextureCoord * uDimensions);
-  
+  vec2 dimensions = vec2(uWidth, uHeight);
+  vec2 pixelCoord = floor(vTextureCoord * dimensions);
+
   // Apply size (larger size = fewer unique grain pixels = coarser grain)
   vec2 grainCoord = floor(pixelCoord / uSize);
   
