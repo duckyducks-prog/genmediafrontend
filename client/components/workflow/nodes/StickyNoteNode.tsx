@@ -1,7 +1,7 @@
 import { memo, useState, useRef, useEffect } from "react";
 import { NodeProps, useReactFlow } from "reactflow";
 import { StickyNoteNodeData } from "../types";
-import { Trash2, MessageSquare } from "lucide-react";
+import { Trash2, MessageSquare, Pencil } from "lucide-react";
 
 const COLOR_OPTIONS = [
   { name: "yellow", bg: "bg-yellow-100", border: "border-yellow-300", text: "text-yellow-900" },
@@ -184,11 +184,24 @@ function StickyNoteNode({ data, id }: NodeProps<StickyNoteNodeData>) {
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
-            <div
-              className={`flex-1 font-semibold text-sm ${currentColor.text} cursor-pointer hover:opacity-70 min-w-0 truncate`}
-              onDoubleClick={() => !data.readOnly && setIsEditingLabel(true)}
-            >
-              {data.label || "Sticky Note"}
+            <div className="flex items-center gap-1 flex-1 min-w-0 group">
+              <div
+                className={`flex-1 font-semibold text-sm ${currentColor.text} cursor-pointer hover:opacity-70 min-w-0 truncate`}
+                onDoubleClick={() => !data.readOnly && setIsEditingLabel(true)}
+                onClick={() => !data.readOnly && setIsEditingLabel(true)}
+              >
+                {data.label || "Sticky Note"}
+              </div>
+              {!data.readOnly && (
+                <button
+                  onClick={() => setIsEditingLabel(true)}
+                  className={`nodrag opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-black hover:bg-opacity-10 ${currentColor.text}`}
+                  title="Edit label"
+                  onMouseDown={(e) => e.preventDefault()}
+                >
+                  <Pencil className="w-3 h-3" />
+                </button>
+              )}
             </div>
           )}
         </div>
