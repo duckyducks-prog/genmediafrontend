@@ -31,6 +31,53 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
     }
   }, [data.videoUrl, data.thumbnailUrl, data.duration, videoUrl, thumbnailUrl, duration]);
 
+  // Sync local state TO node data when it changes (for library-loaded videos)
+  useEffect(() => {
+    // If we have video in local state but not in node data, update node data
+    if (videoUrl && videoUrl !== data.videoUrl) {
+      console.log('[VideoUploadNode] Syncing local state to node data:', {
+        videoUrl: videoUrl.substring(0, 100),
+        hasOutputs: !!data.outputs?.video,
+      });
+
+      // For HTTP URLs (library assets), fetch and convert to data URL
+      if (videoUrl.startsWith('http')) {
+        fetch(videoUrl, { mode: 'cors' })
+          .then(response => response.blob())
+          .then(blob => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const dataUrl = reader.result as string;
+
+              const newData = {
+                ...data,
+                videoUrl,
+                thumbnailUrl,
+                duration,
+                outputs: { video: dataUrl },
+              };
+
+              console.log('[VideoUploadNode] Updated node data with library video');
+
+              setNodes((nodes) =>
+                nodes.map((node) =>
+                  node.id === id ? { ...node, data: newData } : node
+                )
+              );
+
+              window.dispatchEvent(new CustomEvent('node-update', {
+                detail: { id, data: newData },
+              }));
+            };
+            reader.readAsDataURL(blob);
+          })
+          .catch((err) => {
+            console.error('[VideoUploadNode] Error converting library video:', err);
+          });
+      }
+    }
+  }, [videoUrl, thumbnailUrl, duration, data, id, setNodes]);
+
   // Generate thumbnail from video at 1 second mark
   const generateThumbnail = useCallback((videoElement: HTMLVideoElement): Promise<string> => {
     return new Promise((resolve) => {
