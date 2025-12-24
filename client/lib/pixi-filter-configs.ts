@@ -194,4 +194,48 @@ export const FILTER_DEFINITIONS: Record<string, FilterDefinition> = {
       },
     },
   },
+
+  filmGrain: {
+    type: 'filmGrain',
+    label: 'Film Grain',
+    description: 'Add realistic film grain effect',
+    filterClass: 'FilmGrainFilter', // Custom shader filter
+    params: {
+      intensity: {
+        label: 'Intensity',
+        min: 0,
+        max: 100,
+        step: 1,
+        default: 50,
+      },
+      size: {
+        label: 'Size',
+        min: 0.5,
+        max: 3,
+        step: 0.1,
+        default: 1.0,
+      },
+      shadows: {
+        label: 'Shadows',
+        min: 0,
+        max: 100,
+        step: 1,
+        default: 30,
+      },
+      highlights: {
+        label: 'Highlights',
+        min: 0,
+        max: 100,
+        step: 1,
+        default: 30,
+      },
+      midtonesBias: {
+        label: 'Midtones',
+        min: 0,
+        max: 100,
+        step: 1,
+        default: 80,
+      },
+    },
+  },
 };
