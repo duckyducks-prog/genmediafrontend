@@ -648,6 +648,41 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
     ],
   },
 
+  [NodeType.FilmGrain]: {
+    type: NodeType.FilmGrain,
+    label: "Film Grain",
+    category: "modifier",
+    description: "Add realistic film grain effect",
+    inputConnectors: [
+      {
+        id: "image",
+        label: "Image",
+        type: ConnectorType.Image,
+        required: true,
+        acceptsMultiple: false,
+      },
+      {
+        id: "filters",
+        label: "Filters",
+        type: ConnectorType.Any,
+        required: false,
+        acceptsMultiple: false,
+      },
+    ],
+    outputConnectors: [
+      {
+        id: "image",
+        label: "Image",
+        type: ConnectorType.Image,
+      },
+      {
+        id: "filters",
+        label: "Filters",
+        type: ConnectorType.Any,
+      },
+    ],
+  },
+
   [NodeType.Vignette]: {
     type: NodeType.Vignette,
     label: "Vignette",
