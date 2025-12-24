@@ -1,5 +1,5 @@
 import { memo, useState, useEffect } from "react";
-import { Handle, Position, NodeProps, useReactFlow } from "reactflow";
+import { Handle, Position, NodeProps, useEdges, useNodes } from "reactflow";
 import { DownloadNodeData } from "../types";
 import { Download, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import { createMediaZip, downloadBlob } from "@/lib/zip-utils";
@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
-  const { getEdges, getNodes } = useReactFlow();
+  const edges = useEdges();
+  const nodes = useNodes();
   const [isDownloading, setIsDownloading] = useState(false);
   const [connectedMedia, setConnectedMedia] = useState<
     Array<{ type: "image" | "video"; url: string }>
@@ -15,8 +16,6 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
 
   // Detect connected media from incoming edges
   useEffect(() => {
-    const edges = getEdges();
-    const nodes = getNodes();
 
     const incomingEdges = edges.filter((edge) => edge.target === id);
     const media: Array<{ type: "image" | "video"; url: string }> = [];
