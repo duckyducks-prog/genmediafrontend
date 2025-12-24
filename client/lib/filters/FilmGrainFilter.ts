@@ -118,10 +118,21 @@ export interface FilmGrainFilterOptions {
 export class FilmGrainFilter extends Filter {
   private _width: number;
   private _height: number;
+  private _uniforms: Record<string, any>;
 
   constructor(options: FilmGrainFilterOptions = {}) {
     const width = options.width ?? 1920;
     const height = options.height ?? 1080;
+
+    console.log('[FilmGrainFilter] Initializing with options:', {
+      intensity: options.intensity,
+      size: options.size,
+      shadows: options.shadows,
+      highlights: options.highlights,
+      midtonesBias: options.midtonesBias,
+      width,
+      height,
+    });
 
     const glProgram = GlProgram.from({
       vertex,
@@ -129,23 +140,28 @@ export class FilmGrainFilter extends Filter {
       name: 'film-grain-filter',
     });
 
+    const uniforms = {
+      uIntensity: (options.intensity ?? 50) / 100,
+      uSize: options.size ?? 1.0,
+      uSeed: Math.random() * 10000,
+      uShadows: (options.shadows ?? 30) / 100,
+      uHighlights: (options.highlights ?? 30) / 100,
+      uMidtonesBias: (options.midtonesBias ?? 80) / 100,
+      uDimensions: new Float32Array([width, height]),
+    };
+
     super({
       glProgram,
       resources: {
-        filmGrainUniforms: {
-          uIntensity: { value: (options.intensity ?? 50) / 100, type: 'f32' },
-          uSize: { value: options.size ?? 1.0, type: 'f32' },
-          uSeed: { value: Math.random() * 10000, type: 'f32' },
-          uShadows: { value: (options.shadows ?? 30) / 100, type: 'f32' },
-          uHighlights: { value: (options.highlights ?? 30) / 100, type: 'f32' },
-          uMidtonesBias: { value: (options.midtonesBias ?? 80) / 100, type: 'f32' },
-          uDimensions: { value: new Float32Array([width, height]), type: 'vec2<f32>' },
-        },
+        filmGrainUniforms: uniforms,
       },
     });
 
+    this._uniforms = uniforms;
     this._width = width;
     this._height = height;
+
+    console.log('[FilmGrainFilter] Filter created successfully');
   }
 
   // --- Intensity (0-100) ---
