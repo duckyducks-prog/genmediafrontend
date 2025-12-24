@@ -69,6 +69,7 @@ import BlurNode from "./nodes/BlurNode";
 import SharpenNode from "./nodes/SharpenNode";
 import HueSaturationNode from "./nodes/HueSaturationNode";
 import NoiseNode from "./nodes/NoiseNode";
+import FilmGrainNode from "./nodes/FilmGrainNode";
 import VignetteNode from "./nodes/VignetteNode";
 import CropNode from "./nodes/CropNode";
 import ImageCompositeNode from "./nodes/ImageCompositeNode";
@@ -89,6 +90,7 @@ const nodeTypes: NodeTypes = {
   [NodeType.Sharpen]: SharpenNode,
   [NodeType.HueSaturation]: HueSaturationNode,
   [NodeType.Noise]: NoiseNode,
+  [NodeType.FilmGrain]: FilmGrainNode,
   [NodeType.Vignette]: VignetteNode,
   [NodeType.Crop]: CropNode,
   [NodeType.ImageComposite]: ImageCompositeNode,
