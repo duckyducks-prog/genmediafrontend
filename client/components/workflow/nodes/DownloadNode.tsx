@@ -48,17 +48,32 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
       );
 
       // Extract image/video URLs from various node types
+      // Check multiple sources: top-level props, outputs object
       const imageUrl =
         nodeData.imageUrl ||
         nodeData.image ||
         nodeData.outputs?.image ||
         nodeData.outputs?.images?.[0];
 
-      const videoUrl =
+      let videoUrl =
         nodeData.videoUrl ||
         nodeData.video ||
         nodeData.outputs?.video ||
         nodeData.outputs?.videos?.[0];
+
+      // For video nodes, also check for blob URLs (from VideoUploadNode preview)
+      // and data URLs (from outputs)
+      if (!videoUrl && nodeType === "videoUpload") {
+        videoUrl = nodeData.videoUrl || nodeData.outputs?.video;
+        console.log(
+          `[DownloadNode] Special handling for videoUpload node:`,
+          {
+            videoUrl: !!videoUrl,
+            videoUrlType: typeof nodeData.videoUrl,
+            outputsVideo: !!nodeData.outputs?.video,
+          }
+        );
+      }
 
       const textContent =
         nodeData.textContent || nodeData.outputs?.text || nodeData.text;
@@ -85,8 +100,13 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
         media.push({ type: "image", url: textContent });
       } else {
         console.log(
-          `[DownloadNode] ✗ No media found. Available data:`,
-          nodeData
+          `[DownloadNode] ✗ No media found in node ${edge.source} (type: ${nodeType}). Data:`,
+          {
+            imageUrl,
+            videoUrl,
+            textContent,
+            nodeData,
+          }
         );
       }
 
@@ -100,6 +120,20 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
         for (const img of images) {
           if (typeof img === "string") {
             media.push({ type: "image", url: img });
+          }
+        }
+      }
+
+      // Handle arrays of videos
+      if (
+        Array.isArray(nodeData.videos) ||
+        Array.isArray(nodeData.outputs?.videos)
+      ) {
+        const videos = nodeData.videos || nodeData.outputs?.videos;
+        console.log(`[DownloadNode] Found ${videos.length} videos in array`);
+        for (const vid of videos) {
+          if (typeof vid === "string") {
+            media.push({ type: "video", url: vid });
           }
         }
       }
