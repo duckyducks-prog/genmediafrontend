@@ -115,16 +115,27 @@ export class FilmGrainFilter extends Filter {
       name: 'film-grain-filter',
     });
 
+    // Create a deterministic seed based on filter parameters
+    // This ensures the same settings always produce the same grain pattern
+    const intensity = options.intensity ?? 50;
+    const size = options.size ?? 1.0;
+    const shadows = options.shadows ?? 30;
+    const highlights = options.highlights ?? 30;
+    const midtonesBias = options.midtonesBias ?? 80;
+
+    // Simple hash function to create a stable seed from parameters
+    const hashSeed = (intensity * 1000 + size * 100 + shadows + highlights * 10 + midtonesBias * 0.1) % 100;
+
     super({
       glProgram,
       resources: {
         filmGrainUniforms: {
-          uIntensity: { value: (options.intensity ?? 50) / 100, type: 'f32' },
-          uSize: { value: options.size ?? 1.0, type: 'f32' },
-          uSeed: { value: Math.random() * 100, type: 'f32' },
-          uShadows: { value: (options.shadows ?? 30) / 100, type: 'f32' },
-          uHighlights: { value: (options.highlights ?? 30) / 100, type: 'f32' },
-          uMidtonesBias: { value: (options.midtonesBias ?? 80) / 100, type: 'f32' },
+          uIntensity: { value: intensity / 100, type: 'f32' },
+          uSize: { value: size, type: 'f32' },
+          uSeed: { value: hashSeed, type: 'f32' },
+          uShadows: { value: shadows / 100, type: 'f32' },
+          uHighlights: { value: highlights / 100, type: 'f32' },
+          uMidtonesBias: { value: midtonesBias / 100, type: 'f32' },
         },
       },
     });
