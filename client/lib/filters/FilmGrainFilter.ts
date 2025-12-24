@@ -39,19 +39,20 @@ uniform float uMidtonesBias;
 uniform float uWidth;
 uniform float uHeight;
 
-// High-quality hash functions - no visible patterns
-// Based on Dave Hoskins' hash functions
+// High-quality hash functions - float-only, compatible with all GLSL versions
+// Adapted to avoid uvec2/uint which aren't available in all GLSL implementations
 float hash12(vec2 p) {
   vec3 p3 = fract(vec3(p.xyx) * .1031);
   p3 += dot(p3, p3.yzx + 33.33);
   return fract((p3.x + p3.y) * p3.z);
 }
 
-// Second hash for variation
+// Second hash for variation - float-only version
 float hash12b(vec2 p) {
-  uvec2 q = uvec2(ivec2(p)) * uvec2(1597334673U, 3812015801U);
-  uint n = (q.x ^ q.y) * 1597334673U;
-  return float(n) * (1.0 / float(0xffffffffU));
+  // Use floating-point arithmetic instead of unsigned integers
+  vec2 q = floor(p) * vec2(1597.0, 3812.0);
+  float n = fract(sin(dot(q, vec2(12.9898, 78.233))) * 43758.5453);
+  return n;
 }
 
 // Combine two hashes for better randomness
