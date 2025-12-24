@@ -928,7 +928,7 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         label: "Media",
         type: ConnectorType.Any,
         required: false,
-        acceptsMultiple: false,
+        acceptsMultiple: true,
       },
     ],
     outputConnectors: [],
