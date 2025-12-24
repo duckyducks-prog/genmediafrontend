@@ -213,9 +213,7 @@ export class FilmGrainFilter extends Filter {
   }
   set width(value: number) {
     this._width = value;
-    if (this._uniforms.uDimensions instanceof Float32Array) {
-      this._uniforms.uDimensions[0] = value;
-    }
+    this._uniforms.uWidth = value;
   }
 
   get height(): number {
@@ -223,18 +221,14 @@ export class FilmGrainFilter extends Filter {
   }
   set height(value: number) {
     this._height = value;
-    if (this._uniforms.uDimensions instanceof Float32Array) {
-      this._uniforms.uDimensions[1] = value;
-    }
+    this._uniforms.uHeight = value;
   }
 
   setDimensions(width: number, height: number): void {
     this._width = width;
     this._height = height;
-    if (this._uniforms.uDimensions instanceof Float32Array) {
-      this._uniforms.uDimensions[0] = width;
-      this._uniforms.uDimensions[1] = height;
-    }
+    this._uniforms.uWidth = width;
+    this._uniforms.uHeight = height;
   }
 
   // --- Randomize seed (for different grain pattern) ---
