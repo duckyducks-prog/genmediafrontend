@@ -172,27 +172,73 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
     }));
   }, [id, data, setNodes]);
 
-  // Generate thumbnail for pre-loaded videos from library
+  // Generate thumbnail and convert video to data URL for pre-loaded videos from library
   useEffect(() => {
-    if (videoUrl && !thumbnailUrl) {
-      console.log('[VideoUploadNode] Generating thumbnail for pre-loaded video');
+    if (videoUrl && (!thumbnailUrl || !data.outputs?.video)) {
+      console.log('[VideoUploadNode] Processing pre-loaded video:', {
+        videoUrl: videoUrl.substring(0, 100),
+        hasThumbnail: !!thumbnailUrl,
+        hasOutputs: !!data.outputs?.video,
+      });
+
       const tempVideo = document.createElement('video');
       tempVideo.src = videoUrl;
       tempVideo.muted = true;
       tempVideo.crossOrigin = 'anonymous';
 
-      generateThumbnail(tempVideo)
-        .then((thumb) => {
-          if (thumb) {
-            console.log('[VideoUploadNode] Thumbnail generated successfully');
-            setThumbnailUrl(thumb);
-          }
-        })
-        .catch((err) => {
-          console.error('[VideoUploadNode] Error generating thumbnail:', err);
-        });
+      // Generate thumbnail if needed
+      if (!thumbnailUrl) {
+        generateThumbnail(tempVideo)
+          .then((thumb) => {
+            if (thumb) {
+              console.log('[VideoUploadNode] Thumbnail generated successfully');
+              setThumbnailUrl(thumb);
+            }
+          })
+          .catch((err) => {
+            console.error('[VideoUploadNode] Error generating thumbnail:', err);
+          });
+      }
+
+      // Convert video to data URL if needed
+      if (!data.outputs?.video && videoUrl.startsWith('http')) {
+        console.log('[VideoUploadNode] Fetching and converting library video to data URL...');
+
+        fetch(videoUrl, { mode: 'cors' })
+          .then(response => response.blob())
+          .then(blob => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              const dataUrl = reader.result as string;
+
+              console.log('[VideoUploadNode] Library video converted to data URL:', {
+                nodeId: id,
+                dataUrlLength: dataUrl.length,
+              });
+
+              const newData = {
+                ...data,
+                outputs: { video: dataUrl },
+              };
+
+              setNodes((nodes) =>
+                nodes.map((node) =>
+                  node.id === id ? { ...node, data: newData } : node
+                )
+              );
+
+              window.dispatchEvent(new CustomEvent('node-update', {
+                detail: { id, data: newData },
+              }));
+            };
+            reader.readAsDataURL(blob);
+          })
+          .catch((err) => {
+            console.error('[VideoUploadNode] Error fetching library video:', err);
+          });
+      }
     }
-  }, [videoUrl, thumbnailUrl, generateThumbnail]);
+  }, [videoUrl, thumbnailUrl, data, id, setNodes, generateThumbnail]);
 
   const handleBrowseLibrary = useCallback(() => {
     // Dispatch event to open Asset Library with video filter
