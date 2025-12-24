@@ -1,4 +1,4 @@
-import { Filter, GlProgram } from 'pixi.js';
+import { Filter, GlProgram } from "pixi.js";
 
 const vertex = `
 in vec2 aPosition;
@@ -109,13 +109,13 @@ void main() {
 `;
 
 export interface FilmGrainFilterOptions {
-  intensity?: number;      // 0-100 (default 50)
-  size?: number;           // 1-4, where 1=fine, 4=coarse (default 1)
-  shadows?: number;        // 0-100 (default 30)
-  highlights?: number;     // 0-100 (default 30)
-  midtonesBias?: number;   // 0-100 (default 80)
-  width?: number;          // Image width in pixels
-  height?: number;         // Image height in pixels
+  intensity?: number; // 0-100 (default 50)
+  size?: number; // 1-4, where 1=fine, 4=coarse (default 1)
+  shadows?: number; // 0-100 (default 30)
+  highlights?: number; // 0-100 (default 30)
+  midtonesBias?: number; // 0-100 (default 80)
+  width?: number; // Image width in pixels
+  height?: number; // Image height in pixels
 }
 
 export class FilmGrainFilter extends Filter {
@@ -127,7 +127,7 @@ export class FilmGrainFilter extends Filter {
     const width = options.width ?? 1920;
     const height = options.height ?? 1080;
 
-    console.log('[FilmGrainFilter] Initializing with options:', {
+    console.log("[FilmGrainFilter] Initializing with options:", {
       intensity: options.intensity,
       size: options.size,
       shadows: options.shadows,
@@ -140,7 +140,7 @@ export class FilmGrainFilter extends Filter {
     const glProgram = GlProgram.from({
       vertex,
       fragment,
-      name: 'film-grain-filter',
+      name: "film-grain-filter",
     });
 
     const uniforms = {
@@ -159,14 +159,14 @@ export class FilmGrainFilter extends Filter {
       glProgram,
       resources: {
         filmGrainUniforms: {
-          uIntensity: { value: uniforms.uIntensity, type: 'f32' },
-          uSize: { value: uniforms.uSize, type: 'f32' },
-          uSeed: { value: uniforms.uSeed, type: 'f32' },
-          uShadows: { value: uniforms.uShadows, type: 'f32' },
-          uHighlights: { value: uniforms.uHighlights, type: 'f32' },
-          uMidtonesBias: { value: uniforms.uMidtonesBias, type: 'f32' },
-          uWidth: { value: uniforms.uWidth, type: 'f32' },
-          uHeight: { value: uniforms.uHeight, type: 'f32' },
+          uIntensity: { value: uniforms.uIntensity, type: "f32" },
+          uSize: { value: uniforms.uSize, type: "f32" },
+          uSeed: { value: uniforms.uSeed, type: "f32" },
+          uShadows: { value: uniforms.uShadows, type: "f32" },
+          uHighlights: { value: uniforms.uHighlights, type: "f32" },
+          uMidtonesBias: { value: uniforms.uMidtonesBias, type: "f32" },
+          uWidth: { value: uniforms.uWidth, type: "f32" },
+          uHeight: { value: uniforms.uHeight, type: "f32" },
         },
       },
     });
@@ -175,7 +175,7 @@ export class FilmGrainFilter extends Filter {
     this._width = width;
     this._height = height;
 
-    console.log('[FilmGrainFilter] Filter created successfully', {
+    console.log("[FilmGrainFilter] Filter created successfully", {
       uniforms: this._uniforms,
       width: this._width,
       height: this._height,
@@ -284,7 +284,7 @@ export class FilmGrainFilter extends Filter {
     digital: {
       intensity: 30,
       size: 1,
-      shadows: 80,  // Digital noise shows more in shadows
+      shadows: 80, // Digital noise shows more in shadows
       highlights: 10,
       midtonesBias: 40,
     },

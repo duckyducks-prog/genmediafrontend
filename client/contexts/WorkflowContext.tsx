@@ -170,7 +170,15 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
               ...(Object.fromEntries(
                 Object.entries(data as any).filter(
                   ([key]) =>
-                    !["outputs", "imageUrl", "videoUrl", "image", "video", "imageData", "videoData"].includes(key),
+                    ![
+                      "outputs",
+                      "imageUrl",
+                      "videoUrl",
+                      "image",
+                      "video",
+                      "imageData",
+                      "videoData",
+                    ].includes(key),
                 ),
               ) as any),
             },

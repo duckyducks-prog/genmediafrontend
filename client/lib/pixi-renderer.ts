@@ -129,7 +129,11 @@ export function disposeSharedPixiApp(): void {
  * Creates a PixiJS Filter instance from a FilterConfig
  * This is the ONLY place where Filter instances are created
  */
-function createFilterFromConfig(config: FilterConfig, width?: number, height?: number): Filter {
+function createFilterFromConfig(
+  config: FilterConfig,
+  width?: number,
+  height?: number,
+): Filter {
   const def = FILTER_DEFINITIONS[config.type];
 
   switch (def.filterClass) {
@@ -182,7 +186,7 @@ function createFilterFromConfig(config: FilterConfig, width?: number, height?: n
         width: width ?? 1920,
         height: height ?? 1080,
       });
-      console.log('[pixi-renderer] FilmGrainFilter created:', {
+      console.log("[pixi-renderer] FilmGrainFilter created:", {
         width: width ?? 1920,
         height: height ?? 1080,
         intensity: config.params.intensity,
@@ -345,10 +349,7 @@ async function performRender(
   if (cropConfig) {
     const cropX = Math.max(0, Math.min(cropConfig.params.x || 0, width));
     const cropY = Math.max(0, Math.min(cropConfig.params.y || 0, height));
-    const cropWidth = Math.min(
-      cropConfig.params.width || width,
-      width - cropX,
-    );
+    const cropWidth = Math.min(cropConfig.params.width || width, width - cropX);
     const cropHeight = Math.min(
       cropConfig.params.height || height,
       height - cropY,
@@ -388,14 +389,27 @@ async function performRender(
 
   // 7. Apply remaining filters to sprite
   if (otherFilters.length > 0) {
-    console.log('[performRender] Applying filters:', otherFilters.map(f => f.type));
+    console.log(
+      "[performRender] Applying filters:",
+      otherFilters.map((f) => f.type),
+    );
     const filters = otherFilters.map((config) => {
-      console.log('[performRender] Creating filter:', config.type, 'with width:', width, 'height:', height);
+      console.log(
+        "[performRender] Creating filter:",
+        config.type,
+        "with width:",
+        width,
+        "height:",
+        height,
+      );
       return createFilterFromConfig(config, width, height);
     });
-    console.log('[performRender] Filters created, applying to sprite:', filters.length);
+    console.log(
+      "[performRender] Filters created, applying to sprite:",
+      filters.length,
+    );
     sprite.filters = filters; // PixiJS applies all filters on GPU
-    console.log('[performRender] Filters applied to sprite');
+    console.log("[performRender] Filters applied to sprite");
   }
 
   // 8. Add to stage and render
@@ -488,7 +502,7 @@ const BLEND_MODE_MAP: Record<string, string> = {
   screen: "screen",
   add: "add",
   overlay: "overlay", // Pixi v8 supports overlay
-  darken: "darken",   // Pixi v8 supports darken
+  darken: "darken", // Pixi v8 supports darken
   lighten: "lighten", // Pixi v8 supports lighten
 };
 
@@ -576,7 +590,9 @@ async function performComposite(
       ]);
 
       images.push(img);
-      console.log(`[performComposite] Image ${i + 1}/${imageSources.length} loaded`);
+      console.log(
+        `[performComposite] Image ${i + 1}/${imageSources.length} loaded`,
+      );
     } catch (error) {
       console.error(`[performComposite] Failed to load image ${i + 1}:`, error);
       throw error;
@@ -631,14 +647,20 @@ async function performComposite(
 
     sprites.push(sprite);
     app.stage.addChild(sprite);
-    console.log(`[performComposite] Sprite ${i + 1} added with blendMode=${sprite.blendMode}, alpha=${sprite.alpha}`);
+    console.log(
+      `[performComposite] Sprite ${i + 1} added with blendMode=${sprite.blendMode}, alpha=${sprite.alpha}`,
+    );
   }
 
   // 6. Apply filters to the entire composite if provided
   if (filterConfigs.length > 0) {
-    const filters = filterConfigs.map((config) => createFilterFromConfig(config));
+    const filters = filterConfigs.map((config) =>
+      createFilterFromConfig(config),
+    );
     app.stage.filters = filters;
-    console.log(`[performComposite] Applied ${filters.length} filters to composite`);
+    console.log(
+      `[performComposite] Applied ${filters.length} filters to composite`,
+    );
   }
 
   // 7. Render the composite
@@ -715,7 +737,9 @@ export async function renderCompositeWithPixi(
   // Enqueue this render to prevent concurrent modification of shared app
   return new Promise<string>((resolve, reject) => {
     renderQueue = renderQueue
-      .then(() => performComposite(imageSources, blendMode, opacity, filterConfigs))
+      .then(() =>
+        performComposite(imageSources, blendMode, opacity, filterConfigs),
+      )
       .then(resolve)
       .catch(reject);
   });

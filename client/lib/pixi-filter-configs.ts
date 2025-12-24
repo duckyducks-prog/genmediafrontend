@@ -3,7 +3,15 @@
  * NO PixiJS Filter instances, just parameter data
  */
 export interface FilterConfig {
-  type: 'brightness' | 'blur' | 'sharpen' | 'hueSaturation' | 'noise' | 'vignette' | 'crop' | 'filmGrain';
+  type:
+    | "brightness"
+    | "blur"
+    | "sharpen"
+    | "hueSaturation"
+    | "noise"
+    | "vignette"
+    | "crop"
+    | "filmGrain";
   params: Record<string, number>;
 }
 
@@ -29,13 +37,13 @@ export interface FilterDefinition {
 
 export const FILTER_DEFINITIONS: Record<string, FilterDefinition> = {
   brightness: {
-    type: 'brightness',
-    label: 'Brightness/Contrast',
-    description: 'Adjust brightness and contrast',
-    filterClass: 'AdjustmentFilter', // from pixi-filters
+    type: "brightness",
+    label: "Brightness/Contrast",
+    description: "Adjust brightness and contrast",
+    filterClass: "AdjustmentFilter", // from pixi-filters
     params: {
       brightness: {
-        label: 'Brightness',
+        label: "Brightness",
         min: -1,
         max: 1,
         step: 0.01,
@@ -43,7 +51,7 @@ export const FILTER_DEFINITIONS: Record<string, FilterDefinition> = {
         displayMultiplier: 100,
       },
       contrast: {
-        label: 'Contrast',
+        label: "Contrast",
         min: -1,
         max: 1,
         step: 0.01,
@@ -54,20 +62,20 @@ export const FILTER_DEFINITIONS: Record<string, FilterDefinition> = {
   },
 
   blur: {
-    type: 'blur',
-    label: 'Blur',
-    description: 'Apply Gaussian blur',
-    filterClass: 'BlurFilter',
+    type: "blur",
+    label: "Blur",
+    description: "Apply Gaussian blur",
+    filterClass: "BlurFilter",
     params: {
       strength: {
-        label: 'Strength',
+        label: "Strength",
         min: 0,
         max: 50,
         step: 1,
         default: 8,
       },
       quality: {
-        label: 'Quality',
+        label: "Quality",
         min: 1,
         max: 10,
         step: 1,
@@ -77,20 +85,20 @@ export const FILTER_DEFINITIONS: Record<string, FilterDefinition> = {
   },
 
   hueSaturation: {
-    type: 'hueSaturation',
-    label: 'Hue/Saturation',
-    description: 'Adjust hue and saturation',
-    filterClass: 'ColorMatrixFilter',
+    type: "hueSaturation",
+    label: "Hue/Saturation",
+    description: "Adjust hue and saturation",
+    filterClass: "ColorMatrixFilter",
     params: {
       hue: {
-        label: 'Hue',
+        label: "Hue",
         min: 0,
         max: 360,
         step: 1,
         default: 0,
       },
       saturation: {
-        label: 'Saturation',
+        label: "Saturation",
         min: -1,
         max: 1,
         step: 0.01,
@@ -101,13 +109,13 @@ export const FILTER_DEFINITIONS: Record<string, FilterDefinition> = {
   },
 
   noise: {
-    type: 'noise',
-    label: 'Noise',
-    description: 'Add grain/noise texture',
-    filterClass: 'NoiseFilter',
+    type: "noise",
+    label: "Noise",
+    description: "Add grain/noise texture",
+    filterClass: "NoiseFilter",
     params: {
       noise: {
-        label: 'Amount',
+        label: "Amount",
         min: 0,
         max: 1,
         step: 0.01,
@@ -118,13 +126,13 @@ export const FILTER_DEFINITIONS: Record<string, FilterDefinition> = {
   },
 
   sharpen: {
-    type: 'sharpen',
-    label: 'Sharpen',
-    description: 'Sharpen image details',
-    filterClass: 'AdjustmentFilter',
+    type: "sharpen",
+    label: "Sharpen",
+    description: "Sharpen image details",
+    filterClass: "AdjustmentFilter",
     params: {
       gamma: {
-        label: 'Intensity',
+        label: "Intensity",
         min: 0,
         max: 3,
         step: 0.1,
@@ -134,13 +142,13 @@ export const FILTER_DEFINITIONS: Record<string, FilterDefinition> = {
   },
 
   vignette: {
-    type: 'vignette',
-    label: 'Vignette',
-    description: 'Add vignette effect',
-    filterClass: 'Custom', // Will need custom implementation
+    type: "vignette",
+    label: "Vignette",
+    description: "Add vignette effect",
+    filterClass: "Custom", // Will need custom implementation
     params: {
       size: {
-        label: 'Size',
+        label: "Size",
         min: 0,
         max: 1,
         step: 0.01,
@@ -148,7 +156,7 @@ export const FILTER_DEFINITIONS: Record<string, FilterDefinition> = {
         displayMultiplier: 100,
       },
       amount: {
-        label: 'Amount',
+        label: "Amount",
         min: 0,
         max: 1,
         step: 0.01,
@@ -159,34 +167,34 @@ export const FILTER_DEFINITIONS: Record<string, FilterDefinition> = {
   },
 
   crop: {
-    type: 'crop',
-    label: 'Crop',
-    description: 'Crop image to specific dimensions and position',
-    filterClass: 'Custom', // Custom crop implementation
+    type: "crop",
+    label: "Crop",
+    description: "Crop image to specific dimensions and position",
+    filterClass: "Custom", // Custom crop implementation
     params: {
       x: {
-        label: 'X Position',
+        label: "X Position",
         min: 0,
         max: 4096,
         step: 1,
         default: 0,
       },
       y: {
-        label: 'Y Position',
+        label: "Y Position",
         min: 0,
         max: 4096,
         step: 1,
         default: 0,
       },
       width: {
-        label: 'Width',
+        label: "Width",
         min: 1,
         max: 4096,
         step: 1,
         default: 1024,
       },
       height: {
-        label: 'Height',
+        label: "Height",
         min: 1,
         max: 4096,
         step: 1,
@@ -196,41 +204,41 @@ export const FILTER_DEFINITIONS: Record<string, FilterDefinition> = {
   },
 
   filmGrain: {
-    type: 'filmGrain',
-    label: 'Film Grain',
-    description: 'Add realistic film grain effect',
-    filterClass: 'FilmGrainFilter', // Custom shader filter
+    type: "filmGrain",
+    label: "Film Grain",
+    description: "Add realistic film grain effect",
+    filterClass: "FilmGrainFilter", // Custom shader filter
     params: {
       intensity: {
-        label: 'Intensity',
+        label: "Intensity",
         min: 0,
         max: 100,
         step: 1,
         default: 50,
       },
       size: {
-        label: 'Size',
+        label: "Size",
         min: 1,
         max: 4,
         step: 1,
         default: 1,
       },
       shadows: {
-        label: 'Shadows',
+        label: "Shadows",
         min: 0,
         max: 100,
         step: 1,
         default: 30,
       },
       highlights: {
-        label: 'Highlights',
+        label: "Highlights",
         min: 0,
         max: 100,
         step: 1,
         default: 30,
       },
       midtonesBias: {
-        label: 'Midtones',
+        label: "Midtones",
         min: 0,
         max: 100,
         step: 1,
