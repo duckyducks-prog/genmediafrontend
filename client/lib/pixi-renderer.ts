@@ -10,6 +10,7 @@ import {
 } from "pixi.js";
 import { AdjustmentFilter } from "pixi-filters";
 import { FilterConfig, FILTER_DEFINITIONS } from "./pixi-filter-configs";
+import { FilmGrainFilter } from "./filters/FilmGrainFilter";
 
 /**
  * Singleton PixiJS Application to avoid WebGL context exhaustion
@@ -170,6 +171,15 @@ function createFilterFromConfig(config: FilterConfig): Filter {
 
     case "NoiseFilter":
       return new NoiseFilter({ noise: config.params.noise });
+
+    case "FilmGrainFilter":
+      return new FilmGrainFilter({
+        intensity: config.params.intensity,
+        size: config.params.size,
+        shadows: config.params.shadows,
+        highlights: config.params.highlights,
+        midtonesBias: config.params.midtonesBias,
+      });
 
     case "Custom":
       // Handle custom filters like vignette
