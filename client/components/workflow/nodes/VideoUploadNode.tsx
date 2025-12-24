@@ -76,6 +76,13 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
     const url = URL.createObjectURL(file);
     setVideoUrl(url);
 
+    console.log('[VideoUploadNode] Starting video upload:', {
+      nodeId: id,
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+    });
+
     // Create temporary video element to extract metadata and thumbnail
     const tempVideo = document.createElement('video');
     tempVideo.src = url;
@@ -85,14 +92,27 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
       const videoDuration = tempVideo.duration;
       setDuration(videoDuration);
 
+      console.log('[VideoUploadNode] Video metadata loaded:', {
+        nodeId: id,
+        duration: videoDuration,
+      });
+
       // Generate thumbnail
       const thumb = await generateThumbnail(tempVideo);
       setThumbnailUrl(thumb);
+
+      console.log('[VideoUploadNode] Thumbnail generated, reading file as data URL...');
 
       // Read file as data URL for output
       const reader = new FileReader();
       reader.onload = () => {
         const dataUrl = reader.result as string;
+
+        console.log('[VideoUploadNode] File read complete:', {
+          nodeId: id,
+          dataUrlLength: dataUrl.length,
+          dataUrlStart: dataUrl.substring(0, 100),
+        });
 
         const newData = {
           ...data,
