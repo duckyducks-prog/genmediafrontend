@@ -285,8 +285,8 @@ export interface OutputNodeData extends BaseNodeData {
 }
 
 export interface DownloadNodeData extends BaseNodeData {
-  inputData: string | null;
-  type: "image" | "video";
+  inputData?: string | null; // Legacy: single input
+  inputs?: Array<{ type: "image" | "video"; url: string }>; // Multiple inputs
 }
 
 // STICKY NOTE node (documentation/explanation)
