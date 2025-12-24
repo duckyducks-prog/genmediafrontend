@@ -33,9 +33,18 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
       }
 
       const nodeData = sourceNode.data as any;
+      const nodeType = sourceNode.type;
       console.log(
-        `[DownloadNode] Processing source node ${edge.source}:`,
-        nodeData
+        `[DownloadNode] Processing source node ${edge.source} (type: ${nodeType}):`,
+        {
+          hasImageUrl: !!nodeData.imageUrl,
+          hasVideoUrl: !!nodeData.videoUrl,
+          hasImage: !!nodeData.image,
+          hasVideo: !!nodeData.video,
+          hasOutputs: !!nodeData.outputs,
+          outputsKeys: nodeData.outputs ? Object.keys(nodeData.outputs) : [],
+          dataKeys: Object.keys(nodeData).slice(0, 15),
+        }
       );
 
       // Extract image/video URLs from various node types
@@ -55,10 +64,16 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
         nodeData.textContent || nodeData.outputs?.text || nodeData.text;
 
       if (imageUrl && typeof imageUrl === "string") {
-        console.log(`[DownloadNode] Found image URL:`, imageUrl.substring(0, 50));
+        console.log(
+          `[DownloadNode] ✓ Found image URL:`,
+          imageUrl.substring(0, 80)
+        );
         media.push({ type: "image", url: imageUrl });
       } else if (videoUrl && typeof videoUrl === "string") {
-        console.log(`[DownloadNode] Found video URL:`, videoUrl.substring(0, 50));
+        console.log(
+          `[DownloadNode] ✓ Found video URL:`,
+          videoUrl.substring(0, 80)
+        );
         media.push({ type: "video", url: videoUrl });
       } else if (
         textContent &&
@@ -66,12 +81,12 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
         textContent.startsWith("data:")
       ) {
         // Handle text that's been converted to data URL
-        console.log(`[DownloadNode] Found text as data URL`);
+        console.log(`[DownloadNode] ✓ Found text as data URL`);
         media.push({ type: "image", url: textContent });
       } else {
         console.log(
-          `[DownloadNode] No media found in:`,
-          Object.keys(nodeData).slice(0, 10)
+          `[DownloadNode] ✗ No media found. Available data:`,
+          nodeData
         );
       }
 
