@@ -294,9 +294,27 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
       }
 
       // Convert video to data URL if needed
-      if (!data.outputs?.video && videoUrl.startsWith("http")) {
+      // Check if we need to convert HTTP URL to data URL
+      const outputVideo = data.outputs?.video;
+      const needsConversion =
+        videoUrl.startsWith("http") &&
+        (!outputVideo ||
+          (typeof outputVideo === "string" && outputVideo.startsWith("http")));
+
+      console.log("[VideoUploadNode] Checking if conversion needed:", {
+        videoUrlScheme: videoUrl.substring(0, 20),
+        hasOutputVideo: !!outputVideo,
+        outputVideoScheme: outputVideo
+          ? typeof outputVideo === "string"
+            ? outputVideo.substring(0, 20)
+            : "not-string"
+          : "none",
+        needsConversion,
+      });
+
+      if (needsConversion) {
         console.log(
-          "[VideoUploadNode] Fetching and converting library video to data URL...",
+          "[VideoUploadNode] Converting HTTP video to data URL...",
         );
 
         fetch(videoUrl, { mode: "cors" })
