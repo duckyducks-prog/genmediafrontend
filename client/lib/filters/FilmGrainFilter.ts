@@ -153,11 +153,11 @@ export class FilmGrainFilter extends Filter {
       uHeight: height,
     };
 
+    // In PixiJS v8, uniforms can be passed directly in resources
+    // The glProgram will expose them automatically
     super({
       glProgram,
-      resources: {
-        filmGrainUniforms: uniforms,
-      },
+      resources: uniforms,
     });
 
     this._uniforms = uniforms;
