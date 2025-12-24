@@ -5,6 +5,7 @@ import { Download, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import { createMediaZip, downloadBlob } from "@/lib/zip-utils";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { resolveAssetToDataUrl } from "../executionHelpers";
 
 function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
   const edges = useEdges();
