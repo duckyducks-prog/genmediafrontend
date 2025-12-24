@@ -154,14 +154,24 @@ export class FilmGrainFilter extends Filter {
       uHeight: height,
     };
 
-    // In PixiJS v8, uniforms can be passed directly in resources
-    // The glProgram will expose them automatically
+    // PixiJS v8 requires uniforms in a uniform group resource
     super({
       glProgram,
-      resources: uniforms,
+      resources: {
+        filmGrainUniforms: {
+          uIntensity: { value: uniforms.uIntensity, type: 'f32' },
+          uSize: { value: uniforms.uSize, type: 'f32' },
+          uSeed: { value: uniforms.uSeed, type: 'f32' },
+          uShadows: { value: uniforms.uShadows, type: 'f32' },
+          uHighlights: { value: uniforms.uHighlights, type: 'f32' },
+          uMidtonesBias: { value: uniforms.uMidtonesBias, type: 'f32' },
+          uWidth: { value: uniforms.uWidth, type: 'f32' },
+          uHeight: { value: uniforms.uHeight, type: 'f32' },
+        },
+      },
     });
 
-    this._uniforms = uniforms;
+    this._uniforms = this.resources.filmGrainUniforms.uniforms;
     this._width = width;
     this._height = height;
 
