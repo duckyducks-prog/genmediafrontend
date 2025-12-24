@@ -180,7 +180,7 @@ function StickyNoteNode({ data, id }: NodeProps<StickyNoteNodeData>) {
                   setIsEditingLabel(false);
                 }
               }}
-              className={`flex-1 bg-transparent font-semibold text-sm ${currentColor.text} outline-none border-0 p-0 min-w-0 truncate`}
+              className={`nodrag flex-1 bg-transparent font-semibold text-sm ${currentColor.text} outline-none border-0 p-0 min-w-0 truncate`}
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
@@ -201,7 +201,7 @@ function StickyNoteNode({ data, id }: NodeProps<StickyNoteNodeData>) {
               <div className="relative">
                 <button
                   onClick={() => setShowColorPicker(!showColorPicker)}
-                  className={`p-1 rounded hover:opacity-70 transition-opacity ${currentColor.text}`}
+                  className={`nodrag p-1 rounded hover:opacity-70 transition-opacity ${currentColor.text}`}
                   title="Change color"
                   onMouseDown={(e) => e.preventDefault()}
                 >
@@ -210,7 +210,7 @@ function StickyNoteNode({ data, id }: NodeProps<StickyNoteNodeData>) {
 
                 {/* Color picker dropdown */}
                 {showColorPicker && (
-                  <div className="absolute right-0 top-full mt-1 p-2 bg-white rounded-md shadow-lg border border-gray-200 z-50 flex gap-2">
+                  <div className="nodrag absolute right-0 top-full mt-1 p-2 bg-white rounded-md shadow-lg border border-gray-200 z-50 flex gap-2">
                     {COLOR_OPTIONS.map((color) => (
                       <button
                         key={color.name}
@@ -227,7 +227,7 @@ function StickyNoteNode({ data, id }: NodeProps<StickyNoteNodeData>) {
               {/* Delete button */}
               <button
                 onClick={handleDelete}
-                className={`p-1 rounded hover:opacity-70 transition-opacity ${currentColor.text}`}
+                className={`nodrag p-1 rounded hover:opacity-70 transition-opacity ${currentColor.text}`}
                 title="Delete note"
                 onMouseDown={(e) => e.preventDefault()}
               >
@@ -244,7 +244,7 @@ function StickyNoteNode({ data, id }: NodeProps<StickyNoteNodeData>) {
         onChange={handleContentChange}
         disabled={data.readOnly}
         placeholder="Enter your note here..."
-        className={`flex-1 bg-transparent ${currentColor.text} placeholder-current placeholder-opacity-40 text-sm resize-none outline-none border-0 p-0 font-normal overflow-auto`}
+        className={`nodrag flex-1 bg-transparent ${currentColor.text} placeholder-current placeholder-opacity-40 text-sm resize-none outline-none border-0 p-0 font-normal overflow-auto`}
         onClick={(e) => e.stopPropagation()}
       />
 
