@@ -175,7 +175,11 @@ export class FilmGrainFilter extends Filter {
     this._width = width;
     this._height = height;
 
-    console.log('[FilmGrainFilter] Filter created successfully');
+    console.log('[FilmGrainFilter] Filter created successfully', {
+      uniforms: this._uniforms,
+      width: this._width,
+      height: this._height,
+    });
   }
 
   // --- Intensity (0-100) ---
