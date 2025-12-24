@@ -16,15 +16,27 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
 
   // Detect connected media from incoming edges
   useEffect(() => {
-
     const incomingEdges = edges.filter((edge) => edge.target === id);
     const media: Array<{ type: "image" | "video"; url: string }> = [];
 
+    console.log(
+      `[DownloadNode] Updating media for ${id}:`,
+      incomingEdges.length,
+      "incoming edges"
+    );
+
     for (const edge of incomingEdges) {
       const sourceNode = nodes.find((n) => n.id === edge.source);
-      if (!sourceNode || !sourceNode.data) continue;
+      if (!sourceNode || !sourceNode.data) {
+        console.log(`[DownloadNode] No source node found for edge`, edge);
+        continue;
+      }
 
       const nodeData = sourceNode.data as any;
+      console.log(
+        `[DownloadNode] Processing source node ${edge.source}:`,
+        nodeData
+      );
 
       // Extract image/video URLs from various node types
       const imageUrl =
@@ -43,8 +55,10 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
         nodeData.textContent || nodeData.outputs?.text || nodeData.text;
 
       if (imageUrl && typeof imageUrl === "string") {
+        console.log(`[DownloadNode] Found image URL:`, imageUrl.substring(0, 50));
         media.push({ type: "image", url: imageUrl });
       } else if (videoUrl && typeof videoUrl === "string") {
+        console.log(`[DownloadNode] Found video URL:`, videoUrl.substring(0, 50));
         media.push({ type: "video", url: videoUrl });
       } else if (
         textContent &&
@@ -52,7 +66,13 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
         textContent.startsWith("data:")
       ) {
         // Handle text that's been converted to data URL
+        console.log(`[DownloadNode] Found text as data URL`);
         media.push({ type: "image", url: textContent });
+      } else {
+        console.log(
+          `[DownloadNode] No media found in:`,
+          Object.keys(nodeData).slice(0, 10)
+        );
       }
 
       // Handle arrays of images
@@ -61,6 +81,7 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
         Array.isArray(nodeData.outputs?.images)
       ) {
         const images = nodeData.images || nodeData.outputs?.images;
+        console.log(`[DownloadNode] Found ${images.length} images in array`);
         for (const img of images) {
           if (typeof img === "string") {
             media.push({ type: "image", url: img });
@@ -69,8 +90,9 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
       }
     }
 
+    console.log(`[DownloadNode] Total media found:`, media.length);
     setConnectedMedia(media);
-  }, [id, getEdges, getNodes]);
+  }, [id, edges, nodes]);
 
   const handleDownload = async () => {
     if (connectedMedia.length === 0) {
