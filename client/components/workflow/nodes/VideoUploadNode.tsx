@@ -109,23 +109,11 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
           return;
         }
 
-        const handleLoadedMetadata = () => {
+        const captureFrame = () => {
           try {
             canvas.width = videoElement.videoWidth;
             canvas.height = videoElement.videoHeight;
-
-            // Seek to 1 second (or 10% of duration, whichever is smaller)
-            const seekTime = Math.min(1, videoElement.duration * 0.1);
-            videoElement.currentTime = seekTime;
-          } catch (err) {
-            console.error("[VideoUploadNode] Error loading metadata:", err);
-            resolve("");
-          }
-        };
-
-        const handleSeeked = () => {
-          try {
-            ctx!.drawImage(videoElement, 0, 0);
+            ctx.drawImage(videoElement, 0, 0);
             resolve(canvas.toDataURL("image/jpeg", 0.8));
           } catch (err) {
             console.error("[VideoUploadNode] Error capturing frame:", err);
@@ -133,17 +121,30 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
           }
         };
 
-        videoElement.addEventListener("loadedmetadata", handleLoadedMetadata);
-        videoElement.addEventListener("seeked", handleSeeked);
+        const seekAndCapture = () => {
+          const seekTime = Math.min(1, videoElement.duration * 0.1);
 
-        // Cleanup on unmount
-        return () => {
-          videoElement.removeEventListener(
-            "loadedmetadata",
-            handleLoadedMetadata,
-          );
-          videoElement.removeEventListener("seeked", handleSeeked);
+          const handleSeeked = () => {
+            videoElement.removeEventListener("seeked", handleSeeked);
+            captureFrame();
+          };
+
+          videoElement.addEventListener("seeked", handleSeeked);
+          videoElement.currentTime = seekTime;
         };
+
+        // Check if metadata is already loaded
+        if (videoElement.readyState >= 1) {
+          // Metadata already loaded, seek directly
+          seekAndCapture();
+        } else {
+          // Wait for metadata
+          const handleLoadedMetadata = () => {
+            videoElement.removeEventListener("loadedmetadata", handleLoadedMetadata);
+            seekAndCapture();
+          };
+          videoElement.addEventListener("loadedmetadata", handleLoadedMetadata);
+        }
       });
     },
     [],
