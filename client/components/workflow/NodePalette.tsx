@@ -164,14 +164,14 @@ const paletteNodes: PaletteNode[] = [
     type: NodeType.Preview,
     label: "Preview",
     icon: <Eye className="w-4 h-4" />,
-    category: "action",
+    category: "output",
     description: "Preview images, videos, or text",
   },
   {
     type: NodeType.Download,
     label: "Download",
     icon: <Download className="w-4 h-4" />,
-    category: "action",
+    category: "output",
     description: "Download media result",
   },
 
