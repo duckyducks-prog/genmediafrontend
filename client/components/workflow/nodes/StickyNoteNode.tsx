@@ -251,7 +251,7 @@ function StickyNoteNode({ data, id }: NodeProps<StickyNoteNodeData>) {
       {/* Resize handle */}
       {!data.readOnly && (
         <div
-          className={`absolute bottom-0 right-0 w-5 h-5 cursor-nwse-resize select-none rounded-tl ${currentColor.bg} ${currentColor.border} border-t border-l opacity-60 hover:opacity-100 transition-opacity`}
+          className={`nodrag absolute bottom-0 right-0 w-5 h-5 cursor-nwse-resize select-none rounded-tl ${currentColor.bg} ${currentColor.border} border-t border-l opacity-60 hover:opacity-100 transition-opacity`}
           onMouseDown={handleResizeStart}
           title="Drag to resize"
           style={{
