@@ -21,6 +21,7 @@ export enum NodeType {
   Sharpen = "sharpen",
   HueSaturation = "hueSaturation",
   Noise = "noise",
+  FilmGrain = "filmGrain",
   Vignette = "vignette",
   Crop = "crop",
   ImageComposite = "imageComposite",
@@ -211,6 +212,14 @@ export interface HueSaturationNodeData extends BaseNodeData {
 
 export interface NoiseNodeData extends BaseNodeData {
   noise: number;
+}
+
+export interface FilmGrainNodeData extends BaseNodeData {
+  intensity: number;
+  size: number;
+  shadows: number;
+  highlights: number;
+  midtonesBias: number;
 }
 
 export interface SharpenNodeData extends BaseNodeData {
