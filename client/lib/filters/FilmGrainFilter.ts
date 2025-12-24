@@ -36,7 +36,8 @@ uniform float uSeed;
 uniform float uShadows;
 uniform float uHighlights;
 uniform float uMidtonesBias;
-uniform vec2 uDimensions;
+uniform float uWidth;
+uniform float uHeight;
 
 // High-quality hash functions - no visible patterns
 // Based on Dave Hoskins' hash functions
