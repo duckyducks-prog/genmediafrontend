@@ -47,31 +47,34 @@
 
 /* Color-coded edges by connector type */
 .react-flow__edge.connector-type-text .react-flow__edge-path {
-  stroke: #FCC3DC !important;
+  stroke: #fcc3dc !important;
 }
 
 .react-flow__edge.connector-type-image .react-flow__edge-path,
 .react-flow__edge.connector-type-images .react-flow__edge-path {
-  stroke: #83D196 !important;
+  stroke: #83d196 !important;
 }
 
 .react-flow__edge.connector-type-video .react-flow__edge-path {
-  stroke: #FCC3DC !important;
+  stroke: #fcc3dc !important;
 }
 
 .react-flow__edge.connector-type-format .react-flow__edge-path {
-  stroke: #FCC3DC !important;
+  stroke: #fcc3dc !important;
 }
 
 .react-flow__edge.connector-type-any .react-flow__edge-path {
-  stroke: #FCC3DC !important;
+  stroke: #fcc3dc !important;
 }
 
 /* Base animation for all animated edges */
 .react-flow__edge.animated .react-flow__edge-path {
   stroke-dasharray: 8 4;
   animation: dashdraw 0.5s linear infinite;
-  transition: stroke 0.3s ease, stroke-width 0.3s ease, filter 0.3s ease;
+  transition:
+    stroke 0.3s ease,
+    stroke-width 0.3s ease,
+    filter 0.3s ease;
 }
 
 @keyframes dashdraw {
@@ -82,21 +85,21 @@
 
 /* Connector type colors when animated - with glow */
 .react-flow__edge.animated.connector-type-image .react-flow__edge-path {
-  stroke: #83D196 !important;
+  stroke: #83d196 !important;
   stroke-width: 2.5px;
-  filter: drop-shadow(0 0 6px #83D196) drop-shadow(0 0 12px #83D19666);
+  filter: drop-shadow(0 0 6px #83d196) drop-shadow(0 0 12px #83d19666);
 }
 
 .react-flow__edge.animated.connector-type-text .react-flow__edge-path {
-  stroke: #FCC3DC !important;
+  stroke: #fcc3dc !important;
   stroke-width: 2.5px;
-  filter: drop-shadow(0 0 6px #FCC3DC) drop-shadow(0 0 12px #FCC3DC66);
+  filter: drop-shadow(0 0 6px #fcc3dc) drop-shadow(0 0 12px #fcc3dc66);
 }
 
 .react-flow__edge.animated.connector-type-video .react-flow__edge-path {
-  stroke: #FCC3DC !important;
+  stroke: #fcc3dc !important;
   stroke-width: 2.5px;
-  filter: drop-shadow(0 0 6px #FCC3DC) drop-shadow(0 0 12px #FCC3DC66);
+  filter: drop-shadow(0 0 6px #fcc3dc) drop-shadow(0 0 12px #fcc3dc66);
 }
 
 .react-flow__edge.animated.connector-type-any .react-flow__edge-path {
@@ -110,7 +113,10 @@
   stroke: #10b981 !important;
   stroke-width: 3px;
   filter: drop-shadow(0 0 8px #10b981) drop-shadow(0 0 16px #10b98199);
-  transition: stroke 0.2s ease, stroke-width 0.2s ease, filter 0.2s ease;
+  transition:
+    stroke 0.2s ease,
+    stroke-width 0.2s ease,
+    filter 0.2s ease;
 }
 
 /* Edge Labels */
@@ -132,7 +138,7 @@
 }
 
 .react-flow__node.selected {
-  border: 2px solid #FCC3DC !important;
+  border: 2px solid #fcc3dc !important;
   box-shadow: none !important;
   outline: none !important;
 }
@@ -169,28 +175,28 @@
 
 /* Color-coded handles by connector type */
 .react-flow__handle[data-connector-type="text"] {
-  background: #FCC3DC !important;
+  background: #fcc3dc !important;
   border-color: hsl(var(--background)) !important;
 }
 
 .react-flow__handle[data-connector-type="image"],
 .react-flow__handle[data-connector-type="images"] {
-  background: #83D196 !important;
+  background: #83d196 !important;
   border-color: hsl(var(--background)) !important;
 }
 
 .react-flow__handle[data-connector-type="video"] {
-  background: #FCC3DC !important;
+  background: #fcc3dc !important;
   border-color: hsl(var(--background)) !important;
 }
 
 .react-flow__handle[data-connector-type="format"] {
-  background: #FCC3DC !important;
+  background: #fcc3dc !important;
   border-color: hsl(var(--background)) !important;
 }
 
 .react-flow__handle[data-connector-type="any"] {
-  background: #FCC3DC !important;
+  background: #fcc3dc !important;
   border-color: hsl(var(--background)) !important;
 }
 
@@ -318,7 +324,7 @@
 }
 
 .workflow-node.selected {
-  border-color: #FCC3DC;
+  border-color: #fcc3dc;
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
 }
 

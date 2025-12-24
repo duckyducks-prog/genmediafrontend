@@ -8,11 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Loader2,
-  Search,
-  Workflow as WorkflowIcon,
-} from "lucide-react";
+import { Loader2, Search, Workflow as WorkflowIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   listMyWorkflows,
@@ -36,7 +32,7 @@ export default function WorkflowLoadDialog({
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [loadingWorkflowId, setLoadingWorkflowId] = useState<string | null>(
-    null
+    null,
   );
   const { toast } = useToast();
 
@@ -65,8 +61,7 @@ export default function WorkflowLoadDialog({
       console.error("[WorkflowLoadDialog] Failed to fetch workflows:", error);
       toast({
         title: "Failed to load workflows",
-        description:
-          error instanceof Error ? error.message : "Unknown error",
+        description: error instanceof Error ? error.message : "Unknown error",
         variant: "destructive",
       });
     } finally {
@@ -84,7 +79,7 @@ export default function WorkflowLoadDialog({
     return workflows.filter(
       (wf) =>
         wf.name.toLowerCase().includes(query) ||
-        (wf.description && wf.description.toLowerCase().includes(query))
+        (wf.description && wf.description.toLowerCase().includes(query)),
     );
   }, [workflows, searchQuery]);
 
@@ -102,8 +97,7 @@ export default function WorkflowLoadDialog({
       console.error("[WorkflowLoadDialog] Failed to load workflow:", error);
       toast({
         title: "Failed to load workflow",
-        description:
-          error instanceof Error ? error.message : "Unknown error",
+        description: error instanceof Error ? error.message : "Unknown error",
         variant: "destructive",
       });
     } finally {

@@ -15,10 +15,10 @@ function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
       reader.onload = (event) => {
         const url = event.target?.result as string;
 
-        console.log('[ImageUploadNode] Image loaded:', {
+        console.log("[ImageUploadNode] Image loaded:", {
           nodeId: id,
           urlLength: url.length,
-          urlPreview: url.substring(0, 50) + '...',
+          urlPreview: url.substring(0, 50) + "...",
           fileType: file.type,
           fileSize: file.size,
         });
@@ -33,7 +33,7 @@ function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
           outputs: { image: url }, // Ensure outputs is set with the image
         };
 
-        console.log('[ImageUploadNode] Updating node with data:', {
+        console.log("[ImageUploadNode] Updating node with data:", {
           nodeId: id,
           hasOutputs: !!newData.outputs,
           outputKeys: Object.keys(newData.outputs),
@@ -53,8 +53,8 @@ function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
         );
 
         // Then trigger propagation with the same data
-        console.log('[ImageUploadNode] Dispatching node-update event');
-        const updateEvent = new CustomEvent('node-update', {
+        console.log("[ImageUploadNode] Dispatching node-update event");
+        const updateEvent = new CustomEvent("node-update", {
           detail: {
             id,
             data: newData,
@@ -67,7 +67,7 @@ function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
   };
 
   const handleRemove = () => {
-    console.log('[ImageUploadNode] Removing image from node:', id);
+    console.log("[ImageUploadNode] Removing image from node:", id);
 
     setImageUrl(null);
 
@@ -90,8 +90,8 @@ function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
     );
 
     // Trigger data propagation to downstream nodes
-    console.log('[ImageUploadNode] Dispatching node-update event (clear)');
-    const updateEvent = new CustomEvent('node-update', {
+    console.log("[ImageUploadNode] Dispatching node-update event (clear)");
+    const updateEvent = new CustomEvent("node-update", {
       detail: {
         id,
         data: newData,
@@ -171,7 +171,7 @@ function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
         id="image"
         data-connector-type="image"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: "50%", transform: 'translateY(-50%)' }}
+        style={{ top: "50%", transform: "translateY(-50%)" }}
       />
     </div>
   );

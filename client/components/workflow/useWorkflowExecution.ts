@@ -53,12 +53,12 @@ export function useWorkflowExecution(
         eds.map((edge) => {
           // Animate edges going INTO this node (target)
           if (edge.target === nodeId) {
-            let className = edge.className || '';
+            let className = edge.className || "";
 
             // Remove existing animation classes
             className = className
-              .replace(/\s*animated\s*/g, ' ')
-              .replace(/\s*edge-completed\s*/g, ' ')
+              .replace(/\s*animated\s*/g, " ")
+              .replace(/\s*edge-completed\s*/g, " ")
               .trim();
 
             // Add appropriate class
@@ -75,10 +75,10 @@ export function useWorkflowExecution(
             };
           }
           return edge;
-        })
+        }),
       );
     },
-    [setEdges]
+    [setEdges],
   );
 
   // Build adjacency list for the graph

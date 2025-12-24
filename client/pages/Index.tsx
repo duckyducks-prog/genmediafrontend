@@ -55,16 +55,16 @@ export default function Index() {
       const reader = new FileReader();
       reader.onload = (event) => {
         const newImage = event.target?.result as string;
-        setReferenceImages(prev => [...prev, newImage]);
+        setReferenceImages((prev) => [...prev, newImage]);
       };
       reader.readAsDataURL(file);
     }
     // Reset input value to allow uploading the same file again
-    e.target.value = '';
+    e.target.value = "";
   };
 
   const handleRemoveReferenceImage = (index: number) => {
-    setReferenceImages(prev => prev.filter((_, i) => i !== index));
+    setReferenceImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleFirstFrameUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -258,7 +258,8 @@ export default function Index() {
     };
 
     window.addEventListener("browse-library", handleBrowseLibrary);
-    return () => window.removeEventListener("browse-library", handleBrowseLibrary);
+    return () =>
+      window.removeEventListener("browse-library", handleBrowseLibrary);
   }, []);
 
   // Handle adding asset from library to workflow
@@ -274,7 +275,7 @@ export default function Index() {
           url: asset.url,
           mimeType: asset.mime_type,
         },
-      })
+      }),
     );
 
     // Switch to workflow tab
@@ -299,153 +300,323 @@ export default function Index() {
   return (
     <WorkflowProvider>
       <div className="min-h-screen bg-[#360F46] flex flex-col">
-      <header className="border-b border-border">
-        <div className="py-8 border-b border-border">
-          <div className="px-4 flex items-center justify-between">
-            <div className="inline-flex items-center gap-2">
-              <img
-                src="https://cdn.builder.io/api/v1/image/assets%2Fb1d3bf7cc0eb4f0daca65fdc5a7d5179%2F30fc0e70b75040f4858161ac143ab00c?format=webp&width=800"
-                alt="Sprocket"
-                className="w-10 h-10"
-              />
-              <h1 className="text-4xl font-bold" style={{ color: "#F8F5EE" }}>
-                HubSpot Gen Media Studio
-              </h1>
-            </div>
-
-            {/* User Info & Sign Out */}
-            {user && (
-              <div className="flex items-center gap-4">
-                <div className="text-sm text-muted-foreground">
-                  {user.email}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={async () => {
-                    try {
-                      await logOut();
-                      toast({
-                        title: "Signed out",
-                        description: "You have been signed out successfully",
-                      });
-                    } catch (error) {
-                      toast({
-                        title: "Sign out failed",
-                        description:
-                          error instanceof Error
-                            ? error.message
-                            : "Unknown error",
-                        variant: "destructive",
-                      });
-                    }
-                  }}
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Sign Out
-                </Button>
+        <header className="border-b border-border">
+          <div className="py-8 border-b border-border">
+            <div className="px-4 flex items-center justify-between">
+              <div className="inline-flex items-center gap-2">
+                <img
+                  src="https://cdn.builder.io/api/v1/image/assets%2Fb1d3bf7cc0eb4f0daca65fdc5a7d5179%2F30fc0e70b75040f4858161ac143ab00c?format=webp&width=800"
+                  alt="Sprocket"
+                  className="w-10 h-10"
+                />
+                <h1 className="text-4xl font-bold" style={{ color: "#F8F5EE" }}>
+                  HubSpot Gen Media Studio
+                </h1>
               </div>
-            )}
+
+              {/* User Info & Sign Out */}
+              {user && (
+                <div className="flex items-center gap-4">
+                  <div className="text-sm text-muted-foreground">
+                    {user.email}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        await logOut();
+                        toast({
+                          title: "Signed out",
+                          description: "You have been signed out successfully",
+                        });
+                      } catch (error) {
+                        toast({
+                          title: "Sign out failed",
+                          description:
+                            error instanceof Error
+                              ? error.message
+                              : "Unknown error",
+                          variant: "destructive",
+                        });
+                      }
+                    }}
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
 
-        <nav className="px-4 py-4 flex gap-2 items-center justify-start overflow-x-auto border-b border-border">
-          <NavLink
-            icon={<Home className="w-5 h-5" />}
-            label="Home"
-            value="home"
-          />
-          <NavLink
-            icon={<ImageIcon className="w-5 h-5" />}
-            label="Image"
-            value="image"
-          />
-          <NavLink
-            icon={<VideoIcon className="w-5 h-5" />}
-            label="Video"
-            value="video"
-          />
-          <NavLink
-            icon={<WorkflowIcon className="w-5 h-5" />}
-            label="Workflow"
-            value="workflow"
-          />
-          <button
-            onClick={() => setIsLibraryOpen(true)}
-            className="flex items-center justify-center w-10 h-10 rounded-lg transition-colors text-muted-foreground hover:bg-secondary"
-            title="Library"
+          <nav className="px-4 py-4 flex gap-2 items-center justify-start overflow-x-auto border-b border-border">
+            <NavLink
+              icon={<Home className="w-5 h-5" />}
+              label="Home"
+              value="home"
+            />
+            <NavLink
+              icon={<ImageIcon className="w-5 h-5" />}
+              label="Image"
+              value="image"
+            />
+            <NavLink
+              icon={<VideoIcon className="w-5 h-5" />}
+              label="Video"
+              value="video"
+            />
+            <NavLink
+              icon={<WorkflowIcon className="w-5 h-5" />}
+              label="Workflow"
+              value="workflow"
+            />
+            <button
+              onClick={() => setIsLibraryOpen(true)}
+              className="flex items-center justify-center w-10 h-10 rounded-lg transition-colors text-muted-foreground hover:bg-secondary"
+              title="Library"
+            >
+              <FolderOpen className="w-5 h-5" />
+            </button>
+          </nav>
+        </header>
+
+        <div className="flex flex-1 gap-0">
+          <div
+            className={`flex-1 ${currentTab === "workflow" || currentTab === "image" || currentTab === "video" ? "max-w-none px-0 py-0" : "container mx-auto max-w-4xl px-4 py-8"}`}
           >
-            <FolderOpen className="w-5 h-5" />
-          </button>
-        </nav>
-      </header>
+            <Tabs value={currentTab} className="w-full h-full">
+              <TabsContent value="home" className="space-y-6">
+                <WorkflowGallery
+                  onLoadWorkflow={(workflow) => {
+                    // Load templates (public workflows) as read-only
+                    const readOnly = workflow.is_public === true;
 
-      <div className="flex flex-1 gap-0">
-        <div
-          className={`flex-1 ${currentTab === "workflow" || currentTab === "image" || currentTab === "video" ? "max-w-none px-0 py-0" : "container mx-auto max-w-4xl px-4 py-8"}`}
-        >
-          <Tabs value={currentTab} className="w-full h-full">
-            <TabsContent value="home" className="space-y-6">
-              <WorkflowGallery
-                onLoadWorkflow={(workflow) => {
-                  // Load templates (public workflows) as read-only
-                  const readOnly = workflow.is_public === true;
+                    // Switch to workflow tab FIRST to ensure canvas is mounted
+                    setCurrentTab("workflow");
 
-                  // Switch to workflow tab FIRST to ensure canvas is mounted
-                  setCurrentTab("workflow");
+                    // Then load workflow after a small delay to ensure canvas is ready
+                    setTimeout(() => {
+                      if (workflowCanvasRef.current?.loadWorkflow) {
+                        workflowCanvasRef.current.loadWorkflow(workflow, {
+                          readOnly,
+                        });
+                      } else {
+                        console.error(
+                          "[Index] Failed to load workflow - canvas not ready",
+                        );
+                      }
+                    }, 100);
+                  }}
+                />
+              </TabsContent>
 
-                  // Then load workflow after a small delay to ensure canvas is ready
-                  setTimeout(() => {
-                    if (workflowCanvasRef.current?.loadWorkflow) {
-                      workflowCanvasRef.current.loadWorkflow(workflow, {
-                        readOnly,
-                      });
-                    } else {
-                      console.error(
-                        "[Index] Failed to load workflow - canvas not ready",
-                      );
-                    }
-                  }, 100);
-                }}
-              />
-            </TabsContent>
+              <TabsContent value="image" className="h-full p-0">
+                <div
+                  className="grid gap-8 h-full p-6"
+                  style={{ gridTemplateColumns: "340px 1fr" }}
+                >
+                  {/* Left Grid Area - Input Controls Card */}
+                  <div className="flex">
+                    <Card className="bg-[#41204E] border-[#41204E] p-6 w-full h-full flex flex-col">
+                      <div className="flex-1 space-y-4">
+                        <div className="space-y-2">
+                          <label
+                            htmlFor="image-prompt"
+                            className="block text-sm font-medium"
+                          >
+                            Describe your image:
+                          </label>
+                          <Textarea
+                            id="image-prompt"
+                            placeholder="A man holding a book"
+                            value={imagePrompt}
+                            onChange={(e) => setImagePrompt(e.target.value)}
+                            className="min-h-[100px] bg-[#2A1A3F] border-[#3D2D4F] text-white placeholder:text-gray-400 resize-none"
+                          />
+                        </div>
 
-            <TabsContent value="image" className="h-full p-0">
-              <div className="grid gap-8 h-full p-6" style={{ gridTemplateColumns: '340px 1fr' }}>
-                {/* Left Grid Area - Input Controls Card */}
-                <div className="flex">
-                  <Card className="bg-[#41204E] border-[#41204E] p-6 w-full h-full flex flex-col">
-                    <div className="flex-1 space-y-4">
-                      <div className="space-y-2">
-                        <label
-                          htmlFor="image-prompt"
-                          className="block text-sm font-medium"
-                        >
-                          Describe your image:
-                        </label>
-                        <Textarea
-                          id="image-prompt"
-                          placeholder="A man holding a book"
-                          value={imagePrompt}
-                          onChange={(e) => setImagePrompt(e.target.value)}
-                          className="min-h-[100px] bg-[#2A1A3F] border-[#3D2D4F] text-white placeholder:text-gray-400 resize-none"
-                        />
+                        <div className="space-y-2">
+                          <label className="block text-sm font-medium">
+                            Reference images: ({referenceImages.length}/9)
+                          </label>
+                          <div className="grid grid-cols-3 gap-2">
+                            {referenceImages.map((image, index) => (
+                              <div
+                                key={index}
+                                className="relative rounded-lg overflow-hidden border border-[#3D2D4F] bg-[#2A1A3F] aspect-square"
+                              >
+                                <img
+                                  src={image}
+                                  alt={`Reference ${index + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                                <Button
+                                  onClick={() =>
+                                    handleRemoveReferenceImage(index)
+                                  }
+                                  variant="ghost"
+                                  size="icon"
+                                  className="absolute top-1 right-1 h-5 w-5 bg-black/50 hover:bg-black/70"
+                                >
+                                  <X className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            ))}
+                            {referenceImages.length < 9 && (
+                              <label
+                                htmlFor="reference-image"
+                                className="flex flex-col items-center justify-center aspect-square border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
+                              >
+                                <Upload className="w-5 h-5 text-gray-400" />
+                                <input
+                                  id="reference-image"
+                                  type="file"
+                                  className="hidden"
+                                  accept="image/*"
+                                  onChange={handleReferenceImageUpload}
+                                />
+                              </label>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="block text-sm font-medium">
+                            Aspect Ratio
+                          </label>
+                          <select
+                            value={aspectRatio}
+                            onChange={(e) => setAspectRatio(e.target.value)}
+                            className="w-full px-3 py-2 bg-[#2A1A3F] border border-[#3D2D4F] rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                          >
+                            <option value="1:1">1:1 Square</option>
+                            <option value="16:9">16:9 Landscape</option>
+                            <option value="9:16">9:16 Portrait</option>
+                            <option value="4:3">4:3 Standard</option>
+                            <option value="3:2">3:2 Classic</option>
+                          </select>
+                        </div>
                       </div>
 
-                      <div className="space-y-2">
-                        <label className="block text-sm font-medium">
-                          Reference images: ({referenceImages.length}/9)
-                        </label>
-                        <div className="grid grid-cols-3 gap-2">
-                          {referenceImages.map((image, index) => (
-                            <div key={index} className="relative rounded-lg overflow-hidden border border-[#3D2D4F] bg-[#2A1A3F] aspect-square">
+                      <Button
+                        onClick={handleGenerateImage}
+                        disabled={!imagePrompt.trim() || isGeneratingImage}
+                        className="w-full bg-[#9B6C94] hover:bg-[#8A5B84] text-white mt-4"
+                        size="lg"
+                      >
+                        {isGeneratingImage ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          "Generate Image"
+                        )}
+                      </Button>
+                    </Card>
+                  </div>
+
+                  {/* Right Grid Area - Result */}
+                  {imageResult && (
+                    <div className="h-full flex flex-col items-center justify-center gap-4">
+                      <div
+                        className="relative rounded-lg overflow-hidden bg-[#2A1A3F] border border-[#3D2D4F] max-w-full"
+                        style={{ maxHeight: "calc(100% - 60px)" }}
+                      >
+                        <img
+                          src={imageResult}
+                          alt="Generated"
+                          className="max-w-full max-h-full h-auto object-contain"
+                        />
+                        <Button
+                          onClick={() => setImageResult(null)}
+                          variant="ghost"
+                          size="icon"
+                          className="absolute top-2 right-2 bg-black/50 hover:bg-black/70"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div className="flex gap-3">
+                        <Button className="bg-[#9B6C94] hover:bg-[#8A5B84] text-white px-8">
+                          Upscale
+                        </Button>
+                        <Button
+                          onClick={handleGenerateImage}
+                          disabled={isGeneratingImage}
+                          className="bg-[#9B6C94] hover:bg-[#8A5B84] text-white px-8"
+                        >
+                          Regenerate
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Empty state when no result */}
+                  {!imageResult && !isGeneratingImage && (
+                    <div className="h-full flex items-center justify-center text-muted-foreground">
+                      <div className="text-center">
+                        <ImageIcon className="w-16 h-16 mx-auto mb-4 opacity-20" />
+                        <p className="text-sm">
+                          Generated image will appear here
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Loading state */}
+                  {isGeneratingImage && (
+                    <div className="h-full flex items-center justify-center">
+                      <div className="text-center">
+                        <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin text-primary" />
+                        <p className="text-sm text-muted-foreground">
+                          Generating your image...
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="video" className="h-full p-0">
+                <div
+                  className="grid gap-8 h-full p-6"
+                  style={{ gridTemplateColumns: "340px 1fr" }}
+                >
+                  {/* Left Grid Area - Input Controls Card */}
+                  <div className="flex">
+                    <Card className="bg-[#41204E] border-[#41204E] p-6 w-full h-full flex flex-col">
+                      <div className="flex-1 space-y-4">
+                        <div className="space-y-2">
+                          <label
+                            htmlFor="video-prompt"
+                            className="block text-sm font-medium"
+                          >
+                            Describe your video:
+                          </label>
+                          <Textarea
+                            id="video-prompt"
+                            placeholder="A time-lapse of a bustling city transitioning from day to night..."
+                            value={videoPrompt}
+                            onChange={(e) => setVideoPrompt(e.target.value)}
+                            className="min-h-[100px] bg-[#2A1A3F] border-[#3D2D4F] text-white placeholder:text-gray-400 resize-none"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="block text-sm font-medium">
+                            First Frame (Optional):
+                          </label>
+                          {firstFrame ? (
+                            <div className="relative rounded-lg overflow-hidden border border-[#3D2D4F] bg-[#2A1A3F] aspect-video">
                               <img
-                                src={image}
-                                alt={`Reference ${index + 1}`}
+                                src={firstFrame}
+                                alt="First Frame"
                                 className="w-full h-full object-cover"
                               />
                               <Button
-                                onClick={() => handleRemoveReferenceImage(index)}
+                                onClick={() => setFirstFrame(null)}
                                 variant="ghost"
                                 size="icon"
                                 className="absolute top-1 right-1 h-5 w-5 bg-black/50 hover:bg-black/70"
@@ -453,333 +624,186 @@ export default function Index() {
                                 <X className="w-3 h-3" />
                               </Button>
                             </div>
-                          ))}
-                          {referenceImages.length < 9 && (
+                          ) : (
                             <label
-                              htmlFor="reference-image"
-                              className="flex flex-col items-center justify-center aspect-square border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
+                              htmlFor="first-frame"
+                              className="flex flex-col items-center justify-center w-full aspect-video border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
                             >
-                              <Upload className="w-5 h-5 text-gray-400" />
+                              <div className="flex flex-col items-center justify-center">
+                                <Upload className="w-5 h-5 mb-1 text-gray-400" />
+                                <p className="text-xs text-gray-400">
+                                  Click to upload
+                                </p>
+                              </div>
                               <input
-                                id="reference-image"
+                                id="first-frame"
                                 type="file"
                                 className="hidden"
                                 accept="image/*"
-                                onChange={handleReferenceImageUpload}
+                                onChange={handleFirstFrameUpload}
+                              />
+                            </label>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="block text-sm font-medium">
+                            Last Frame (Optional):
+                          </label>
+                          {lastFrame ? (
+                            <div className="relative rounded-lg overflow-hidden border border-[#3D2D4F] bg-[#2A1A3F] aspect-video">
+                              <img
+                                src={lastFrame}
+                                alt="Last Frame"
+                                className="w-full h-full object-cover"
+                              />
+                              <Button
+                                onClick={() => setLastFrame(null)}
+                                variant="ghost"
+                                size="icon"
+                                className="absolute top-1 right-1 h-5 w-5 bg-black/50 hover:bg-black/70"
+                              >
+                                <X className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <label
+                              htmlFor="last-frame"
+                              className="flex flex-col items-center justify-center w-full aspect-video border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
+                            >
+                              <div className="flex flex-col items-center justify-center">
+                                <Upload className="w-5 h-5 mb-1 text-gray-400" />
+                                <p className="text-xs text-gray-400">
+                                  Click to upload
+                                </p>
+                              </div>
+                              <input
+                                id="last-frame"
+                                type="file"
+                                className="hidden"
+                                accept="image/*"
+                                onChange={handleLastFrameUpload}
                               />
                             </label>
                           )}
                         </div>
                       </div>
 
-                      <div className="space-y-2">
-                        <label className="block text-sm font-medium">
-                          Aspect Ratio
-                        </label>
-                        <select
-                          value={aspectRatio}
-                          onChange={(e) => setAspectRatio(e.target.value)}
-                          className="w-full px-3 py-2 bg-[#2A1A3F] border border-[#3D2D4F] rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                        >
-                          <option value="1:1">1:1 Square</option>
-                          <option value="16:9">16:9 Landscape</option>
-                          <option value="9:16">9:16 Portrait</option>
-                          <option value="4:3">4:3 Standard</option>
-                          <option value="3:2">3:2 Classic</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <Button
-                      onClick={handleGenerateImage}
-                      disabled={!imagePrompt.trim() || isGeneratingImage}
-                      className="w-full bg-[#9B6C94] hover:bg-[#8A5B84] text-white mt-4"
-                      size="lg"
-                    >
-                      {isGeneratingImage ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Generating...
-                        </>
-                      ) : (
-                        "Generate Image"
-                      )}
-                    </Button>
-                  </Card>
-                </div>
-
-                {/* Right Grid Area - Result */}
-                {imageResult && (
-                  <div className="h-full flex flex-col items-center justify-center gap-4">
-                    <div className="relative rounded-lg overflow-hidden bg-[#2A1A3F] border border-[#3D2D4F] max-w-full" style={{ maxHeight: 'calc(100% - 60px)' }}>
-                      <img
-                        src={imageResult}
-                        alt="Generated"
-                        className="max-w-full max-h-full h-auto object-contain"
-                      />
-                      <Button
-                        onClick={() => setImageResult(null)}
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-2 right-2 bg-black/50 hover:bg-black/70"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    <div className="flex gap-3">
-                      <Button
-                        className="bg-[#9B6C94] hover:bg-[#8A5B84] text-white px-8"
-                      >
-                        Upscale
-                      </Button>
-                      <Button
-                        onClick={handleGenerateImage}
-                        disabled={isGeneratingImage}
-                        className="bg-[#9B6C94] hover:bg-[#8A5B84] text-white px-8"
-                      >
-                        Regenerate
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Empty state when no result */}
-                {!imageResult && !isGeneratingImage && (
-                  <div className="h-full flex items-center justify-center text-muted-foreground">
-                    <div className="text-center">
-                      <ImageIcon className="w-16 h-16 mx-auto mb-4 opacity-20" />
-                      <p className="text-sm">Generated image will appear here</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Loading state */}
-                {isGeneratingImage && (
-                  <div className="h-full flex items-center justify-center">
-                    <div className="text-center">
-                      <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin text-primary" />
-                      <p className="text-sm text-muted-foreground">Generating your image...</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="video" className="h-full p-0">
-              <div className="grid gap-8 h-full p-6" style={{ gridTemplateColumns: '340px 1fr' }}>
-                {/* Left Grid Area - Input Controls Card */}
-                <div className="flex">
-                  <Card className="bg-[#41204E] border-[#41204E] p-6 w-full h-full flex flex-col">
-                    <div className="flex-1 space-y-4">
-                      <div className="space-y-2">
-                        <label
-                          htmlFor="video-prompt"
-                          className="block text-sm font-medium"
-                        >
-                          Describe your video:
-                        </label>
-                        <Textarea
-                          id="video-prompt"
-                          placeholder="A time-lapse of a bustling city transitioning from day to night..."
-                          value={videoPrompt}
-                          onChange={(e) => setVideoPrompt(e.target.value)}
-                          className="min-h-[100px] bg-[#2A1A3F] border-[#3D2D4F] text-white placeholder:text-gray-400 resize-none"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="block text-sm font-medium">
-                          First Frame (Optional):
-                        </label>
-                        {firstFrame ? (
-                          <div className="relative rounded-lg overflow-hidden border border-[#3D2D4F] bg-[#2A1A3F] aspect-video">
-                            <img
-                              src={firstFrame}
-                              alt="First Frame"
-                              className="w-full h-full object-cover"
-                            />
-                            <Button
-                              onClick={() => setFirstFrame(null)}
-                              variant="ghost"
-                              size="icon"
-                              className="absolute top-1 right-1 h-5 w-5 bg-black/50 hover:bg-black/70"
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <label
-                            htmlFor="first-frame"
-                            className="flex flex-col items-center justify-center w-full aspect-video border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
-                          >
-                            <div className="flex flex-col items-center justify-center">
-                              <Upload className="w-5 h-5 mb-1 text-gray-400" />
-                              <p className="text-xs text-gray-400">
-                                Click to upload
-                              </p>
-                            </div>
-                            <input
-                              id="first-frame"
-                              type="file"
-                              className="hidden"
-                              accept="image/*"
-                              onChange={handleFirstFrameUpload}
-                            />
-                          </label>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="block text-sm font-medium">
-                          Last Frame (Optional):
-                        </label>
-                        {lastFrame ? (
-                          <div className="relative rounded-lg overflow-hidden border border-[#3D2D4F] bg-[#2A1A3F] aspect-video">
-                            <img
-                              src={lastFrame}
-                              alt="Last Frame"
-                              className="w-full h-full object-cover"
-                            />
-                            <Button
-                              onClick={() => setLastFrame(null)}
-                              variant="ghost"
-                              size="icon"
-                              className="absolute top-1 right-1 h-5 w-5 bg-black/50 hover:bg-black/70"
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <label
-                            htmlFor="last-frame"
-                            className="flex flex-col items-center justify-center w-full aspect-video border-2 border-dashed border-[#3D2D4F] rounded-lg cursor-pointer bg-[#2A1A3F] hover:bg-[#3D2D4F]/50 transition-colors"
-                          >
-                            <div className="flex flex-col items-center justify-center">
-                              <Upload className="w-5 h-5 mb-1 text-gray-400" />
-                              <p className="text-xs text-gray-400">
-                                Click to upload
-                              </p>
-                            </div>
-                            <input
-                              id="last-frame"
-                              type="file"
-                              className="hidden"
-                              accept="image/*"
-                              onChange={handleLastFrameUpload}
-                            />
-                          </label>
-                        )}
-                      </div>
-                    </div>
-
-                    <Button
-                      onClick={handleGenerateVideo}
-                      disabled={!videoPrompt.trim() || isGeneratingVideo}
-                      className="w-full bg-[#9B6C94] hover:bg-[#8A5B84] text-white mt-4"
-                      size="lg"
-                    >
-                      {isGeneratingVideo ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Generating...
-                        </>
-                      ) : (
-                        "Generate Video"
-                      )}
-                    </Button>
-                  </Card>
-                </div>
-
-                {/* Right Grid Area - Result */}
-                {videoResult && (
-                  <div className="h-full flex flex-col items-center justify-center gap-4">
-                    <div className="relative rounded-lg overflow-hidden bg-[#2A1A3F] border border-[#3D2D4F] max-w-full" style={{ maxHeight: 'calc(100% - 60px)' }}>
-                      <video
-                        src={videoResult}
-                        controls
-                        className="max-w-full max-h-full h-auto object-contain"
-                      />
-                      <Button
-                        onClick={() => setVideoResult(null)}
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-2 right-2 bg-black/50 hover:bg-black/70"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    <div className="flex gap-3">
-                      <Button
-                        onClick={handleDownloadVideo}
-                        className="bg-[#9B6C94] hover:bg-[#8A5B84] text-white px-8"
-                      >
-                        Download
-                      </Button>
                       <Button
                         onClick={handleGenerateVideo}
-                        disabled={isGeneratingVideo}
-                        className="bg-[#9B6C94] hover:bg-[#8A5B84] text-white px-8"
+                        disabled={!videoPrompt.trim() || isGeneratingVideo}
+                        className="w-full bg-[#9B6C94] hover:bg-[#8A5B84] text-white mt-4"
+                        size="lg"
                       >
-                        Regenerate
+                        {isGeneratingVideo ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          "Generate Video"
+                        )}
                       </Button>
-                    </div>
+                    </Card>
                   </div>
-                )}
 
-                {/* Empty state when no result */}
-                {!videoResult && !isGeneratingVideo && (
-                  <div className="h-full flex items-center justify-center text-muted-foreground">
-                    <div className="text-center">
-                      <VideoIcon className="w-16 h-16 mx-auto mb-4 opacity-20" />
-                      <p className="text-sm">Generated video will appear here</p>
+                  {/* Right Grid Area - Result */}
+                  {videoResult && (
+                    <div className="h-full flex flex-col items-center justify-center gap-4">
+                      <div
+                        className="relative rounded-lg overflow-hidden bg-[#2A1A3F] border border-[#3D2D4F] max-w-full"
+                        style={{ maxHeight: "calc(100% - 60px)" }}
+                      >
+                        <video
+                          src={videoResult}
+                          controls
+                          className="max-w-full max-h-full h-auto object-contain"
+                        />
+                        <Button
+                          onClick={() => setVideoResult(null)}
+                          variant="ghost"
+                          size="icon"
+                          className="absolute top-2 right-2 bg-black/50 hover:bg-black/70"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div className="flex gap-3">
+                        <Button
+                          onClick={handleDownloadVideo}
+                          className="bg-[#9B6C94] hover:bg-[#8A5B84] text-white px-8"
+                        >
+                          Download
+                        </Button>
+                        <Button
+                          onClick={handleGenerateVideo}
+                          disabled={isGeneratingVideo}
+                          className="bg-[#9B6C94] hover:bg-[#8A5B84] text-white px-8"
+                        >
+                          Regenerate
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Loading state */}
-                {isGeneratingVideo && (
-                  <div className="h-full flex items-center justify-center">
-                    <div className="text-center">
-                      <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin text-primary" />
-                      <p className="text-sm text-muted-foreground">Generating your video...</p>
+                  {/* Empty state when no result */}
+                  {!videoResult && !isGeneratingVideo && (
+                    <div className="h-full flex items-center justify-center text-muted-foreground">
+                      <div className="text-center">
+                        <VideoIcon className="w-16 h-16 mx-auto mb-4 opacity-20" />
+                        <p className="text-sm">
+                          Generated video will appear here
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            </TabsContent>
+                  )}
 
-            <TabsContent value="workflow" className="h-[calc(100vh-180px)]">
-              <WorkflowCanvas
-                ref={workflowCanvasRef}
-                onAssetGenerated={() => {
-                  console.log("[Index] Asset generated callback triggered");
-                  console.log(
-                    "[Index] AssetLibrary ref:",
-                    assetLibraryRef.current,
-                  );
-                  if (assetLibraryRef.current) {
-                    console.log("[Index] Calling refresh on asset library");
-                    assetLibraryRef.current.refresh();
-                  } else {
-                    console.warn(
-                      "[Index] AssetLibrary ref is null, cannot refresh",
+                  {/* Loading state */}
+                  {isGeneratingVideo && (
+                    <div className="h-full flex items-center justify-center">
+                      <div className="text-center">
+                        <Loader2 className="w-12 h-12 mx-auto mb-4 animate-spin text-primary" />
+                        <p className="text-sm text-muted-foreground">
+                          Generating your video...
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="workflow" className="h-[calc(100vh-180px)]">
+                <WorkflowCanvas
+                  ref={workflowCanvasRef}
+                  onAssetGenerated={() => {
+                    console.log("[Index] Asset generated callback triggered");
+                    console.log(
+                      "[Index] AssetLibrary ref:",
+                      assetLibraryRef.current,
                     );
-                  }
-                }}
-              />
-            </TabsContent>
-          </Tabs>
+                    if (assetLibraryRef.current) {
+                      console.log("[Index] Calling refresh on asset library");
+                      assetLibraryRef.current.refresh();
+                    } else {
+                      console.warn(
+                        "[Index] AssetLibrary ref is null, cannot refresh",
+                      );
+                    }
+                  }}
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
-      </div>
 
-      {/* Asset Library */}
-      <AssetLibrary
-        ref={assetLibraryRef}
-        open={isLibraryOpen}
-        onOpenChange={setIsLibraryOpen}
-        onAddAssetNode={handleAddAssetNode}
-      />
-    </div>
+        {/* Asset Library */}
+        <AssetLibrary
+          ref={assetLibraryRef}
+          open={isLibraryOpen}
+          onOpenChange={setIsLibraryOpen}
+          onAddAssetNode={handleAddAssetNode}
+        />
+      </div>
     </WorkflowProvider>
   );
 }

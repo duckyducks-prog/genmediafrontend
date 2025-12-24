@@ -23,7 +23,7 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
     console.log(
       `[DownloadNode] Updating media for ${id}:`,
       incomingEdges.length,
-      "incoming edges"
+      "incoming edges",
     );
 
     for (const edge of incomingEdges) {
@@ -48,15 +48,14 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
           outputsKeys: nodeData.outputs ? Object.keys(nodeData.outputs) : [],
           allDataKeys,
           fullNodeData: nodeData,
-        }
+        },
       );
 
       // Helper function to detect if a URL is a video
       const isVideoUrl = (url: string): boolean => {
         if (url.startsWith("data:")) {
           return (
-            url.includes("video/") ||
-            url.includes("application/octet-stream") // Sometimes videos come as octet-stream
+            url.includes("video/") || url.includes("application/octet-stream") // Sometimes videos come as octet-stream
           );
         }
         // Check file extensions for blob/object URLs
@@ -105,7 +104,7 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
         nodeData.outputs.video.startsWith("data:")
       ) {
         console.log(
-          `[DownloadNode] Preferring data URL over blob URL for video`
+          `[DownloadNode] Preferring data URL over blob URL for video`,
         );
         videoUrl = nodeData.outputs.video;
       }
@@ -116,12 +115,12 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
           if (typeof value === "string" && value.startsWith("data:")) {
             if (!videoUrl && isVideoUrl(value)) {
               console.log(
-                `[DownloadNode] Found video in outputs.${key} by MIME type`
+                `[DownloadNode] Found video in outputs.${key} by MIME type`,
               );
               videoUrl = value;
             } else if (!imageUrl && isImageUrl(value)) {
               console.log(
-                `[DownloadNode] Found image in outputs.${key} by MIME type`
+                `[DownloadNode] Found image in outputs.${key} by MIME type`,
               );
               imageUrl = value;
             }
@@ -132,26 +131,23 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
       const textContent =
         nodeData.textContent || nodeData.outputs?.text || nodeData.text;
 
-      console.log(
-        `[DownloadNode] Extracted media:`,
-        {
-          hasImageUrl: !!imageUrl,
-          hasVideoUrl: !!videoUrl,
-          imageUrlStart: imageUrl?.substring(0, 50),
-          videoUrlStart: videoUrl?.substring(0, 50),
-        }
-      );
+      console.log(`[DownloadNode] Extracted media:`, {
+        hasImageUrl: !!imageUrl,
+        hasVideoUrl: !!videoUrl,
+        imageUrlStart: imageUrl?.substring(0, 50),
+        videoUrlStart: videoUrl?.substring(0, 50),
+      });
 
       if (imageUrl && typeof imageUrl === "string") {
         console.log(
           `[DownloadNode] ✓ Adding image URL:`,
-          imageUrl.substring(0, 80)
+          imageUrl.substring(0, 80),
         );
         media.push({ type: "image", url: imageUrl });
       } else if (videoUrl && typeof videoUrl === "string") {
         console.log(
           `[DownloadNode] ✓ Adding video URL:`,
-          videoUrl.substring(0, 80)
+          videoUrl.substring(0, 80),
         );
         media.push({ type: "video", url: videoUrl });
       } else if (
@@ -164,7 +160,7 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
         media.push({ type: "image", url: textContent });
       } else {
         console.log(
-          `[DownloadNode] ✗ No media found in node ${edge.source} (type: ${nodeType}).`
+          `[DownloadNode] ✗ No media found in node ${edge.source} (type: ${nodeType}).`,
         );
       }
 
@@ -245,7 +241,7 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
     } catch (error) {
       console.error("[DownloadNode] Download error:", error);
       toast.error(
-        `Download failed: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Download failed: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
       setIsDownloading(false);
@@ -264,7 +260,9 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
         <div className="flex items-center gap-2">
           <Download className="w-4 h-4 text-primary" />
-          <div className="font-semibold text-sm">{data.label || "Download"}</div>
+          <div className="font-semibold text-sm">
+            {data.label || "Download"}
+          </div>
         </div>
         {isDownloading && (
           <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />

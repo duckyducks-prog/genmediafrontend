@@ -44,7 +44,11 @@ import { useToast } from "@/hooks/use-toast";
 import { SavedWorkflow, cloneWorkflow } from "@/lib/workflow-api";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
-import { useWorkflowNodes, useWorkflowEdges, useWorkflow } from "@/contexts/WorkflowContext";
+import {
+  useWorkflowNodes,
+  useWorkflowEdges,
+  useWorkflow,
+} from "@/contexts/WorkflowContext";
 import { useUnsavedChangesWarning } from "@/hooks/useUnsavedChangesWarning";
 
 // Import all custom node components
@@ -712,14 +716,20 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
             });
 
             // Create appropriate input node based on asset type
-            const nodeType = asset.assetType === "video" ? NodeType.VideoInput : NodeType.ImageInput;
+            const nodeType =
+              asset.assetType === "video"
+                ? NodeType.VideoInput
+                : NodeType.ImageInput;
             const newNode: WorkflowNode = {
               id: `${nodeType}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
               type: nodeType,
               position,
               data: {
-                ...(asset.assetType === "video" ? { videoUrl: asset.url } : { imageUrl: asset.url }),
-                label: asset.assetType === "video" ? "Video Input" : "Image Input",
+                ...(asset.assetType === "video"
+                  ? { videoUrl: asset.url }
+                  : { imageUrl: asset.url }),
+                label:
+                  asset.assetType === "video" ? "Video Input" : "Image Input",
                 outputs: { [asset.assetType]: asset.url },
               },
             };
@@ -965,7 +975,13 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
       isExecuting,
       executionProgress,
       totalNodes,
-    } = useWorkflowExecution(nodes, edges, setNodes, setEdges, onAssetGenerated);
+    } = useWorkflowExecution(
+      nodes,
+      edges,
+      setNodes,
+      setEdges,
+      onAssetGenerated,
+    );
 
     // Copy selected nodes
     const copySelectedNodes = useCallback(() => {
@@ -1271,7 +1287,8 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
         });
 
         // Create appropriate input node based on asset type
-        const nodeType = assetType === "video" ? NodeType.VideoInput : NodeType.ImageInput;
+        const nodeType =
+          assetType === "video" ? NodeType.VideoInput : NodeType.ImageInput;
         const newNode: WorkflowNode = {
           id: `${nodeType}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           type: nodeType,

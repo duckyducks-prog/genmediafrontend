@@ -4,10 +4,30 @@ import { StickyNoteNodeData } from "../types";
 import { Trash2, MessageSquare, Pencil } from "lucide-react";
 
 const COLOR_OPTIONS = [
-  { name: "yellow", bg: "bg-yellow-100", border: "border-yellow-300", text: "text-yellow-900" },
-  { name: "blue", bg: "bg-blue-100", border: "border-blue-300", text: "text-blue-900" },
-  { name: "pink", bg: "bg-pink-100", border: "border-pink-300", text: "text-pink-900" },
-  { name: "purple", bg: "bg-purple-100", border: "border-purple-300", text: "text-purple-900" },
+  {
+    name: "yellow",
+    bg: "bg-yellow-100",
+    border: "border-yellow-300",
+    text: "text-yellow-900",
+  },
+  {
+    name: "blue",
+    bg: "bg-blue-100",
+    border: "border-blue-300",
+    text: "text-blue-900",
+  },
+  {
+    name: "pink",
+    bg: "bg-pink-100",
+    border: "border-pink-300",
+    text: "text-pink-900",
+  },
+  {
+    name: "purple",
+    bg: "bg-purple-100",
+    border: "border-purple-300",
+    text: "text-purple-900",
+  },
 ];
 
 const MIN_WIDTH = 150;
@@ -21,11 +41,18 @@ function StickyNoteNode({ data, id }: NodeProps<StickyNoteNodeData>) {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [labelInput, setLabelInput] = useState(data.label || "Sticky Note");
   const [isResizing, setIsResizing] = useState(false);
-  const resizeStartRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
+  const resizeStartRef = useRef<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
 
   const width = data.width || DEFAULT_WIDTH;
   const height = data.height || DEFAULT_HEIGHT;
-  const currentColor = COLOR_OPTIONS.find((c) => c.name === (data.color || "yellow")) || COLOR_OPTIONS[0];
+  const currentColor =
+    COLOR_OPTIONS.find((c) => c.name === (data.color || "yellow")) ||
+    COLOR_OPTIONS[0];
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (data.readOnly) return;
@@ -119,8 +146,14 @@ function StickyNoteNode({ data, id }: NodeProps<StickyNoteNodeData>) {
       const deltaX = e.clientX - resizeStartRef.current.x;
       const deltaY = e.clientY - resizeStartRef.current.y;
 
-      const newWidth = Math.max(MIN_WIDTH, resizeStartRef.current.width + deltaX);
-      const newHeight = Math.max(MIN_HEIGHT, resizeStartRef.current.height + deltaY);
+      const newWidth = Math.max(
+        MIN_WIDTH,
+        resizeStartRef.current.width + deltaX,
+      );
+      const newHeight = Math.max(
+        MIN_HEIGHT,
+        resizeStartRef.current.height + deltaY,
+      );
 
       setNodes((nodes) =>
         nodes.map((node) =>
@@ -165,7 +198,9 @@ function StickyNoteNode({ data, id }: NodeProps<StickyNoteNodeData>) {
       {/* Header */}
       <div className="flex items-start justify-between mb-2 pb-2 border-b border-current border-opacity-20">
         <div className="flex items-center gap-1 flex-1 min-w-0">
-          <MessageSquare className={`w-4 h-4 ${currentColor.text} flex-shrink-0`} />
+          <MessageSquare
+            className={`w-4 h-4 ${currentColor.text} flex-shrink-0`}
+          />
           {isEditingLabel ? (
             <input
               autoFocus
@@ -218,7 +253,9 @@ function StickyNoteNode({ data, id }: NodeProps<StickyNoteNodeData>) {
                   title="Change color"
                   onMouseDown={(e) => e.preventDefault()}
                 >
-                  <div className={`w-4 h-4 rounded border-2 ${currentColor.border}`} />
+                  <div
+                    className={`w-4 h-4 rounded border-2 ${currentColor.border}`}
+                  />
                 </button>
 
                 {/* Color picker dropdown */}

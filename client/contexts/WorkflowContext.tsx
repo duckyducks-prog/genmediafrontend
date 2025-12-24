@@ -43,7 +43,10 @@ const initialState: WorkflowState = {
 };
 
 // Reducer
-function workflowReducer(state: WorkflowState, action: WorkflowAction): WorkflowState {
+function workflowReducer(
+  state: WorkflowState,
+  action: WorkflowAction,
+): WorkflowState {
   switch (action.type) {
     case "SET_NODES":
       return { ...state, nodes: action.payload, isDirty: true };
@@ -66,26 +69,34 @@ function workflowReducer(state: WorkflowState, action: WorkflowAction): Workflow
         nodes: state.nodes.map((node) =>
           node.id === action.payload.id
             ? { ...node, data: { ...node.data, ...action.payload.data } }
-            : node
+            : node,
         ),
         isDirty: true,
       };
 
     case "ADD_NODE":
-      return { ...state, nodes: [...state.nodes, action.payload], isDirty: true };
+      return {
+        ...state,
+        nodes: [...state.nodes, action.payload],
+        isDirty: true,
+      };
 
     case "REMOVE_NODE":
       return {
         ...state,
         nodes: state.nodes.filter((n) => n.id !== action.payload),
         edges: state.edges.filter(
-          (e) => e.source !== action.payload && e.target !== action.payload
+          (e) => e.source !== action.payload && e.target !== action.payload,
         ),
         isDirty: true,
       };
 
     case "ADD_EDGE":
-      return { ...state, edges: [...state.edges, action.payload], isDirty: true };
+      return {
+        ...state,
+        edges: [...state.edges, action.payload],
+        isDirty: true,
+      };
 
     case "REMOVE_EDGE":
       return {
@@ -153,7 +164,7 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
           edges: state.edges,
           viewport: state.viewport,
           lastSaved: new Date().toISOString(),
-        })
+        }),
       );
       dispatch({ type: "MARK_SAVED" });
     }, 1000); // 1 second debounce
@@ -192,7 +203,7 @@ export function useWorkflowNodes() {
         dispatch({ type: "SET_NODES", payload: nodes });
       }
     },
-    [dispatch] // Only depend on dispatch, which is stable
+    [dispatch], // Only depend on dispatch, which is stable
   );
 
   return [state.nodes, setNodes] as const;
@@ -211,7 +222,7 @@ export function useWorkflowEdges() {
         dispatch({ type: "SET_EDGES", payload: edges });
       }
     },
-    [dispatch] // Only depend on dispatch, which is stable
+    [dispatch], // Only depend on dispatch, which is stable
   );
 
   return [state.edges, setEdges] as const;

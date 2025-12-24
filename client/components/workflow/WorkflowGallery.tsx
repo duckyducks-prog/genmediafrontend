@@ -52,7 +52,9 @@ export default function WorkflowGallery({
   onLoadWorkflow,
 }: WorkflowGalleryProps) {
   const [myWorkflows, setMyWorkflows] = useState<WorkflowListItem[]>([]);
-  const [publicWorkflows, setPublicWorkflows] = useState<WorkflowListItem[]>([]);
+  const [publicWorkflows, setPublicWorkflows] = useState<WorkflowListItem[]>(
+    [],
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [apiStatus, setApiStatus] = useState<APITestResult | null>(null);
@@ -64,11 +66,14 @@ export default function WorkflowGallery({
     try {
       const [myWf, publicWf] = await Promise.all([
         listMyWorkflows().catch((err) => {
-          console.error('[WorkflowGallery] Failed to fetch my workflows:', err);
+          console.error("[WorkflowGallery] Failed to fetch my workflows:", err);
           return [];
         }),
         listPublicWorkflows().catch((err) => {
-          console.error('[WorkflowGallery] Failed to fetch public workflows:', err);
+          console.error(
+            "[WorkflowGallery] Failed to fetch public workflows:",
+            err,
+          );
           return [];
         }),
       ]);
@@ -108,7 +113,7 @@ export default function WorkflowGallery({
       setApiStatus(result);
 
       if (!result.available) {
-        console.warn('[WorkflowGallery] API Status:', result);
+        console.warn("[WorkflowGallery] API Status:", result);
         setShowApiTest(true);
       }
     };
@@ -250,7 +255,10 @@ export default function WorkflowGallery({
           {/* Template badge (top-right) */}
           {workflow.is_public && (
             <div className="absolute top-2 right-2 z-10">
-              <Badge variant="secondary" className="flex items-center gap-1 shadow-lg">
+              <Badge
+                variant="secondary"
+                className="flex items-center gap-1 shadow-lg"
+              >
                 <Lock className="w-3 h-3" />
                 Template
               </Badge>
@@ -337,7 +345,8 @@ export default function WorkflowGallery({
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Workflow API Unavailable</AlertTitle>
           <AlertDescription>
-            Cannot connect to the backend API. You won't be able to save or load your own workflows.
+            Cannot connect to the backend API. You won't be able to save or load
+            your own workflows.
             {apiStatus.details && (
               <span className="block mt-1 text-sm">
                 <strong>Details:</strong> {apiStatus.details}
@@ -360,7 +369,8 @@ export default function WorkflowGallery({
                 } else {
                   toast({
                     title: "Still unavailable",
-                    description: result.details || result.error || "Cannot reach API",
+                    description:
+                      result.details || result.error || "Cannot reach API",
                     variant: "destructive",
                   });
                 }
@@ -398,9 +408,7 @@ export default function WorkflowGallery({
             <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
               <WorkflowIcon className="w-16 h-16 mb-4 opacity-50" />
               <p className="text-lg font-medium">Workflow Library is empty</p>
-              <p className="text-sm">
-                Check back later for more workflows
-              </p>
+              <p className="text-sm">Check back later for more workflows</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -91,7 +91,7 @@ export function downloadBlob(blob: Blob, fileName: string): void {
 export async function downloadMediaFile(
   dataUrl: string,
   type: "image" | "video",
-  index: number
+  index: number,
 ): Promise<void> {
   const blob = dataUrlToBlob(dataUrl);
   const ext = getFileExtension(blob.type);

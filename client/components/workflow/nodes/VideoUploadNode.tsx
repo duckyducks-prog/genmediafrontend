@@ -7,20 +7,25 @@ import { VideoInputNodeData } from "../types";
 function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
   // Initialize from data, which may be pre-populated from library
   const [videoUrl, setVideoUrl] = useState<string | null>(
-    data.videoUrl || (data as any).url || null
+    data.videoUrl || (data as any).url || null,
   );
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(
-    data.thumbnailUrl || (data as any).thumbnailUrl || null
+    data.thumbnailUrl || (data as any).thumbnailUrl || null,
   );
   const [showPreview, setShowPreview] = useState(false);
-  const [duration, setDuration] = useState<number | null>(data.duration || null);
+  const [duration, setDuration] = useState<number | null>(
+    data.duration || null,
+  );
   const videoRef = useRef<HTMLVideoElement>(null);
   const { setNodes } = useReactFlow();
 
   // Sync local state with node data on mount
   useEffect(() => {
     if (data.videoUrl && data.videoUrl !== videoUrl) {
-      console.log('[VideoUploadNode] Syncing videoUrl from data:', data.videoUrl);
+      console.log(
+        "[VideoUploadNode] Syncing videoUrl from data:",
+        data.videoUrl,
+      );
       setVideoUrl(data.videoUrl);
     }
     if (data.thumbnailUrl && data.thumbnailUrl !== thumbnailUrl) {
@@ -29,22 +34,29 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
     if (data.duration && data.duration !== duration) {
       setDuration(data.duration);
     }
-  }, [data.videoUrl, data.thumbnailUrl, data.duration, videoUrl, thumbnailUrl, duration]);
+  }, [
+    data.videoUrl,
+    data.thumbnailUrl,
+    data.duration,
+    videoUrl,
+    thumbnailUrl,
+    duration,
+  ]);
 
   // Sync local state TO node data when it changes (for library-loaded videos)
   useEffect(() => {
     // If we have video in local state but not in node data, update node data
     if (videoUrl && videoUrl !== data.videoUrl) {
-      console.log('[VideoUploadNode] Syncing local state to node data:', {
+      console.log("[VideoUploadNode] Syncing local state to node data:", {
         videoUrl: videoUrl.substring(0, 100),
         hasOutputs: !!data.outputs?.video,
       });
 
       // For HTTP URLs (library assets), fetch and convert to data URL
-      if (videoUrl.startsWith('http')) {
-        fetch(videoUrl, { mode: 'cors' })
-          .then(response => response.blob())
-          .then(blob => {
+      if (videoUrl.startsWith("http")) {
+        fetch(videoUrl, { mode: "cors" })
+          .then((response) => response.blob())
+          .then((blob) => {
             const reader = new FileReader();
             reader.onload = () => {
               const dataUrl = reader.result as string;
@@ -57,155 +69,175 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
                 outputs: { video: dataUrl },
               };
 
-              console.log('[VideoUploadNode] Updated node data with library video');
+              console.log(
+                "[VideoUploadNode] Updated node data with library video",
+              );
 
               setNodes((nodes) =>
                 nodes.map((node) =>
-                  node.id === id ? { ...node, data: newData } : node
-                )
+                  node.id === id ? { ...node, data: newData } : node,
+                ),
               );
 
-              window.dispatchEvent(new CustomEvent('node-update', {
-                detail: { id, data: newData },
-              }));
+              window.dispatchEvent(
+                new CustomEvent("node-update", {
+                  detail: { id, data: newData },
+                }),
+              );
             };
             reader.readAsDataURL(blob);
           })
           .catch((err) => {
-            console.error('[VideoUploadNode] Error converting library video:', err);
+            console.error(
+              "[VideoUploadNode] Error converting library video:",
+              err,
+            );
           });
       }
     }
   }, [videoUrl, thumbnailUrl, duration, data, id, setNodes]);
 
   // Generate thumbnail from video at 1 second mark
-  const generateThumbnail = useCallback((videoElement: HTMLVideoElement): Promise<string> => {
-    return new Promise((resolve) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        console.error('[VideoUploadNode] Failed to get canvas context');
-        resolve('');
+  const generateThumbnail = useCallback(
+    (videoElement: HTMLVideoElement): Promise<string> => {
+      return new Promise((resolve) => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          console.error("[VideoUploadNode] Failed to get canvas context");
+          resolve("");
+          return;
+        }
+
+        const handleLoadedMetadata = () => {
+          try {
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+
+            // Seek to 1 second (or 10% of duration, whichever is smaller)
+            const seekTime = Math.min(1, videoElement.duration * 0.1);
+            videoElement.currentTime = seekTime;
+          } catch (err) {
+            console.error("[VideoUploadNode] Error loading metadata:", err);
+            resolve("");
+          }
+        };
+
+        const handleSeeked = () => {
+          try {
+            ctx!.drawImage(videoElement, 0, 0);
+            resolve(canvas.toDataURL("image/jpeg", 0.8));
+          } catch (err) {
+            console.error("[VideoUploadNode] Error capturing frame:", err);
+            resolve("");
+          }
+        };
+
+        videoElement.addEventListener("loadedmetadata", handleLoadedMetadata);
+        videoElement.addEventListener("seeked", handleSeeked);
+
+        // Cleanup on unmount
+        return () => {
+          videoElement.removeEventListener(
+            "loadedmetadata",
+            handleLoadedMetadata,
+          );
+          videoElement.removeEventListener("seeked", handleSeeked);
+        };
+      });
+    },
+    [],
+  );
+
+  const handleFileUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      // Validate file type
+      if (!file.type.startsWith("video/")) {
+        console.error("[VideoUploadNode] Invalid file type:", file.type);
         return;
       }
 
-      const handleLoadedMetadata = () => {
-        try {
-          canvas.width = videoElement.videoWidth;
-          canvas.height = videoElement.videoHeight;
+      const url = URL.createObjectURL(file);
+      setVideoUrl(url);
 
-          // Seek to 1 second (or 10% of duration, whichever is smaller)
-          const seekTime = Math.min(1, videoElement.duration * 0.1);
-          videoElement.currentTime = seekTime;
-        } catch (err) {
-          console.error('[VideoUploadNode] Error loading metadata:', err);
-          resolve('');
-        }
-      };
-
-      const handleSeeked = () => {
-        try {
-          ctx!.drawImage(videoElement, 0, 0);
-          resolve(canvas.toDataURL('image/jpeg', 0.8));
-        } catch (err) {
-          console.error('[VideoUploadNode] Error capturing frame:', err);
-          resolve('');
-        }
-      };
-
-      videoElement.addEventListener('loadedmetadata', handleLoadedMetadata);
-      videoElement.addEventListener('seeked', handleSeeked);
-
-      // Cleanup on unmount
-      return () => {
-        videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata);
-        videoElement.removeEventListener('seeked', handleSeeked);
-      };
-    });
-  }, []);
-
-  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith('video/')) {
-      console.error('[VideoUploadNode] Invalid file type:', file.type);
-      return;
-    }
-
-    const url = URL.createObjectURL(file);
-    setVideoUrl(url);
-
-    console.log('[VideoUploadNode] Starting video upload:', {
-      nodeId: id,
-      fileName: file.name,
-      fileSize: file.size,
-      fileType: file.type,
-    });
-
-    // Create temporary video element to extract metadata and thumbnail
-    const tempVideo = document.createElement('video');
-    tempVideo.src = url;
-    tempVideo.muted = true;
-
-    tempVideo.onloadedmetadata = async () => {
-      const videoDuration = tempVideo.duration;
-      setDuration(videoDuration);
-
-      console.log('[VideoUploadNode] Video metadata loaded:', {
+      console.log("[VideoUploadNode] Starting video upload:", {
         nodeId: id,
-        duration: videoDuration,
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
       });
 
-      // Generate thumbnail
-      const thumb = await generateThumbnail(tempVideo);
-      setThumbnailUrl(thumb);
+      // Create temporary video element to extract metadata and thumbnail
+      const tempVideo = document.createElement("video");
+      tempVideo.src = url;
+      tempVideo.muted = true;
 
-      console.log('[VideoUploadNode] Thumbnail generated, reading file as data URL...');
+      tempVideo.onloadedmetadata = async () => {
+        const videoDuration = tempVideo.duration;
+        setDuration(videoDuration);
 
-      // Read file as data URL for output
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = reader.result as string;
-
-        console.log('[VideoUploadNode] File read complete:', {
-          nodeId: id,
-          dataUrlLength: dataUrl.length,
-          dataUrlStart: dataUrl.substring(0, 100),
-        });
-
-        const newData = {
-          ...data,
-          videoUrl: url, // Object URL for preview
-          file,
-          duration: videoDuration,
-          thumbnailUrl: thumb,
-          outputs: { video: dataUrl }, // Data URL for downstream nodes
-        };
-
-        console.log('[VideoUploadNode] Video loaded:', {
+        console.log("[VideoUploadNode] Video metadata loaded:", {
           nodeId: id,
           duration: videoDuration,
-          fileSize: file.size,
-          fileType: file.type,
         });
 
-        // Update React Flow node
-        setNodes((nodes) =>
-          nodes.map((node) =>
-            node.id === id ? { ...node, data: newData } : node
-          )
+        // Generate thumbnail
+        const thumb = await generateThumbnail(tempVideo);
+        setThumbnailUrl(thumb);
+
+        console.log(
+          "[VideoUploadNode] Thumbnail generated, reading file as data URL...",
         );
 
-        // Dispatch for propagation
-        window.dispatchEvent(new CustomEvent('node-update', {
-          detail: { id, data: newData },
-        }));
+        // Read file as data URL for output
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = reader.result as string;
+
+          console.log("[VideoUploadNode] File read complete:", {
+            nodeId: id,
+            dataUrlLength: dataUrl.length,
+            dataUrlStart: dataUrl.substring(0, 100),
+          });
+
+          const newData = {
+            ...data,
+            videoUrl: url, // Object URL for preview
+            file,
+            duration: videoDuration,
+            thumbnailUrl: thumb,
+            outputs: { video: dataUrl }, // Data URL for downstream nodes
+          };
+
+          console.log("[VideoUploadNode] Video loaded:", {
+            nodeId: id,
+            duration: videoDuration,
+            fileSize: file.size,
+            fileType: file.type,
+          });
+
+          // Update React Flow node
+          setNodes((nodes) =>
+            nodes.map((node) =>
+              node.id === id ? { ...node, data: newData } : node,
+            ),
+          );
+
+          // Dispatch for propagation
+          window.dispatchEvent(
+            new CustomEvent("node-update", {
+              detail: { id, data: newData },
+            }),
+          );
+        };
+        reader.readAsDataURL(file);
       };
-      reader.readAsDataURL(file);
-    };
-  }, [id, data, setNodes, generateThumbnail]);
+    },
+    [id, data, setNodes, generateThumbnail],
+  );
 
   const handleRemove = useCallback(() => {
     setVideoUrl(null);
@@ -223,59 +255,64 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
     };
 
     setNodes((nodes) =>
-      nodes.map((node) =>
-        node.id === id ? { ...node, data: newData } : node
-      )
+      nodes.map((node) => (node.id === id ? { ...node, data: newData } : node)),
     );
 
-    window.dispatchEvent(new CustomEvent('node-update', {
-      detail: { id, data: newData },
-    }));
+    window.dispatchEvent(
+      new CustomEvent("node-update", {
+        detail: { id, data: newData },
+      }),
+    );
   }, [id, data, setNodes]);
 
   // Generate thumbnail and convert video to data URL for pre-loaded videos from library
   useEffect(() => {
     if (videoUrl && (!thumbnailUrl || !data.outputs?.video)) {
-      console.log('[VideoUploadNode] Processing pre-loaded video:', {
+      console.log("[VideoUploadNode] Processing pre-loaded video:", {
         videoUrl: videoUrl.substring(0, 100),
         hasThumbnail: !!thumbnailUrl,
         hasOutputs: !!data.outputs?.video,
       });
 
-      const tempVideo = document.createElement('video');
+      const tempVideo = document.createElement("video");
       tempVideo.src = videoUrl;
       tempVideo.muted = true;
-      tempVideo.crossOrigin = 'anonymous';
+      tempVideo.crossOrigin = "anonymous";
 
       // Generate thumbnail if needed
       if (!thumbnailUrl) {
         generateThumbnail(tempVideo)
           .then((thumb) => {
             if (thumb) {
-              console.log('[VideoUploadNode] Thumbnail generated successfully');
+              console.log("[VideoUploadNode] Thumbnail generated successfully");
               setThumbnailUrl(thumb);
             }
           })
           .catch((err) => {
-            console.error('[VideoUploadNode] Error generating thumbnail:', err);
+            console.error("[VideoUploadNode] Error generating thumbnail:", err);
           });
       }
 
       // Convert video to data URL if needed
-      if (!data.outputs?.video && videoUrl.startsWith('http')) {
-        console.log('[VideoUploadNode] Fetching and converting library video to data URL...');
+      if (!data.outputs?.video && videoUrl.startsWith("http")) {
+        console.log(
+          "[VideoUploadNode] Fetching and converting library video to data URL...",
+        );
 
-        fetch(videoUrl, { mode: 'cors' })
-          .then(response => response.blob())
-          .then(blob => {
+        fetch(videoUrl, { mode: "cors" })
+          .then((response) => response.blob())
+          .then((blob) => {
             const reader = new FileReader();
             reader.onload = () => {
               const dataUrl = reader.result as string;
 
-              console.log('[VideoUploadNode] Library video converted to data URL:', {
-                nodeId: id,
-                dataUrlLength: dataUrl.length,
-              });
+              console.log(
+                "[VideoUploadNode] Library video converted to data URL:",
+                {
+                  nodeId: id,
+                  dataUrlLength: dataUrl.length,
+                },
+              );
 
               const newData = {
                 ...data,
@@ -284,18 +321,23 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
 
               setNodes((nodes) =>
                 nodes.map((node) =>
-                  node.id === id ? { ...node, data: newData } : node
-                )
+                  node.id === id ? { ...node, data: newData } : node,
+                ),
               );
 
-              window.dispatchEvent(new CustomEvent('node-update', {
-                detail: { id, data: newData },
-              }));
+              window.dispatchEvent(
+                new CustomEvent("node-update", {
+                  detail: { id, data: newData },
+                }),
+              );
             };
             reader.readAsDataURL(blob);
           })
           .catch((err) => {
-            console.error('[VideoUploadNode] Error fetching library video:', err);
+            console.error(
+              "[VideoUploadNode] Error fetching library video:",
+              err,
+            );
           });
       }
     }
@@ -303,15 +345,17 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
 
   const handleBrowseLibrary = useCallback(() => {
     // Dispatch event to open Asset Library with video filter
-    window.dispatchEvent(new CustomEvent('open-asset-library', {
-      detail: { assetType: 'video', targetNodeId: id },
-    }));
+    window.dispatchEvent(
+      new CustomEvent("open-asset-library", {
+        detail: { assetType: "video", targetNodeId: id },
+      }),
+    );
   }, [id]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   const status = (data as any).status || "ready";
@@ -324,9 +368,13 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
         <div className="flex items-center gap-2">
           <Film className="w-4 h-4 text-accent" />
-          <div className="font-semibold text-sm">{data.label || "Video Input"}</div>
+          <div className="font-semibold text-sm">
+            {data.label || "Video Input"}
+          </div>
         </div>
-        {isExecuting && <span className="w-4 h-4 animate-pulse text-yellow-500">⚡</span>}
+        {isExecuting && (
+          <span className="w-4 h-4 animate-pulse text-yellow-500">⚡</span>
+        )}
         {isCompleted && <span className="text-green-500">✓</span>}
       </div>
 
@@ -357,8 +405,11 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
                       alt="Video thumbnail"
                       className="max-w-full max-h-full object-contain"
                       onError={(e) => {
-                        console.error('[VideoUploadNode] Thumbnail failed to load');
-                        (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="112"%3E%3Crect fill="%23333" width="200" height="112"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23999" font-size="14" dominant-baseline="middle"%3EVideo Thumbnail%3C/text%3E%3C/svg%3E';
+                        console.error(
+                          "[VideoUploadNode] Thumbnail failed to load",
+                        );
+                        (e.target as HTMLImageElement).src =
+                          'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="112"%3E%3Crect fill="%23333" width="200" height="112"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" fill="%23999" font-size="14" dominant-baseline="middle"%3EVideo Thumbnail%3C/text%3E%3C/svg%3E';
                       }}
                     />
                   ) : (
@@ -398,7 +449,9 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
               className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-accent/10 transition-colors"
             >
               <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-              <span className="text-xs text-muted-foreground">Click to upload video</span>
+              <span className="text-xs text-muted-foreground">
+                Click to upload video
+              </span>
               <input
                 id={`file-upload-${id}`}
                 type="file"
