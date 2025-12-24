@@ -3,7 +3,7 @@
  * NO PixiJS Filter instances, just parameter data
  */
 export interface FilterConfig {
-  type: 'brightness' | 'blur' | 'sharpen' | 'hueSaturation' | 'noise' | 'vignette' | 'crop';
+  type: 'brightness' | 'blur' | 'sharpen' | 'hueSaturation' | 'noise' | 'vignette' | 'crop' | 'filmGrain';
   params: Record<string, number>;
 }
 
