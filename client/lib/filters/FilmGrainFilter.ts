@@ -166,42 +166,42 @@ export class FilmGrainFilter extends Filter {
 
   // --- Intensity (0-100) ---
   get intensity(): number {
-    return this.resources.filmGrainUniforms.uniforms.uIntensity * 100;
+    return this._uniforms.uIntensity * 100;
   }
   set intensity(value: number) {
-    this.resources.filmGrainUniforms.uniforms.uIntensity = Math.max(0, Math.min(100, value)) / 100;
+    this._uniforms.uIntensity = Math.max(0, Math.min(100, value)) / 100;
   }
 
   // --- Size (1 = fine, 2 = medium, 3-4 = coarse) ---
   get size(): number {
-    return this.resources.filmGrainUniforms.uniforms.uSize;
+    return this._uniforms.uSize;
   }
   set size(value: number) {
-    this.resources.filmGrainUniforms.uniforms.uSize = Math.max(1, Math.min(4, value));
+    this._uniforms.uSize = Math.max(1, Math.min(4, value));
   }
 
   // --- Shadows (0-100) ---
   get shadows(): number {
-    return this.resources.filmGrainUniforms.uniforms.uShadows * 100;
+    return this._uniforms.uShadows * 100;
   }
   set shadows(value: number) {
-    this.resources.filmGrainUniforms.uniforms.uShadows = Math.max(0, Math.min(100, value)) / 100;
+    this._uniforms.uShadows = Math.max(0, Math.min(100, value)) / 100;
   }
 
   // --- Highlights (0-100) ---
   get highlights(): number {
-    return this.resources.filmGrainUniforms.uniforms.uHighlights * 100;
+    return this._uniforms.uHighlights * 100;
   }
   set highlights(value: number) {
-    this.resources.filmGrainUniforms.uniforms.uHighlights = Math.max(0, Math.min(100, value)) / 100;
+    this._uniforms.uHighlights = Math.max(0, Math.min(100, value)) / 100;
   }
 
   // --- Midtones Bias (0-100) ---
   get midtonesBias(): number {
-    return this.resources.filmGrainUniforms.uniforms.uMidtonesBias * 100;
+    return this._uniforms.uMidtonesBias * 100;
   }
   set midtonesBias(value: number) {
-    this.resources.filmGrainUniforms.uniforms.uMidtonesBias = Math.max(0, Math.min(100, value)) / 100;
+    this._uniforms.uMidtonesBias = Math.max(0, Math.min(100, value)) / 100;
   }
 
   // --- Dimensions ---
@@ -210,7 +210,9 @@ export class FilmGrainFilter extends Filter {
   }
   set width(value: number) {
     this._width = value;
-    this.resources.filmGrainUniforms.uniforms.uDimensions[0] = value;
+    if (this._uniforms.uDimensions instanceof Float32Array) {
+      this._uniforms.uDimensions[0] = value;
+    }
   }
 
   get height(): number {
@@ -218,19 +220,23 @@ export class FilmGrainFilter extends Filter {
   }
   set height(value: number) {
     this._height = value;
-    this.resources.filmGrainUniforms.uniforms.uDimensions[1] = value;
+    if (this._uniforms.uDimensions instanceof Float32Array) {
+      this._uniforms.uDimensions[1] = value;
+    }
   }
 
   setDimensions(width: number, height: number): void {
     this._width = width;
     this._height = height;
-    this.resources.filmGrainUniforms.uniforms.uDimensions[0] = width;
-    this.resources.filmGrainUniforms.uniforms.uDimensions[1] = height;
+    if (this._uniforms.uDimensions instanceof Float32Array) {
+      this._uniforms.uDimensions[0] = width;
+      this._uniforms.uDimensions[1] = height;
+    }
   }
 
   // --- Randomize seed (for different grain pattern) ---
   randomizeSeed(): void {
-    this.resources.filmGrainUniforms.uniforms.uSeed = Math.random() * 10000;
+    this._uniforms.uSeed = Math.random() * 10000;
   }
 
   // --- Presets ---
