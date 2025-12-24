@@ -210,10 +210,10 @@ export const FILTER_DEFINITIONS: Record<string, FilterDefinition> = {
       },
       size: {
         label: 'Size',
-        min: 0.5,
-        max: 3,
-        step: 0.1,
-        default: 1.0,
+        min: 1,
+        max: 4,
+        step: 1,
+        default: 1,
       },
       shadows: {
         label: 'Shadows',
