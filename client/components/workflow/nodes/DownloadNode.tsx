@@ -34,6 +34,8 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
 
       const nodeData = sourceNode.data as any;
       const nodeType = sourceNode.type;
+      const allDataKeys = Object.keys(nodeData);
+
       console.log(
         `[DownloadNode] Processing source node ${edge.source} (type: ${nodeType}):`,
         {
@@ -43,7 +45,8 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
           hasVideo: !!nodeData.video,
           hasOutputs: !!nodeData.outputs,
           outputsKeys: nodeData.outputs ? Object.keys(nodeData.outputs) : [],
-          dataKeys: Object.keys(nodeData).slice(0, 15),
+          allDataKeys,
+          fullNodeData: nodeData,
         }
       );
 
