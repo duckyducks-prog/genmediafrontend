@@ -388,10 +388,14 @@ async function performRender(
 
   // 7. Apply remaining filters to sprite
   if (otherFilters.length > 0) {
-    const filters = otherFilters.map((config) =>
-      createFilterFromConfig(config, width, height),
-    );
+    console.log('[performRender] Applying filters:', otherFilters.map(f => f.type));
+    const filters = otherFilters.map((config) => {
+      console.log('[performRender] Creating filter:', config.type, 'with width:', width, 'height:', height);
+      return createFilterFromConfig(config, width, height);
+    });
+    console.log('[performRender] Filters created, applying to sprite:', filters.length);
     sprite.filters = filters; // PixiJS applies all filters on GPU
+    console.log('[performRender] Filters applied to sprite');
   }
 
   // 8. Add to stage and render
