@@ -172,8 +172,8 @@ function createFilterFromConfig(config: FilterConfig, width?: number, height?: n
     case "NoiseFilter":
       return new NoiseFilter({ noise: config.params.noise });
 
-    case "FilmGrainFilter":
-      return new FilmGrainFilter({
+    case "FilmGrainFilter": {
+      const filmGrainFilter = new FilmGrainFilter({
         intensity: config.params.intensity,
         size: config.params.size,
         shadows: config.params.shadows,
@@ -182,6 +182,14 @@ function createFilterFromConfig(config: FilterConfig, width?: number, height?: n
         width: width ?? 1920,
         height: height ?? 1080,
       });
+      console.log('[pixi-renderer] FilmGrainFilter created:', {
+        width: width ?? 1920,
+        height: height ?? 1080,
+        intensity: config.params.intensity,
+        size: config.params.size,
+      });
+      return filmGrainFilter;
+    }
 
     case "Custom":
       // Handle custom filters like vignette
