@@ -358,6 +358,27 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
             );
           });
       }
+      // Handle data URLs that don't need conversion
+      else if (videoUrl.startsWith("data:") && !data.outputs?.video) {
+        console.log(
+          "[VideoUploadNode] Video is already a data URL, setting outputs directly",
+        );
+
+        const newData = {
+          ...data,
+          outputs: { video: videoUrl },
+        };
+
+        setNodes((nodes) =>
+          nodes.map((node) => (node.id === id ? { ...node, data: newData } : node)),
+        );
+
+        window.dispatchEvent(
+          new CustomEvent("node-update", {
+            detail: { id, data: newData },
+          }),
+        );
+      }
     }
   }, [videoUrl, thumbnailUrl, data, id, setNodes, generateThumbnail]);
 
