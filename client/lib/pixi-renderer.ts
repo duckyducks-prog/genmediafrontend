@@ -129,7 +129,7 @@ export function disposeSharedPixiApp(): void {
  * Creates a PixiJS Filter instance from a FilterConfig
  * This is the ONLY place where Filter instances are created
  */
-function createFilterFromConfig(config: FilterConfig): Filter {
+function createFilterFromConfig(config: FilterConfig, width?: number, height?: number): Filter {
   const def = FILTER_DEFINITIONS[config.type];
 
   switch (def.filterClass) {
@@ -179,6 +179,8 @@ function createFilterFromConfig(config: FilterConfig): Filter {
         shadows: config.params.shadows,
         highlights: config.params.highlights,
         midtonesBias: config.params.midtonesBias,
+        width: width ?? 1920,
+        height: height ?? 1080,
       });
 
     case "Custom":
@@ -379,7 +381,7 @@ async function performRender(
   // 7. Apply remaining filters to sprite
   if (otherFilters.length > 0) {
     const filters = otherFilters.map((config) =>
-      createFilterFromConfig(config),
+      createFilterFromConfig(config, width, height),
     );
     sprite.filters = filters; // PixiJS applies all filters on GPU
   }
