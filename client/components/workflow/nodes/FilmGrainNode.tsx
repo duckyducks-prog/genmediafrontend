@@ -16,40 +16,47 @@ import { Button } from "@/components/ui/button";
 // Preset configurations
 const PRESETS = {
   subtle: {
-    intensity: 25,
-    size: 0.5,
+    intensity: 20,
+    size: 1,
     shadows: 20,
     highlights: 20,
     midtonesBias: 90,
   },
   standard: {
     intensity: 50,
-    size: 1.0,
+    size: 1,
     shadows: 30,
     highlights: 30,
     midtonesBias: 80,
   },
   heavy35mm: {
-    intensity: 75,
-    size: 2.0,
-    shadows: 40,
+    intensity: 70,
+    size: 2,
+    shadows: 50,
     highlights: 40,
     midtonesBias: 70,
   },
   super8: {
-    intensity: 90,
-    size: 2.5,
+    intensity: 85,
+    size: 3,
     shadows: 60,
-    highlights: 60,
-    midtonesBias: 65,
+    highlights: 50,
+    midtonesBias: 60,
+  },
+  digital: {
+    intensity: 30,
+    size: 1,
+    shadows: 80,
+    highlights: 10,
+    midtonesBias: 40,
   },
 };
 
-// Size presets
+// Size presets (1 = fine, 4 = coarse)
 const SIZE_PRESETS = {
-  fine: 0.5,
-  medium: 1.0,
-  coarse: 2.0,
+  fine: 1,
+  medium: 2,
+  coarse: 3,
 };
 
 function FilmGrainNode({ data, id }: NodeProps<FilmGrainNodeData>) {
