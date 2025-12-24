@@ -110,7 +110,7 @@ function FilmGrainNode({ data, id }: NodeProps<FilmGrainNodeData>) {
       });
       window.dispatchEvent(updateEvent);
     };
-  });
+  }, [id, data, imageInput, upstreamFiltersRaw, createConfig]);
 
   useEffect(() => {
     updateOutputsRef.current({
