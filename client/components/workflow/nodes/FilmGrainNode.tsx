@@ -207,6 +207,7 @@ function FilmGrainNode({ data, id }: NodeProps<FilmGrainNodeData>) {
               <SelectItem value="standard">Standard</SelectItem>
               <SelectItem value="heavy35mm">Heavy 35mm</SelectItem>
               <SelectItem value="super8">Super 8</SelectItem>
+              <SelectItem value="digital">Digital</SelectItem>
               <SelectItem value="custom">Custom</SelectItem>
             </SelectContent>
           </Select>
