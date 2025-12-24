@@ -149,7 +149,8 @@ export class FilmGrainFilter extends Filter {
       uShadows: (options.shadows ?? 30) / 100,
       uHighlights: (options.highlights ?? 30) / 100,
       uMidtonesBias: (options.midtonesBias ?? 80) / 100,
-      uDimensions: new Float32Array([width, height]),
+      uWidth: width,
+      uHeight: height,
     };
 
     super({
