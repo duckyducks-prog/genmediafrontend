@@ -17,6 +17,20 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { setNodes } = useReactFlow();
 
+  // Sync local state with node data on mount
+  useEffect(() => {
+    if (data.videoUrl && data.videoUrl !== videoUrl) {
+      console.log('[VideoUploadNode] Syncing videoUrl from data:', data.videoUrl);
+      setVideoUrl(data.videoUrl);
+    }
+    if (data.thumbnailUrl && data.thumbnailUrl !== thumbnailUrl) {
+      setThumbnailUrl(data.thumbnailUrl);
+    }
+    if (data.duration && data.duration !== duration) {
+      setDuration(data.duration);
+    }
+  }, [data.videoUrl, data.thumbnailUrl, data.duration, videoUrl, thumbnailUrl, duration]);
+
   // Generate thumbnail from video at 1 second mark
   const generateThumbnail = useCallback((videoElement: HTMLVideoElement): Promise<string> => {
     return new Promise((resolve) => {
