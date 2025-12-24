@@ -47,46 +47,106 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
         }
       );
 
-      // Extract image/video URLs from various node types
-      // Check multiple sources: top-level props, outputs object
-      const imageUrl =
-        nodeData.imageUrl ||
-        nodeData.image ||
-        nodeData.outputs?.image ||
-        nodeData.outputs?.images?.[0];
-
-      let videoUrl =
-        nodeData.videoUrl ||
-        nodeData.video ||
-        nodeData.outputs?.video ||
-        nodeData.outputs?.videos?.[0];
-
-      // For video nodes, also check for blob URLs (from VideoUploadNode preview)
-      // and data URLs (from outputs)
-      if (!videoUrl && nodeType === "videoUpload") {
-        videoUrl = nodeData.videoUrl || nodeData.outputs?.video;
-        console.log(
-          `[DownloadNode] Special handling for videoUpload node:`,
-          {
-            videoUrl: !!videoUrl,
-            videoUrlType: typeof nodeData.videoUrl,
-            outputsVideo: !!nodeData.outputs?.video,
-          }
+      // Helper function to detect if a URL is a video
+      const isVideoUrl = (url: string): boolean => {
+        if (url.startsWith("data:")) {
+          return (
+            url.includes("video/") ||
+            url.includes("application/octet-stream") // Sometimes videos come as octet-stream
+          );
+        }
+        // Check file extensions for blob/object URLs
+        return (
+          url.includes(".mp4") ||
+          url.includes(".webm") ||
+          url.includes(".mov") ||
+          url.includes(".avi")
         );
+      };
+
+      // Helper function to detect if a URL is an image
+      const isImageUrl = (url: string): boolean => {
+        if (url.startsWith("data:")) {
+          return url.includes("image/");
+        }
+        return (
+          url.includes(".png") ||
+          url.includes(".jpg") ||
+          url.includes(".jpeg") ||
+          url.includes(".webp") ||
+          url.includes(".gif")
+        );
+      };
+
+      // Extract from various sources in priority order
+      // 1. Try explicit top-level fields
+      let imageUrl =
+        nodeData.imageUrl || nodeData.image || nodeData.outputs?.image;
+      let videoUrl =
+        nodeData.videoUrl || nodeData.video || nodeData.outputs?.video;
+
+      // 2. Try arrays
+      if (!imageUrl && Array.isArray(nodeData.outputs?.images)) {
+        imageUrl = nodeData.outputs.images[0];
+      }
+      if (!videoUrl && Array.isArray(nodeData.outputs?.videos)) {
+        videoUrl = nodeData.outputs.videos[0];
+      }
+
+      // 3. If we have a videoUrl that's actually a blob URL, prefer the data URL from outputs
+      if (
+        videoUrl &&
+        videoUrl.startsWith("blob:") &&
+        nodeData.outputs?.video &&
+        nodeData.outputs.video.startsWith("data:")
+      ) {
+        console.log(
+          `[DownloadNode] Preferring data URL over blob URL for video`
+        );
+        videoUrl = nodeData.outputs.video;
+      }
+
+      // 4. Scan outputs object for any video/image URLs by MIME type
+      if (nodeData.outputs && typeof nodeData.outputs === "object") {
+        for (const [key, value] of Object.entries(nodeData.outputs)) {
+          if (typeof value === "string" && value.startsWith("data:")) {
+            if (!videoUrl && isVideoUrl(value)) {
+              console.log(
+                `[DownloadNode] Found video in outputs.${key} by MIME type`
+              );
+              videoUrl = value;
+            } else if (!imageUrl && isImageUrl(value)) {
+              console.log(
+                `[DownloadNode] Found image in outputs.${key} by MIME type`
+              );
+              imageUrl = value;
+            }
+          }
+        }
       }
 
       const textContent =
         nodeData.textContent || nodeData.outputs?.text || nodeData.text;
 
+      console.log(
+        `[DownloadNode] Extracted media:`,
+        {
+          hasImageUrl: !!imageUrl,
+          hasVideoUrl: !!videoUrl,
+          imageUrlStart: imageUrl?.substring(0, 50),
+          videoUrlStart: videoUrl?.substring(0, 50),
+        }
+      );
+
       if (imageUrl && typeof imageUrl === "string") {
         console.log(
-          `[DownloadNode] ✓ Found image URL:`,
+          `[DownloadNode] ✓ Adding image URL:`,
           imageUrl.substring(0, 80)
         );
         media.push({ type: "image", url: imageUrl });
       } else if (videoUrl && typeof videoUrl === "string") {
         console.log(
-          `[DownloadNode] ✓ Found video URL:`,
+          `[DownloadNode] ✓ Adding video URL:`,
           videoUrl.substring(0, 80)
         );
         media.push({ type: "video", url: videoUrl });
@@ -96,17 +156,11 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
         textContent.startsWith("data:")
       ) {
         // Handle text that's been converted to data URL
-        console.log(`[DownloadNode] ✓ Found text as data URL`);
+        console.log(`[DownloadNode] ✓ Adding text as data URL`);
         media.push({ type: "image", url: textContent });
       } else {
         console.log(
-          `[DownloadNode] ✗ No media found in node ${edge.source} (type: ${nodeType}). Data:`,
-          {
-            imageUrl,
-            videoUrl,
-            textContent,
-            nodeData,
-          }
+          `[DownloadNode] ✗ No media found in node ${edge.source} (type: ${nodeType}).`
         );
       }
 
