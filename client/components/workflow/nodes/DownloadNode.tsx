@@ -164,10 +164,11 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
         );
       }
 
-      // Handle arrays of images
+      // Handle arrays of images - ONLY if we didn't already add an image from this node
       if (
-        Array.isArray(nodeData.images) ||
-        Array.isArray(nodeData.outputs?.images)
+        !imageUrl &&
+        (Array.isArray(nodeData.images) ||
+          Array.isArray(nodeData.outputs?.images))
       ) {
         const images = nodeData.images || nodeData.outputs?.images;
         console.log(`[DownloadNode] Found ${images.length} images in array`);
@@ -178,10 +179,11 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
         }
       }
 
-      // Handle arrays of videos
+      // Handle arrays of videos - ONLY if we didn't already add a video from this node
       if (
-        Array.isArray(nodeData.videos) ||
-        Array.isArray(nodeData.outputs?.videos)
+        !videoUrl &&
+        (Array.isArray(nodeData.videos) ||
+          Array.isArray(nodeData.outputs?.videos))
       ) {
         const videos = nodeData.videos || nodeData.outputs?.videos;
         console.log(`[DownloadNode] Found ${videos.length} videos in array`);
