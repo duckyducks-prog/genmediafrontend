@@ -516,7 +516,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           case NodeType.FilmGrain:
             data = {
               intensity: 50,
-              size: 1.0,
+              size: 1,
               shadows: 30,
               highlights: 30,
               midtonesBias: 80,
