@@ -27,6 +27,7 @@
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "html2canvas": "^1.4.1",
+    "jszip": "^3.10.1",
     "pixi-filters": "^6.1.5",
     "pixi.js": "^8.14.3",
     "reactflow": "^11.11.4",
