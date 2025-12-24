@@ -110,6 +110,13 @@ const paletteNodes: PaletteNode[] = [
     description: "Add noise texture",
   },
   {
+    type: NodeType.FilmGrain,
+    label: "Film Grain",
+    icon: <Film className="w-4 h-4" />,
+    category: "modifier",
+    description: "Add realistic film grain",
+  },
+  {
     type: NodeType.Vignette,
     label: "Vignette",
     icon: <Circle className="w-4 h-4" />,
