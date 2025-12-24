@@ -153,20 +153,50 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
   });
 
   // Auto-save to localStorage on changes (debounced)
+  // Note: We strip out large data (outputs, image data) to avoid quota exceeded errors
   useEffect(() => {
     if (!state.isDirty) return;
 
     const timeout = setTimeout(() => {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-          nodes: state.nodes,
-          edges: state.edges,
-          viewport: state.viewport,
-          lastSaved: new Date().toISOString(),
-        }),
-      );
-      dispatch({ type: "MARK_SAVED" });
+      try {
+        // Strip out large output data from nodes to avoid localStorage quota issues
+        const nodesSafeForStorage = state.nodes.map((node) => {
+          const { data, ...nodeRest } = node;
+          return {
+            ...nodeRest,
+            // Only save essential node data, exclude outputs/image data
+            data: {
+              label: (data as any).label,
+              ...(Object.fromEntries(
+                Object.entries(data as any).filter(
+                  ([key]) =>
+                    !["outputs", "imageUrl", "videoUrl", "image", "video", "imageData", "videoData"].includes(key),
+                ),
+              ) as any),
+            },
+          };
+        });
+
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            nodes: nodesSafeForStorage,
+            edges: state.edges,
+            viewport: state.viewport,
+            lastSaved: new Date().toISOString(),
+          }),
+        );
+        dispatch({ type: "MARK_SAVED" });
+      } catch (error) {
+        if (error instanceof Error && error.message.includes("quota")) {
+          console.warn(
+            "[WorkflowContext] localStorage quota exceeded. Workflow changes were not saved to browser storage, but your current session is not affected.",
+          );
+          dispatch({ type: "MARK_SAVED" });
+        } else {
+          console.error("[WorkflowContext] Error saving workflow:", error);
+        }
+      }
     }, 1000); // 1 second debounce
 
     return () => clearTimeout(timeout);
