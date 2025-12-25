@@ -21,6 +21,7 @@ interface WorkflowToolbarProps {
   onResetWorkflow: () => void;
   onSaveWorkflow: () => void;
   onLoadWorkflow: () => void;
+  onSaveAsCompound?: () => void;
   isExecuting: boolean;
   executionProgress?: Map<string, string>;
   totalNodes?: number;
@@ -34,6 +35,7 @@ export default function WorkflowToolbar({
   onResetWorkflow,
   onSaveWorkflow,
   onLoadWorkflow,
+  onSaveAsCompound,
   isExecuting,
   executionProgress,
   totalNodes,
