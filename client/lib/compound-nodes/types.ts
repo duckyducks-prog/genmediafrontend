@@ -236,7 +236,7 @@ export interface BuildCompoundInput {
       config: any;
     }
   >;
-  exposedOutputs: Record<
+  exposedOutputs?: Record<
     string,
     {
       id: string;
@@ -245,5 +245,5 @@ export interface BuildCompoundInput {
       exposedName: string;
       type: ConnectorType;
     }
-  >;
+  >; // Optional - outputs are auto-generated from GenerateImage/GenerateVideo nodes
 }
