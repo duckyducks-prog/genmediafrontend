@@ -25,7 +25,9 @@ import {
 } from "lucide-react";
 import { NodeType, NODE_CONFIGURATIONS } from "./types";
 import { Input } from "@/components/ui/input";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { getCompoundTemplatesList } from "@/lib/compound-nodes/storage";
+import type { CompoundNodeDefinition } from "@/lib/compound-nodes/types";
 
 interface PaletteNode {
   type: NodeType;
