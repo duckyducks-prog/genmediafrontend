@@ -44,6 +44,9 @@ export enum NodeType {
 
   // DOCUMENTATION/UTILITY nodes
   StickyNote = "stickyNote",
+
+  // COMPOUND nodes (reusable workflows)
+  Compound = "compound",
 }
 
 // Re-export FilterConfig for convenience
