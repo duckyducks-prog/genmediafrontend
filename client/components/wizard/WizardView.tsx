@@ -73,9 +73,9 @@ export default function WizardView({ wizardId }: WizardViewProps) {
       console.log("[WizardView] Execution completed, collecting results...");
 
       // ========================================================================
-      // IMPORTANT: Collect ALL outputs from ALL GenerateImage/GenerateVideo nodes
-      // The wizard shows ALL generated media to the user, not just "exposed" outputs
-      // "Exposed outputs" in the creation modal are just organizational hints
+      // Collect ALL outputs from ALL GenerateImage/GenerateVideo nodes
+      // Outputs are automatically generated from the workflow - no manual selection
+      // Users always see everything that was generated
       // ========================================================================
       const allOutputs: Record<string, any> = {};
 
