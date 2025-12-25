@@ -138,6 +138,7 @@ export default function CreateWizardModal({
           inputHandle: input.inputHandle,
           exposedName: input.suggestedName,
           type: input.type,
+          paramPath: input.paramPath, // Store paramPath for Input nodes
         },
       }));
     } else {
