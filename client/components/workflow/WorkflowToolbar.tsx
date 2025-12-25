@@ -10,7 +10,7 @@ import {
   Save,
   List,
   StopCircle,
-  Package,
+  Wand2,
 } from "lucide-react";
 import { useReactFlow } from "reactflow";
 import { useWorkflow } from "@/contexts/WorkflowContext";
@@ -22,7 +22,7 @@ interface WorkflowToolbarProps {
   onResetWorkflow: () => void;
   onSaveWorkflow: () => void;
   onLoadWorkflow: () => void;
-  onSaveAsCompound?: () => void;
+  onSaveAsWizard?: () => void;
   isExecuting: boolean;
   executionProgress?: Map<string, string>;
   totalNodes?: number;
@@ -36,7 +36,7 @@ export default function WorkflowToolbar({
   onResetWorkflow,
   onSaveWorkflow,
   onLoadWorkflow,
-  onSaveAsCompound,
+  onSaveAsWizard,
   isExecuting,
   executionProgress,
   totalNodes,
@@ -102,17 +102,17 @@ export default function WorkflowToolbar({
         <List className="w-3.5 h-3.5" />
       </Button>
 
-      {onSaveAsCompound && (
+      {onSaveAsWizard && (
         <Button
-          onClick={onSaveAsCompound}
+          onClick={onSaveAsWizard}
           variant="outline"
           size="icon"
           className="h-8 w-8"
-          title="Save as Compound Node"
-          aria-label="Save as Compound Node"
+          title="Save as Wizard"
+          aria-label="Save as Wizard"
           disabled={isReadOnly}
         >
-          <Package className="w-3.5 h-3.5" />
+          <Wand2 className="w-3.5 h-3.5" />
         </Button>
       )}
 
