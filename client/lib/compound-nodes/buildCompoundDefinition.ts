@@ -59,7 +59,7 @@ export function buildCompoundDefinition(
     edgeCount: edges.length,
     exposedInputCount: Object.keys(exposedInputs).length,
     exposedControlCount: Object.keys(exposedControls).length,
-    exposedOutputCount: Object.keys(exposedOutputs).length,
+    note: "Outputs will be auto-generated from GenerateImage/GenerateVideo nodes",
   });
 
   // ========================================================================
