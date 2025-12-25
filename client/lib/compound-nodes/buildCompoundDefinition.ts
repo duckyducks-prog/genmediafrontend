@@ -80,19 +80,48 @@ export function buildCompoundDefinition(
   );
 
   // ========================================================================
-  // BUILD OUTPUTS ARRAY
+  // BUILD OUTPUTS ARRAY - Auto-generate from GenerateImage/GenerateVideo nodes
+  // Users always see ALL generated media, no manual selection needed
   // ========================================================================
 
-  const outputs: CompoundOutput[] = Object.values(exposedOutputs)
-    .filter(Boolean)
-    .map((item) => ({
-      id: slugify(item.exposedName),
-      name: item.exposedName,
-      type: item.type as ConnectorType,
-    }));
+  const outputs: CompoundOutput[] = [];
+  const outputMappings: Record<string, OutputMapping> = {};
+
+  nodes.forEach((node) => {
+    const nodeType = node.type as NodeType;
+    const nodeName = node.data?.label || node.id;
+
+    // Auto-detect GenerateImage nodes
+    if (nodeType === NodeType.GenerateImage) {
+      const outputId = slugify(`${nodeName}_image`);
+      outputs.push({
+        id: outputId,
+        name: `${nodeName} Image`,
+        type: ConnectorType.Image,
+      });
+      outputMappings[outputId] = {
+        nodeId: node.id,
+        param: "data.outputs.image",
+      };
+    }
+
+    // Auto-detect GenerateVideo nodes
+    if (nodeType === NodeType.GenerateVideo) {
+      const outputId = slugify(`${nodeName}_video`);
+      outputs.push({
+        id: outputId,
+        name: `${nodeName} Video`,
+        type: ConnectorType.Video,
+      });
+      outputMappings[outputId] = {
+        nodeId: node.id,
+        param: "data.outputs.video",
+      };
+    }
+  });
 
   console.log(
-    "[buildCompoundDefinition] Built outputs:",
+    "[buildCompoundDefinition] Auto-generated outputs:",
     outputs.map((o) => o.name),
   );
 
