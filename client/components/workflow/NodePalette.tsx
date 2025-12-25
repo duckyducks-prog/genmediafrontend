@@ -26,8 +26,6 @@ import {
 import { NodeType, NODE_CONFIGURATIONS } from "./types";
 import { Input } from "@/components/ui/input";
 import { useState, useMemo, useEffect } from "react";
-import { getCompoundTemplatesList } from "@/lib/compound-nodes/storage";
-import type { CompoundNodeDefinition } from "@/lib/compound-nodes/types";
 
 interface PaletteNode {
   type: NodeType;
@@ -196,37 +194,12 @@ const paletteNodes: PaletteNode[] = [
 
 interface NodePaletteProps {
   onAddNode: (type: NodeType) => void;
-  onAddCompoundNode?: (template: CompoundNodeDefinition) => void;
 }
 
 export default function NodePalette({
   onAddNode,
-  onAddCompoundNode,
 }: NodePaletteProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [compoundTemplates, setCompoundTemplates] = useState<
-    CompoundNodeDefinition[]
-  >([]);
-
-  // Load compound templates on mount and when modal closes
-  useEffect(() => {
-    const loadTemplates = () => {
-      const templates = getCompoundTemplatesList();
-      setCompoundTemplates(templates);
-    };
-
-    loadTemplates();
-
-    // Listen for storage changes (when new compound nodes are saved)
-    window.addEventListener("storage", loadTemplates);
-    // Also listen for custom event when compound is saved in same tab
-    window.addEventListener("compound-saved", loadTemplates);
-
-    return () => {
-      window.removeEventListener("storage", loadTemplates);
-      window.removeEventListener("compound-saved", loadTemplates);
-    };
-  }, []);
 
   const filteredNodes = useMemo(() => {
     if (!searchQuery.trim()) {
@@ -247,18 +220,6 @@ export default function NodePalette({
     output: filteredNodes.filter((n) => n.category === "output"),
   };
 
-  // Filter compound templates by search query
-  const filteredCompounds = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return compoundTemplates;
-    }
-    const query = searchQuery.toLowerCase();
-    return compoundTemplates.filter(
-      (template) =>
-        template.name.toLowerCase().includes(query) ||
-        template.description.toLowerCase().includes(query),
-    );
-  }, [searchQuery, compoundTemplates]);
 
   const handleDragStart = (event: React.DragEvent, nodeType: NodeType) => {
     event.dataTransfer.setData("application/reactflow", nodeType);
@@ -431,52 +392,10 @@ export default function NodePalette({
           </div>
         )}
 
-        {/* Compound Nodes */}
-        {filteredCompounds.length > 0 && (
-          <div className="pr-4">
-            {!searchQuery && (
-              <div className="h-px bg-border my-4" />
-            )}
-            <h4 className="text-xs font-medium text-muted-foreground uppercase mb-2 tracking-wide">
-              My Compound Nodes
-            </h4>
-            <p className="text-xs text-muted-foreground/70 mb-3">
-              Reusable workflows you've created
-            </p>
-            <div className="space-y-2">
-              {filteredCompounds.map((template) => (
-                <button
-                  key={template.id}
-                  draggable
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData(
-                      "application/compound-node",
-                      template.id,
-                    );
-                    e.dataTransfer.effectAllowed = "move";
-                  }}
-                  onClick={() => onAddCompoundNode?.(template)}
-                  className="w-full flex items-start gap-2 p-3 rounded-lg bg-secondary/50 hover:bg-secondary border border-border transition-colors cursor-grab active:cursor-grabbing group"
-                >
-                  <div className="text-lg mt-0.5 group-hover:scale-110 transition-transform">
-                    {template.icon}
-                  </div>
-                  <div className="flex-1 text-left">
-                    <div className="text-sm font-medium">{template.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {template.description || "Custom compound node"}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* No results message */}
         {searchQuery &&
-          filteredNodes.length === 0 &&
-          filteredCompounds.length === 0 && (
+          filteredNodes.length === 0 && (
           <div className="pr-4 text-center py-8">
             <p className="text-sm text-muted-foreground">
               No nodes found matching "{searchQuery}"
