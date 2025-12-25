@@ -1520,6 +1520,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               onResetWorkflow={resetWorkflow}
               onSaveWorkflow={handleSaveWorkflow}
               onLoadWorkflow={handleLoadWorkflow}
+              onSaveAsCompound={() => setIsCompoundModalOpen(true)}
               isExecuting={isExecuting}
               executionProgress={executionProgress}
               totalNodes={totalNodes}
