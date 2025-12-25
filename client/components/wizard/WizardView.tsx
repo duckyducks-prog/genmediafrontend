@@ -32,7 +32,6 @@ function setNestedValue(obj: any, path: string, value: any) {
 }
 
 export default function WizardView({ wizardId }: WizardViewProps) {
-  const navigate = useNavigate();
   const wizard = getCompoundTemplate(wizardId);
 
   console.log("[WizardView] Rendering with wizardId:", wizardId);
