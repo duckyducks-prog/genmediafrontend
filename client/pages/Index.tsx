@@ -22,6 +22,7 @@ import AssetLibrary, {
   AssetLibraryRef,
 } from "@/components/library/AssetLibrary";
 import WorkflowGallery from "@/components/workflow/WorkflowGallery";
+import WizardsSection from "@/components/home/WizardsSection";
 import { useAuth } from "@/lib/AuthContext";
 import { logOut, auth } from "@/lib/firebase";
 import { API_ENDPOINTS } from "@/lib/api-config";
@@ -409,6 +410,8 @@ export default function Index() {
                     }, 100);
                   }}
                 />
+
+                <WizardsSection />
               </TabsContent>
 
               <TabsContent value="image" className="h-full p-0">
