@@ -8,7 +8,7 @@ import {
   OutputMapping,
   BuildCompoundInput,
 } from "./types";
-import { ConnectorType } from "@/components/workflow/types";
+import { ConnectorType, NodeType } from "@/components/workflow/types";
 
 /**
  * Helper function to get a nested value from an object using a path string
