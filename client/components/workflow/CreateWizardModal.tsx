@@ -198,7 +198,7 @@ export default function CreateWizardModal({
       edges,
       exposedInputs: selectedInputs,
       exposedControls: selectedControls,
-      exposedOutputs: selectedOutputs,
+      // exposedOutputs removed - outputs are auto-generated from workflow
     };
 
     // Validate
@@ -241,8 +241,8 @@ export default function CreateWizardModal({
     }
   };
 
-  const canSave =
-    name.trim().length > 0 && Object.keys(selectedOutputs).length > 0;
+  // Validation: just need a name (outputs are auto-generated)
+  const canSave = name.trim().length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
