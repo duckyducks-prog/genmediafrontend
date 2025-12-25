@@ -19,6 +19,9 @@ export default function WizardView({ wizardId }: WizardViewProps) {
   const navigate = useNavigate();
   const wizard = getCompoundTemplate(wizardId);
 
+  console.log("[WizardView] Rendering with wizardId:", wizardId);
+  console.log("[WizardView] Wizard data:", wizard);
+
   // Create temporary nodes/edges state for execution
   const [tempNodes, setTempNodes] = useState<WorkflowNode[]>([]);
   const [tempEdges, setTempEdges] = useState<WorkflowEdge[]>([]);
