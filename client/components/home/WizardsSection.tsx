@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { getCompoundTemplatesList } from "@/lib/compound-nodes/storage";
 import WizardCard from "./WizardCard";
+import "../wizard/wizard.css";
 
 export default function WizardsSection() {
   const [wizards, setWizards] = useState(getCompoundTemplatesList());
