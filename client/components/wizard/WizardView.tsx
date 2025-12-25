@@ -53,6 +53,7 @@ export default function WizardView({ wizardId }: WizardViewProps) {
   // Execution state
   const [results, setResults] = useState<Record<string, any> | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [wasExecuting, setWasExecuting] = useState(false);
 
   // Initialize control values with defaults
   useEffect(() => {
@@ -64,6 +65,64 @@ export default function WizardView({ wizardId }: WizardViewProps) {
       setControlValues(defaults);
     }
   }, [wizard]);
+
+  // Collect results after execution completes
+  useEffect(() => {
+    // Check if execution just finished
+    if (wasExecuting && !isExecuting && workflowNodes.length > 0) {
+      console.log("[WizardView] Execution completed, collecting results...");
+
+      const allOutputs: Record<string, any> = {};
+
+      workflowNodes.forEach((node) => {
+        // Collect from GenerateImage nodes
+        if (node.type === "generateImage" && node.data.outputs?.image) {
+          const outputId = `image_${node.data.label || node.id}`;
+          allOutputs[outputId] = node.data.outputs.image;
+          console.log(`[WizardView] Collected image from ${node.id}`);
+        }
+
+        // Collect from GenerateVideo nodes
+        if (node.type === "generateVideo" && node.data.outputs?.video) {
+          const outputId = `video_${node.data.label || node.id}`;
+          allOutputs[outputId] = node.data.outputs.video;
+          console.log(`[WizardView] Collected video from ${node.id}`);
+        }
+
+        // Also collect any other outputs from the node
+        if (node.data.outputs) {
+          Object.entries(node.data.outputs).forEach(([key, value]) => {
+            if (value && typeof value === "string" && value.length > 0) {
+              const outputId = `${key}_${node.data.label || node.id}`;
+              if (!allOutputs[outputId]) {
+                allOutputs[outputId] = value;
+                console.log(`[WizardView] Collected ${key} from ${node.id}`);
+              }
+            }
+          });
+        }
+      });
+
+      console.log("[WizardView] All outputs collected:", {
+        count: Object.keys(allOutputs).length,
+        keys: Object.keys(allOutputs),
+      });
+
+      if (Object.keys(allOutputs).length > 0) {
+        setResults(allOutputs);
+        setError(null);
+      } else {
+        setError("No outputs were generated. Please check your inputs and try again.");
+      }
+    }
+
+    // Track execution state
+    if (isExecuting) {
+      setWasExecuting(true);
+    } else if (wasExecuting) {
+      setWasExecuting(false);
+    }
+  }, [isExecuting, workflowNodes, wasExecuting]);
 
   if (!wizard) {
     return (
