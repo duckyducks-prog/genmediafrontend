@@ -76,7 +76,8 @@ export default function CreateWizardModal({
         nodeId: string;
         inputHandle: string;
         exposedName: string;
-        type: ConnectorType;
+        type: ConnectorType | "text" | "image" | "video";
+        paramPath?: string; // For Input nodes
       }
     >
   >({});
