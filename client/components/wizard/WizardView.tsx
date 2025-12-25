@@ -1,12 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Loader2, AlertCircle, X } from "lucide-react";
 import "./wizard.css";
 import { Button } from "@/components/ui/button";
 import { getCompoundTemplate } from "@/lib/compound-nodes/storage";
-import { executeCompoundNode } from "@/lib/compound-nodes/executeCompound";
-import { useWorkflowExecution } from "@/components/workflow/useWorkflowExecution";
-import type { WorkflowNode, WorkflowEdge } from "@/components/workflow/types";
 import WizardInput from "./WizardInput";
 import WizardControl from "./WizardControl";
 import WizardResults from "./WizardResults";
@@ -21,18 +18,6 @@ export default function WizardView({ wizardId }: WizardViewProps) {
 
   console.log("[WizardView] Rendering with wizardId:", wizardId);
   console.log("[WizardView] Wizard data:", wizard);
-
-  // Create temporary nodes/edges state for execution
-  const [tempNodes, setTempNodes] = useState<WorkflowNode[]>([]);
-  const [tempEdges, setTempEdges] = useState<WorkflowEdge[]>([]);
-
-  // Get execution function from hook
-  const { executeWorkflow: executeWorkflowHook } = useWorkflowExecution(
-    tempNodes,
-    tempEdges,
-    setTempNodes,
-    setTempEdges,
-  );
 
   // Form state
   const [inputValues, setInputValues] = useState<Record<string, any>>({});
@@ -64,6 +49,9 @@ export default function WizardView({ wizardId }: WizardViewProps) {
           <p className="text-muted-foreground mb-4">
             This wizard may have been deleted or doesn't exist.
           </p>
+          <p className="text-xs text-muted-foreground mb-4">
+            Wizard ID: {wizardId}
+          </p>
           <Button onClick={() => navigate("/")}>
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Home
@@ -81,73 +69,23 @@ export default function WizardView({ wizardId }: WizardViewProps) {
     setControlValues((prev) => ({ ...prev, [controlId]: value }));
   };
 
-  // Create a wrapper function that accepts nodes and edges for compound execution
-  const executeWorkflow = useCallback(
-    async (nodes: WorkflowNode[], edges: WorkflowEdge[]) => {
-      // Set the temporary nodes and edges
-      setTempNodes(nodes);
-      setTempEdges(edges);
-
-      // Wait for state to update and execute
-      return new Promise<any>((resolve) => {
-        setTimeout(async () => {
-          try {
-            await executeWorkflowHook();
-
-            // Get the results from the executed nodes
-            const outputs: Record<string, any> = {};
-            nodes.forEach((node) => {
-              if (node.data.outputs) {
-                Object.assign(outputs, node.data.outputs);
-              }
-            });
-
-            resolve({
-              success: true,
-              data: outputs,
-            });
-          } catch (error) {
-            resolve({
-              success: false,
-              error: error instanceof Error ? error.message : "Execution failed",
-            });
-          }
-        }, 100);
-      });
-    },
-    [executeWorkflowHook],
-  );
-
   const handleGenerate = async () => {
     setIsRunning(true);
-    setProgress("Starting...");
+    setProgress("Starting execution...");
     setResults(null);
     setError(null);
 
     try {
-      // Create a mock node structure for execution
-      const mockNode = {
-        id: "wizard-execution",
-        type: "compound" as const,
-        position: { x: 0, y: 0 },
-        data: {
-          ...wizard,
-          controlValues,
-        },
-      };
+      // TODO: Implement actual workflow execution
+      // For now, show a placeholder error
+      setError("Workflow execution is being implemented. Please check back soon!");
+      
+      console.log("[WizardView] Would execute with:", {
+        inputs: inputValues,
+        controls: controlValues,
+        workflow: wizard.internalWorkflow,
+      });
 
-      const result = await executeCompoundNode(
-        mockNode,
-        inputValues,
-        executeWorkflow,
-      );
-
-      if (result.success) {
-        setResults(result.data);
-        setProgress(null);
-      } else {
-        setError(result.error || "Generation failed");
-      }
     } catch (err) {
       console.error("[WizardView] Execution error:", err);
       setError(err instanceof Error ? err.message : "Unknown error");
@@ -242,6 +180,17 @@ export default function WizardView({ wizardId }: WizardViewProps) {
 
       {/* Results */}
       {results && <WizardResults outputs={wizard.outputs} results={results} />}
+      
+      {/* Debug Info */}
+      <div className="mt-8 p-4 bg-secondary/20 rounded-lg text-xs text-muted-foreground">
+        <p><strong>Debug Info:</strong></p>
+        <p>Wizard ID: {wizard.id}</p>
+        <p>Inputs: {wizard.inputs.length}</p>
+        <p>Controls: {wizard.controls.length}</p>
+        <p>Outputs: {wizard.outputs.length}</p>
+        <p>Internal Nodes: {wizard.internalWorkflow.nodes.length}</p>
+        <p>Internal Edges: {wizard.internalWorkflow.edges.length}</p>
+      </div>
     </div>
   );
 }
