@@ -221,11 +221,14 @@ export default function WizardView({ wizardId }: WizardViewProps) {
         }
       }
 
-      // Set the nodes and edges for execution
+      // ========================================================================
+      // STEP 4: Execute the FULL workflow
+      // Every node runs, not just the exposed ones
+      // ========================================================================
       setWorkflowNodes(nodes);
       setWorkflowEdges(edges);
 
-      // Execute the workflow (results will be collected by useEffect)
+      // Execute and wait for completion (results collected by useEffect)
       await executeWorkflow();
 
     } catch (err) {
