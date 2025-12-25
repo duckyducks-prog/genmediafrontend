@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Loader2, AlertCircle, X } from "lucide-react";
 import "./wizard.css";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { getCompoundTemplate } from "@/lib/compound-nodes/storage";
 import { executeCompoundNode } from "@/lib/compound-nodes/executeCompound";
 import { useWorkflowExecution } from "@/components/workflow/useWorkflowExecution";
+import type { WorkflowNode, WorkflowEdge } from "@/components/workflow/types";
 import WizardInput from "./WizardInput";
 import WizardControl from "./WizardControl";
 import WizardResults from "./WizardResults";
@@ -17,7 +18,18 @@ interface WizardViewProps {
 export default function WizardView({ wizardId }: WizardViewProps) {
   const navigate = useNavigate();
   const wizard = getCompoundTemplate(wizardId);
-  const { executeWorkflow } = useWorkflowExecution();
+
+  // Create temporary nodes/edges state for execution
+  const [tempNodes, setTempNodes] = useState<WorkflowNode[]>([]);
+  const [tempEdges, setTempEdges] = useState<WorkflowEdge[]>([]);
+
+  // Get execution function from hook
+  const { executeWorkflow: executeWorkflowHook } = useWorkflowExecution(
+    tempNodes,
+    tempEdges,
+    setTempNodes,
+    setTempEdges,
+  );
 
   // Form state
   const [inputValues, setInputValues] = useState<Record<string, any>>({});
