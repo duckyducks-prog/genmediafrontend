@@ -50,21 +50,40 @@ export function analyzeWorkflow(
 
     // ========================================================================
     // ANALYZE INPUTS
+    // Only Input nodes (Prompt, ImageInput, VideoInput) should be exposable
+    // These are the nodes where users provide their data
     // ========================================================================
 
-    for (const input of config.inputConnectors || []) {
-      const inputKey = `${node.id}-${input.id}`;
-      const isConnected = connectedInputs.has(inputKey);
+    // Check if this is an Input node type
+    const isInputNode =
+      nodeType === NodeType.Prompt ||
+      nodeType === NodeType.ImageInput ||
+      nodeType === NodeType.VideoInput;
+
+    if (isInputNode) {
+      // For Input nodes, expose the node itself (not its output connectors)
+      // The user will fill in the data for this node
+      let inputType: "text" | "image" | "video" = "text";
+      let paramPath = "data.promptText"; // default for Prompt
+
+      if (nodeType === NodeType.ImageInput) {
+        inputType = "image";
+        paramPath = "data.imageUrl";
+      } else if (nodeType === NodeType.VideoInput) {
+        inputType = "video";
+        paramPath = "data.videoUrl";
+      }
 
       availableInputs.push({
-        id: inputKey,
+        id: `${node.id}-input`,
         nodeId: node.id,
         nodeName,
-        inputHandle: input.id,
-        inputName: input.label || input.id,
-        type: input.type,
-        isConnected,
-        suggestedName: `${nodeName} ${input.label || input.id}`,
+        inputHandle: "input", // Not used for input nodes
+        inputName: nodeName,
+        type: inputType,
+        isConnected: false, // Input nodes don't have incoming connections
+        suggestedName: nodeName,
+        paramPath, // Add the path to inject the value
       });
     }
 
