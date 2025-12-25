@@ -72,10 +72,15 @@ export default function WizardView({ wizardId }: WizardViewProps) {
     if (wasExecuting && !isExecuting && workflowNodes.length > 0) {
       console.log("[WizardView] Execution completed, collecting results...");
 
+      // ========================================================================
+      // IMPORTANT: Collect ALL outputs from ALL GenerateImage/GenerateVideo nodes
+      // The wizard shows ALL generated media to the user, not just "exposed" outputs
+      // "Exposed outputs" in the creation modal are just organizational hints
+      // ========================================================================
       const allOutputs: Record<string, any> = {};
 
       workflowNodes.forEach((node) => {
-        // Collect from GenerateImage nodes
+        // Collect ALL images from GenerateImage nodes
         if (node.type === "generateImage" && node.data.outputs?.image) {
           const outputId = `image_${node.data.label || node.id}`;
           allOutputs[outputId] = node.data.outputs.image;
