@@ -474,63 +474,6 @@ export default function CreateWizardModal({
               )}
             </div>
           </div>
-
-          {/* Expose Outputs Section */}
-          <div className="space-y-3">
-            <div>
-              <h3 className="text-sm font-semibold">
-                Expose as Outputs <span className="text-destructive">*</span>
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Select outputs to show as results - at least one required
-              </p>
-            </div>
-
-            <div className="border rounded-lg divide-y max-h-48 overflow-y-auto">
-              {analysis.availableOutputs.length === 0 ? (
-                <div className="p-4 text-sm text-muted-foreground text-center">
-                  No available outputs
-                </div>
-              ) : (
-                analysis.availableOutputs.map((output) => (
-                  <div
-                    key={output.id}
-                    className="p-3 flex items-center gap-3 hover:bg-accent/50"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={!!selectedOutputs[output.id]}
-                      onChange={(e) =>
-                        handleOutputToggle(output.id, e.target.checked, output)
-                      }
-                      className="w-4 h-4"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">
-                          {output.nodeName}
-                        </span>
-                        <span className="text-xs text-muted-foreground">→</span>
-                        <span className="text-sm font-medium">
-                          {output.outputName}
-                        </span>
-                      </div>
-                    </div>
-                    {selectedOutputs[output.id] && (
-                      <Input
-                        value={selectedOutputs[output.id].exposedName}
-                        onChange={(e) =>
-                          updateOutputName(output.id, e.target.value)
-                        }
-                        placeholder="Display name"
-                        className="w-40 h-8 text-xs"
-                      />
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
         </div>
 
         <DialogFooter>
