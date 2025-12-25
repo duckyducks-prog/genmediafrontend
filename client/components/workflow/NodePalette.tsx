@@ -247,6 +247,19 @@ export default function NodePalette({
     output: filteredNodes.filter((n) => n.category === "output"),
   };
 
+  // Filter compound templates by search query
+  const filteredCompounds = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return compoundTemplates;
+    }
+    const query = searchQuery.toLowerCase();
+    return compoundTemplates.filter(
+      (template) =>
+        template.name.toLowerCase().includes(query) ||
+        template.description.toLowerCase().includes(query),
+    );
+  }, [searchQuery, compoundTemplates]);
+
   const handleDragStart = (event: React.DragEvent, nodeType: NodeType) => {
     event.dataTransfer.setData("application/reactflow", nodeType);
     event.dataTransfer.effectAllowed = "move";
