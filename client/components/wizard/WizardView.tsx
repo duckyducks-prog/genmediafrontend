@@ -130,20 +130,21 @@ export default function WizardView({ wizardId }: WizardViewProps) {
 
   if (!wizard) {
     return (
-      <div className="wizard-view">
-        <div className="wizard-not-found">
-          <AlertCircle className="w-12 h-12 text-muted-foreground mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Wizard not found</h2>
-          <p className="text-muted-foreground mb-4">
-            This wizard may have been deleted or doesn't exist.
-          </p>
-          <p className="text-xs text-muted-foreground mb-4">
-            Wizard ID: {wizardId}
-          </p>
-          <Button onClick={() => navigate("/")}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Home
-          </Button>
+      <div className="wizard-view-container">
+        <div className="wizard-grid">
+          <div className="wizard-not-found">
+            <AlertCircle className="w-12 h-12 text-muted-foreground mb-4" />
+            <h2 className="text-xl font-semibold mb-2 text-white">Wizard not found</h2>
+            <p className="text-muted-foreground mb-4">
+              This wizard may have been deleted or doesn't exist.
+            </p>
+            <p className="text-xs text-muted-foreground mb-4">
+              Wizard ID: {wizardId}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Use the Home icon in the navigation above to go back.
+            </p>
+          </div>
         </div>
       </div>
     );
