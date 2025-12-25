@@ -1035,6 +1035,18 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
     inputConnectors: [],
     outputConnectors: [],
   },
+
+  // ========== COMPOUND NODES ==========
+  [NodeType.Compound]: {
+    type: NodeType.Compound,
+    label: "Compound Node",
+    category: "action",
+    description: "Reusable workflow with simplified controls",
+    // Note: Compound nodes have dynamic connectors defined at runtime
+    // The actual connectors are stored in the node's data.inputs and data.outputs
+    inputConnectors: [],
+    outputConnectors: [],
+  },
 };
 
 // ============================================================================
