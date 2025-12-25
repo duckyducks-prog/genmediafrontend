@@ -609,6 +609,28 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               color: "yellow",
             };
             break;
+
+          // Compound nodes
+          // Note: Compound nodes should be added via addCompoundNode() instead
+          // This case exists for completeness but shouldn't be reached
+          case NodeType.Compound:
+            console.warn(
+              "[addNode] Compound nodes should be added via addCompoundNode()",
+            );
+            data = {
+              label: "Compound Node",
+              name: "Compound Node",
+              icon: "📦",
+              description: "",
+              inputs: [],
+              outputs: [],
+              controls: [],
+              controlValues: {},
+              internalWorkflow: { nodes: [], edges: [] },
+              mappings: { inputs: {}, controls: {}, outputs: {} },
+              compoundId: "",
+            };
+            break;
         }
 
         const newNode: WorkflowNode = {
