@@ -150,9 +150,13 @@ export function buildCompoundDefinition(
     .filter(Boolean)
     .forEach((item) => {
       const exposedId = slugify(item.exposedName);
+      // For Input nodes (Prompt, ImageInput, VideoInput), use the paramPath
+      // For other nodes, use data.inputs.{inputHandle}
+      const param = item.paramPath || `data.inputs.${item.inputHandle}`;
+
       mappings.inputs[exposedId] = {
         nodeId: item.nodeId,
-        param: `data.inputs.${item.inputHandle}`,
+        param,
       };
     });
 
