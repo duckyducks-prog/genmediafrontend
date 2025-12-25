@@ -1,5 +1,6 @@
 import { Node, Edge } from "reactflow";
 import { FilterConfig } from "@/lib/pixi-filter-configs";
+import { CompoundNodeData } from "@/lib/compound-nodes/types";
 
 // ============================================================================
 // NODE TYPES
@@ -335,7 +336,8 @@ export type WorkflowNodeData =
   | PreviewNodeData
   | OutputNodeData
   | DownloadNodeData
-  | StickyNoteNodeData;
+  | StickyNoteNodeData
+  | CompoundNodeData;
 
 // ============================================================================
 // CUSTOM NODE & EDGE TYPES
