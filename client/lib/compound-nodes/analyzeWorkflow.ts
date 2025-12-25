@@ -50,8 +50,9 @@ export function analyzeWorkflow(
 
     // ========================================================================
     // ANALYZE INPUTS
-    // Only Input nodes (Prompt, ImageInput, VideoInput) should be exposable
-    // These are the nodes where users provide their data
+    // Two types of inputs can be exposed:
+    // 1. Input nodes (Prompt, ImageInput, VideoInput) - where users provide data
+    // 2. Unconnected input handles on other nodes - optional parameters
     // ========================================================================
 
     // Check if this is an Input node type
@@ -85,6 +86,30 @@ export function analyzeWorkflow(
         suggestedName: nodeName,
         paramPath, // Add the path to inject the value
       });
+    }
+
+    // Also check for unconnected input handles on other nodes
+    // These are optional parameters users can provide (e.g., GenVideo.first_frame)
+    if (!isInputNode && config.inputConnectors) {
+      for (const input of config.inputConnectors) {
+        const inputKey = `${node.id}-${input.id}`;
+        const isConnected = connectedInputs.has(inputKey);
+
+        // Only expose unconnected inputs (connected ones already have data)
+        if (!isConnected) {
+          availableInputs.push({
+            id: inputKey,
+            nodeId: node.id,
+            nodeName,
+            inputHandle: input.id,
+            inputName: input.label || input.id,
+            type: input.type,
+            isConnected: false,
+            suggestedName: `${nodeName} ${input.label || input.id}`,
+            paramPath: `data.inputs.${input.id}`, // Standard path for input handles
+          });
+        }
+      }
     }
 
     // ========================================================================
