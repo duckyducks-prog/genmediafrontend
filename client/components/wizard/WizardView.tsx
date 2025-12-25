@@ -160,7 +160,11 @@ export default function WizardView({ wizardId }: WizardViewProps) {
     try {
       console.log("[WizardView] Starting execution...");
 
-      // Deep clone the internal workflow
+      // ========================================================================
+      // STEP 1: Clone the ENTIRE internal workflow
+      // The full workflow always runs - exposed inputs/controls just determine
+      // what the user can see/control in the wizard UI
+      // ========================================================================
       const nodes: WorkflowNode[] = JSON.parse(
         JSON.stringify(wizard.internalWorkflow.nodes),
       );
@@ -168,7 +172,10 @@ export default function WizardView({ wizardId }: WizardViewProps) {
         JSON.stringify(wizard.internalWorkflow.edges),
       );
 
-      // Inject input values into internal nodes
+      // ========================================================================
+      // STEP 2: Inject values for EXPOSED inputs (user-provided values)
+      // Non-exposed nodes keep their default values from the original workflow
+      // ========================================================================
       if (wizard.mappings.inputs) {
         for (const [exposedId, mapping] of Object.entries(
           wizard.mappings.inputs,
