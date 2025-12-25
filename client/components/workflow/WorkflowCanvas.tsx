@@ -645,6 +645,52 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
       [setNodes, isReadOnly, toast],
     );
 
+    // Add a compound node from a template
+    const addCompoundNode = useCallback(
+      (template: any, position?: { x: number; y: number }) => {
+        // Block adding nodes in read-only mode
+        if (isReadOnly) {
+          toast({
+            title: "Read-Only Template",
+            description: "Clone this template to make edits",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const nodePosition = position || {
+          x: Math.random() * 400 + 100,
+          y: Math.random() * 200 + 100,
+        };
+
+        // Create compound node data from template
+        const data: any = {
+          label: template.name,
+          compoundId: template.id,
+          name: template.name,
+          icon: template.icon,
+          description: template.description,
+          inputs: template.inputs,
+          outputs: template.outputs,
+          controls: template.controls,
+          controlValues: {}, // Start with empty control values (will use defaults)
+          internalWorkflow: template.internalWorkflow,
+          mappings: template.mappings,
+          outputs: {}, // Runtime outputs
+        };
+
+        const newNode: WorkflowNode = {
+          id: `compound-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          type: NodeType.Compound,
+          position: nodePosition,
+          data,
+        };
+
+        setNodes((nds) => [...nds, newNode]);
+      },
+      [setNodes, isReadOnly, toast],
+    );
+
     // Validate image file type and size
     const validateImageFile = (
       file: File,
