@@ -21,6 +21,7 @@ import {
 import { auth } from "@/lib/firebase";
 import { renderWithPixi, renderCompositeWithPixi } from "@/lib/pixi-renderer";
 import { FilterConfig } from "@/lib/pixi-filter-configs";
+import { executeCompoundNode } from "@/lib/compound-nodes/executeCompound";
 
 interface ExecutionResult {
   success: boolean;
@@ -1535,6 +1536,30 @@ export function useWorkflowExecution(
             }
 
             return { success: true, data: { downloaded: !!mediaUrl } };
+          }
+
+          // COMPOUND NODES
+          case NodeType.Compound: {
+            console.log("[Compound] Executing compound node:", node.id);
+
+            // Execute the compound node's internal workflow
+            const result = await executeCompoundNode(node, inputs, executeWorkflow);
+
+            if (!result.success) {
+              return {
+                success: false,
+                error: result.error || "Compound node execution failed",
+              };
+            }
+
+            // Return the outputs from the compound node
+            return {
+              success: true,
+              data: {
+                outputs: result.data,
+                ...result.data, // Also spread to top level for compatibility
+              },
+            };
           }
 
           default:
