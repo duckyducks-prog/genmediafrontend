@@ -1,6 +1,5 @@
 import { Node, Edge } from "reactflow";
 import { FilterConfig } from "@/lib/pixi-filter-configs";
-import { CompoundNodeData } from "@/lib/compound-nodes/types";
 
 // ============================================================================
 // NODE TYPES
@@ -46,8 +45,6 @@ export enum NodeType {
   // DOCUMENTATION/UTILITY nodes
   StickyNote = "stickyNote",
 
-  // COMPOUND nodes (reusable workflows)
-  Compound = "compound",
 }
 
 // Re-export FilterConfig for convenience
@@ -336,8 +333,7 @@ export type WorkflowNodeData =
   | PreviewNodeData
   | OutputNodeData
   | DownloadNodeData
-  | StickyNoteNodeData
-  | CompoundNodeData;
+  | StickyNoteNodeData;
 
 // ============================================================================
 // CUSTOM NODE & EDGE TYPES
@@ -1036,17 +1032,6 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
     outputConnectors: [],
   },
 
-  // ========== COMPOUND NODES ==========
-  [NodeType.Compound]: {
-    type: NodeType.Compound,
-    label: "Compound Node",
-    category: "action",
-    description: "Reusable workflow with simplified controls",
-    // Note: Compound nodes have dynamic connectors defined at runtime
-    // The actual connectors are stored in the node's data.inputs and data.outputs
-    inputConnectors: [],
-    outputConnectors: [],
-  },
 };
 
 // ============================================================================
