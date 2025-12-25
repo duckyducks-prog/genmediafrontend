@@ -4,12 +4,27 @@ import { ArrowLeft, Loader2, AlertCircle, X } from "lucide-react";
 import "./wizard.css";
 import { Button } from "@/components/ui/button";
 import { getCompoundTemplate } from "@/lib/compound-nodes/storage";
+import { useWorkflowExecution } from "@/components/workflow/useWorkflowExecution";
+import type { WorkflowNode, WorkflowEdge, NodeType } from "@/components/workflow/types";
 import WizardInput from "./WizardInput";
 import WizardControl from "./WizardControl";
 import WizardResults from "./WizardResults";
 
 interface WizardViewProps {
   wizardId: string;
+}
+
+// Helper to set nested values in objects
+function setNestedValue(obj: any, path: string, value: any) {
+  const parts = path.split(".");
+  let current = obj;
+  for (let i = 0; i < parts.length - 1; i++) {
+    if (!current[parts[i]]) {
+      current[parts[i]] = {};
+    }
+    current = current[parts[i]];
+  }
+  current[parts[parts.length - 1]] = value;
 }
 
 export default function WizardView({ wizardId }: WizardViewProps) {
@@ -19,13 +34,23 @@ export default function WizardView({ wizardId }: WizardViewProps) {
   console.log("[WizardView] Rendering with wizardId:", wizardId);
   console.log("[WizardView] Wizard data:", wizard);
 
+  // State for internal workflow execution
+  const [workflowNodes, setWorkflowNodes] = useState<WorkflowNode[]>([]);
+  const [workflowEdges, setWorkflowEdges] = useState<WorkflowEdge[]>([]);
+  
+  // Get workflow execution hook
+  const { executeWorkflow, isExecuting } = useWorkflowExecution(
+    workflowNodes,
+    workflowEdges,
+    setWorkflowNodes,
+    setWorkflowEdges,
+  );
+
   // Form state
   const [inputValues, setInputValues] = useState<Record<string, any>>({});
   const [controlValues, setControlValues] = useState<Record<string, any>>({});
 
   // Execution state
-  const [isRunning, setIsRunning] = useState(false);
-  const [progress, setProgress] = useState<string | null>(null);
   const [results, setResults] = useState<Record<string, any> | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,28 +95,110 @@ export default function WizardView({ wizardId }: WizardViewProps) {
   };
 
   const handleGenerate = async () => {
-    setIsRunning(true);
-    setProgress("Starting execution...");
     setResults(null);
     setError(null);
 
     try {
-      // TODO: Implement actual workflow execution
-      // For now, show a placeholder error
-      setError("Workflow execution is being implemented. Please check back soon!");
+      console.log("[WizardView] Starting execution...");
+
+      // Deep clone the internal workflow
+      const nodes: WorkflowNode[] = JSON.parse(
+        JSON.stringify(wizard.internalWorkflow.nodes),
+      );
+      const edges: WorkflowEdge[] = JSON.parse(
+        JSON.stringify(wizard.internalWorkflow.edges),
+      );
+
+      // Inject input values into internal nodes
+      if (wizard.mappings.inputs) {
+        for (const [exposedId, mapping] of Object.entries(
+          wizard.mappings.inputs,
+        )) {
+          const inputValue = inputValues[exposedId];
+          if (inputValue !== undefined) {
+            const node = nodes.find((n) => n.id === (mapping as any).nodeId);
+            if (node) {
+              setNestedValue(node, (mapping as any).param, inputValue);
+              console.log(
+                `[WizardView] Injected input "${exposedId}" -> ${(mapping as any).nodeId}.${(mapping as any).param}`,
+              );
+            }
+          }
+        }
+      }
+
+      // Apply control values to internal nodes
+      if (wizard.mappings.controls) {
+        for (const [controlId, mappingList] of Object.entries(
+          wizard.mappings.controls,
+        )) {
+          const value = controlValues[controlId];
+          if (value !== undefined && Array.isArray(mappingList)) {
+            for (const mapping of mappingList) {
+              const node = nodes.find((n) => n.id === (mapping as any).nodeId);
+              if (node) {
+                setNestedValue(node, (mapping as any).param, value);
+                console.log(
+                  `[WizardView] Applied control "${controlId}" (${value}) -> ${(mapping as any).nodeId}.${(mapping as any).param}`,
+                );
+              }
+            }
+          }
+        }
+      }
+
+      // Set the nodes and edges for execution
+      setWorkflowNodes(nodes);
+      setWorkflowEdges(edges);
+
+      // Execute the workflow
+      await executeWorkflow();
+
+      // After execution, collect ALL outputs from Generate nodes
+      const allOutputs: Record<string, any> = {};
       
-      console.log("[WizardView] Would execute with:", {
-        inputs: inputValues,
-        controls: controlValues,
-        workflow: wizard.internalWorkflow,
-      });
+      // Wait a bit for nodes to update
+      setTimeout(() => {
+        nodes.forEach((node) => {
+          // Collect from GenerateImage nodes
+          if (node.type === "generateImage" && node.data.outputs?.image) {
+            const outputId = `${node.id}_image`;
+            allOutputs[outputId] = node.data.outputs.image;
+            console.log(`[WizardView] Collected image from ${node.id}`);
+          }
+          
+          // Collect from GenerateVideo nodes
+          if (node.type === "generateVideo" && node.data.outputs?.video) {
+            const outputId = `${node.id}_video`;
+            allOutputs[outputId] = node.data.outputs.video;
+            console.log(`[WizardView] Collected video from ${node.id}`);
+          }
+
+          // Also collect any other outputs from the node
+          if (node.data.outputs) {
+            Object.entries(node.data.outputs).forEach(([key, value]) => {
+              if (value && !allOutputs[`${node.id}_${key}`]) {
+                allOutputs[`${node.id}_${key}`] = value;
+              }
+            });
+          }
+        });
+
+        console.log("[WizardView] All outputs collected:", {
+          count: Object.keys(allOutputs).length,
+          keys: Object.keys(allOutputs),
+        });
+
+        if (Object.keys(allOutputs).length > 0) {
+          setResults(allOutputs);
+        } else {
+          setError("No outputs were generated. Please check your inputs and try again.");
+        }
+      }, 2000); // Wait 2 seconds for execution to complete
 
     } catch (err) {
       console.error("[WizardView] Execution error:", err);
       setError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setIsRunning(false);
-      setProgress(null);
     }
   };
 
@@ -128,7 +235,7 @@ export default function WizardView({ wizardId }: WizardViewProps) {
                 input={input}
                 value={inputValues[input.id]}
                 onChange={(value) => handleInputChange(input.id, value)}
-                disabled={isRunning}
+                disabled={isExecuting}
               />
             ))}
           </div>
@@ -143,7 +250,7 @@ export default function WizardView({ wizardId }: WizardViewProps) {
                 control={control}
                 value={controlValues[control.id]}
                 onChange={(value) => handleControlChange(control.id, value)}
-                disabled={isRunning}
+                disabled={isExecuting}
               />
             ))}
           </div>
@@ -153,13 +260,13 @@ export default function WizardView({ wizardId }: WizardViewProps) {
         <Button
           className="wizard-generate-btn"
           onClick={handleGenerate}
-          disabled={isRunning || !canGenerate}
+          disabled={isExecuting || !canGenerate}
           size="lg"
         >
-          {isRunning ? (
+          {isExecuting ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              {progress || "Generating..."}
+              Generating...
             </>
           ) : (
             <>✨ Generate</>
@@ -179,18 +286,56 @@ export default function WizardView({ wizardId }: WizardViewProps) {
       </div>
 
       {/* Results */}
-      {results && <WizardResults outputs={wizard.outputs} results={results} />}
-      
-      {/* Debug Info */}
-      <div className="mt-8 p-4 bg-secondary/20 rounded-lg text-xs text-muted-foreground">
-        <p><strong>Debug Info:</strong></p>
-        <p>Wizard ID: {wizard.id}</p>
-        <p>Inputs: {wizard.inputs.length}</p>
-        <p>Controls: {wizard.controls.length}</p>
-        <p>Outputs: {wizard.outputs.length}</p>
-        <p>Internal Nodes: {wizard.internalWorkflow.nodes.length}</p>
-        <p>Internal Edges: {wizard.internalWorkflow.edges.length}</p>
-      </div>
+      {results && (
+        <div className="wizard-results">
+          <h2 className="wizard-results-title">Results</h2>
+
+          <div className="wizard-results-grid">
+            {Object.entries(results).map(([key, value]) => {
+              const isVideo = key.includes("video");
+              const isImage = key.includes("image");
+
+              return (
+                <div key={key} className="result-item">
+                  {isVideo && value && (
+                    <video className="result-video" src={value as string} controls />
+                  )}
+
+                  {isImage && value && (
+                    <img className="result-image" src={value as string} alt="Generated" />
+                  )}
+
+                  {!isVideo && !isImage && (
+                    <div className="result-text">{String(value)}</div>
+                  )}
+
+                  <div className="result-label">{key.split("_").slice(1).join(" ")}</div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="wizard-results-actions">
+            <Button
+              className="wizard-action-btn secondary"
+              onClick={() => {
+                // Download all results
+                Object.entries(results).forEach(([key, value]) => {
+                  if (value) {
+                    const link = document.createElement("a");
+                    link.href = value as string;
+                    link.download = `${key}`;
+                    link.click();
+                  }
+                });
+              }}
+              variant="outline"
+            >
+              ⬇️ Download All
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
