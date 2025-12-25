@@ -73,44 +73,40 @@ export default function WizardView({ wizardId }: WizardViewProps) {
       console.log("[WizardView] Execution completed, collecting results...");
 
       // ========================================================================
-      // Collect ALL outputs from ALL GenerateImage/GenerateVideo nodes
-      // Outputs are automatically generated from the workflow - no manual selection
-      // Users always see everything that was generated
+      // Collect outputs using wizard.outputs definitions and wizard.mappings.outputs
+      // This ensures we only collect the outputs that were auto-generated during
+      // wizard creation (GenerateImage/GenerateVideo nodes) and nothing else
       // ========================================================================
       const allOutputs: Record<string, any> = {};
 
-      workflowNodes.forEach((node) => {
-        // Collect ALL images from GenerateImage nodes
-        if (node.type === "generateImage" && node.data.outputs?.image) {
-          const outputId = `image_${node.data.label || node.id}`;
-          allOutputs[outputId] = node.data.outputs.image;
-          console.log(`[WizardView] Collected image from ${node.id}`);
-        }
+      // Use wizard.outputs to know what outputs to collect
+      wizard.outputs.forEach((outputDef) => {
+        const mapping = wizard.mappings.outputs[outputDef.id];
 
-        // Collect from GenerateVideo nodes
-        if (node.type === "generateVideo" && node.data.outputs?.video) {
-          const outputId = `video_${node.data.label || node.id}`;
-          allOutputs[outputId] = node.data.outputs.video;
-          console.log(`[WizardView] Collected video from ${node.id}`);
-        }
+        if (mapping) {
+          // Find the node referenced by this output mapping
+          const node = workflowNodes.find((n) => n.id === mapping.nodeId);
 
-        // Also collect any other outputs from the node
-        if (node.data.outputs) {
-          Object.entries(node.data.outputs).forEach(([key, value]) => {
-            if (value && typeof value === "string" && value.length > 0) {
-              const outputId = `${key}_${node.data.label || node.id}`;
-              if (!allOutputs[outputId]) {
-                allOutputs[outputId] = value;
-                console.log(`[WizardView] Collected ${key} from ${node.id}`);
-              }
+          if (node) {
+            // Extract the value from the node using the mapping path
+            const value = getNestedValue(node, mapping.param);
+
+            if (value) {
+              allOutputs[outputDef.id] = value;
+              console.log(`[WizardView] Collected "${outputDef.name}" (${outputDef.type}) from ${mapping.nodeId}`);
+            } else {
+              console.warn(`[WizardView] No value found at ${mapping.nodeId}.${mapping.param}`);
             }
-          });
+          } else {
+            console.warn(`[WizardView] Node ${mapping.nodeId} not found in workflow`);
+          }
         }
       });
 
       console.log("[WizardView] All outputs collected:", {
-        count: Object.keys(allOutputs).length,
-        keys: Object.keys(allOutputs),
+        expected: wizard.outputs.length,
+        collected: Object.keys(allOutputs).length,
+        outputs: wizard.outputs.map(o => o.name),
       });
 
       if (Object.keys(allOutputs).length > 0) {
@@ -127,7 +123,7 @@ export default function WizardView({ wizardId }: WizardViewProps) {
     } else if (wasExecuting) {
       setWasExecuting(false);
     }
-  }, [isExecuting, workflowNodes, wasExecuting]);
+  }, [isExecuting, workflowNodes, wasExecuting, wizard]);
 
   if (!wizard) {
     return (
