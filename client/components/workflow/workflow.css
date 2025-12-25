@@ -396,3 +396,172 @@
   user-select: none;
   -webkit-user-select: none;
 }
+
+/* ============================================================================
+   COMPOUND NODE STYLES
+   ============================================================================ */
+
+/* Base compound node container */
+.compound-node {
+  background: hsl(var(--card));
+  border: 2px solid hsl(var(--border));
+  border-radius: 8px;
+  min-width: 250px;
+  max-width: 350px;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  transition: all 0.2s;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.compound-node:hover {
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.2);
+}
+
+/* Compound node header */
+.compound-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: hsl(var(--accent) / 0.5);
+  border-radius: 6px 6px 0 0;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.compound-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.compound-name {
+  color: hsl(var(--foreground));
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+/* Compound node description */
+.compound-description {
+  padding: 8px 12px;
+  color: hsl(var(--muted-foreground));
+  font-size: 11px;
+  line-height: 1.4;
+  border-bottom: 1px solid hsl(var(--border));
+  background: hsl(var(--muted) / 0.3);
+}
+
+/* Input and output sections */
+.compound-inputs,
+.compound-outputs {
+  padding: 8px 0;
+}
+
+.compound-input-row,
+.compound-output-row {
+  display: flex;
+  align-items: center;
+  padding: 4px 12px;
+  position: relative;
+  min-height: 28px;
+}
+
+.compound-input-row .input-label {
+  color: hsl(var(--muted-foreground));
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.compound-output-row {
+  justify-content: flex-end;
+}
+
+.compound-output-row .output-label {
+  color: hsl(var(--muted-foreground));
+  font-size: 12px;
+  margin-right: 8px;
+}
+
+/* Controls section */
+.compound-controls {
+  padding: 12px 16px;
+  border-top: 1px solid hsl(var(--border));
+  background: hsl(var(--accent) / 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.compound-control-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.compound-control-row label {
+  display: block;
+  color: hsl(var(--muted-foreground));
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* Slider control */
+.slider-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.slider-control input[type="range"] {
+  flex: 1;
+}
+
+.slider-value {
+  color: hsl(var(--foreground));
+  font-size: 12px;
+  font-family: "Courier New", monospace;
+  min-width: 40px;
+  text-align: right;
+}
+
+/* Dropdown, text input, and toggle controls */
+.compound-control-row select,
+.compound-control-row input[type="text"] {
+  width: 100%;
+  padding: 6px 8px;
+  background: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+  border-radius: 4px;
+  color: hsl(var(--foreground));
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.compound-control-row select:hover,
+.compound-control-row input[type="text"]:hover {
+  border-color: hsl(var(--primary));
+}
+
+.compound-control-row select:focus,
+.compound-control-row input[type="text"]:focus {
+  outline: none;
+  border-color: hsl(var(--primary));
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2);
+}
+
+.compound-control-row input[type="text"]:disabled,
+.compound-control-row select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Toggle control */
+.compound-control-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.compound-control-row input[type="checkbox"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
