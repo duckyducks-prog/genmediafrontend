@@ -78,6 +78,43 @@ export default function WizardView({ wizardId }: WizardViewProps) {
     setControlValues((prev) => ({ ...prev, [controlId]: value }));
   };
 
+  // Create a wrapper function that accepts nodes and edges for compound execution
+  const executeWorkflow = useCallback(
+    async (nodes: WorkflowNode[], edges: WorkflowEdge[]) => {
+      // Set the temporary nodes and edges
+      setTempNodes(nodes);
+      setTempEdges(edges);
+
+      // Wait for state to update and execute
+      return new Promise<any>((resolve) => {
+        setTimeout(async () => {
+          try {
+            await executeWorkflowHook();
+
+            // Get the results from the executed nodes
+            const outputs: Record<string, any> = {};
+            nodes.forEach((node) => {
+              if (node.data.outputs) {
+                Object.assign(outputs, node.data.outputs);
+              }
+            });
+
+            resolve({
+              success: true,
+              data: outputs,
+            });
+          } catch (error) {
+            resolve({
+              success: false,
+              error: error instanceof Error ? error.message : "Execution failed",
+            });
+          }
+        }, 100);
+      });
+    },
+    [executeWorkflowHook],
+  );
+
   const handleGenerate = async () => {
     setIsRunning(true);
     setProgress("Starting...");
