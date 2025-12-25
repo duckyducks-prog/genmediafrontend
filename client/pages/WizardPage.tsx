@@ -1,4 +1,5 @@
 import { useParams } from "react-router-dom";
+import { WorkflowProvider } from "@/contexts/WorkflowContext";
 import WizardView from "@/components/wizard/WizardView";
 
 export default function WizardPage() {
@@ -16,8 +17,10 @@ export default function WizardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#360F46]">
-      <WizardView wizardId={id} />
-    </div>
+    <WorkflowProvider>
+      <div className="min-h-screen bg-[#360F46]">
+        <WizardView wizardId={id} />
+      </div>
+    </WorkflowProvider>
   );
 }
