@@ -1610,6 +1610,21 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           onOpenChange={setIsLoadDialogOpen}
           onLoadWorkflow={loadWorkflow}
         />
+
+        {/* Compound Node Modal */}
+        <CompoundNodeModal
+          nodes={nodes}
+          edges={edges}
+          open={isCompoundModalOpen}
+          onOpenChange={setIsCompoundModalOpen}
+          onSave={() => {
+            // Compound node saved successfully - it will appear in the palette
+            toast({
+              title: "Success",
+              description: "Compound node has been saved to your palette",
+            });
+          }}
+        />
       </div>
     );
   },
