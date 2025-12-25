@@ -25,6 +25,20 @@ export function getConnectorType(
   const config = NODE_CONFIGURATIONS[node.type as NodeType];
   if (!config) return null;
 
+  // Special case: Compound nodes have dynamic connectors defined in node data
+  if (node.type === NodeType.Compound) {
+    const handle = handleId || "default";
+    const connectors = isSource
+      ? (node.data as any).outputs
+      : (node.data as any).inputs;
+
+    if (Array.isArray(connectors)) {
+      const connector = connectors.find((c: any) => c.id === handle);
+      return connector ? connector.type : null;
+    }
+    return null;
+  }
+
   const connectors = isSource
     ? config.outputConnectors
     : config.inputConnectors;
