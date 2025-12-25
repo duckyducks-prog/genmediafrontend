@@ -135,16 +135,18 @@ export interface CompoundNodeData extends BaseNodeData {
 
 /**
  * Represents an available input that can be exposed from the workflow
+ * For Input nodes (Prompt, ImageInput, VideoInput), this represents the node itself
  */
 export interface AvailableInput {
-  id: string; // Unique ID: "nodeId-inputHandle"
+  id: string; // Unique ID: "nodeId-inputHandle" or "nodeId-input" for input nodes
   nodeId: string; // ID of the node
   nodeName: string; // Display name of the node
-  inputHandle: string; // Handle ID (e.g., "text", "first_frame")
+  inputHandle: string; // Handle ID (e.g., "text", "first_frame") - not used for input nodes
   inputName: string; // Display name of the input (e.g., "Text", "First Frame")
-  type: ConnectorType; // Connector type
+  type: ConnectorType | "text" | "image" | "video"; // Connector type or input type
   isConnected: boolean; // Already has incoming connection?
   suggestedName: string; // Default exposed name
+  paramPath?: string; // Path to inject value (e.g., "data.promptText") - for input nodes
 }
 
 /**
