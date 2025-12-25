@@ -63,13 +63,7 @@
    ============================================================================ */
 
 .wizard-view-container {
-  min-height: 100vh;
   background: #360F46;
-}
-
-.wizard-back-nav {
-  padding: 16px 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .wizard-grid {
@@ -77,7 +71,7 @@
   grid-template-columns: 340px 1fr;
   gap: 32px;
   padding: 24px;
-  min-height: calc(100vh - 64px);
+  min-height: calc(100vh - 200px);
 }
 
 /* Left Panel - Form Card */
