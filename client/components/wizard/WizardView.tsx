@@ -244,87 +244,123 @@ export default function WizardView({ wizardId }: WizardViewProps) {
   });
 
   return (
-    <div className="wizard-view">
+    <div className="wizard-view-container">
       {/* Back button */}
-      <button className="back-button" onClick={() => navigate("/")}>
-        <ArrowLeft className="w-4 h-4 mr-2" />
-        Back
-      </button>
-
-      {/* Header */}
-      <div className="wizard-header">
-        <span className="wizard-icon">{wizard.icon}</span>
-        <h1 className="wizard-title">{wizard.name}</h1>
-        {wizard.description && (
-          <p className="wizard-description">{wizard.description}</p>
-        )}
-      </div>
-
-      {/* Form */}
-      <div className="wizard-form">
-        {/* Inputs */}
-        {wizard.inputs.length > 0 && (
-          <div className="wizard-inputs">
-            {wizard.inputs.map((input) => (
-              <WizardInput
-                key={input.id}
-                input={input}
-                value={inputValues[input.id]}
-                onChange={(value) => handleInputChange(input.id, value)}
-                disabled={isExecuting}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Controls */}
-        {wizard.controls.length > 0 && (
-          <div className="wizard-controls">
-            {wizard.controls.map((control) => (
-              <WizardControl
-                key={control.id}
-                control={control}
-                value={controlValues[control.id]}
-                onChange={(value) => handleControlChange(control.id, value)}
-                disabled={isExecuting}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Generate Button */}
+      <div className="wizard-back-nav">
         <Button
-          className="wizard-generate-btn"
-          onClick={handleGenerate}
-          disabled={isExecuting || !canGenerate}
-          size="lg"
+          variant="ghost"
+          onClick={() => navigate("/")}
+          className="text-muted-foreground hover:text-foreground"
         >
-          {isExecuting ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            <>✨ Generate</>
-          )}
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Home
         </Button>
-
-        {/* Error */}
-        {error && (
-          <div className="wizard-error">
-            <AlertCircle className="w-4 h-4" />
-            <span className="flex-1">{error}</span>
-            <button onClick={() => setError(null)}>
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* Results */}
-      {results && (
-        <WizardResults outputs={wizard.outputs} results={results} />
-      )}
+      {/* 2-Column Grid Layout */}
+      <div className="wizard-grid">
+        {/* Left Column - Form Card */}
+        <div className="wizard-left-panel">
+          <div className="wizard-form-card">
+            {/* Header */}
+            <div className="wizard-form-header">
+              <span className="wizard-icon">{wizard.icon}</span>
+              <h2 className="wizard-form-title">{wizard.name}</h2>
+              {wizard.description && (
+                <p className="wizard-form-description">{wizard.description}</p>
+              )}
+            </div>
+
+            {/* Form Content */}
+            <div className="wizard-form-content">
+              {/* Inputs */}
+              {wizard.inputs.length > 0 && (
+                <div className="wizard-inputs">
+                  {wizard.inputs.map((input) => (
+                    <WizardInput
+                      key={input.id}
+                      input={input}
+                      value={inputValues[input.id]}
+                      onChange={(value) => handleInputChange(input.id, value)}
+                      disabled={isExecuting}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Controls */}
+              {wizard.controls.length > 0 && (
+                <div className="wizard-controls">
+                  {wizard.controls.map((control) => (
+                    <WizardControl
+                      key={control.id}
+                      control={control}
+                      value={controlValues[control.id]}
+                      onChange={(value) => handleControlChange(control.id, value)}
+                      disabled={isExecuting}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Error */}
+              {error && (
+                <div className="wizard-error">
+                  <AlertCircle className="w-4 h-4" />
+                  <span className="flex-1">{error}</span>
+                  <button onClick={() => setError(null)}>
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Generate Button - Fixed at bottom */}
+            <Button
+              className="wizard-generate-btn"
+              onClick={handleGenerate}
+              disabled={isExecuting || !canGenerate}
+              size="lg"
+            >
+              {isExecuting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>✨ Generate</>
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Right Column - Results */}
+        <div className="wizard-right-panel">
+          {!results && !isExecuting && (
+            <div className="wizard-empty-state">
+              <div className="text-center">
+                <span className="wizard-empty-icon">{wizard.icon}</span>
+                <p className="wizard-empty-text">
+                  Fill in the form and click Generate to see results
+                </p>
+              </div>
+            </div>
+          )}
+
+          {isExecuting && (
+            <div className="wizard-loading-state">
+              <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
+              <p className="text-sm text-muted-foreground">
+                Generating your content...
+              </p>
+            </div>
+          )}
+
+          {results && !isExecuting && (
+            <WizardResults outputs={wizard.outputs} results={results} />
+          )}
+        </div>
+      </div>
     </div>
   );
 }
