@@ -14,6 +14,11 @@ interface WizardViewProps {
   wizardId: string;
 }
 
+// Helper to get nested values from objects
+function getNestedValue(obj: any, path: string): any {
+  return path.split(".").reduce((curr, key) => curr?.[key], obj);
+}
+
 // Helper to set nested values in objects
 function setNestedValue(obj: any, path: string, value: any) {
   const parts = path.split(".");
