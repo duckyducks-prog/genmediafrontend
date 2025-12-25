@@ -1361,7 +1361,6 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           <div className="shrink-0">
             <NodePalette
               onAddNode={addNode}
-              onAddCompoundNode={addCompoundNode}
             />
           </div>
         )}
