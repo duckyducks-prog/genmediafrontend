@@ -38,7 +38,7 @@ import NodePalette from "./NodePalette";
 import WorkflowToolbar from "./WorkflowToolbar";
 import SaveWorkflowDialog from "./SaveWorkflowDialog";
 import WorkflowLoadDialog from "./WorkflowLoadDialog";
-import CompoundNodeModal from "./CompoundNodeModal";
+import CreateWizardModal from "./CreateWizardModal";
 import { useWorkflowExecution } from "./useWorkflowExecution";
 import { validateConnection, getConnectorType } from "./connectionValidation";
 import { useToast } from "@/hooks/use-toast";
@@ -143,7 +143,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
     const reactFlowWrapper = useRef<HTMLDivElement>(null);
     const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
     const [isLoadDialogOpen, setIsLoadDialogOpen] = useState(false);
-    const [isCompoundModalOpen, setIsCompoundModalOpen] = useState(false);
+    const [isWizardModalOpen, setIsWizardModalOpen] = useState(false);
     const [currentWorkflowId, setCurrentWorkflowId] = useState<string | null>(
       null,
     );
@@ -1539,7 +1539,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               onResetWorkflow={resetWorkflow}
               onSaveWorkflow={handleSaveWorkflow}
               onLoadWorkflow={handleLoadWorkflow}
-              onSaveAsCompound={() => setIsCompoundModalOpen(true)}
+              onSaveAsWizard={() => setIsWizardModalOpen(true)}
               isExecuting={isExecuting}
               executionProgress={executionProgress}
               totalNodes={totalNodes}
@@ -1630,17 +1630,17 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           onLoadWorkflow={loadWorkflow}
         />
 
-        {/* Compound Node Modal */}
-        <CompoundNodeModal
+        {/* Create Wizard Modal */}
+        <CreateWizardModal
           nodes={nodes}
           edges={edges}
-          open={isCompoundModalOpen}
-          onOpenChange={setIsCompoundModalOpen}
+          open={isWizardModalOpen}
+          onOpenChange={setIsWizardModalOpen}
           onSave={() => {
-            // Compound node saved successfully - it will appear in the palette
+            // Wizard saved successfully - it will appear on home page
             toast({
               title: "Success",
-              description: "Compound node has been saved to your palette",
+              description: "Wizard has been created and is available on the home page",
             });
           }}
         />
