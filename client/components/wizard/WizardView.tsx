@@ -155,21 +155,22 @@ export default function WizardView({ wizardId }: WizardViewProps) {
       await executeWorkflow();
 
       // After execution, collect ALL outputs from Generate nodes
-      const allOutputs: Record<string, any> = {};
-      
-      // Wait a bit for nodes to update
+      // Use a small delay to ensure state has updated
       setTimeout(() => {
-        nodes.forEach((node) => {
+        const allOutputs: Record<string, any> = {};
+
+        // Read from the updated state nodes
+        workflowNodes.forEach((node) => {
           // Collect from GenerateImage nodes
           if (node.type === "generateImage" && node.data.outputs?.image) {
-            const outputId = `${node.id}_image`;
+            const outputId = `image_${node.data.label || node.id}`;
             allOutputs[outputId] = node.data.outputs.image;
             console.log(`[WizardView] Collected image from ${node.id}`);
           }
-          
+
           // Collect from GenerateVideo nodes
           if (node.type === "generateVideo" && node.data.outputs?.video) {
-            const outputId = `${node.id}_video`;
+            const outputId = `video_${node.data.label || node.id}`;
             allOutputs[outputId] = node.data.outputs.video;
             console.log(`[WizardView] Collected video from ${node.id}`);
           }
@@ -177,8 +178,12 @@ export default function WizardView({ wizardId }: WizardViewProps) {
           // Also collect any other outputs from the node
           if (node.data.outputs) {
             Object.entries(node.data.outputs).forEach(([key, value]) => {
-              if (value && !allOutputs[`${node.id}_${key}`]) {
-                allOutputs[`${node.id}_${key}`] = value;
+              if (value && typeof value === "string") {
+                const outputId = `${key}_${node.data.label || node.id}`;
+                if (!allOutputs[outputId]) {
+                  allOutputs[outputId] = value;
+                  console.log(`[WizardView] Collected ${key} from ${node.id}`);
+                }
               }
             });
           }
@@ -194,7 +199,7 @@ export default function WizardView({ wizardId }: WizardViewProps) {
         } else {
           setError("No outputs were generated. Please check your inputs and try again.");
         }
-      }, 2000); // Wait 2 seconds for execution to complete
+      }, 3000); // Wait 3 seconds for execution to complete
 
     } catch (err) {
       console.error("[WizardView] Execution error:", err);
