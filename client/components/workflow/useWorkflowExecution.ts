@@ -368,6 +368,320 @@ export function useWorkflowExecution(
             }
           }
 
+          // ========== PIXI FILTER MODIFIER NODES ==========
+          // These nodes build filter chains that are applied client-side via PixiJS
+          // They pass through the image and append their filter config to the chain
+
+          case NodeType.BrightnessContrast: {
+            const imageInput = inputs.image || null;
+            const upstreamFilters: FilterConfig[] = inputs.filters || [];
+
+            const brightness = (node.data as any).brightness ?? 1.0;
+            const contrast = (node.data as any).contrast ?? 1.0;
+
+            console.log("[BrightnessContrast] Execution:", {
+              hasImage: !!imageInput,
+              upstreamFilterCount: upstreamFilters.length,
+              brightness,
+              contrast,
+            });
+
+            if (!imageInput) {
+              return { success: false, error: "No image connected" };
+            }
+
+            const thisFilter: FilterConfig = {
+              type: "brightness",
+              params: { brightness, contrast },
+            };
+
+            const outputFilters = [...upstreamFilters, thisFilter];
+
+            return {
+              success: true,
+              data: {
+                image: imageInput,
+                filters: outputFilters,
+                outputs: {
+                  image: imageInput,
+                  filters: outputFilters,
+                },
+              },
+            };
+          }
+
+          case NodeType.Blur: {
+            const imageInput = inputs.image || null;
+            const upstreamFilters: FilterConfig[] = inputs.filters || [];
+
+            const strength = (node.data as any).strength ?? 8;
+            const quality = (node.data as any).quality ?? 4;
+
+            console.log("[Blur] Execution:", {
+              hasImage: !!imageInput,
+              upstreamFilterCount: upstreamFilters.length,
+              strength,
+              quality,
+            });
+
+            if (!imageInput) {
+              return { success: false, error: "No image connected" };
+            }
+
+            const thisFilter: FilterConfig = {
+              type: "blur",
+              params: { strength, quality },
+            };
+
+            const outputFilters = [...upstreamFilters, thisFilter];
+
+            return {
+              success: true,
+              data: {
+                image: imageInput,
+                filters: outputFilters,
+                outputs: {
+                  image: imageInput,
+                  filters: outputFilters,
+                },
+              },
+            };
+          }
+
+          case NodeType.Sharpen: {
+            const imageInput = inputs.image || null;
+            const upstreamFilters: FilterConfig[] = inputs.filters || [];
+
+            const gamma = (node.data as any).gamma ?? 0;
+
+            console.log("[Sharpen] Execution:", {
+              hasImage: !!imageInput,
+              upstreamFilterCount: upstreamFilters.length,
+              gamma,
+            });
+
+            if (!imageInput) {
+              return { success: false, error: "No image connected" };
+            }
+
+            const thisFilter: FilterConfig = {
+              type: "sharpen",
+              params: { gamma },
+            };
+
+            const outputFilters = [...upstreamFilters, thisFilter];
+
+            return {
+              success: true,
+              data: {
+                image: imageInput,
+                filters: outputFilters,
+                outputs: {
+                  image: imageInput,
+                  filters: outputFilters,
+                },
+              },
+            };
+          }
+
+          case NodeType.HueSaturation: {
+            const imageInput = inputs.image || null;
+            const upstreamFilters: FilterConfig[] = inputs.filters || [];
+
+            const hue = (node.data as any).hue ?? 0;
+            const saturation = (node.data as any).saturation ?? 0;
+
+            console.log("[HueSaturation] Execution:", {
+              hasImage: !!imageInput,
+              upstreamFilterCount: upstreamFilters.length,
+              hue,
+              saturation,
+            });
+
+            if (!imageInput) {
+              return { success: false, error: "No image connected" };
+            }
+
+            const thisFilter: FilterConfig = {
+              type: "hueSaturation",
+              params: { hue, saturation },
+            };
+
+            const outputFilters = [...upstreamFilters, thisFilter];
+
+            return {
+              success: true,
+              data: {
+                image: imageInput,
+                filters: outputFilters,
+                outputs: {
+                  image: imageInput,
+                  filters: outputFilters,
+                },
+              },
+            };
+          }
+
+          case NodeType.Noise: {
+            const imageInput = inputs.image || null;
+            const upstreamFilters: FilterConfig[] = inputs.filters || [];
+
+            const noise = (node.data as any).noise ?? 0.5;
+
+            console.log("[Noise] Execution:", {
+              hasImage: !!imageInput,
+              upstreamFilterCount: upstreamFilters.length,
+              noise,
+            });
+
+            if (!imageInput) {
+              return { success: false, error: "No image connected" };
+            }
+
+            const thisFilter: FilterConfig = {
+              type: "noise",
+              params: { noise },
+            };
+
+            const outputFilters = [...upstreamFilters, thisFilter];
+
+            return {
+              success: true,
+              data: {
+                image: imageInput,
+                filters: outputFilters,
+                outputs: {
+                  image: imageInput,
+                  filters: outputFilters,
+                },
+              },
+            };
+          }
+
+          case NodeType.FilmGrain: {
+            const imageInput = inputs.image || null;
+            const upstreamFilters: FilterConfig[] = inputs.filters || [];
+
+            const intensity = (node.data as any).intensity ?? 50;
+            const size = (node.data as any).size ?? 1;
+            const shadows = (node.data as any).shadows ?? 30;
+            const highlights = (node.data as any).highlights ?? 30;
+            const midtonesBias = (node.data as any).midtonesBias ?? 80;
+
+            console.log("[FilmGrain] Execution:", {
+              hasImage: !!imageInput,
+              upstreamFilterCount: upstreamFilters.length,
+              intensity,
+              size,
+              shadows,
+              highlights,
+              midtonesBias,
+            });
+
+            if (!imageInput) {
+              return { success: false, error: "No image connected" };
+            }
+
+            const thisFilter: FilterConfig = {
+              type: "filmGrain",
+              params: { intensity, size, shadows, highlights, midtonesBias },
+            };
+
+            const outputFilters = [...upstreamFilters, thisFilter];
+
+            return {
+              success: true,
+              data: {
+                image: imageInput,
+                filters: outputFilters,
+                outputs: {
+                  image: imageInput,
+                  filters: outputFilters,
+                },
+              },
+            };
+          }
+
+          case NodeType.Vignette: {
+            const imageInput = inputs.image || null;
+            const upstreamFilters: FilterConfig[] = inputs.filters || [];
+
+            const size = (node.data as any).size ?? 0.5;
+            const amount = (node.data as any).amount ?? 0.5;
+
+            console.log("[Vignette] Execution:", {
+              hasImage: !!imageInput,
+              upstreamFilterCount: upstreamFilters.length,
+              size,
+              amount,
+            });
+
+            if (!imageInput) {
+              return { success: false, error: "No image connected" };
+            }
+
+            const thisFilter: FilterConfig = {
+              type: "vignette",
+              params: { size, amount },
+            };
+
+            const outputFilters = [...upstreamFilters, thisFilter];
+
+            return {
+              success: true,
+              data: {
+                image: imageInput,
+                filters: outputFilters,
+                outputs: {
+                  image: imageInput,
+                  filters: outputFilters,
+                },
+              },
+            };
+          }
+
+          case NodeType.Crop: {
+            const imageInput = inputs.image || null;
+            const upstreamFilters: FilterConfig[] = inputs.filters || [];
+
+            const x = (node.data as any).x ?? 0;
+            const y = (node.data as any).y ?? 0;
+            const width = (node.data as any).width ?? 512;
+            const height = (node.data as any).height ?? 512;
+
+            console.log("[Crop] Execution:", {
+              hasImage: !!imageInput,
+              upstreamFilterCount: upstreamFilters.length,
+              x,
+              y,
+              width,
+              height,
+            });
+
+            if (!imageInput) {
+              return { success: false, error: "No image connected" };
+            }
+
+            const thisFilter: FilterConfig = {
+              type: "crop",
+              params: { x, y, width, height },
+            };
+
+            const outputFilters = [...upstreamFilters, thisFilter];
+
+            return {
+              success: true,
+              data: {
+                image: imageInput,
+                filters: outputFilters,
+                outputs: {
+                  image: imageInput,
+                  filters: outputFilters,
+                },
+              },
+            };
+          }
+
           // ACTION NODES
           case NodeType.LLM: {
             const prompt = inputs.prompt;
