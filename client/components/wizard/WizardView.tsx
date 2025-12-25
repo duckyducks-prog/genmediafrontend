@@ -245,18 +245,6 @@ export default function WizardView({ wizardId }: WizardViewProps) {
 
   return (
     <div className="wizard-view-container">
-      {/* Back button */}
-      <div className="wizard-back-nav">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/")}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Home
-        </Button>
-      </div>
-
       {/* 2-Column Grid Layout */}
       <div className="wizard-grid">
         {/* Left Column - Form Card */}
