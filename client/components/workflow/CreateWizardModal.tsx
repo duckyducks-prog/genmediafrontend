@@ -96,19 +96,6 @@ export default function CreateWizardModal({
     >
   >({});
 
-  const [selectedOutputs, setSelectedOutputs] = useState<
-    Record<
-      string,
-      {
-        id: string;
-        nodeId: string;
-        outputHandle: string;
-        exposedName: string;
-        type: ConnectorType;
-      }
-    >
-  >({});
-
   // Analyze workflow to get available items
   const analysis = useMemo(() => analyzeWorkflow(nodes, edges), [nodes, edges]);
 
@@ -120,7 +107,6 @@ export default function CreateWizardModal({
       setDescription("");
       setSelectedInputs({});
       setSelectedControls({});
-      setSelectedOutputs({});
     }
   }, [open]);
 
@@ -177,31 +163,6 @@ export default function CreateWizardModal({
     }
   };
 
-  const handleOutputToggle = (
-    outputId: string,
-    checked: boolean,
-    output: (typeof analysis.availableOutputs)[0],
-  ) => {
-    if (checked) {
-      setSelectedOutputs((prev) => ({
-        ...prev,
-        [outputId]: {
-          id: outputId,
-          nodeId: output.nodeId,
-          outputHandle: output.outputHandle,
-          exposedName: output.suggestedName,
-          type: output.type,
-        },
-      }));
-    } else {
-      setSelectedOutputs((prev) => {
-        const next = { ...prev };
-        delete next[outputId];
-        return next;
-      });
-    }
-  };
-
   // Update exposed name for an item
   const updateInputName = (id: string, newName: string) => {
     setSelectedInputs((prev) => ({
@@ -212,13 +173,6 @@ export default function CreateWizardModal({
 
   const updateControlName = (id: string, newName: string) => {
     setSelectedControls((prev) => ({
-      ...prev,
-      [id]: { ...prev[id], exposedName: newName },
-    }));
-  };
-
-  const updateOutputName = (id: string, newName: string) => {
-    setSelectedOutputs((prev) => ({
       ...prev,
       [id]: { ...prev[id], exposedName: newName },
     }));
