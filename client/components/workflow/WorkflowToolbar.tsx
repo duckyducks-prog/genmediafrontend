@@ -102,6 +102,20 @@ export default function WorkflowToolbar({
         <List className="w-3.5 h-3.5" />
       </Button>
 
+      {onSaveAsCompound && (
+        <Button
+          onClick={onSaveAsCompound}
+          variant="outline"
+          size="icon"
+          className="h-8 w-8"
+          title="Save as Compound Node"
+          aria-label="Save as Compound Node"
+          disabled={isReadOnly}
+        >
+          <Package className="w-3.5 h-3.5" />
+        </Button>
+      )}
+
       <div className="w-px h-6 bg-border mx-0.5" />
 
       <Button
