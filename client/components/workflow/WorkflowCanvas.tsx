@@ -75,6 +75,7 @@ import CropNode from "./nodes/CropNode";
 import ImageCompositeNode from "./nodes/ImageCompositeNode";
 import ExtractLastFrameNode from "./nodes/ExtractLastFrameNode";
 import StickyNoteNode from "./nodes/StickyNoteNode";
+import CompoundNode from "./nodes/CompoundNode";
 
 const nodeTypes: NodeTypes = {
   // Input nodes
@@ -109,6 +110,9 @@ const nodeTypes: NodeTypes = {
 
   // Documentation/Utility nodes
   [NodeType.StickyNote]: StickyNoteNode,
+
+  // Compound nodes
+  [NodeType.Compound]: CompoundNode,
 };
 
 export interface WorkflowCanvasRef {
