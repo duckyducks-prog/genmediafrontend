@@ -38,6 +38,7 @@ import NodePalette from "./NodePalette";
 import WorkflowToolbar from "./WorkflowToolbar";
 import SaveWorkflowDialog from "./SaveWorkflowDialog";
 import WorkflowLoadDialog from "./WorkflowLoadDialog";
+import CompoundNodeModal from "./CompoundNodeModal";
 import { useWorkflowExecution } from "./useWorkflowExecution";
 import { validateConnection, getConnectorType } from "./connectionValidation";
 import { useToast } from "@/hooks/use-toast";
@@ -142,6 +143,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
     const reactFlowWrapper = useRef<HTMLDivElement>(null);
     const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
     const [isLoadDialogOpen, setIsLoadDialogOpen] = useState(false);
+    const [isCompoundModalOpen, setIsCompoundModalOpen] = useState(false);
     const [currentWorkflowId, setCurrentWorkflowId] = useState<string | null>(
       null,
     );
