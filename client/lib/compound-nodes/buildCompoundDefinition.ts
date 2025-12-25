@@ -272,13 +272,8 @@ export function validateCompoundDefinition(
     return "Compound node must contain at least one node";
   }
 
-  const outputCount = Object.keys(definition.exposedOutputs || {}).filter(
-    (key) => definition.exposedOutputs![key],
-  ).length;
-
-  if (outputCount === 0) {
-    return "Compound node must expose at least one output";
-  }
+  // Note: Output validation removed - outputs are auto-generated from
+  // GenerateImage/GenerateVideo nodes in the workflow
 
   return null;
 }
