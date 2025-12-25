@@ -1407,7 +1407,10 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
         {/* Node Palette - Always visible unless in read-only mode */}
         {!isReadOnly && (
           <div className="shrink-0">
-            <NodePalette onAddNode={addNode} />
+            <NodePalette
+              onAddNode={addNode}
+              onAddCompoundNode={addCompoundNode}
+            />
           </div>
         )}
 
