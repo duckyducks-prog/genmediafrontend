@@ -198,7 +198,10 @@ export default function WizardView({ wizardId }: WizardViewProps) {
         }
       }
 
-      // Apply control values to internal nodes
+      // ========================================================================
+      // STEP 3: Apply values for EXPOSED controls (user-adjusted values)
+      // Non-exposed parameters keep their default values from the original workflow
+      // ========================================================================
       if (wizard.mappings.controls) {
         for (const [controlId, mappingList] of Object.entries(
           wizard.mappings.controls,
