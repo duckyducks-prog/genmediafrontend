@@ -203,16 +203,8 @@ export function buildCompoundDefinition(
       });
     });
 
-  // Map outputs
-  Object.values(exposedOutputs)
-    .filter(Boolean)
-    .forEach((item) => {
-      const exposedId = slugify(item.exposedName);
-      mappings.outputs[exposedId] = {
-        nodeId: item.nodeId,
-        param: `data.outputs.${item.outputHandle}`,
-      };
-    });
+  // Use the auto-generated output mappings (already built above)
+  mappings.outputs = outputMappings;
 
   console.log("[buildCompoundDefinition] Built mappings:", {
     inputMappings: Object.keys(mappings.inputs).length,
