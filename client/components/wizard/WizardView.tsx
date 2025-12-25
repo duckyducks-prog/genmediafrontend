@@ -210,55 +210,8 @@ export default function WizardView({ wizardId }: WizardViewProps) {
       setWorkflowNodes(nodes);
       setWorkflowEdges(edges);
 
-      // Execute the workflow
+      // Execute the workflow (results will be collected by useEffect)
       await executeWorkflow();
-
-      // After execution, collect ALL outputs from Generate nodes
-      // Use a small delay to ensure state has updated
-      setTimeout(() => {
-        const allOutputs: Record<string, any> = {};
-
-        // Read from the updated state nodes
-        workflowNodes.forEach((node) => {
-          // Collect from GenerateImage nodes
-          if (node.type === "generateImage" && node.data.outputs?.image) {
-            const outputId = `image_${node.data.label || node.id}`;
-            allOutputs[outputId] = node.data.outputs.image;
-            console.log(`[WizardView] Collected image from ${node.id}`);
-          }
-
-          // Collect from GenerateVideo nodes
-          if (node.type === "generateVideo" && node.data.outputs?.video) {
-            const outputId = `video_${node.data.label || node.id}`;
-            allOutputs[outputId] = node.data.outputs.video;
-            console.log(`[WizardView] Collected video from ${node.id}`);
-          }
-
-          // Also collect any other outputs from the node
-          if (node.data.outputs) {
-            Object.entries(node.data.outputs).forEach(([key, value]) => {
-              if (value && typeof value === "string") {
-                const outputId = `${key}_${node.data.label || node.id}`;
-                if (!allOutputs[outputId]) {
-                  allOutputs[outputId] = value;
-                  console.log(`[WizardView] Collected ${key} from ${node.id}`);
-                }
-              }
-            });
-          }
-        });
-
-        console.log("[WizardView] All outputs collected:", {
-          count: Object.keys(allOutputs).length,
-          keys: Object.keys(allOutputs),
-        });
-
-        if (Object.keys(allOutputs).length > 0) {
-          setResults(allOutputs);
-        } else {
-          setError("No outputs were generated. Please check your inputs and try again.");
-        }
-      }, 3000); // Wait 3 seconds for execution to complete
 
     } catch (err) {
       console.error("[WizardView] Execution error:", err);
