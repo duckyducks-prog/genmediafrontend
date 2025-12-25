@@ -323,54 +323,7 @@ export default function WizardView({ wizardId }: WizardViewProps) {
 
       {/* Results */}
       {results && (
-        <div className="wizard-results">
-          <h2 className="wizard-results-title">Results</h2>
-
-          <div className="wizard-results-grid">
-            {Object.entries(results).map(([key, value]) => {
-              const isVideo = key.includes("video");
-              const isImage = key.includes("image");
-
-              return (
-                <div key={key} className="result-item">
-                  {isVideo && value && (
-                    <video className="result-video" src={value as string} controls />
-                  )}
-
-                  {isImage && value && (
-                    <img className="result-image" src={value as string} alt="Generated" />
-                  )}
-
-                  {!isVideo && !isImage && (
-                    <div className="result-text">{String(value)}</div>
-                  )}
-
-                  <div className="result-label">{key.split("_").slice(1).join(" ")}</div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="wizard-results-actions">
-            <Button
-              className="wizard-action-btn secondary"
-              onClick={() => {
-                // Download all results
-                Object.entries(results).forEach(([key, value]) => {
-                  if (value) {
-                    const link = document.createElement("a");
-                    link.href = value as string;
-                    link.download = `${key}`;
-                    link.click();
-                  }
-                });
-              }}
-              variant="outline"
-            >
-              ⬇️ Download All
-            </Button>
-          </div>
-        </div>
+        <WizardResults outputs={wizard.outputs} results={results} />
       )}
     </div>
   );
