@@ -431,8 +431,52 @@ export default function NodePalette({
           </div>
         )}
 
+        {/* Compound Nodes */}
+        {filteredCompounds.length > 0 && (
+          <div className="pr-4">
+            {!searchQuery && (
+              <div className="h-px bg-border my-4" />
+            )}
+            <h4 className="text-xs font-medium text-muted-foreground uppercase mb-2 tracking-wide">
+              My Compound Nodes
+            </h4>
+            <p className="text-xs text-muted-foreground/70 mb-3">
+              Reusable workflows you've created
+            </p>
+            <div className="space-y-2">
+              {filteredCompounds.map((template) => (
+                <button
+                  key={template.id}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData(
+                      "application/compound-node",
+                      template.id,
+                    );
+                    e.dataTransfer.effectAllowed = "move";
+                  }}
+                  onClick={() => onAddCompoundNode?.(template)}
+                  className="w-full flex items-start gap-2 p-3 rounded-lg bg-secondary/50 hover:bg-secondary border border-border transition-colors cursor-grab active:cursor-grabbing group"
+                >
+                  <div className="text-lg mt-0.5 group-hover:scale-110 transition-transform">
+                    {template.icon}
+                  </div>
+                  <div className="flex-1 text-left">
+                    <div className="text-sm font-medium">{template.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {template.description || "Custom compound node"}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* No results message */}
-        {searchQuery && filteredNodes.length === 0 && (
+        {searchQuery &&
+          filteredNodes.length === 0 &&
+          filteredCompounds.length === 0 && (
           <div className="pr-4 text-center py-8">
             <p className="text-sm text-muted-foreground">
               No nodes found matching "{searchQuery}"
