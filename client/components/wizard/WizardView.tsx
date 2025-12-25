@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2, AlertCircle, X } from "lucide-react";
+import { Loader2, AlertCircle, X } from "lucide-react";
 import "./wizard.css";
 import { Button } from "@/components/ui/button";
 import { getCompoundTemplate } from "@/lib/compound-nodes/storage";
