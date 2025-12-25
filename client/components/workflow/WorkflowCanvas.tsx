@@ -792,6 +792,22 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           return;
         }
 
+        // Handle compound node drops
+        const compoundId = event.dataTransfer.getData("application/compound-node");
+        if (compoundId) {
+          const { getCompoundTemplate } = await import("@/lib/compound-nodes/storage");
+          const template = getCompoundTemplate(compoundId);
+
+          if (template) {
+            const position = reactFlowInstance.screenToFlowPosition({
+              x: event.clientX,
+              y: event.clientY,
+            });
+            addCompoundNode(template, position);
+          }
+          return;
+        }
+
         // Handle asset drops from library
         const assetData = event.dataTransfer.getData("application/asset");
         if (assetData) {
