@@ -261,6 +261,9 @@ export default function CompoundNodeModal({
       const compound = buildCompoundDefinition(inputData);
       saveCompoundTemplate(compound);
 
+      // Dispatch event to notify palette to reload
+      window.dispatchEvent(new Event("compound-saved"));
+
       toast({
         title: "Compound Node Created",
         description: `"${compound.name}" has been added to your node palette.`,
