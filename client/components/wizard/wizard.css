@@ -574,12 +574,15 @@
    ============================================================================ */
 
 .wizard-not-found {
+  grid-column: 1 / -1;
   text-align: center;
   padding: 60px 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   color: #fff;
+  min-height: 400px;
 }
 
 /* ============================================================================
