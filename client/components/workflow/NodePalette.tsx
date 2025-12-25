@@ -196,10 +196,37 @@ const paletteNodes: PaletteNode[] = [
 
 interface NodePaletteProps {
   onAddNode: (type: NodeType) => void;
+  onAddCompoundNode?: (template: CompoundNodeDefinition) => void;
 }
 
-export default function NodePalette({ onAddNode }: NodePaletteProps) {
+export default function NodePalette({
+  onAddNode,
+  onAddCompoundNode,
+}: NodePaletteProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [compoundTemplates, setCompoundTemplates] = useState<
+    CompoundNodeDefinition[]
+  >([]);
+
+  // Load compound templates on mount and when modal closes
+  useEffect(() => {
+    const loadTemplates = () => {
+      const templates = getCompoundTemplatesList();
+      setCompoundTemplates(templates);
+    };
+
+    loadTemplates();
+
+    // Listen for storage changes (when new compound nodes are saved)
+    window.addEventListener("storage", loadTemplates);
+    // Also listen for custom event when compound is saved in same tab
+    window.addEventListener("compound-saved", loadTemplates);
+
+    return () => {
+      window.removeEventListener("storage", loadTemplates);
+      window.removeEventListener("compound-saved", loadTemplates);
+    };
+  }, []);
 
   const filteredNodes = useMemo(() => {
     if (!searchQuery.trim()) {
