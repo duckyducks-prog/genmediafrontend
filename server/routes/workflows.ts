@@ -222,6 +222,40 @@ export function cloneWorkflow(req: Request, res: Response) {
   }
 }
 
+/**
+ * POST /workflows/admin/rebuild-index
+ *
+ * Admin endpoint to rebuild the workflow index from existing files.
+ * Use this to recover from index corruption or sync issues.
+ *
+ * TODO: Add proper admin authentication
+ */
+export function rebuildIndexEndpoint(req: Request, res: Response) {
+  try {
+    // TODO: Add admin auth check here
+    // For now, log a warning
+    console.warn("[Workflows API] ⚠️  Rebuild index requested - this should be admin-only!");
+
+    console.log('[Workflows API] Rebuilding index from workflow files...');
+
+    const result = workflowStorage.rebuildIndex();
+
+    res.json({
+      success: true,
+      message: `Index rebuilt successfully: ${result.rebuilt} workflows recovered, ${result.failed} failed`,
+      ...result
+    });
+
+  } catch (error) {
+    console.error('[Workflows API] Error rebuilding index:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to rebuild index',
+      detail: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+}
+
 // Apply auth middleware to all routes
 export function setupWorkflowRoutes(app: any) {
   app.use(requireAuth);
@@ -232,4 +266,7 @@ export function setupWorkflowRoutes(app: any) {
   app.put("/api/workflows/:id", updateWorkflow);
   app.delete("/api/workflows/:id", deleteWorkflow);
   app.post("/api/workflows/:id/clone", cloneWorkflow);
+
+  // Admin endpoints
+  app.post("/api/workflows/admin/rebuild-index", rebuildIndexEndpoint);
 }
