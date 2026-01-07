@@ -3,9 +3,13 @@ import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
 import { setupWorkflowRoutes } from "./routes/workflows";
+import { verifyStorageHealth } from "./workflow-storage";
 
 export function createServer() {
   const app = express();
+
+  // Verify workflow storage health on startup
+  verifyStorageHealth();
 
   // Middleware
   app.use(cors());
