@@ -51,28 +51,123 @@ function getIndexPath(): string {
 }
 
 /**
- * Load the workflow index
+ * Create a timestamped backup of a corrupted file for forensic analysis
  */
-function loadIndex(): Record<string, WorkflowMetadata> {
-  const indexPath = getIndexPath();
-  if (!fs.existsSync(indexPath)) {
-    return {};
-  }
+function createCorruptionBackup(corruptedPath: string): string {
+  const timestamp = Date.now();
+  const backupPath = `${corruptedPath}.corrupted.${timestamp}`;
+
   try {
-    const data = fs.readFileSync(indexPath, "utf-8");
-    return JSON.parse(data);
-  } catch (error) {
-    console.error("Error loading workflow index:", error);
-    return {};
+    fs.copyFileSync(corruptedPath, backupPath);
+    console.error(`📦 [WorkflowStorage] Backed up corrupted file to: ${backupPath}`);
+    return backupPath;
+  } catch (backupError) {
+    console.error(`[WorkflowStorage] Failed to backup corrupted file:`, backupError);
+    throw backupError;
   }
 }
 
 /**
+ * Load the workflow index
+ *
+ * Automatically recovers from backup if primary is corrupted.
+ * Throws error if both primary and backup are corrupted.
+ */
+function loadIndex(): Record<string, WorkflowMetadata> {
+  const indexPath = getIndexPath();
+  const backupPath = `${indexPath}.backup`;
+
+  // Try primary index file
+  if (fs.existsSync(indexPath)) {
+    try {
+      const data = fs.readFileSync(indexPath, "utf-8");
+      return JSON.parse(data);
+    } catch (error) {
+      console.error("⛔ [WorkflowStorage] CRITICAL: Primary index file corrupted!", error);
+
+      // Create forensic backup of corrupted file
+      createCorruptionBackup(indexPath);
+
+      // Try backup file
+      console.log("🔄 [WorkflowStorage] Attempting recovery from backup file...");
+
+      if (fs.existsSync(backupPath)) {
+        try {
+          const backupData = fs.readFileSync(backupPath, "utf-8");
+          const recoveredIndex = JSON.parse(backupData);
+
+          console.log("✅ [WorkflowStorage] Successfully recovered index from backup!");
+
+          // Restore backup to primary
+          fs.writeFileSync(indexPath, backupData);
+
+          return recoveredIndex;
+        } catch (backupError) {
+          console.error("⛔ [WorkflowStorage] Backup file also corrupted!", backupError);
+          createCorruptionBackup(backupPath);
+        }
+      }
+
+      // Both files corrupted or missing
+      throw new Error(
+        "Index file corrupted and backup unavailable or also corrupted. " +
+        "Use POST /api/workflows/admin/rebuild-index to recover."
+      );
+    }
+  }
+
+  // No index file exists yet - this is normal for first run
+  return {};
+}
+
+/**
  * Save the workflow index
+ *
+ * Uses atomic write pattern:
+ * 1. Create backup of current index
+ * 2. Write to temporary file
+ * 3. Atomic rename (OS-guaranteed)
  */
 function saveIndex(index: Record<string, WorkflowMetadata>): void {
   const indexPath = getIndexPath();
-  fs.writeFileSync(indexPath, JSON.stringify(index, null, 2));
+  const backupPath = `${indexPath}.backup`;
+  const tempPath = `${indexPath}.tmp`;
+
+  try {
+    // Step 1: Create backup of current index (if exists)
+    if (fs.existsSync(indexPath)) {
+      try {
+        fs.copyFileSync(indexPath, backupPath);
+        console.log(`[WorkflowStorage] Created backup: ${backupPath}`);
+      } catch (backupError) {
+        // Log but don't fail - we can still proceed
+        console.warn("[WorkflowStorage] Failed to create backup:", backupError);
+      }
+    }
+
+    // Step 2: Write to temporary file
+    const jsonData = JSON.stringify(index, null, 2);
+    fs.writeFileSync(tempPath, jsonData, "utf-8");
+
+    // Step 3: Atomic rename (OS guarantees atomicity)
+    fs.renameSync(tempPath, indexPath);
+
+    console.log(`[WorkflowStorage] Index saved successfully (${Object.keys(index).length} workflows)`);
+
+  } catch (error) {
+    // Cleanup temp file if it exists
+    if (fs.existsSync(tempPath)) {
+      try {
+        fs.unlinkSync(tempPath);
+      } catch (cleanupError) {
+        console.error("[WorkflowStorage] Failed to cleanup temp file:", cleanupError);
+      }
+    }
+
+    // Re-throw original error
+    console.error("[WorkflowStorage] Failed to save index:", error);
+    throw error;
+  }
 }
 
 /**
@@ -245,4 +340,94 @@ export function cloneWorkflow(
   };
 
   return saveWorkflow(clonedData);
+}
+
+/**
+ * Rebuild index from existing workflow files
+ *
+ * Use this to recover from index corruption or sync issues.
+ * Scans all wf_*.json files and reconstructs the index.
+ *
+ * @returns Object with rebuilt index and statistics
+ */
+export function rebuildIndex(): {
+  success: boolean;
+  rebuilt: number;
+  failed: number;
+  errors: Array<{ file: string; error: string }>;
+} {
+  console.log("[WorkflowStorage] Starting index rebuild...");
+
+  const newIndex: Record<string, WorkflowMetadata> = {};
+  const errors: Array<{ file: string; error: string }> = [];
+  let rebuilt = 0;
+  let failed = 0;
+
+  try {
+    // Get all files in storage directory
+    const files = fs.readdirSync(STORAGE_DIR);
+
+    // Filter for workflow files (wf_*.json, excluding special files)
+    const workflowFiles = files.filter(
+      f => f.startsWith('wf_') && f.endsWith('.json')
+    );
+
+    console.log(`[WorkflowStorage] Found ${workflowFiles.length} workflow files to process`);
+
+    // Process each workflow file
+    for (const file of workflowFiles) {
+      try {
+        const filePath = path.join(STORAGE_DIR, file);
+        const data = fs.readFileSync(filePath, 'utf-8');
+        const workflow: WorkflowData = JSON.parse(data);
+
+        // Extract metadata (strip nodes/edges)
+        const { nodes, edges, ...metadata } = workflow;
+
+        // Add to index
+        newIndex[workflow.id] = metadata;
+        rebuilt++;
+
+      } catch (fileError) {
+        failed++;
+        const errorMsg = fileError instanceof Error ? fileError.message : "Unknown error";
+        errors.push({ file, error: errorMsg });
+        console.error(`[WorkflowStorage] Failed to process ${file}:`, fileError);
+      }
+    }
+
+    // Save the rebuilt index
+    console.log(`[WorkflowStorage] Saving rebuilt index (${rebuilt} workflows)...`);
+    saveIndex(newIndex);
+
+    console.log(`[WorkflowStorage] Index rebuild complete: ${rebuilt} succeeded, ${failed} failed`);
+
+    return {
+      success: true,
+      rebuilt,
+      failed,
+      errors
+    };
+
+  } catch (error) {
+    console.error("[WorkflowStorage] Index rebuild failed:", error);
+    throw error;
+  }
+}
+
+/**
+ * Verify storage health on startup
+ *
+ * Checks that index can be loaded without errors.
+ * Could auto-trigger rebuild if needed.
+ */
+export function verifyStorageHealth(): void {
+  try {
+    loadIndex(); // Will throw if corrupted without backup
+    console.log("✅ [WorkflowStorage] Storage health check passed");
+  } catch (error) {
+    console.error("⛔ [WorkflowStorage] Storage health check failed:", error);
+    console.error("⚠️  [WorkflowStorage] Use POST /api/workflows/admin/rebuild-index to recover");
+    // Could auto-trigger rebuild here if desired
+  }
 }
