@@ -9,7 +9,8 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
     fs: {
-      allow: ["./client", "./shared", "./node_modules"],
+      // Allow Vite to serve the root index.html (repo root) as well as source folders.
+      allow: [".", "./client", "./shared", "./node_modules"],
       deny: [".env", ".env.*", "*.{crt,pem}", "**/.git/**", "server/**"],
     },
   },
