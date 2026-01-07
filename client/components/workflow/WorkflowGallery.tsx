@@ -197,7 +197,9 @@ export default function WorkflowGallery({
         return;
       }
 
-      const mockById = MOCK_WORKFLOW_TEMPLATES.find((w) => w.id === workflow.id);
+      const mockById = MOCK_WORKFLOW_TEMPLATES.find(
+        (w) => w.id === workflow.id,
+      );
       const mockByName = MOCK_WORKFLOW_TEMPLATES.find(
         (w) => w.name.toLowerCase() === workflow.name.toLowerCase(),
       );
@@ -239,7 +241,7 @@ export default function WorkflowGallery({
         }
 
         // No fallback available - show helpful error message
-        const is404 = error instanceof Error && error.message.includes('404');
+        const is404 = error instanceof Error && error.message.includes("404");
 
         if (is404) {
           toast({
@@ -249,7 +251,8 @@ export default function WorkflowGallery({
         } else {
           toast({
             title: "Failed to load workflow",
-            description: error instanceof Error ? error.message : "Unknown error",
+            description:
+              error instanceof Error ? error.message : "Unknown error",
             variant: "destructive",
           });
         }

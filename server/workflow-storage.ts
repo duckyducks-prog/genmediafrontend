@@ -59,10 +59,15 @@ function createCorruptionBackup(corruptedPath: string): string {
 
   try {
     fs.copyFileSync(corruptedPath, backupPath);
-    console.error(`📦 [WorkflowStorage] Backed up corrupted file to: ${backupPath}`);
+    console.error(
+      `📦 [WorkflowStorage] Backed up corrupted file to: ${backupPath}`,
+    );
     return backupPath;
   } catch (backupError) {
-    console.error(`[WorkflowStorage] Failed to backup corrupted file:`, backupError);
+    console.error(
+      `[WorkflowStorage] Failed to backup corrupted file:`,
+      backupError,
+    );
     throw backupError;
   }
 }
@@ -83,27 +88,37 @@ function loadIndex(): Record<string, WorkflowMetadata> {
       const data = fs.readFileSync(indexPath, "utf-8");
       return JSON.parse(data);
     } catch (error) {
-      console.error("⛔ [WorkflowStorage] CRITICAL: Primary index file corrupted!", error);
+      console.error(
+        "⛔ [WorkflowStorage] CRITICAL: Primary index file corrupted!",
+        error,
+      );
 
       // Create forensic backup of corrupted file
       createCorruptionBackup(indexPath);
 
       // Try backup file
-      console.log("🔄 [WorkflowStorage] Attempting recovery from backup file...");
+      console.log(
+        "🔄 [WorkflowStorage] Attempting recovery from backup file...",
+      );
 
       if (fs.existsSync(backupPath)) {
         try {
           const backupData = fs.readFileSync(backupPath, "utf-8");
           const recoveredIndex = JSON.parse(backupData);
 
-          console.log("✅ [WorkflowStorage] Successfully recovered index from backup!");
+          console.log(
+            "✅ [WorkflowStorage] Successfully recovered index from backup!",
+          );
 
           // Restore backup to primary
           fs.writeFileSync(indexPath, backupData);
 
           return recoveredIndex;
         } catch (backupError) {
-          console.error("⛔ [WorkflowStorage] Backup file also corrupted!", backupError);
+          console.error(
+            "⛔ [WorkflowStorage] Backup file also corrupted!",
+            backupError,
+          );
           createCorruptionBackup(backupPath);
         }
       }
@@ -111,7 +126,7 @@ function loadIndex(): Record<string, WorkflowMetadata> {
       // Both files corrupted or missing
       throw new Error(
         "Index file corrupted and backup unavailable or also corrupted. " +
-        "Use POST /api/workflows/admin/rebuild-index to recover."
+          "Use POST /api/workflows/admin/rebuild-index to recover.",
       );
     }
   }
@@ -152,15 +167,19 @@ function saveIndex(index: Record<string, WorkflowMetadata>): void {
     // Step 3: Atomic rename (OS guarantees atomicity)
     fs.renameSync(tempPath, indexPath);
 
-    console.log(`[WorkflowStorage] Index saved successfully (${Object.keys(index).length} workflows)`);
-
+    console.log(
+      `[WorkflowStorage] Index saved successfully (${Object.keys(index).length} workflows)`,
+    );
   } catch (error) {
     // Cleanup temp file if it exists
     if (fs.existsSync(tempPath)) {
       try {
         fs.unlinkSync(tempPath);
       } catch (cleanupError) {
-        console.error("[WorkflowStorage] Failed to cleanup temp file:", cleanupError);
+        console.error(
+          "[WorkflowStorage] Failed to cleanup temp file:",
+          cleanupError,
+        );
       }
     }
 
@@ -196,7 +215,9 @@ export function saveWorkflow(
   index[id] = metadata;
   saveIndex(index);
 
-  console.log(`[WorkflowStorage] Saved workflow: ${id} - "${workflowData.name}"`);
+  console.log(
+    `[WorkflowStorage] Saved workflow: ${id} - "${workflowData.name}"`,
+  );
   return { id };
 }
 
@@ -205,10 +226,13 @@ export function saveWorkflow(
  */
 export function updateWorkflow(
   workflowId: string,
-  workflowData: Omit<WorkflowData, "id" | "created_at" | "updated_at" | "user_id" | "user_email">,
+  workflowData: Omit<
+    WorkflowData,
+    "id" | "created_at" | "updated_at" | "user_id" | "user_email"
+  >,
 ): void {
   const workflowPath = getWorkflowPath(workflowId);
-  
+
   if (!fs.existsSync(workflowPath)) {
     throw new Error(`Workflow not found: ${workflowId}`);
   }
@@ -369,16 +393,18 @@ export function rebuildIndex(): {
 
     // Filter for workflow files (wf_*.json, excluding special files)
     const workflowFiles = files.filter(
-      f => f.startsWith('wf_') && f.endsWith('.json')
+      (f) => f.startsWith("wf_") && f.endsWith(".json"),
     );
 
-    console.log(`[WorkflowStorage] Found ${workflowFiles.length} workflow files to process`);
+    console.log(
+      `[WorkflowStorage] Found ${workflowFiles.length} workflow files to process`,
+    );
 
     // Process each workflow file
     for (const file of workflowFiles) {
       try {
         const filePath = path.join(STORAGE_DIR, file);
-        const data = fs.readFileSync(filePath, 'utf-8');
+        const data = fs.readFileSync(filePath, "utf-8");
         const workflow: WorkflowData = JSON.parse(data);
 
         // Extract metadata (strip nodes/edges)
@@ -387,28 +413,34 @@ export function rebuildIndex(): {
         // Add to index
         newIndex[workflow.id] = metadata;
         rebuilt++;
-
       } catch (fileError) {
         failed++;
-        const errorMsg = fileError instanceof Error ? fileError.message : "Unknown error";
+        const errorMsg =
+          fileError instanceof Error ? fileError.message : "Unknown error";
         errors.push({ file, error: errorMsg });
-        console.error(`[WorkflowStorage] Failed to process ${file}:`, fileError);
+        console.error(
+          `[WorkflowStorage] Failed to process ${file}:`,
+          fileError,
+        );
       }
     }
 
     // Save the rebuilt index
-    console.log(`[WorkflowStorage] Saving rebuilt index (${rebuilt} workflows)...`);
+    console.log(
+      `[WorkflowStorage] Saving rebuilt index (${rebuilt} workflows)...`,
+    );
     saveIndex(newIndex);
 
-    console.log(`[WorkflowStorage] Index rebuild complete: ${rebuilt} succeeded, ${failed} failed`);
+    console.log(
+      `[WorkflowStorage] Index rebuild complete: ${rebuilt} succeeded, ${failed} failed`,
+    );
 
     return {
       success: true,
       rebuilt,
       failed,
-      errors
+      errors,
     };
-
   } catch (error) {
     console.error("[WorkflowStorage] Index rebuild failed:", error);
     throw error;
@@ -427,7 +459,9 @@ export function verifyStorageHealth(): void {
     console.log("✅ [WorkflowStorage] Storage health check passed");
   } catch (error) {
     console.error("⛔ [WorkflowStorage] Storage health check failed:", error);
-    console.error("⚠️  [WorkflowStorage] Use POST /api/workflows/admin/rebuild-index to recover");
+    console.error(
+      "⚠️  [WorkflowStorage] Use POST /api/workflows/admin/rebuild-index to recover",
+    );
     // Could auto-trigger rebuild here if desired
   }
 }

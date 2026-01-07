@@ -9,7 +9,7 @@ function requireAuth(req: Request, res: Response, next: Function) {
   // TODO: Add proper Firebase admin auth verification
   // For now, extract user info from Authorization header if present
   const authHeader = req.headers.authorization;
-  
+
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     // For development, allow requests without auth
     // But set a default user ID
@@ -34,15 +34,17 @@ export function listWorkflows(req: Request, res: Response) {
     const scope = (req.query.scope as "my" | "public") || "my";
     const userId = (req as any).userId || "anonymous";
 
-    console.log(`[Workflows API] Listing workflows: scope=${scope}, userId=${userId}`);
+    console.log(
+      `[Workflows API] Listing workflows: scope=${scope}, userId=${userId}`,
+    );
 
     const workflows = workflowStorage.listWorkflows(scope, userId);
     res.json({ workflows });
   } catch (error) {
     console.error("[Workflows API] Error listing workflows:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: "Failed to list workflows",
-      detail: error instanceof Error ? error.message : "Unknown error"
+      detail: error instanceof Error ? error.message : "Unknown error",
     });
   }
 }
@@ -62,9 +64,9 @@ export function saveWorkflow(req: Request, res: Response) {
 
     // Validate required fields
     if (!name || !nodes || !edges) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: "Missing required fields",
-        detail: "name, nodes, and edges are required"
+        detail: "name, nodes, and edges are required",
       });
     }
 
@@ -82,9 +84,9 @@ export function saveWorkflow(req: Request, res: Response) {
     res.json(result);
   } catch (error) {
     console.error("[Workflows API] Error saving workflow:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: "Failed to save workflow",
-      detail: error instanceof Error ? error.message : "Unknown error"
+      detail: error instanceof Error ? error.message : "Unknown error",
     });
   }
 }
@@ -103,16 +105,16 @@ export function getWorkflow(req: Request, res: Response) {
     res.json(workflow);
   } catch (error) {
     console.error("[Workflows API] Error getting workflow:", error);
-    
+
     if (error instanceof Error && error.message.includes("not found")) {
-      res.status(404).json({ 
+      res.status(404).json({
         error: "Workflow not found",
-        detail: error.message
+        detail: error.message,
       });
     } else {
-      res.status(500).json({ 
+      res.status(500).json({
         error: "Failed to load workflow",
-        detail: error instanceof Error ? error.message : "Unknown error"
+        detail: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -141,16 +143,16 @@ export function updateWorkflow(req: Request, res: Response) {
     res.json({ success: true });
   } catch (error) {
     console.error("[Workflows API] Error updating workflow:", error);
-    
+
     if (error instanceof Error && error.message.includes("not found")) {
-      res.status(404).json({ 
+      res.status(404).json({
         error: "Workflow not found",
-        detail: error.message
+        detail: error.message,
       });
     } else {
-      res.status(500).json({ 
+      res.status(500).json({
         error: "Failed to update workflow",
-        detail: error instanceof Error ? error.message : "Unknown error"
+        detail: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -171,21 +173,24 @@ export function deleteWorkflow(req: Request, res: Response) {
     res.json({ success: true });
   } catch (error) {
     console.error("[Workflows API] Error deleting workflow:", error);
-    
+
     if (error instanceof Error && error.message.includes("not found")) {
-      res.status(404).json({ 
+      res.status(404).json({
         error: "Workflow not found",
-        detail: error.message
+        detail: error.message,
       });
-    } else if (error instanceof Error && error.message.includes("Unauthorized")) {
-      res.status(403).json({ 
+    } else if (
+      error instanceof Error &&
+      error.message.includes("Unauthorized")
+    ) {
+      res.status(403).json({
         error: "Unauthorized",
-        detail: error.message
+        detail: error.message,
       });
     } else {
-      res.status(500).json({ 
+      res.status(500).json({
         error: "Failed to delete workflow",
-        detail: error instanceof Error ? error.message : "Unknown error"
+        detail: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -207,16 +212,16 @@ export function cloneWorkflow(req: Request, res: Response) {
     res.json(result);
   } catch (error) {
     console.error("[Workflows API] Error cloning workflow:", error);
-    
+
     if (error instanceof Error && error.message.includes("not found")) {
-      res.status(404).json({ 
+      res.status(404).json({
         error: "Workflow not found",
-        detail: error.message
+        detail: error.message,
       });
     } else {
-      res.status(500).json({ 
+      res.status(500).json({
         error: "Failed to clone workflow",
-        detail: error instanceof Error ? error.message : "Unknown error"
+        detail: error instanceof Error ? error.message : "Unknown error",
       });
     }
   }
@@ -234,24 +239,25 @@ export function rebuildIndexEndpoint(req: Request, res: Response) {
   try {
     // TODO: Add admin auth check here
     // For now, log a warning
-    console.warn("[Workflows API] ⚠️  Rebuild index requested - this should be admin-only!");
+    console.warn(
+      "[Workflows API] ⚠️  Rebuild index requested - this should be admin-only!",
+    );
 
-    console.log('[Workflows API] Rebuilding index from workflow files...');
+    console.log("[Workflows API] Rebuilding index from workflow files...");
 
     const result = workflowStorage.rebuildIndex();
 
     res.json({
       success: true,
       message: `Index rebuilt successfully: ${result.rebuilt} workflows recovered, ${result.failed} failed`,
-      ...result
+      ...result,
     });
-
   } catch (error) {
-    console.error('[Workflows API] Error rebuilding index:', error);
+    console.error("[Workflows API] Error rebuilding index:", error);
     res.status(500).json({
       success: false,
-      error: 'Failed to rebuild index',
-      detail: error instanceof Error ? error.message : 'Unknown error'
+      error: "Failed to rebuild index",
+      detail: error instanceof Error ? error.message : "Unknown error",
     });
   }
 }
@@ -259,7 +265,7 @@ export function rebuildIndexEndpoint(req: Request, res: Response) {
 // Apply auth middleware to all routes
 export function setupWorkflowRoutes(app: any) {
   app.use(requireAuth);
-  
+
   app.get("/api/workflows", listWorkflows);
   app.post("/api/workflows/save", saveWorkflow);
   app.get("/api/workflows/:id", getWorkflow);

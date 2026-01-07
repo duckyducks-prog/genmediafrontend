@@ -9,6 +9,7 @@
 ## Executive Summary
 
 Fixed critical bug where index file corruption caused silent data loss. System now:
+
 - ✅ Automatically recovers from backup
 - ✅ Creates forensic backups of corrupted files
 - ✅ Uses atomic writes to prevent corruption
@@ -22,6 +23,7 @@ Fixed critical bug where index file corruption caused silent data loss. System n
 ### 1. Silent Index Corruption Handling
 
 **Before:**
+
 ```typescript
 catch (error) {
   return {}; // ❌ Silently loses all metadata
@@ -29,6 +31,7 @@ catch (error) {
 ```
 
 **After:**
+
 ```typescript
 catch (error) {
   createCorruptionBackup(indexPath);
@@ -40,11 +43,13 @@ catch (error) {
 ### 2. Non-Atomic Writes
 
 **Before:**
+
 ```typescript
 fs.writeFileSync(indexPath, data); // ❌ Can corrupt
 ```
 
 **After:**
+
 ```typescript
 fs.writeFileSync(tempPath, data);
 fs.renameSync(tempPath, indexPath); // ✅ Atomic
@@ -86,18 +91,21 @@ No changes required - safeguards work automatically.
 ### Recovery from Corruption
 
 If you see:
+
 ```
 Error: Index file corrupted and backup unavailable.
 Use POST /api/workflows/admin/rebuild-index to recover.
 ```
 
 **Recovery:**
+
 ```bash
 curl -X POST http://localhost:3000/api/workflows/admin/rebuild-index \
   -H "Authorization: Bearer {token}"
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -169,6 +177,7 @@ npm run dev
 ## Error Messages Reference
 
 ### Corruption Detected
+
 ```
 ⛔ [WorkflowStorage] CRITICAL: Primary index file corrupted!
 📦 [WorkflowStorage] Backed up corrupted file to: ...
@@ -177,12 +186,14 @@ npm run dev
 ```
 
 ### Health Check Failed
+
 ```
 ⛔ [WorkflowStorage] Storage health check failed: Error: ...
 ⚠️  [WorkflowStorage] Use POST /api/workflows/admin/rebuild-index to recover
 ```
 
 ### Rebuild Success
+
 ```
 [WorkflowStorage] Starting index rebuild...
 [WorkflowStorage] Found 15 workflow files to process
@@ -194,12 +205,12 @@ npm run dev
 
 ## Risk Assessment
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|------------|
-| Atomic rename fails (Windows cross-device) | Low | Medium | Temp file in same dir |
-| Backup creation fails | Low | Low | Logged warning, continues |
-| Rebuild endpoint abuse | Medium | Low | TODO: Add auth |
-| Race condition during rebuild | Low | Medium | Admin-only operation |
+| Risk                                       | Likelihood | Impact | Mitigation                |
+| ------------------------------------------ | ---------- | ------ | ------------------------- |
+| Atomic rename fails (Windows cross-device) | Low        | Medium | Temp file in same dir     |
+| Backup creation fails                      | Low        | Low    | Logged warning, continues |
+| Rebuild endpoint abuse                     | Medium     | Low    | TODO: Add auth            |
+| Race condition during rebuild              | Low        | Medium | Admin-only operation      |
 
 ---
 
@@ -241,6 +252,7 @@ fs.renameSync(tempPath, indexPath);
 ```
 
 **Why atomic?**
+
 - OS guarantees `renameSync()` is atomic
 - No partial states possible
 - If crash during temp write, original remains intact
@@ -270,6 +282,7 @@ Atomic rename works on Windows as long as temp file is on same device/partition.
    - Import and call `verifyStorageHealth()` on startup
 
 ### Total Impact
+
 - **3 files modified**
 - **~217 lines changed**
 - **5 new functions added**
@@ -280,12 +293,14 @@ Atomic rename works on Windows as long as temp file is on same device/partition.
 ## Verification Checklist
 
 ### Before Deployment
+
 - ✅ Type definitions verified (WorkflowMetadata already correct)
 - ✅ Route pattern verified (setupWorkflowRoutes confirmed)
 - ✅ Windows atomic rename considered (same-directory temp file)
 - ✅ Startup health check added
 
 ### After Deployment
+
 - [ ] Test corruption recovery (automatic backup)
 - [ ] Test atomic writes (no partial states)
 - [ ] Test rebuild endpoint (full recovery)
