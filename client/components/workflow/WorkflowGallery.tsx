@@ -244,16 +244,7 @@ export default function WorkflowGallery({
         if (is404) {
           toast({
             title: "Workflow data not available",
-            description: (
-              <div className="space-y-2">
-                <p className="text-sm">
-                  The data for "{workflow.name}" is stored in the cloud and isn't available in this local environment.
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  To access this workflow, sync from your cloud database or recreate it.
-                </p>
-              </div>
-            ),
+            description: `The data for "${workflow.name}" is stored in the cloud and isn't available in this local environment. To access this workflow, you'll need to sync from your cloud database or recreate it.`,
           });
         } else {
           toast({
