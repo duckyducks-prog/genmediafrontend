@@ -181,9 +181,10 @@ export function listWorkflows(
       new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
   );
 
-  // List endpoints should be metadata-only for performance.
-  // Also, skip entries whose workflow file is missing (stale index rows).
-  return workflows.filter((metadata) => fs.existsSync(getWorkflowPath(metadata.id)));
+  // Return metadata from index. The actual workflow files may be stored elsewhere
+  // (cloud storage, database, etc.), so we show all workflows that exist in the index.
+  // If a workflow file is missing when someone tries to LOAD it, loadWorkflow() will throw an error.
+  return workflows;
 }
 
 /**
