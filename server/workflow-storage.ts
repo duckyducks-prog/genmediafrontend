@@ -147,7 +147,15 @@ export function loadWorkflow(workflowId: string): WorkflowData {
   const workflowPath = getWorkflowPath(workflowId);
 
   if (!fs.existsSync(workflowPath)) {
-    throw new Error(`Workflow not found: ${workflowId}`);
+    // The workflow exists in the index but the file is missing.
+    // This can happen if:
+    // 1. Workflows are stored in cloud storage (Firestore, S3, etc.) in production
+    // 2. Local files weren't synced to this environment
+    // 3. The workflow was deleted but index wasn't updated
+    console.error(`[WorkflowStorage] Workflow file not found: ${workflowPath}`);
+    throw new Error(
+      `Workflow data file not found. This workflow may be stored in a cloud database that isn't accessible in this environment. Workflow ID: ${workflowId}`,
+    );
   }
 
   const data = fs.readFileSync(workflowPath, "utf-8");
