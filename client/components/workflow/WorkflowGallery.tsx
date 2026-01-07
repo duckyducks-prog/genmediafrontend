@@ -188,20 +188,54 @@ export default function WorkflowGallery({
 
     // Load full workflow with nodes/edges when clicked
     const handleLoadWorkflow = async () => {
-      try {
-        if (!workflow.id) {
-          toast({
-            title: "Error",
-            description: "Workflow ID is missing",
-            variant: "destructive",
-          });
-          return;
-        }
+      if (!workflow.id) {
+        toast({
+          title: "Error",
+          description: "Workflow ID is missing",
+          variant: "destructive",
+        });
+        return;
+      }
 
-        setIsLoadingWorkflow(true);
+      const mockById = MOCK_WORKFLOW_TEMPLATES.find((w) => w.id === workflow.id);
+      const mockByName = MOCK_WORKFLOW_TEMPLATES.find(
+        (w) => w.name.toLowerCase() === workflow.name.toLowerCase(),
+      );
+
+      // Built-in templates should open even if the backend is unavailable.
+      if (mockById) {
+        onLoadWorkflow(mockById);
+        return;
+      }
+
+      setIsLoadingWorkflow(true);
+      try {
         const fullWorkflow = await loadWorkflow(workflow.id);
         onLoadWorkflow(fullWorkflow);
       } catch (error) {
+        // If backend can't load the workflow (missing file / 404 / offline), fall back
+        // to a built-in template with the same name.
+        const fallback = mockByName;
+        if (fallback) {
+          console.warn(
+            "[WorkflowGallery] Backend workflow unavailable, falling back to built-in template:",
+            {
+              requestedId: workflow.id,
+              templateId: fallback.id,
+              name: workflow.name,
+            },
+          );
+
+          toast({
+            title: "Loaded example template",
+            description:
+              "The saved workflow data isn't available in this environment yet. Loading a built-in template instead.",
+          });
+
+          onLoadWorkflow(fallback);
+          return;
+        }
+
         console.error("Failed to load workflow:", error);
         toast({
           title: "Failed to load workflow",
