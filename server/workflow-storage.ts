@@ -27,6 +27,8 @@ export interface WorkflowData {
   user_email: string;
 }
 
+export type WorkflowMetadata = Omit<WorkflowData, "nodes" | "edges">;
+
 /**
  * Generate a unique ID for workflows
  */
@@ -51,7 +53,7 @@ function getIndexPath(): string {
 /**
  * Load the workflow index
  */
-function loadIndex(): Record<string, Omit<WorkflowData, "nodes" | "edges">> {
+function loadIndex(): Record<string, WorkflowMetadata> {
   const indexPath = getIndexPath();
   if (!fs.existsSync(indexPath)) {
     return {};
@@ -68,9 +70,7 @@ function loadIndex(): Record<string, Omit<WorkflowData, "nodes" | "edges">> {
 /**
  * Save the workflow index
  */
-function saveIndex(
-  index: Record<string, Omit<WorkflowData, "nodes" | "edges">>,
-): void {
+function saveIndex(index: Record<string, WorkflowMetadata>): void {
   const indexPath = getIndexPath();
   fs.writeFileSync(indexPath, JSON.stringify(index, null, 2));
 }
@@ -160,15 +160,18 @@ export function loadWorkflow(workflowId: string): WorkflowData {
 export function listWorkflows(
   scope: "my" | "public",
   userId: string,
-): WorkflowData[] {
+): WorkflowMetadata[] {
   const index = loadIndex();
 
   const workflows = Object.values(index).filter((workflow) => {
     if (scope === "my") {
       return workflow.user_id === userId;
-    } else if (scope === "public") {
+    }
+
+    if (scope === "public") {
       return workflow.is_public === true;
     }
+
     return false;
   });
 
@@ -178,20 +181,9 @@ export function listWorkflows(
       new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
   );
 
-  // Load full workflow data for each
-  return workflows.map((metadata) => {
-    try {
-      return loadWorkflow(metadata.id);
-    } catch (error) {
-      console.error(`Error loading workflow ${metadata.id}:`, error);
-      // Return metadata only if full load fails
-      return {
-        ...metadata,
-        nodes: [],
-        edges: [],
-      } as WorkflowData;
-    }
-  });
+  // List endpoints should be metadata-only for performance.
+  // Also, skip entries whose workflow file is missing (stale index rows).
+  return workflows.filter((metadata) => fs.existsSync(getWorkflowPath(metadata.id)));
 }
 
 /**
