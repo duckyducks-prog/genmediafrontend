@@ -213,6 +213,8 @@ export default function WorkflowGallery({
         const fullWorkflow = await loadWorkflow(workflow.id);
         onLoadWorkflow(fullWorkflow);
       } catch (error) {
+        console.error("Failed to load workflow:", error);
+
         // If backend can't load the workflow (missing file / 404 / offline), fall back
         // to a built-in template with the same name.
         const fallback = mockByName;
@@ -236,12 +238,30 @@ export default function WorkflowGallery({
           return;
         }
 
-        console.error("Failed to load workflow:", error);
-        toast({
-          title: "Failed to load workflow",
-          description: error instanceof Error ? error.message : "Unknown error",
-          variant: "destructive",
-        });
+        // No fallback available - show helpful error message
+        const is404 = error instanceof Error && error.message.includes('404');
+
+        if (is404) {
+          toast({
+            title: "Workflow data not available",
+            description: (
+              <div className="space-y-2">
+                <p className="text-sm">
+                  The data for "{workflow.name}" is stored in the cloud and isn't available in this local environment.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  To access this workflow, sync from your cloud database or recreate it.
+                </p>
+              </div>
+            ),
+          });
+        } else {
+          toast({
+            title: "Failed to load workflow",
+            description: error instanceof Error ? error.message : "Unknown error",
+            variant: "destructive",
+          });
+        }
       } finally {
         setIsLoadingWorkflow(false);
       }
