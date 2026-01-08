@@ -118,7 +118,7 @@ beforeAll(async () => {
 
   // Verify token works by hitting a simple endpoint
   try {
-    const response = await apiRequest("/library");
+    const response = await apiRequest("/v1/assets");
     if (response.status === 403) {
       throw new Error("Token is valid but user is not whitelisted");
     }
@@ -189,7 +189,7 @@ describe("API E2E Tests", () => {
       async () => {
         if (!authToken) return; // Skip if no token
 
-        const response = await apiRequest("/generate/image", {
+        const response = await apiRequest("/v1/generate/image", {
           method: "POST",
           body: JSON.stringify({
             prompt: "A serene mountain landscape at sunset, test image",
@@ -237,7 +237,7 @@ describe("API E2E Tests", () => {
         const aspectRatios = ["1:1", "16:9", "9:16", "3:4", "4:3"];
 
         for (const ratio of aspectRatios) {
-          const response = await apiRequest("/generate/image", {
+          const response = await apiRequest("/v1/generate/image", {
             method: "POST",
             body: JSON.stringify({
               prompt: `Test image with ${ratio} aspect ratio`,
@@ -266,7 +266,7 @@ describe("API E2E Tests", () => {
         console.log("Step 1: Generating reference image...");
 
         // First generate a reference image
-        const refResponse = await apiRequest("/generate/image", {
+        const refResponse = await apiRequest("/v1/generate/image", {
           method: "POST",
           body: JSON.stringify({
             prompt: "A simple geometric pattern - reference image",
@@ -289,7 +289,7 @@ describe("API E2E Tests", () => {
         console.log("Step 2: Generating image with reference...");
 
         // Generate with reference
-        const response = await apiRequest("/generate/image", {
+        const response = await apiRequest("/v1/generate/image", {
           method: "POST",
           body: JSON.stringify({
             prompt: "A colorful variation based on the reference pattern",
@@ -318,7 +318,7 @@ describe("API E2E Tests", () => {
       if (!authToken) return;
 
       // Generate a small test image first
-      const response = await apiRequest("/generate/image", {
+      const response = await apiRequest("/v1/generate/image", {
         method: "POST",
         body: JSON.stringify({
           prompt: "Simple test pattern for upscaling",
@@ -353,7 +353,7 @@ describe("API E2E Tests", () => {
 
         const base64Image = cleanBase64(testImageBase64);
 
-        const response = await apiRequest("/generate/upscale", {
+        const response = await apiRequest("/v1/generate/upscale", {
           method: "POST",
           body: JSON.stringify({
             image: base64Image,
@@ -398,7 +398,7 @@ describe("API E2E Tests", () => {
           // Only x2 tested - x3 and x4 may not be supported
           const base64Image = cleanBase64(testImageBase64);
 
-          const response = await apiRequest("/generate/upscale", {
+          const response = await apiRequest("/v1/generate/upscale", {
             method: "POST",
             body: JSON.stringify({
               image: base64Image,
@@ -428,7 +428,7 @@ describe("API E2E Tests", () => {
       async () => {
         if (!authToken) return;
 
-        const response = await apiRequest("/generate/video", {
+        const response = await apiRequest("/v1/generate/video", {
           method: "POST",
           body: JSON.stringify({
             prompt: "A calm ocean with gentle waves, test video",
@@ -460,7 +460,7 @@ describe("API E2E Tests", () => {
 
       try {
         // Start a video generation
-        const response = await apiRequest("/generate/video", {
+        const response = await apiRequest("/v1/generate/video", {
           method: "POST",
           body: JSON.stringify({
             prompt: "Simple test video for status polling",
@@ -503,7 +503,7 @@ describe("API E2E Tests", () => {
 
         console.log("[Video Status] Checking operation:", operationName);
 
-        const response = await apiRequest("/generate/video/status", {
+        const response = await apiRequest("/v1/generate/videos/{operation_id}/status", {
           method: "POST",
           body: JSON.stringify({
             operation_name: operationName,
@@ -551,7 +551,7 @@ describe("API E2E Tests", () => {
       async () => {
         if (!authToken) return;
 
-        const response = await apiRequest("/generate/text", {
+        const response = await apiRequest("/v1/generate/text", {
           method: "POST",
           body: JSON.stringify({
             prompt: "Write a short tagline for a mountain hiking brand.",
@@ -589,7 +589,7 @@ describe("API E2E Tests", () => {
       async () => {
         if (!authToken) return;
 
-        const response = await apiRequest("/generate/text", {
+        const response = await apiRequest("/v1/generate/text", {
           method: "POST",
           body: JSON.stringify({
             prompt: "What is your role?",
@@ -628,7 +628,7 @@ describe("API E2E Tests", () => {
         if (!authToken) return;
 
         for (const temp of [0.1, 0.5, 0.9]) {
-          const response = await apiRequest("/generate/text", {
+          const response = await apiRequest("/v1/generate/text", {
             method: "POST",
             body: JSON.stringify({
               prompt: "Say hello creatively.",
@@ -661,7 +661,7 @@ describe("API E2E Tests", () => {
         if (!authToken) return;
 
         // Generate a test image first
-        const genResponse = await apiRequest("/generate/image", {
+        const genResponse = await apiRequest("/v1/generate/image", {
           method: "POST",
           body: JSON.stringify({
             prompt: "Test library asset - colorful abstract pattern",
@@ -727,7 +727,7 @@ describe("API E2E Tests", () => {
     it("should retrieve library assets", async () => {
       if (!authToken) return;
 
-      const response = await apiRequest("/library", {
+      const response = await apiRequest("/v1/assets", {
         method: "GET",
       });
 
@@ -769,7 +769,7 @@ describe("API E2E Tests", () => {
       }
 
       // Verify it's deleted
-      const listResponse = await apiRequest("/library");
+      const listResponse = await apiRequest("/v1/assets");
       const listData = await listResponse.json();
       const assets = Array.isArray(listData) ? listData : listData.assets;
 
@@ -806,7 +806,7 @@ describe("API E2E Tests", () => {
     it("should handle missing required parameters", async () => {
       if (!authToken) return;
 
-      const response = await apiRequest("/generate/image", {
+      const response = await apiRequest("/v1/generate/image", {
         method: "POST",
         body: JSON.stringify({
           // Missing prompt
@@ -822,7 +822,7 @@ describe("API E2E Tests", () => {
       async () => {
         if (!authToken) return;
 
-        const response = await apiRequest("/generate/image", {
+        const response = await apiRequest("/v1/generate/image", {
           method: "POST",
           body: JSON.stringify({
             prompt: "Test",
@@ -852,7 +852,7 @@ describe("API E2E Tests", () => {
 
         // Step 1: Generate image
         console.log("Step 1: Generating image...");
-        const genResponse = await apiRequest("/generate/image", {
+        const genResponse = await apiRequest("/v1/generate/image", {
           method: "POST",
           body: JSON.stringify({
             prompt: "Workflow test - simple geometric shapes",
@@ -879,7 +879,7 @@ describe("API E2E Tests", () => {
         console.log("Step 2: Upscaling image...");
         const base64ForUpscale = cleanBase64(originalImage);
 
-        const upscaleResponse = await apiRequest("/generate/upscale", {
+        const upscaleResponse = await apiRequest("/v1/generate/upscale", {
           method: "POST",
           body: JSON.stringify({
             image: base64ForUpscale,
