@@ -503,11 +503,14 @@ describe("API E2E Tests", () => {
 
         console.log("[Video Status] Checking operation:", operationName);
 
-        const response = await apiRequest("/v1/generate/videos/{operation_id}/status", {
-          method: "POST",
-          body: JSON.stringify({
-            operation_name: operationName,
-          }),
+        const encodedOperationId = encodeURIComponent(operationName);
+        const prompt = "Simple test video for status polling";
+        const encodedPrompt = encodeURIComponent(prompt);
+        const statusEndpoint = `/v1/generate/videos/${encodedOperationId}/status?prompt=${encodedPrompt}`;
+
+        const response = await fetch(`${API_BASE_URL}${statusEndpoint}`, {
+          method: "GET",
+          headers: getAuthHeaders(),
         });
 
         // If 500 error, log the backend error for debugging
