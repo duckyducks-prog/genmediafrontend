@@ -110,7 +110,8 @@ describe("Video Generation Debug", () => {
         );
 
         try {
-          const prompt = "A serene mountain landscape with flowing water, debug test video";
+          const prompt =
+            "A serene mountain landscape with flowing water, debug test video";
           const encodedOperationId = encodeURIComponent(operationName);
           const encodedPrompt = encodeURIComponent(prompt);
           const statusUrl = `${API_BASE_URL}/v1/generate/videos/${encodedOperationId}/status?prompt=${encodedPrompt}`;

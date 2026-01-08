@@ -7,8 +7,7 @@
 
 // The base URL for the Veo API
 // Update this single URL when the API endpoint changes
-export const VEO_API_BASE_URL =
-  "https://veo-api-otfo2ctxma-uc.a.run.app";
+export const VEO_API_BASE_URL = "https://veo-api-otfo2ctxma-uc.a.run.app";
 
 // Construct full endpoint URLs
 export const API_ENDPOINTS = {

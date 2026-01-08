@@ -1544,7 +1544,11 @@ export function useWorkflowExecution(
             console.log("[Compound] Executing compound node:", node.id);
 
             // Execute the compound node's internal workflow
-            const result = await executeCompoundNode(node, inputs, executeWorkflow);
+            const result = await executeCompoundNode(
+              node,
+              inputs,
+              executeWorkflow,
+            );
 
             if (!result.success) {
               return {
