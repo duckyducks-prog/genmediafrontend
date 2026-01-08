@@ -14,32 +14,44 @@ export const VEO_API_BASE_URL =
 export const API_ENDPOINTS = {
   // Workflow endpoints
   workflows: {
-    save: `${VEO_API_BASE_URL}/workflows/save`,
-    list: (scope: string) => `${VEO_API_BASE_URL}/workflows?scope=${scope}`,
-    get: (id: string) => `${VEO_API_BASE_URL}/workflows/${id}`,
-    update: (id: string) => `${VEO_API_BASE_URL}/workflows/${id}`,
-    delete: (id: string) => `${VEO_API_BASE_URL}/workflows/${id}`,
-    clone: (id: string) => `${VEO_API_BASE_URL}/workflows/${id}/clone`,
+    save: `${VEO_API_BASE_URL}/v1/workflows`,
+    list: (scope: string) => `${VEO_API_BASE_URL}/v1/workflows?scope=${scope}`,
+    get: (id: string) => `${VEO_API_BASE_URL}/v1/workflows/${id}`,
+    update: (id: string) => `${VEO_API_BASE_URL}/v1/workflows/${id}`,
+    delete: (id: string) => `${VEO_API_BASE_URL}/v1/workflows/${id}`,
+    clone: (id: string) => `${VEO_API_BASE_URL}/v1/workflows/${id}/clone`,
   },
 
   // Generation endpoints
   generate: {
-    image: `${VEO_API_BASE_URL}/generate/image`,
-    video: `${VEO_API_BASE_URL}/generate/video`,
-    videoStatus: `${VEO_API_BASE_URL}/generate/video/status`,
-    text: `${VEO_API_BASE_URL}/generate/text`,
-    upscale: `${VEO_API_BASE_URL}/generate/upscale`,
+    image: `${VEO_API_BASE_URL}/v1/generate/image`,
+    video: `${VEO_API_BASE_URL}/v1/generate/video`,
+    videoStatus: (operationId: string, prompt: string) =>
+      `${VEO_API_BASE_URL}/v1/generate/videos/${encodeURIComponent(operationId)}/status?prompt=${encodeURIComponent(prompt)}`,
+    text: `${VEO_API_BASE_URL}/v1/generate/text`,
+    upscale: `${VEO_API_BASE_URL}/v1/generate/upscale`,
   },
 
-  // Library endpoints
-  library: {
-    save: `${VEO_API_BASE_URL}/library/save`,
+  // Assets endpoints (formerly "Library")
+  assets: {
+    save: `${VEO_API_BASE_URL}/v1/assets`,
     list: (assetType?: string) =>
       assetType
-        ? `${VEO_API_BASE_URL}/library?asset_type=${assetType}`
-        : `${VEO_API_BASE_URL}/library`,
-    get: (id: string) => `${VEO_API_BASE_URL}/library/${id}`,
-    delete: (id: string) => `${VEO_API_BASE_URL}/library/${id}`,
+        ? `${VEO_API_BASE_URL}/v1/assets?asset_type=${assetType}`
+        : `${VEO_API_BASE_URL}/v1/assets`,
+    get: (id: string) => `${VEO_API_BASE_URL}/v1/assets/${id}`,
+    delete: (id: string) => `${VEO_API_BASE_URL}/v1/assets/${id}`,
+  },
+
+  // Legacy library alias for backward compatibility during migration
+  library: {
+    save: `${VEO_API_BASE_URL}/v1/assets`,
+    list: (assetType?: string) =>
+      assetType
+        ? `${VEO_API_BASE_URL}/v1/assets?asset_type=${assetType}`
+        : `${VEO_API_BASE_URL}/v1/assets`,
+    get: (id: string) => `${VEO_API_BASE_URL}/v1/assets/${id}`,
+    delete: (id: string) => `${VEO_API_BASE_URL}/v1/assets/${id}`,
   },
 } as const;
 
