@@ -1338,6 +1338,7 @@ export function useWorkflowExecution(
               // Poll for video completion using helper
               const result = await pollVideoStatus(
                 apiData.operation_name,
+                prompt || "",
                 (attempts) => {
                   // Update node with poll progress
                   updateNodeState(node.id, "executing", {
