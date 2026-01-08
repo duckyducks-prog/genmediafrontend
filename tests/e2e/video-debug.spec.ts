@@ -64,7 +64,7 @@ describe("Video Generation Debug", () => {
       console.log("Step 1: Starting video generation...");
       const startTime = Date.now();
 
-      const generateResponse = await apiRequest("/generate/video", {
+      const generateResponse = await apiRequest("/v1/generate/video", {
         method: "POST",
         body: JSON.stringify({
           prompt:
