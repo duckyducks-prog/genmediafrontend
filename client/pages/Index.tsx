@@ -177,13 +177,12 @@ export default function Index() {
         await new Promise((resolve) => setTimeout(resolve, 10000));
 
         const statusToken = await currentUser?.getIdToken();
-        const statusResponse = await fetch(API_ENDPOINTS.generate.videoStatus, {
-          method: "POST",
+        const statusUrl = API_ENDPOINTS.generate.videoStatus(operationName, videoPrompt);
+        const statusResponse = await fetch(statusUrl, {
+          method: "GET",
           headers: {
-            "Content-Type": "application/json",
             Authorization: `Bearer ${statusToken}`,
           },
-          body: JSON.stringify({ operation_name: operationName }),
         });
         const statusData = await statusResponse.json();
 
