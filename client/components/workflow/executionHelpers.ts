@@ -587,6 +587,7 @@ export function hasUpstreamModifiers(
  */
 export async function pollVideoStatus(
   operationName: string,
+  prompt: string = "",
   onProgress?: (attempts: number) => void,
 ): Promise<{ success: boolean; videoUrl?: string; error?: string }> {
   const maxAttempts = 30; // 5 minutes (30 * 10 seconds)
@@ -606,13 +607,12 @@ export async function pollVideoStatus(
       const user = auth.currentUser;
       const token = await user?.getIdToken();
 
-      const statusResponse = await fetch(API_ENDPOINTS.generate.videoStatus, {
-        method: "POST",
+      const statusUrl = API_ENDPOINTS.generate.videoStatus(operationName, prompt);
+      const statusResponse = await fetch(statusUrl, {
+        method: "GET",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ operation_name: operationName }),
       });
 
       if (!statusResponse.ok) {
