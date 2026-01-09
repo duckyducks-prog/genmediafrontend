@@ -40,7 +40,7 @@
 Run these commands to set environment variables in your Fly.io deployment:
 
 ```bash
-fly secrets set VITE_FIREBASE_API_KEY="AIzaSyA8HEr5QXcEJxjylDbvfA4yx9UK88vh40Q"
+fly secrets set VITE_FIREBASE_API_KEY="<your-firebase-api-key>"
 fly secrets set VITE_FIREBASE_AUTH_DOMAIN="genmediastudio.firebaseapp.com"
 fly secrets set VITE_FIREBASE_PROJECT_ID="genmediastudio"
 fly secrets set VITE_FIREBASE_STORAGE_BUCKET="genmediastudio.firebasestorage.app"
@@ -48,6 +48,8 @@ fly secrets set VITE_FIREBASE_MESSAGING_SENDER_ID="856765593724"
 fly secrets set VITE_FIREBASE_APP_ID="1:856765593724:web:2d56922818e4dd876ff1f9"
 fly secrets set VITE_FIREBASE_MEASUREMENT_ID="G-M4801D5V62"
 ```
+
+**Note**: Replace `<your-firebase-api-key>` with your actual Firebase API key from the Firebase Console.
 
 After setting secrets, deploy:
 
@@ -60,19 +62,19 @@ fly deploy
 1. Go to your Fly.io dashboard
 2. Navigate to your app settings
 3. Add the following environment variables:
-   - `VITE_FIREBASE_API_KEY`: AIzaSyA8HEr5QXcEJxjylDbvfA4yx9UK88vh40Q
-   - `VITE_FIREBASE_AUTH_DOMAIN`: genmediastudio.firebaseapp.com
-   - `VITE_FIREBASE_PROJECT_ID`: genmediastudio
-   - `VITE_FIREBASE_STORAGE_BUCKET`: genmediastudio.firebasestorage.app
-   - `VITE_FIREBASE_MESSAGING_SENDER_ID`: 856765593724
-   - `VITE_FIREBASE_APP_ID`: 1:856765593724:web:2d56922818e4dd876ff1f9
-   - `VITE_FIREBASE_MEASUREMENT_ID`: G-M4801D5V62
+   - `VITE_FIREBASE_API_KEY`: `<your-firebase-api-key>`
+   - `VITE_FIREBASE_AUTH_DOMAIN`: `genmediastudio.firebaseapp.com`
+   - `VITE_FIREBASE_PROJECT_ID`: `genmediastudio`
+   - `VITE_FIREBASE_STORAGE_BUCKET`: `genmediastudio.firebasestorage.app`
+   - `VITE_FIREBASE_MESSAGING_SENDER_ID`: `856765593724`
+   - `VITE_FIREBASE_APP_ID`: `1:856765593724:web:2d56922818e4dd876ff1f9`
+   - `VITE_FIREBASE_MEASUREMENT_ID`: `G-M4801D5V62`
 
 ## 📋 Environment Variables Reference
 
-| Variable                            | Description                | Example                            |
+| Variable                            | Description                | Example/Notes                      |
 | ----------------------------------- | -------------------------- | ---------------------------------- |
-| `VITE_FIREBASE_API_KEY`             | Firebase API Key (rotated) | AIzaSy...                          |
+| `VITE_FIREBASE_API_KEY`             | Firebase API Key (SECRET)  | Get from Firebase Console          |
 | `VITE_FIREBASE_AUTH_DOMAIN`         | Firebase Auth Domain       | genmediastudio.firebaseapp.com     |
 | `VITE_FIREBASE_PROJECT_ID`          | Firebase Project ID        | genmediastudio                     |
 | `VITE_FIREBASE_STORAGE_BUCKET`      | Firebase Storage Bucket    | genmediastudio.firebasestorage.app |
@@ -82,10 +84,11 @@ fly deploy
 
 ## 🔒 Security Notes
 
-1. **Old API Key**: The old key (`AIzaSyDG6YCgaxmh3cXaCNqS8qq862E7Avptpgo`) was removed from the codebase
-2. **New API Key**: The new key (`AIzaSyA8HEr5QXcEJxjylDbvfA4yx9UK88vh40Q`) is stored in `.env.local`
+1. **API Key Rotation**: The old exposed API key has been rotated to a new secure key
+2. **Storage**: The new API key is ONLY stored in `.env.local` (gitignored) and Fly.io secrets
 3. **Git Protection**: `.env.local` is gitignored and will never be committed
 4. **Production Deployment**: Must set environment variables in Fly.io before deploying
+5. **⚠️ NEVER commit API keys to git or include them in documentation files**
 
 ## ✅ Verification Checklist
 
@@ -118,7 +121,7 @@ fly deploy
 - This is a **Vite** project, so we use `VITE_` prefix (not `NEXT_PUBLIC_`)
 - Environment variables are embedded at **build time** in Vite
 - If you change environment variables in Fly.io, you must redeploy the app
-- The `measurementId` was preserved from the old config (for Google Analytics)
+- The `measurementId` is for Google Analytics (optional)
 
 ## 🆘 Troubleshooting
 
@@ -138,6 +141,20 @@ If you're setting up this project for the first time:
 3. Update `VITE_FIREBASE_API_KEY` in your `.env.local`
 4. Run `pnpm dev` to start development
 
+## 🔐 Getting Your Firebase API Key
+
+To get your Firebase API key from the Firebase Console:
+
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Select your project (`genmediastudio`)
+3. Click the gear icon → Project settings
+4. Scroll to "Your apps" section
+5. Find your web app
+6. Copy the `apiKey` value
+7. Paste it into your `.env.local` file
+
 ---
 
 **Migration completed**: All Firebase credentials are now secured via environment variables! 🎉
+
+**REMEMBER**: Never commit `.env.local` or include API keys in documentation files.
