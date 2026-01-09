@@ -25,7 +25,7 @@ function SharpenNode({ data, id }: NodeProps<SharpenNodeData>) {
     [],
   );
 
-  const updateOutputsRef = useRef((gamma: number) => {});
+  const updateOutputsRef = useRef((_gamma: number) => {});
 
   useEffect(() => {
     updateOutputsRef.current = (gamma: number) => {

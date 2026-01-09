@@ -5,7 +5,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
-  Download,
   Loader2,
   Image as ImageIcon,
   Video as VideoIcon,
@@ -216,13 +215,6 @@ export default function Index() {
     }
   };
 
-  const handleDownloadImage = () => {
-    if (!imageResult) return;
-    const link = document.createElement("a");
-    link.href = imageResult;
-    link.download = `ai-image-${Date.now()}.jpg`;
-    link.click();
-  };
 
   const handleDownloadVideo = () => {
     if (!videoResult) return;

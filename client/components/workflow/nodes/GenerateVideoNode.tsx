@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { Button } from "@/components/ui/button";
 import { GenerateVideoNodeData, NODE_CONFIGURATIONS, NodeType } from "../types";
@@ -114,7 +114,7 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
 
       {/* Input Handles - Left side */}
       <div className="space-y-3 mb-4">
-        {config.inputConnectors.map((input, index) => {
+        {config.inputConnectors.map((input) => {
           const isRequired = input.required;
           const isMultiple = input.acceptsMultiple;
 

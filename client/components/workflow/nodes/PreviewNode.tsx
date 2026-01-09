@@ -240,7 +240,7 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
                     ? undefined
                     : "anonymous"
                 }
-                onError={(e) => {
+                onError={() => {
                   console.error("[PreviewNode] Image failed to load");
                 }}
               />
@@ -261,7 +261,7 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
               src={displayContent.content}
               controls
               className="w-full h-auto max-h-[250px] object-contain bg-black"
-              onError={(e) => {
+              onError={() => {
                 console.error("[PreviewNode] Video failed to load");
               }}
             />

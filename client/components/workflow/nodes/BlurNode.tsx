@@ -35,7 +35,7 @@ function BlurNode({ data, id }: NodeProps<BlurNodeData>) {
   );
 
   // Update node outputs - use useRef to avoid re-render loops
-  const updateOutputsRef = useRef((strength: number, quality: number) => {});
+  const updateOutputsRef = useRef((_strength: number, _quality: number) => {});
 
   useEffect(() => {
     updateOutputsRef.current = (strength: number, quality: number) => {

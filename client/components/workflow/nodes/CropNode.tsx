@@ -48,7 +48,7 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
     width: number;
     height: number;
   } | null>(null);
-  const [containerSize, setContainerSize] = useState<{
+  const [_containerSize, setContainerSize] = useState<{
     width: number;
     height: number;
   } | null>(null);
@@ -70,7 +70,7 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
   );
 
   const updateOutputsRef = useRef(
-    (x: number, y: number, width: number, height: number) => {},
+    (_x: number, _y: number, _width: number, _height: number) => {},
   );
 
   useEffect(() => {

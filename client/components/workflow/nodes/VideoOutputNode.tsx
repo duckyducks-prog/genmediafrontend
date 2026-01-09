@@ -9,7 +9,7 @@ import {
   Download,
 } from "lucide-react";
 
-function VideoOutputNode({ data, id }: NodeProps<OutputNodeData>) {
+function VideoOutputNode({ data, id: _id }: NodeProps<OutputNodeData>) {
   const videoUrl = (data as any).videoUrl || data.result;
   const status = (data as any).status || "ready";
   const isExecuting = status === "executing";

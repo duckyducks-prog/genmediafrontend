@@ -2,7 +2,6 @@ import {
   Type,
   Image,
   Sparkles,
-  Settings,
   Combine,
   Brain,
   Upload,
@@ -23,9 +22,9 @@ import {
   List,
   MessageSquare,
 } from "lucide-react";
-import { NodeType, NODE_CONFIGURATIONS } from "./types";
+import { NodeType } from "./types";
 import { Input } from "@/components/ui/input";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 
 interface PaletteNode {
   type: NodeType;

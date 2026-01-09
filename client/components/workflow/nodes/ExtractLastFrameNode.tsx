@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef } from "react";
+import { memo, useEffect } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { ExtractLastFrameNodeData, NODE_CONFIGURATIONS, NodeType } from "../types";
 import { Film, CheckCircle2, Loader2, Image as ImageIcon } from "lucide-react";
@@ -10,7 +10,6 @@ function ExtractLastFrameNode({ data, id }: NodeProps<ExtractLastFrameNodeData>)
   const isCompleted = status === "completed";
   const videoUrl = data.videoUrl;
   const extractedFrameUrl = data.extractedFrameUrl;
-  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const getBorderColor = () => {
     if (status === "error") return "border-red-500";

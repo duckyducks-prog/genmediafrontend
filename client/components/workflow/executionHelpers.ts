@@ -3,8 +3,7 @@ import {
   WorkflowNode,
   WorkflowEdge,
   NODE_CONFIGURATIONS,
-  validateMutualExclusion,
-  ConnectorType,
+  NodeType,
 } from "./types";
 import { API_ENDPOINTS } from "@/lib/api-config";
 
@@ -126,7 +125,11 @@ export function gatherNodeInputs(
   edges: WorkflowEdge[],
 ): Record<string, any> {
   const inputs: Record<string, any> = {};
-  const nodeConfig = NODE_CONFIGURATIONS[node.type];
+  if (!node.type) {
+    logger.warn(`[gatherNodeInputs] Node ${node.id} has no type`);
+    return inputs;
+  }
+  const nodeConfig = NODE_CONFIGURATIONS[node.type as NodeType];
 
   logger.debug(`[gatherNodeInputs] Processing node ${node.id} (${node.type})`);
 
@@ -169,13 +172,14 @@ export function gatherNodeInputs(
     const sourceHandle = edge.sourceHandle || "default";
 
     // First, try to get from outputs object
-    let outputValue = sourceNode.data.outputs?.[sourceHandle];
+    const outputs = sourceNode.data.outputs as Record<string, unknown> | undefined;
+    let outputValue = outputs?.[sourceHandle];
 
     logger.debug(`[gatherNodeInputs] Looking for outputs["${sourceHandle}"]`, {
       found: outputValue !== undefined,
       valueType: typeof outputValue,
       isArray: Array.isArray(outputValue),
-      valueLength: outputValue?.length || 0,
+      valueLength: (outputValue as string | unknown[] | undefined)?.length || 0,
       valuePreview:
         typeof outputValue === "string"
           ? outputValue.substring(0, 50) + "..."
@@ -185,13 +189,14 @@ export function gatherNodeInputs(
 
     // FALLBACK: If not found in outputs, try top-level data
     if (outputValue === undefined && sourceNode.data) {
-      outputValue = sourceNode.data[sourceHandle];
+      const dataRecord = sourceNode.data as unknown as Record<string, unknown>;
+      outputValue = dataRecord[sourceHandle];
       if (outputValue !== undefined) {
         console.warn(
           `[gatherNodeInputs] ⚠️ Using fallback from node.data["${sourceHandle}"] (not in outputs)`,
           {
             valueType: typeof outputValue,
-            valueLength: outputValue?.length || 0,
+            valueLength: (outputValue as string | unknown[])?.length || 0,
           },
         );
       }
@@ -243,7 +248,7 @@ export function gatherNodeInputs(
     if (outputValue !== undefined) {
       // Check if this input accepts multiple connections
       const inputConnector = nodeConfig.inputConnectors.find(
-        (c) => c.id === targetHandle,
+        (c: { id: string }) => c.id === targetHandle,
       );
 
       if (inputConnector?.acceptsMultiple) {
@@ -256,7 +261,6 @@ export function gatherNodeInputs(
         if (Array.isArray(outputValue)) {
           // Source outputs an array (e.g., GenerateImage outputs.images)
           // Flatten it into the target array
-          const beforeCount = inputs[targetHandle].length;
           inputs[targetHandle].push(...outputValue);
           logger.debug(
             `[gatherNodeInputs] ✓ Flattened array into inputs["${targetHandle}"]`,
@@ -315,7 +319,10 @@ export function validateNodeInputs(
   node: WorkflowNode,
   inputs: Record<string, any>,
 ): { valid: boolean; error?: string } {
-  const nodeConfig = NODE_CONFIGURATIONS[node.type];
+  if (!node.type) {
+    return { valid: false, error: `Node ${node.id} has no type` };
+  }
+  const nodeConfig = NODE_CONFIGURATIONS[node.type as NodeType];
 
   for (const inputConnector of nodeConfig.inputConnectors) {
     if (inputConnector.required) {
@@ -351,7 +358,7 @@ export function validateNodeInputs(
  */
 export function findUpstreamDependencies(
   nodeId: string,
-  nodes: WorkflowNode[],
+  __nodes: WorkflowNode[],
   edges: WorkflowEdge[],
 ): string[] {
   const visited = new Set<string>();

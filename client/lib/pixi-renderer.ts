@@ -574,7 +574,7 @@ async function performComposite(
             }
             resolve();
           };
-          img.onerror = (e) => {
+          img.onerror = () => {
             if (timeoutId !== null) {
               clearTimeout(timeoutId);
               timeoutId = null;
@@ -709,7 +709,7 @@ async function performComposite(
     sprite.destroy({ children: true, texture: false });
   });
 
-  images.forEach((img, i) => {
+  images.forEach((img) => {
     const texture = Texture.from(img);
     if (texture) {
       texture.destroy(true);

@@ -45,7 +45,7 @@ function BrightnessContrastNode({
 
   // Update node outputs (Layer 1: store ONLY config)
   // Use useRef to avoid recreating this function and causing re-render loops
-  const updateOutputsRef = useRef((brightness: number, contrast: number) => {});
+  const updateOutputsRef = useRef((_brightness: number, _contrast: number) => {});
 
   useEffect(() => {
     updateOutputsRef.current = (brightness: number, contrast: number) => {

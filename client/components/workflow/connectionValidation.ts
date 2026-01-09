@@ -4,7 +4,6 @@ import {
   WorkflowEdge,
   NODE_CONFIGURATIONS,
   canConnect,
-  validateMutualExclusion,
   ConnectorType,
   NodeType,
 } from "./types";

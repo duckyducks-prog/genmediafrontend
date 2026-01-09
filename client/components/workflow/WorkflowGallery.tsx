@@ -1,13 +1,6 @@
 import { logger } from "@/lib/logger";
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -21,12 +14,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Copy,
   Trash2,
   Loader2,
   RefreshCw,
   Workflow as WorkflowIcon,
-  Globe,
   Lock,
   AlertCircle,
 } from "lucide-react";
@@ -35,7 +26,6 @@ import {
   listMyWorkflows,
   listPublicWorkflows,
   deleteWorkflow,
-  cloneWorkflow,
   loadWorkflow,
   SavedWorkflow,
   WorkflowListItem,
@@ -146,43 +136,13 @@ export default function WorkflowGallery({
     }
   };
 
-  const handleClone = async (workflow: SavedWorkflow) => {
-    try {
-      const result = await cloneWorkflow(workflow.id!);
-      toast({
-        title: "Workflow cloned",
-        description: `"${workflow.name}" has been added to your workflows`,
-      });
-      // Refresh to show the cloned workflow
-      fetchWorkflows();
-    } catch (error) {
-      console.error("Error cloning workflow:", error);
-      toast({
-        title: "Failed to clone workflow",
-        description: error instanceof Error ? error.message : "Unknown error",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
 
   const WorkflowCard = ({
     workflow,
     showDelete = false,
-    showClone = false,
   }: {
     workflow: WorkflowListItem;
     showDelete?: boolean;
-    showClone?: boolean;
   }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [isLoadingWorkflow, setIsLoadingWorkflow] = useState(false);
@@ -465,7 +425,6 @@ export default function WorkflowGallery({
                 <WorkflowCard
                   key={workflow.id}
                   workflow={workflow}
-                  showClone={true}
                 />
               ))}
             </div>

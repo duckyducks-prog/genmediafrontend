@@ -5,7 +5,7 @@ import * as workflowStorage from "../workflow-storage";
  * Middleware to verify Firebase authentication
  * For now, we'll allow all requests - proper auth should be added later
  */
-function requireAuth(req: Request, res: Response, next: Function) {
+function requireAuth(req: Request, _res: Response, next: () => void) {
   // TODO: Add proper Firebase admin auth verification
   // For now, extract user info from Authorization header if present
   const authHeader = req.headers.authorization;
@@ -235,7 +235,7 @@ export function cloneWorkflow(req: Request, res: Response) {
  *
  * TODO: Add proper admin authentication
  */
-export function rebuildIndexEndpoint(req: Request, res: Response) {
+export function rebuildIndexEndpoint(_req: Request, res: Response) {
   try {
     // TODO: Add admin auth check here
     // For now, log a warning
@@ -248,9 +248,9 @@ export function rebuildIndexEndpoint(req: Request, res: Response) {
     const result = workflowStorage.rebuildIndex();
 
     res.json({
-      success: true,
       message: `Index rebuilt successfully: ${result.rebuilt} workflows recovered, ${result.failed} failed`,
       ...result,
+      success: true,
     });
   } catch (error) {
     console.error("[Workflows API] Error rebuilding index:", error);
