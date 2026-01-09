@@ -222,7 +222,8 @@ export interface BuildCompoundInput {
       nodeId: string;
       inputHandle: string;
       exposedName: string;
-      type: ConnectorType;
+      type: ConnectorType | "text" | "image" | "video";
+      paramPath?: string;
     }
   >;
   exposedControls: Record<
