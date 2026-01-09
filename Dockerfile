@@ -59,8 +59,8 @@ RUN npm install --omit=dev && npm cache clean --force
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
 
-# Create data directory for workflow storage
-RUN mkdir -p /app/data && chown -R nodejs:nodejs /app/data
+# Create data directory for workflow storage (relative to dist/server)
+RUN mkdir -p /app/dist/data/workflows && chown -R nodejs:nodejs /app/dist/data
 
 # Switch to non-root user
 USER nodejs
