@@ -72,15 +72,15 @@ fly deploy
 
 ## 📋 Environment Variables Reference
 
-| Variable                            | Description                | Example/Notes                      |
-| ----------------------------------- | -------------------------- | ---------------------------------- |
-| `VITE_FIREBASE_API_KEY`             | Firebase API Key (SECRET)  | Get from Firebase Console          |
-| `VITE_FIREBASE_AUTH_DOMAIN`         | Firebase Auth Domain       | genmediastudio.firebaseapp.com     |
-| `VITE_FIREBASE_PROJECT_ID`          | Firebase Project ID        | genmediastudio                     |
-| `VITE_FIREBASE_STORAGE_BUCKET`      | Firebase Storage Bucket    | genmediastudio.firebasestorage.app |
-| `VITE_FIREBASE_MESSAGING_SENDER_ID` | FCM Sender ID              | 856765593724                       |
-| `VITE_FIREBASE_APP_ID`              | Firebase App ID            | 1:856765593724:web:...             |
-| `VITE_FIREBASE_MEASUREMENT_ID`      | Analytics Measurement ID   | G-M4801D5V62                       |
+| Variable                            | Description               | Example/Notes                      |
+| ----------------------------------- | ------------------------- | ---------------------------------- |
+| `VITE_FIREBASE_API_KEY`             | Firebase API Key (SECRET) | Get from Firebase Console          |
+| `VITE_FIREBASE_AUTH_DOMAIN`         | Firebase Auth Domain      | genmediastudio.firebaseapp.com     |
+| `VITE_FIREBASE_PROJECT_ID`          | Firebase Project ID       | genmediastudio                     |
+| `VITE_FIREBASE_STORAGE_BUCKET`      | Firebase Storage Bucket   | genmediastudio.firebasestorage.app |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` | FCM Sender ID             | 856765593724                       |
+| `VITE_FIREBASE_APP_ID`              | Firebase App ID           | 1:856765593724:web:...             |
+| `VITE_FIREBASE_MEASUREMENT_ID`      | Analytics Measurement ID  | G-M4801D5V62                       |
 
 ## 🔒 Security Notes
 
