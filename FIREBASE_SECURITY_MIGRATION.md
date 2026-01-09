@@ -3,25 +3,30 @@
 ## ✅ Completed Steps
 
 ### 1. Updated `client/lib/firebase.ts`
+
 - Removed hardcoded Firebase configuration values
 - Updated to use Vite environment variables (`import.meta.env.VITE_*`)
 - All sensitive credentials now loaded from environment variables
 
 ### 2. Created `.env.local` for Local Development
+
 - Contains the **new** rotated Firebase API key
 - File is automatically gitignored (`.gitignore` already has `*.local` pattern)
 - **CRITICAL**: This file is already created and contains the new API key
 
 ### 3. Created `.env.example` Template
+
 - Provides a template for other developers
 - Shows required environment variables without exposing secrets
 - Safe to commit to git
 
 ### 4. Added TypeScript Types (`client/vite-env.d.ts`)
+
 - Added type definitions for all Firebase environment variables
 - Provides autocomplete and type safety in the IDE
 
 ### 5. Verified `.gitignore`
+
 - ✅ Already contains `*.local` pattern
 - ✅ Already contains `.env` pattern
 - No changes needed - secrets are protected
@@ -45,6 +50,7 @@ fly secrets set VITE_FIREBASE_MEASUREMENT_ID="G-M4801D5V62"
 ```
 
 After setting secrets, deploy:
+
 ```bash
 fly deploy
 ```
@@ -64,15 +70,15 @@ fly deploy
 
 ## 📋 Environment Variables Reference
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `VITE_FIREBASE_API_KEY` | Firebase API Key (rotated) | AIzaSy... |
-| `VITE_FIREBASE_AUTH_DOMAIN` | Firebase Auth Domain | genmediastudio.firebaseapp.com |
-| `VITE_FIREBASE_PROJECT_ID` | Firebase Project ID | genmediastudio |
-| `VITE_FIREBASE_STORAGE_BUCKET` | Firebase Storage Bucket | genmediastudio.firebasestorage.app |
-| `VITE_FIREBASE_MESSAGING_SENDER_ID` | FCM Sender ID | 856765593724 |
-| `VITE_FIREBASE_APP_ID` | Firebase App ID | 1:856765593724:web:... |
-| `VITE_FIREBASE_MEASUREMENT_ID` | Analytics Measurement ID | G-M4801D5V62 |
+| Variable                            | Description                | Example                            |
+| ----------------------------------- | -------------------------- | ---------------------------------- |
+| `VITE_FIREBASE_API_KEY`             | Firebase API Key (rotated) | AIzaSy...                          |
+| `VITE_FIREBASE_AUTH_DOMAIN`         | Firebase Auth Domain       | genmediastudio.firebaseapp.com     |
+| `VITE_FIREBASE_PROJECT_ID`          | Firebase Project ID        | genmediastudio                     |
+| `VITE_FIREBASE_STORAGE_BUCKET`      | Firebase Storage Bucket    | genmediastudio.firebasestorage.app |
+| `VITE_FIREBASE_MESSAGING_SENDER_ID` | FCM Sender ID              | 856765593724                       |
+| `VITE_FIREBASE_APP_ID`              | Firebase App ID            | 1:856765593724:web:...             |
+| `VITE_FIREBASE_MEASUREMENT_ID`      | Analytics Measurement ID   | G-M4801D5V62                       |
 
 ## 🔒 Security Notes
 
@@ -96,11 +102,13 @@ fly deploy
 ## 🔍 How to Verify
 
 ### Local Development
+
 1. The dev server should already be running with the new configuration
 2. Try signing in with Google - it should work with the new API key
 3. Check browser console for any Firebase errors
 
 ### Production (After Fly.io Deployment)
+
 1. Deploy the app to Fly.io after setting environment variables
 2. Test Google sign-in on the production URL
 3. Verify no console errors related to Firebase
