@@ -136,8 +136,8 @@ gcloud artifacts repositories create "$REPOSITORY" \
   --project="$PROJECT_ID"
 
 # Get git commit SHA for image tagging
-SHORT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "latest")
-echo "Image tag: $SHORT_SHA"
+IMAGE_TAG=$(git rev-parse --short HEAD 2>/dev/null || echo "latest")
+echo "Image tag: $IMAGE_TAG"
 
 # Build and deploy using Cloud Build
 echo -e "${YELLOW}Starting Cloud Build...${NC}"
@@ -145,7 +145,7 @@ gcloud builds submit \
   --config=cloudbuild.yaml \
   --project="$PROJECT_ID" \
   --substitutions="\
-SHORT_SHA=$SHORT_SHA,\
+_IMAGE_TAG=$IMAGE_TAG,\
 _REGION=$REGION,\
 _SERVICE_NAME=$SERVICE_NAME,\
 _REPOSITORY=$REPOSITORY,\
