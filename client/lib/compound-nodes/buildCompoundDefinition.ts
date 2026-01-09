@@ -45,7 +45,7 @@ export function buildCompoundDefinition(
     edges,
     exposedInputs,
     exposedControls,
-    exposedOutputs,
+    exposedOutputs: _exposedOutputs,
   } = input;
 
   // Generate unique ID

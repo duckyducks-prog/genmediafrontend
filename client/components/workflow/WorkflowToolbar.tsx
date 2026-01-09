@@ -38,8 +38,8 @@ export default function WorkflowToolbar({
   onLoadWorkflow,
   onSaveAsWizard,
   isExecuting,
-  executionProgress,
-  totalNodes,
+  executionProgress: _executionProgress,
+  totalNodes: _totalNodes,
   isReadOnly = false,
 }: WorkflowToolbarProps) {
   const { zoomIn, zoomOut, fitView } = useReactFlow();

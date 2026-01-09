@@ -2,11 +2,10 @@ import { logger } from "@/lib/logger";
 import { memo, useState, useEffect } from "react";
 import { Handle, Position, NodeProps, useEdges, useNodes } from "reactflow";
 import { DownloadNodeData } from "../types";
-import { Download, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
+import { Download, Loader2, AlertCircle } from "lucide-react";
 import { createMediaZip, downloadBlob } from "@/lib/zip-utils";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { resolveAssetToDataUrl } from "../executionHelpers";
 
 function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
   const edges = useEdges();

@@ -210,7 +210,7 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
 
       {/* Input Handles - Left side */}
       <div className="space-y-3 mb-4">
-        {config.inputConnectors.map((input, index) => {
+        {config.inputConnectors.map((input) => {
           const isRequired = input.required;
           const isMultiple = input.acceptsMultiple;
 

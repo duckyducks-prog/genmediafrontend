@@ -4,12 +4,6 @@ import { PromptConcatenatorNodeData, NODE_CONFIGURATIONS, NodeType, WorkflowNode
 import { Combine, ChevronDown } from 'lucide-react';
 import { gatherNodeInputs, executeConcatenator } from '../executionHelpers';
 
-const SEPARATORS = {
-  Space: ' ',
-  Comma: ', ',
-  Newline: '\n',
-  Period: '. ',
-} as const;
 
 function PromptConcatenatorNode({ data, id }: NodeProps<PromptConcatenatorNodeData>) {
   const config = NODE_CONFIGURATIONS[NodeType.PromptConcatenator];
@@ -62,7 +56,7 @@ function PromptConcatenatorNode({ data, id }: NodeProps<PromptConcatenatorNodeDa
 
       {/* Input Handles - Left side */}
       <div className="space-y-3 mb-3">
-        {config.inputConnectors.map((input, index) => (
+        {config.inputConnectors.map((input) => (
           <div key={input.id} className="flex items-center gap-2 relative h-6">
             <Handle
               type="target"

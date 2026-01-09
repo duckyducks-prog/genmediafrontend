@@ -1,12 +1,11 @@
 import { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
-import { LLMNodeData, NODE_CONFIGURATIONS, NodeType } from '../types';
+import { LLMNodeData } from '../types';
 import { Brain, Loader2, Play, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
 function LLMNode({ data, id }: NodeProps<LLMNodeData>) {
-  const config = NODE_CONFIGURATIONS[NodeType.LLM];
   const status = data.status || 'ready';
   const isGenerating = data.isGenerating || status === 'executing';
 

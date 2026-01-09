@@ -336,7 +336,7 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
                             <video
                               src={asset.url}
                               className="w-full h-full object-cover"
-                              onError={(e) => {
+                              onError={() => {
                                 console.error(
                                   "[AssetLibrary] Video failed to load:",
                                   asset.url,
@@ -456,7 +456,7 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
                   src={previewAsset.url}
                   alt={previewAsset.prompt}
                   className="w-full h-auto"
-                  onError={(e) => {
+                  onError={() => {
                     console.error(
                       "[AssetLibrary] Preview image failed to load:",
                       previewAsset.url,
@@ -468,7 +468,7 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
                   src={previewAsset?.url}
                   controls
                   className="w-full h-auto"
-                  onError={(e) => {
+                  onError={() => {
                     console.error(
                       "[AssetLibrary] Preview video failed to load:",
                       previewAsset?.url,

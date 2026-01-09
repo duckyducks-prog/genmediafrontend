@@ -25,7 +25,7 @@ function VignetteNode({ data, id }: NodeProps<VignetteNodeData>) {
     [],
   );
 
-  const updateOutputsRef = useRef((size: number, amount: number) => {});
+  const updateOutputsRef = useRef((_size: number, _amount: number) => {});
 
   useEffect(() => {
     updateOutputsRef.current = (size: number, amount: number) => {

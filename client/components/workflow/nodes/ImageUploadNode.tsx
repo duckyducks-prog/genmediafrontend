@@ -6,7 +6,7 @@ import { ImageInputNodeData } from "../types";
 import { Upload, X, Image as ImageIcon } from "lucide-react";
 
 function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
-  const [imageUrl, setImageUrl] = useState<string | null>(data.imageUrl);
+  const [imageUrl, setImageUrl] = useState<string | null>(data.imageUrl ?? null);
   const { setNodes } = useReactFlow();
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

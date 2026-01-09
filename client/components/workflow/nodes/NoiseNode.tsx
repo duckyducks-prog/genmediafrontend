@@ -25,7 +25,7 @@ function NoiseNode({ data, id }: NodeProps<NoiseNodeData>) {
     [],
   );
 
-  const updateOutputsRef = useRef((noise: number) => {});
+  const updateOutputsRef = useRef((_noise: number) => {});
 
   useEffect(() => {
     updateOutputsRef.current = (noise: number) => {

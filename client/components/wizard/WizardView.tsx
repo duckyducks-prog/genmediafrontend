@@ -5,7 +5,7 @@ import "./wizard.css";
 import { Button } from "@/components/ui/button";
 import { getCompoundTemplate } from "@/lib/compound-nodes/storage";
 import { useWorkflowExecution } from "@/components/workflow/useWorkflowExecution";
-import type { WorkflowNode, WorkflowEdge, NodeType } from "@/components/workflow/types";
+import type { WorkflowNode, WorkflowEdge } from "@/components/workflow/types";
 import WizardInput from "./WizardInput";
 import WizardControl from "./WizardControl";
 import WizardResults from "./WizardResults";
@@ -73,60 +73,63 @@ export default function WizardView({ wizardId }: WizardViewProps) {
   // Collect results after execution completes
   useEffect(() => {
     // Check if execution just finished
-    if (wasExecuting && !isExecuting && workflowNodes.length > 0) {
-      logger.debug("[WizardView] Execution completed, collecting results...");
-
-      // ========================================================================
-      // Collect outputs using wizard.outputs definitions and wizard.mappings.outputs
-      // This ensures we only collect the outputs that were auto-generated during
-      // wizard creation (GenerateImage/GenerateVideo nodes) and nothing else
-      // ========================================================================
-      const allOutputs: Record<string, any> = {};
-
-      // Use wizard.outputs to know what outputs to collect
-      wizard.outputs.forEach((outputDef) => {
-        const mapping = wizard.mappings.outputs[outputDef.id];
-
-        if (mapping) {
-          // Find the node referenced by this output mapping
-          const node = workflowNodes.find((n) => n.id === mapping.nodeId);
-
-          if (node) {
-            // Extract the value from the node using the mapping path
-            const value = getNestedValue(node, mapping.param);
-
-            if (value) {
-              allOutputs[outputDef.id] = value;
-              logger.debug(`[WizardView] Collected "${outputDef.name}" (${outputDef.type}) from ${mapping.nodeId}`);
-            } else {
-              console.warn(`[WizardView] No value found at ${mapping.nodeId}.${mapping.param}`);
-            }
-          } else {
-            console.warn(`[WizardView] Node ${mapping.nodeId} not found in workflow`);
-          }
-        }
-      });
-
-      logger.debug("[WizardView] All outputs collected:", {
-        expected: wizard.outputs.length,
-        collected: Object.keys(allOutputs).length,
-        outputs: wizard.outputs.map(o => o.name),
-      });
-
-      if (Object.keys(allOutputs).length > 0) {
-        setResults(allOutputs);
-        setError(null);
-      } else {
-        setError("No outputs were generated. Please check your inputs and try again.");
+    if (!wizard || !wasExecuting || isExecuting || workflowNodes.length === 0) {
+      // Track execution state
+      if (isExecuting) {
+        setWasExecuting(true);
+      } else if (wasExecuting) {
+        setWasExecuting(false);
       }
+      return;
     }
 
-    // Track execution state
-    if (isExecuting) {
-      setWasExecuting(true);
-    } else if (wasExecuting) {
-      setWasExecuting(false);
+    logger.debug("[WizardView] Execution completed, collecting results...");
+
+    // ========================================================================
+    // Collect outputs using wizard.outputs definitions and wizard.mappings.outputs
+    // This ensures we only collect the outputs that were auto-generated during
+    // wizard creation (GenerateImage/GenerateVideo nodes) and nothing else
+    // ========================================================================
+    const allOutputs: Record<string, any> = {};
+
+    // Use wizard.outputs to know what outputs to collect
+    wizard.outputs.forEach((outputDef) => {
+      const mapping = wizard.mappings.outputs[outputDef.id];
+
+      if (mapping) {
+        // Find the node referenced by this output mapping
+        const node = workflowNodes.find((n) => n.id === mapping.nodeId);
+
+        if (node) {
+          // Extract the value from the node using the mapping path
+          const value = getNestedValue(node, mapping.param);
+
+          if (value) {
+            allOutputs[outputDef.id] = value;
+            logger.debug(`[WizardView] Collected "${outputDef.name}" (${outputDef.type}) from ${mapping.nodeId}`);
+          } else {
+            console.warn(`[WizardView] No value found at ${mapping.nodeId}.${mapping.param}`);
+          }
+        } else {
+          console.warn(`[WizardView] Node ${mapping.nodeId} not found in workflow`);
+        }
+      }
+    });
+
+    logger.debug("[WizardView] All outputs collected:", {
+      expected: wizard.outputs.length,
+      collected: Object.keys(allOutputs).length,
+      outputs: wizard.outputs.map(o => o.name),
+    });
+
+    if (Object.keys(allOutputs).length > 0) {
+      setResults(allOutputs);
+      setError(null);
+    } else {
+      setError("No outputs were generated. Please check your inputs and try again.");
     }
+
+    setWasExecuting(false);
   }, [isExecuting, workflowNodes, wasExecuting, wizard]);
 
   if (!wizard) {

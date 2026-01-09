@@ -1,6 +1,5 @@
 import { logger } from "@/lib/logger";
 import { useCallback, useState } from "react";
-import { Node, Edge } from "reactflow";
 import {
   WorkflowNode,
   WorkflowEdge,
@@ -1549,8 +1548,8 @@ export function useWorkflowExecution(
             // Create a workflow executor function with the expected signature
             // This allows compound nodes to recursively execute their internal workflows
             const internalWorkflowExecutor = async (
-              internalNodes: Node[],
-              internalEdges: Edge[],
+              _internalNodes: WorkflowNode[],
+              _internalEdges: WorkflowEdge[],
             ): Promise<{ success: boolean; data?: any; error?: string }> => {
               // Execute the internal workflow nodes using the same execution logic
               // For now, we return a basic implementation
@@ -1634,7 +1633,6 @@ export function useWorkflowExecution(
     setTotalNodes(executionOrder.length);
 
     // Store executed node data
-    const executedData = new Map<string, any>();
     const progress = new Map<string, string>();
 
     // Group nodes by execution level for parallel execution

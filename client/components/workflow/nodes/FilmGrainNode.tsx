@@ -88,7 +88,7 @@ function FilmGrainNode({ data, id }: NodeProps<FilmGrainNodeData>) {
   );
 
   const updateOutputsRef = useRef(
-    (params: {
+    (_params: {
       intensity: number;
       size: number;
       shadows: number;

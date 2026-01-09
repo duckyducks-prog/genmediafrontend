@@ -25,7 +25,7 @@ function HueSaturationNode({ data, id }: NodeProps<HueSaturationNodeData>) {
     [],
   );
 
-  const updateOutputsRef = useRef((hue: number, saturation: number) => {});
+  const updateOutputsRef = useRef((_hue: number, _saturation: number) => {});
 
   useEffect(() => {
     updateOutputsRef.current = (hue: number, saturation: number) => {

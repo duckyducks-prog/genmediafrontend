@@ -11,8 +11,6 @@ import ReactFlow, {
   Background,
   Controls,
   addEdge,
-  useNodesState,
-  useEdgesState,
   Connection,
   Edge,
   NodeTypes,
@@ -33,7 +31,6 @@ import {
   WorkflowNode,
   WorkflowEdge,
   NodeType,
-  WorkflowNodeData,
 } from "./types";
 import NodePalette from "./NodePalette";
 import WorkflowToolbar from "./WorkflowToolbar";
@@ -127,7 +124,7 @@ interface WorkflowCanvasProps {
 }
 
 const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
-  ({ onAssetGenerated, onLoadWorkflowRequest }, ref) => {
+  ({ onAssetGenerated, onLoadWorkflowRequest: _onLoadWorkflowRequest }, ref) => {
     // Use context for workflow state persistence
     const { state: workflowState, dispatch } = useWorkflow();
     const [nodes, setNodes] = useWorkflowNodes();
@@ -987,7 +984,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
 
     // Handle viewport changes (pan/zoom) to save to context
     const handleMoveEnd = useCallback(
-      (event: any) => {
+      (_event: unknown) => {
         if (reactFlowInstance) {
           const viewport = reactFlowInstance.getViewport();
           dispatch({ type: "SET_VIEWPORT", payload: viewport });
@@ -1303,15 +1300,10 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
         window.removeEventListener("node-execute", handleNodeExecute);
     }, [executeSingleNode]);
 
-    // Dispatch browse library event (for external handlers to catch)
-    const handleBrowseLibrary = useCallback(() => {
-      logger.debug("[WorkflowCanvas] Dispatching browse-library event");
-      window.dispatchEvent(new CustomEvent("browse-library"));
-    }, []);
 
     // Listen for add-asset-node events from Index
     useEffect(() => {
-      const handleAddAssetNode = (event: any) => {
+      const handleAddAssetNode = (event: CustomEvent<{ assetType: string; url: string }>) => {
         const { assetType, url } = event.detail;
 
         if (!reactFlowInstance) {
@@ -1320,7 +1312,6 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
         }
 
         // Get center of viewport for positioning
-        const { x, y, zoom } = reactFlowInstance.getViewport();
         const centerPosition = reactFlowInstance.screenToFlowPosition({
           x: window.innerWidth / 2,
           y: window.innerHeight / 2,
@@ -1350,9 +1341,9 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
         logger.debug("[WorkflowCanvas] Asset node added:", nodeType);
       };
 
-      window.addEventListener("add-asset-node", handleAddAssetNode);
+      window.addEventListener("add-asset-node", handleAddAssetNode as EventListener);
       return () =>
-        window.removeEventListener("add-asset-node", handleAddAssetNode);
+        window.removeEventListener("add-asset-node", handleAddAssetNode as EventListener);
     }, [reactFlowInstance, setNodes, toast]);
 
     return (
