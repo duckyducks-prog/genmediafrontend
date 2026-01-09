@@ -1,29 +1,111 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import * as workflowStorage from "../workflow-storage";
+
+// =============================================================================
+// AUTHENTICATION CONFIGURATION
+// =============================================================================
+// Set REQUIRE_AUTH=true in production to enforce Firebase authentication
+// Set REQUIRE_AUTH=false (default) for development without auth
+//
+// To revert to no-auth mode: set REQUIRE_AUTH=false or unset the env var
+// =============================================================================
+const REQUIRE_AUTH = process.env.REQUIRE_AUTH === "true";
+
+// Lazy-load Firebase Admin to avoid initialization errors when not needed
+type FirebaseAdminType = typeof import("firebase-admin");
+let firebaseAdminInstance: FirebaseAdminType | null = null;
+
+function getFirebaseAdmin(): FirebaseAdminType {
+  if (firebaseAdminInstance) {
+    return firebaseAdminInstance;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const admin: FirebaseAdminType = require("firebase-admin");
+
+  if (admin.apps.length === 0) {
+    try {
+      // Initialize with application default credentials or service account
+      admin.initializeApp({
+        credential: admin.credential.applicationDefault(),
+      });
+      console.log("[Auth] Firebase Admin initialized successfully");
+    } catch (error) {
+      console.error("[Auth] Failed to initialize Firebase Admin:", error);
+      throw error;
+    }
+  }
+
+  firebaseAdminInstance = admin;
+  return admin;
+}
 
 /**
  * Middleware to verify Firebase authentication
- * For now, we'll allow all requests - proper auth should be added later
+ *
+ * Behavior controlled by REQUIRE_AUTH environment variable:
+ * - REQUIRE_AUTH=true: Requires valid Firebase token, returns 401 if missing/invalid
+ * - REQUIRE_AUTH=false (default): Allows anonymous access for development
  */
-function requireAuth(req: Request, _res: Response, next: () => void) {
-  // TODO: Add proper Firebase admin auth verification
-  // For now, extract user info from Authorization header if present
+async function requireAuth(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    // For development, allow requests without auth
-    // But set a default user ID
-    (req as any).userId = "anonymous";
-    (req as any).userEmail = "anonymous@example.com";
+  // Development mode - allow anonymous access
+  if (!REQUIRE_AUTH) {
+    if (authHeader?.startsWith("Bearer ")) {
+      // Try to extract user info from token even in dev mode (best effort)
+      try {
+        const token = authHeader.split("Bearer ")[1];
+        const firebaseApp = getFirebaseAdmin();
+        const decodedToken = await firebaseApp.auth().verifyIdToken(token);
+        (req as any).userId = decodedToken.uid;
+        (req as any).userEmail = decodedToken.email || "unknown@example.com";
+        console.log(`[Auth] Dev mode: Authenticated user ${decodedToken.uid}`);
+      } catch {
+        // Token verification failed in dev mode - use anonymous
+        (req as any).userId = "anonymous";
+        (req as any).userEmail = "anonymous@example.com";
+        console.log("[Auth] Dev mode: Using anonymous user (token invalid)");
+      }
+    } else {
+      (req as any).userId = "anonymous";
+      (req as any).userEmail = "anonymous@example.com";
+      console.log("[Auth] Dev mode: Using anonymous user (no token)");
+    }
     return next();
   }
 
-  // TODO: Verify Firebase token and extract user info
-  // For now, just pass through
-  (req as any).userId = "anonymous";
-  (req as any).userEmail = "anonymous@example.com";
-  next();
+  // Production mode - require valid token
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    console.warn("[Auth] Production mode: Missing or invalid Authorization header");
+    return res.status(401).json({
+      error: "Authentication required",
+      detail: "Please sign in to access this resource",
+    });
+  }
+
+  try {
+    const token = authHeader.split("Bearer ")[1];
+    const firebaseApp = getFirebaseAdmin();
+    const decodedToken = await firebaseApp.auth().verifyIdToken(token);
+
+    (req as any).userId = decodedToken.uid;
+    (req as any).userEmail = decodedToken.email || "unknown@example.com";
+
+    console.log(`[Auth] Authenticated user: ${decodedToken.uid} (${decodedToken.email})`);
+    next();
+  } catch (error) {
+    console.error("[Auth] Token verification failed:", error);
+    return res.status(401).json({
+      error: "Invalid or expired token",
+      detail: "Please sign out and sign in again",
+    });
+  }
 }
+
+// Log auth mode on module load
+console.log(`[Auth] Authentication mode: ${REQUIRE_AUTH ? "REQUIRED (production)" : "OPTIONAL (development)"}`);
+
 
 /**
  * GET /workflows?scope=my|public
