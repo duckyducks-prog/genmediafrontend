@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { auth } from "./firebase";
 import { WorkflowNode, WorkflowEdge } from "@/components/workflow/types";
 

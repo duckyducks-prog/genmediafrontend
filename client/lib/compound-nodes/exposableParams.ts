@@ -274,6 +274,7 @@ export const EXPOSABLE_PARAMS: Record<NodeType, ExposableParam[]> = {
   [NodeType.ImageOutput]: [],
   [NodeType.VideoOutput]: [],
   [NodeType.StickyNote]: [],
+  [NodeType.Compound]: [], // Compound nodes don't expose params directly
 };
 
 /**

@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { memo, useState, useCallback, useRef, useEffect } from "react";
 import { Handle, Position, NodeProps, useReactFlow } from "reactflow";
 import { Button } from "@/components/ui/button";

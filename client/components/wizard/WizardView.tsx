@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { useState, useEffect } from "react";
 import { Loader2, AlertCircle, X } from "lucide-react";
 import "./wizard.css";
