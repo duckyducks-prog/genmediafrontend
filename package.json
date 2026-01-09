@@ -28,6 +28,7 @@
     "dotenv": "^17.2.1",
     "express": "^5.2.1",
     "firebase": "^12.7.0",
+    "firebase-admin": "^13.6.0",
     "html2canvas": "^1.4.1",
     "jszip": "^3.10.1",
     "pixi-filters": "^6.1.5",
