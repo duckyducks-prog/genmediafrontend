@@ -31,26 +31,26 @@ export const API_ENDPOINTS = {
     upscale: `${VEO_API_BASE_URL}/v1/generate/upscale`,
   },
 
-  // Assets endpoints (formerly "Library")
+  // Assets endpoints - routed through local proxy to avoid CORS
   assets: {
-    save: `${VEO_API_BASE_URL}/v1/assets`,
+    save: `/api/assets`,
     list: (assetType?: string) =>
       assetType
-        ? `${VEO_API_BASE_URL}/v1/assets?asset_type=${assetType}`
-        : `${VEO_API_BASE_URL}/v1/assets`,
-    get: (id: string) => `${VEO_API_BASE_URL}/v1/assets/${id}`,
-    delete: (id: string) => `${VEO_API_BASE_URL}/v1/assets/${id}`,
+        ? `/api/assets?asset_type=${assetType}`
+        : `/api/assets`,
+    get: (id: string) => `/api/assets/${id}`,
+    delete: (id: string) => `/api/assets/${id}`,
   },
 
   // Legacy library alias for backward compatibility during migration
   library: {
-    save: `${VEO_API_BASE_URL}/v1/assets`,
+    save: `/api/assets`,
     list: (assetType?: string) =>
       assetType
-        ? `${VEO_API_BASE_URL}/v1/assets?asset_type=${assetType}`
-        : `${VEO_API_BASE_URL}/v1/assets`,
-    get: (id: string) => `${VEO_API_BASE_URL}/v1/assets/${id}`,
-    delete: (id: string) => `${VEO_API_BASE_URL}/v1/assets/${id}`,
+        ? `/api/assets?asset_type=${assetType}`
+        : `/api/assets`,
+    get: (id: string) => `/api/assets/${id}`,
+    delete: (id: string) => `/api/assets/${id}`,
   },
 } as const;
 

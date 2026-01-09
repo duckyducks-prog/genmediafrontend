@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
 import { setupWorkflowRoutes } from "./routes/workflows";
+import { setupAssetRoutes } from "./routes/assets";
 import { verifyStorageHealth } from "./workflow-storage";
 
 export function createServer() {
@@ -26,6 +27,9 @@ export function createServer() {
 
   // Workflow API routes
   setupWorkflowRoutes(app);
+
+  // Asset proxy routes (bypasses CORS to Veo API)
+  setupAssetRoutes(app);
 
   return app;
 }
