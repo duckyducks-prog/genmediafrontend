@@ -13,7 +13,7 @@ export function saveCompoundTemplate(compound: CompoundNodeDefinition): void {
     const existing = getCompoundTemplates();
     existing[compound.id] = compound;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
-    console.log(
+    logger.debug(
       `[CompoundStorage] Saved compound template: ${compound.id} (${compound.name})`,
     );
   } catch (error) {
@@ -34,7 +34,7 @@ export function getCompoundTemplates(): Record<string, CompoundNodeDefinition> {
       return {};
     }
     const parsed = JSON.parse(stored);
-    console.log(
+    logger.debug(
       `[CompoundStorage] Loaded ${Object.keys(parsed).length} compound templates`,
     );
     return parsed;
@@ -67,7 +67,7 @@ export function deleteCompoundTemplate(id: string): void {
     if (existing[id]) {
       delete existing[id];
       localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
-      console.log(`[CompoundStorage] Deleted compound template: ${id}`);
+      logger.debug(`[CompoundStorage] Deleted compound template: ${id}`);
     }
   } catch (error) {
     console.error(
@@ -104,7 +104,7 @@ export function updateCompoundTemplate(
     compound.updatedAt = new Date().toISOString();
     existing[compound.id] = compound;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
-    console.log(
+    logger.debug(
       `[CompoundStorage] Updated compound template: ${compound.id} (${compound.name})`,
     );
   } catch (error) {
@@ -123,7 +123,7 @@ export function updateCompoundTemplate(
 export function clearAllCompoundTemplates(): void {
   try {
     localStorage.removeItem(STORAGE_KEY);
-    console.log("[CompoundStorage] Cleared all compound templates");
+    logger.debug("[CompoundStorage] Cleared all compound templates");
   } catch (error) {
     console.error(
       "[CompoundStorage] Failed to clear compound templates:",

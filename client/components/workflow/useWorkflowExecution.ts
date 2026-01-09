@@ -169,7 +169,7 @@ export function useWorkflowExecution(
   // Update node visual state
   const updateNodeState = useCallback(
     (nodeId: string, status: string, data?: any) => {
-      console.log("[updateNodeState] Updating node:", {
+      logger.debug("[updateNodeState] Updating node:", {
         nodeId,
         status,
         dataKeys: data ? Object.keys(data) : [],
@@ -187,7 +187,7 @@ export function useWorkflowExecution(
               ...data,
             };
 
-            console.log("[updateNodeState] Updated node data:", {
+            logger.debug("[updateNodeState] Updated node data:", {
               nodeId,
               nodeType: node.type,
               oldDataKeys: Object.keys(node.data),
@@ -208,7 +208,7 @@ export function useWorkflowExecution(
             // Dispatch node-update event to trigger output propagation to downstream nodes
             // This is crucial for nodes like ImageComposite to propagate their outputs to Preview nodes
             if (status === "completed" && updatedData.outputs) {
-              console.log(
+              logger.debug(
                 "[updateNodeState] Dispatching node-update event for output propagation",
               );
               setTimeout(() => {
@@ -250,7 +250,7 @@ export function useWorkflowExecution(
 
             // Resolve imageRef if imageUrl is missing
             if (!imageUrl && (node.data as any).imageRef) {
-              console.log(
+              logger.debug(
                 "[ImageInput] ⚠️ imageUrl missing, resolving imageRef:",
                 (node.data as any).imageRef,
               );
@@ -258,7 +258,7 @@ export function useWorkflowExecution(
                 imageUrl = await resolveAssetToDataUrl(
                   (node.data as any).imageRef,
                 );
-                console.log(
+                logger.debug(
                   "[ImageInput] ✓ Resolved to data URL, length:",
                   imageUrl.length,
                 );
@@ -309,7 +309,7 @@ export function useWorkflowExecution(
             const blendMode = (node.data as any).blendMode || "normal";
             const opacity = (node.data as any).opacity || 1.0;
 
-            console.log("[ImageComposite] Execution inputs:", {
+            logger.debug("[ImageComposite] Execution inputs:", {
               imageInputsType: typeof imageInputs,
               imageInputsIsArray: Array.isArray(imageInputs),
               imageCount: Array.isArray(imageInputs) ? imageInputs.length : 0,
@@ -330,7 +330,7 @@ export function useWorkflowExecution(
               // Apply filters to each input image if needed
               let processedImages = imageInputs;
               if (filters.length > 0) {
-                console.log(
+                logger.debug(
                   `[ImageComposite] Applying ${filters.length} filters to ${imageInputs.length} images`,
                 );
                 processedImages = await Promise.all(
@@ -339,7 +339,7 @@ export function useWorkflowExecution(
               }
 
               // Composite images with blend mode
-              console.log(
+              logger.debug(
                 `[ImageComposite] Compositing ${processedImages.length} images with mode: ${blendMode}, opacity: ${opacity}`,
               );
               const compositeResult = await renderCompositeWithPixi(
@@ -380,7 +380,7 @@ export function useWorkflowExecution(
             const brightness = (node.data as any).brightness ?? 1.0;
             const contrast = (node.data as any).contrast ?? 1.0;
 
-            console.log("[BrightnessContrast] Execution:", {
+            logger.debug("[BrightnessContrast] Execution:", {
               hasImage: !!imageInput,
               upstreamFilterCount: upstreamFilters.length,
               brightness,
@@ -418,7 +418,7 @@ export function useWorkflowExecution(
             const strength = (node.data as any).strength ?? 8;
             const quality = (node.data as any).quality ?? 4;
 
-            console.log("[Blur] Execution:", {
+            logger.debug("[Blur] Execution:", {
               hasImage: !!imageInput,
               upstreamFilterCount: upstreamFilters.length,
               strength,
@@ -455,7 +455,7 @@ export function useWorkflowExecution(
 
             const gamma = (node.data as any).gamma ?? 0;
 
-            console.log("[Sharpen] Execution:", {
+            logger.debug("[Sharpen] Execution:", {
               hasImage: !!imageInput,
               upstreamFilterCount: upstreamFilters.length,
               gamma,
@@ -492,7 +492,7 @@ export function useWorkflowExecution(
             const hue = (node.data as any).hue ?? 0;
             const saturation = (node.data as any).saturation ?? 0;
 
-            console.log("[HueSaturation] Execution:", {
+            logger.debug("[HueSaturation] Execution:", {
               hasImage: !!imageInput,
               upstreamFilterCount: upstreamFilters.length,
               hue,
@@ -529,7 +529,7 @@ export function useWorkflowExecution(
 
             const noise = (node.data as any).noise ?? 0.5;
 
-            console.log("[Noise] Execution:", {
+            logger.debug("[Noise] Execution:", {
               hasImage: !!imageInput,
               upstreamFilterCount: upstreamFilters.length,
               noise,
@@ -569,7 +569,7 @@ export function useWorkflowExecution(
             const highlights = (node.data as any).highlights ?? 30;
             const midtonesBias = (node.data as any).midtonesBias ?? 80;
 
-            console.log("[FilmGrain] Execution:", {
+            logger.debug("[FilmGrain] Execution:", {
               hasImage: !!imageInput,
               upstreamFilterCount: upstreamFilters.length,
               intensity,
@@ -610,7 +610,7 @@ export function useWorkflowExecution(
             const size = (node.data as any).size ?? 0.5;
             const amount = (node.data as any).amount ?? 0.5;
 
-            console.log("[Vignette] Execution:", {
+            logger.debug("[Vignette] Execution:", {
               hasImage: !!imageInput,
               upstreamFilterCount: upstreamFilters.length,
               size,
@@ -650,7 +650,7 @@ export function useWorkflowExecution(
             const width = (node.data as any).width ?? 512;
             const height = (node.data as any).height ?? 512;
 
-            console.log("[Crop] Execution:", {
+            logger.debug("[Crop] Execution:", {
               hasImage: !!imageInput,
               upstreamFilterCount: upstreamFilters.length,
               x,
@@ -769,7 +769,7 @@ export function useWorkflowExecution(
                         : "";
             prompt = `${prompt}, ${aspectRatio} aspect ratio${aspectRatioLabel ? ` (${aspectRatioLabel})` : ""}`;
 
-            console.log("[GenerateImage] Execution inputs:", {
+            logger.debug("[GenerateImage] Execution inputs:", {
               originalPrompt: inputs.prompt,
               finalPrompt: prompt,
               hasReferenceImages: !!referenceImages,
@@ -782,7 +782,7 @@ export function useWorkflowExecution(
 
             // NEW: Apply filters before sending to API (Layer 3 integration)
             if (referenceImages && filters.length > 0) {
-              console.log(
+              logger.debug(
                 "[GenerateImage] Applying",
                 filters.length,
                 "filters before API call",
@@ -843,7 +843,7 @@ export function useWorkflowExecution(
               }
             }
 
-            console.log("[GenerateImage] Processed reference images:", {
+            logger.debug("[GenerateImage] Processed reference images:", {
               hasReferenceImages: !!referenceImages,
               type: typeof referenceImages,
               isArray: Array.isArray(referenceImages),
@@ -870,7 +870,7 @@ export function useWorkflowExecution(
                 requestBody.reference_images = referenceImages;
               }
 
-              console.log("[GenerateImage] Request body:", {
+              logger.debug("[GenerateImage] Request body:", {
                 hasPrompt: !!requestBody.prompt,
                 aspectRatio: requestBody.aspect_ratio,
                 hasReferenceImages: !!requestBody.reference_images,
@@ -916,7 +916,7 @@ export function useWorkflowExecution(
 
               const apiData = await response.json();
 
-              console.log("[GenerateImage] API Response:", {
+              logger.debug("[GenerateImage] API Response:", {
                 hasImages: !!apiData.images,
                 imageCount: apiData.images?.length || 0,
               });
@@ -927,7 +927,7 @@ export function useWorkflowExecution(
                 );
                 const firstImage = images[0];
 
-                console.log("[GenerateImage] Generated images:", {
+                logger.debug("[GenerateImage] Generated images:", {
                   imageCount: images.length,
                   firstImageLength: firstImage.length,
                   firstImagePreview: firstImage.substring(0, 50),
@@ -936,7 +936,7 @@ export function useWorkflowExecution(
                 // ✅ Backend auto-saves images to library with prompt metadata
                 // Notify that an asset was generated to refresh the library
                 if (onAssetGenerated) {
-                  console.log(
+                  logger.debug(
                     "[useWorkflowExecution] Image generated, triggering asset refresh",
                   );
                   onAssetGenerated();
@@ -952,7 +952,7 @@ export function useWorkflowExecution(
                   },
                 };
 
-                console.log("[GenerateImage] Returning result data:", {
+                logger.debug("[GenerateImage] Returning result data:", {
                   hasImages: !!resultData.images,
                   hasImage: !!resultData.image,
                   hasImageUrl: !!resultData.imageUrl,
@@ -988,7 +988,7 @@ export function useWorkflowExecution(
           }
 
           case NodeType.GenerateVideo: {
-            console.log("[GenerateVideo] Starting execution with inputs:", {
+            logger.debug("[GenerateVideo] Starting execution with inputs:", {
               inputKeys: Object.keys(inputs),
               hasPrompt: !!inputs.prompt,
               hasFirstFrame: !!inputs.first_frame,
@@ -1038,7 +1038,7 @@ export function useWorkflowExecution(
               prompt = "Generate a video from the provided images";
             }
 
-            console.log("[GenerateVideo] After variable assignment:", {
+            logger.debug("[GenerateVideo] After variable assignment:", {
               originalPrompt: inputs.prompt,
               finalPrompt: prompt,
               hasFirstFrame: !!firstFrame,
@@ -1052,7 +1052,7 @@ export function useWorkflowExecution(
 
             // NEW: Apply filters before sending to API (Layer 3 integration)
             if (filters.length > 0) {
-              console.log(
+              logger.debug(
                 "[GenerateVideo] Applying",
                 filters.length,
                 "filters before API call",
@@ -1151,7 +1151,7 @@ export function useWorkflowExecution(
                 };
               }
 
-              console.log(
+              logger.debug(
                 `[GenerateVideo] Reference images count: ${referenceImages.length}/3`,
               );
             }
@@ -1174,7 +1174,7 @@ export function useWorkflowExecution(
               const user = auth.currentUser;
               const token = await user?.getIdToken();
 
-              console.log(
+              logger.debug(
                 "[GenerateVideo] Preparing request body (backend API fields: first_frame/last_frame):",
                 {
                   hasPrompt: !!prompt,
@@ -1209,7 +1209,7 @@ export function useWorkflowExecution(
                 nodeData.seed !== null
               ) {
                 requestBody.seed = nodeData.seed;
-                console.log(
+                logger.debug(
                   "[GenerateVideo] ✓ Using seed from node:",
                   nodeData.seed,
                   "for consistent generation",
@@ -1219,7 +1219,7 @@ export function useWorkflowExecution(
                 formatData?.seed !== null
               ) {
                 requestBody.seed = formatData.seed;
-                console.log(
+                logger.debug(
                   "[GenerateVideo] ✓ Using seed from format:",
                   formatData.seed,
                   "for consistent generation",
@@ -1235,7 +1235,7 @@ export function useWorkflowExecution(
               // Backend API expects "first_frame" and "last_frame" fields
               if (firstFrame) {
                 requestBody.first_frame = firstFrame;
-                console.log(
+                logger.debug(
                   "[GenerateVideo] ✓ Including first_frame in request (base64 length:",
                   firstFrame.length,
                   ")",
@@ -1243,7 +1243,7 @@ export function useWorkflowExecution(
               }
               if (lastFrame) {
                 requestBody.last_frame = lastFrame;
-                console.log(
+                logger.debug(
                   "[GenerateVideo] ✓ Including last_frame in request (base64 length:",
                   lastFrame.length,
                   ")",
@@ -1251,14 +1251,14 @@ export function useWorkflowExecution(
               }
               if (referenceImages) {
                 requestBody.reference_images = referenceImages;
-                console.log(
+                logger.debug(
                   "[GenerateVideo] ✓ Including reference_images in request (count:",
                   Array.isArray(referenceImages) ? referenceImages.length : 1,
                   ")",
                 );
               }
 
-              console.log("[GenerateVideo] Full request body (truncated):", {
+              logger.debug("[GenerateVideo] Full request body (truncated):", {
                 prompt: requestBody.prompt?.substring(0, 50),
                 first_frame: requestBody.first_frame
                   ? `${typeof requestBody.first_frame} (${requestBody.first_frame.length} chars)`
@@ -1351,7 +1351,7 @@ export function useWorkflowExecution(
                 // ✅ Backend auto-saves videos to library with prompt metadata
                 // Notify that an asset was generated to refresh the library
                 if (onAssetGenerated) {
-                  console.log(
+                  logger.debug(
                     "[useWorkflowExecution] Video generated, triggering asset refresh",
                   );
                   onAssetGenerated();
@@ -1409,7 +1409,7 @@ export function useWorkflowExecution(
             }
 
             try {
-              console.log(
+              logger.debug(
                 "[ExtractLastFrame] Extracting last frame from video, length:",
                 typeof videoInput === "string"
                   ? videoInput.length
@@ -1420,7 +1420,7 @@ export function useWorkflowExecution(
               const extractedFrame =
                 await extractLastFrameFromVideo(videoInput);
 
-              console.log(
+              logger.debug(
                 "[ExtractLastFrame] ✓ Frame extracted, length:",
                 extractedFrame.length,
               );
@@ -1474,7 +1474,7 @@ export function useWorkflowExecution(
 
             // Apply filters to images before downloading (Layer 3 integration)
             if (mediaUrl && !isVideo && filters.length > 0) {
-              console.log(
+              logger.debug(
                 "[Download] Applying",
                 filters.length,
                 "filters before download",
@@ -1541,7 +1541,7 @@ export function useWorkflowExecution(
 
           // COMPOUND NODES
           case NodeType.Compound: {
-            console.log("[Compound] Executing compound node:", node.id);
+            logger.debug("[Compound] Executing compound node:", node.id);
 
             // Execute the compound node's internal workflow
             const result = await executeCompoundNode(
@@ -1694,7 +1694,7 @@ export function useWorkflowExecution(
                   : n,
               );
 
-              console.log(
+              logger.debug(
                 "[Execution] ✓ Synchronously updated non-API node outputs:",
                 {
                   nodeId: node.id,
@@ -1722,7 +1722,7 @@ export function useWorkflowExecution(
           const inputs = getNodeInputs(node.id);
 
           // Diagnostic log for input gathering verification
-          console.log(`[Execution] Gathered inputs for ${node.type}:`, {
+          logger.debug(`[Execution] Gathered inputs for ${node.type}:`, {
             nodeId: node.id,
             inputKeys: Object.keys(inputs),
             first_frame: inputs.first_frame
@@ -1791,7 +1791,7 @@ export function useWorkflowExecution(
                     : n,
                 );
 
-                console.log(
+                logger.debug(
                   "[Execution] ✓ Synchronously updated API node outputs:",
                   {
                     nodeId: node.id,
@@ -1844,7 +1844,7 @@ export function useWorkflowExecution(
                 outputs: result.value.data.outputs || result.value.data,
               };
 
-              console.log("[Workflow] Updating node state:", {
+              logger.debug("[Workflow] Updating node state:", {
                 nodeId: node.id,
                 nodeType: node.type,
                 resultData: result.value.data,
@@ -1879,7 +1879,7 @@ export function useWorkflowExecution(
               }, 500);
 
               // Verify state update timing
-              console.log("[Execution] State update timing check:", {
+              logger.debug("[Execution] State update timing check:", {
                 nodeId: node.id,
                 immediateNodeData: nodes.find((n) => n.id === node.id)?.data
                   ?.outputs,
@@ -1891,7 +1891,7 @@ export function useWorkflowExecution(
               });
 
               // Diagnostic log for data flow verification
-              console.log(`[Execution] ✓ Node completed:`, {
+              logger.debug(`[Execution] ✓ Node completed:`, {
                 nodeId: node.id,
                 nodeType: node.type,
                 hasOutputs: !!updateData.outputs,
@@ -2009,7 +2009,7 @@ export function useWorkflowExecution(
         // Find upstream dependencies
         const dependencies = findUpstreamDependencies(nodeId, nodes, edges);
 
-        console.log(
+        logger.debug(
           `[Single Node Execution] Target: ${nodeId}, Dependencies: ${dependencies.join(", ") || "none"}`,
         );
 
@@ -2027,7 +2027,7 @@ export function useWorkflowExecution(
             depNode.type === NodeType.Prompt ||
             depNode.type === NodeType.ImageInput;
 
-          console.log(
+          logger.debug(
             `[Single Node Execution] Checking dependency ${depNodeId}:`,
             {
               nodeType: depNode.type,
@@ -2047,7 +2047,7 @@ export function useWorkflowExecution(
           // Skip if: (1) has outputs AND completed, OR (2) has outputs AND is an input node
           // Input nodes (Prompt, ImageInput) set outputs when user enters data, but don't have "completed" status
           if (hasExistingOutputs && (isCompleted || isInputNode)) {
-            console.log(
+            logger.debug(
               `[Single Node Execution] ✓ Skipping ${depNodeId} - already has outputs`,
               {
                 outputs: depNode.data.outputs,
@@ -2057,7 +2057,7 @@ export function useWorkflowExecution(
             continue; // Skip this dependency, use existing outputs
           }
 
-          console.log(
+          logger.debug(
             `[Single Node Execution] ⚠️ Re-executing dependency ${depNodeId}`,
             {
               reason: !hasExistingOutputs

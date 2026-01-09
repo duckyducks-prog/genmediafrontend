@@ -12,7 +12,7 @@ import { API_ENDPOINTS } from "@/lib/api-config";
  * Fetches from asset library API and converts to base64 data URI
  */
 export async function resolveAssetToDataUrl(assetRef: string): Promise<string> {
-  console.log("[resolveAssetToDataUrl] Resolving asset:", assetRef);
+  logger.debug("[resolveAssetToDataUrl] Resolving asset:", assetRef);
 
   try {
     // Import dynamically to avoid circular dependencies
@@ -39,7 +39,7 @@ export async function resolveAssetToDataUrl(assetRef: string): Promise<string> {
       throw new Error(`Asset not found: ${assetRef}`);
     }
 
-    console.log("[resolveAssetToDataUrl] Asset URL:", asset.url);
+    logger.debug("[resolveAssetToDataUrl] Asset URL:", asset.url);
 
     // If already a data URL, return as-is
     if (asset.url.startsWith("data:")) {
@@ -59,7 +59,7 @@ export async function resolveAssetToDataUrl(assetRef: string): Promise<string> {
       const reader = new FileReader();
       reader.onload = () => {
         const dataUrl = reader.result as string;
-        console.log(
+        logger.debug(
           "[resolveAssetToDataUrl] Converted to data URL, length:",
           dataUrl.length,
         );
@@ -127,18 +127,18 @@ export function gatherNodeInputs(
   const inputs: Record<string, any> = {};
   const nodeConfig = NODE_CONFIGURATIONS[node.type];
 
-  console.log(`[gatherNodeInputs] Processing node ${node.id} (${node.type})`);
+  logger.debug(`[gatherNodeInputs] Processing node ${node.id} (${node.type})`);
 
   // Find all edges that connect TO this node
   const incomingEdges = edges.filter((edge) => edge.target === node.id);
-  console.log(
+  logger.debug(
     `[gatherNodeInputs] Found ${incomingEdges.length} incoming edges`,
   );
 
   incomingEdges.forEach((edge) => {
     const sourceNode = allNodes.find((n) => n.id === edge.source);
 
-    console.log(`[gatherNodeInputs] Processing edge:`, {
+    logger.debug(`[gatherNodeInputs] Processing edge:`, {
       edgeId: edge.id,
       source: edge.source,
       target: edge.target,
@@ -170,7 +170,7 @@ export function gatherNodeInputs(
     // First, try to get from outputs object
     let outputValue = sourceNode.data.outputs?.[sourceHandle];
 
-    console.log(`[gatherNodeInputs] Looking for outputs["${sourceHandle}"]`, {
+    logger.debug(`[gatherNodeInputs] Looking for outputs["${sourceHandle}"]`, {
       found: outputValue !== undefined,
       valueType: typeof outputValue,
       isArray: Array.isArray(outputValue),
@@ -254,7 +254,7 @@ export function gatherNodeInputs(
           // Flatten it into the target array
           const beforeCount = inputs[targetHandle].length;
           inputs[targetHandle].push(...outputValue);
-          console.log(
+          logger.debug(
             `[gatherNodeInputs] ✓ Flattened array into inputs["${targetHandle}"]`,
             {
               sourceOutputWasArray: true,
@@ -269,7 +269,7 @@ export function gatherNodeInputs(
         } else {
           // Source outputs a single value
           inputs[targetHandle].push(outputValue);
-          console.log(
+          logger.debug(
             `[gatherNodeInputs] ✓ Added single item to inputs["${targetHandle}"]`,
             {
               sourceOutputWasArray: false,
@@ -281,7 +281,7 @@ export function gatherNodeInputs(
       } else {
         // Single value
         inputs[targetHandle] = outputValue;
-        console.log(
+        logger.debug(
           `[gatherNodeInputs] ✓ Set inputs["${targetHandle}"] = ${typeof outputValue}`,
         );
       }
@@ -300,7 +300,7 @@ export function gatherNodeInputs(
     }
   });
 
-  console.log(`[gatherNodeInputs] Final inputs keys:`, Object.keys(inputs));
+  logger.debug(`[gatherNodeInputs] Final inputs keys:`, Object.keys(inputs));
   return inputs;
 }
 
@@ -438,7 +438,7 @@ export function executeTextIterator(
   const connectedItems = inputs.variable_items || [];
   let connectedItemsArray: string[] = [];
 
-  console.log("[executeTextIterator] Processing connected items:", {
+  logger.debug("[executeTextIterator] Processing connected items:", {
     connectedItemsType: typeof connectedItems,
     isArray: Array.isArray(connectedItems),
     connectedItems: connectedItems,
@@ -448,7 +448,7 @@ export function executeTextIterator(
   if (typeof connectedItems === "string") {
     // Single connected text - split it using the separator
     connectedItemsArray = parseBatchInput(connectedItems, separator);
-    console.log(
+    logger.debug(
       "[executeTextIterator] Split single string into",
       connectedItemsArray.length,
       "items",
@@ -458,7 +458,7 @@ export function executeTextIterator(
     connectedItemsArray = connectedItems.flatMap((item) =>
       typeof item === "string" ? parseBatchInput(item, separator) : [item],
     );
-    console.log(
+    logger.debug(
       "[executeTextIterator] Split array into",
       connectedItemsArray.length,
       "items",
@@ -638,7 +638,7 @@ export async function pollVideoStatus(
 
       // Check if video is ready
       if (statusData.status === "complete") {
-        console.log(
+        logger.debug(
           "[pollVideoStatus] Video generation complete! Response data:",
           {
             hasVideo_base64: !!statusData.video_base64,
@@ -710,7 +710,7 @@ export async function pollVideoStatus(
       }
 
       // Still processing, continue polling
-      console.log(
+      logger.debug(
         `Video generation in progress... (attempt ${attempts}/${maxAttempts})`,
       );
     } catch (pollError) {

@@ -36,6 +36,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase";
 import { API_ENDPOINTS } from "@/lib/api-config";
+import { logger } from "@/lib/logger";
 
 interface Asset {
   id: string;
@@ -73,7 +74,7 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
         try {
           const url = API_ENDPOINTS.library.list(assetType);
 
-          console.log("[DEBUG] Fetching assets from:", url);
+          logger.debug("[DEBUG] Fetching assets from:", url);
 
           const user = auth.currentUser;
           const token = await user?.getIdToken();
@@ -84,7 +85,7 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
             },
           });
 
-          console.log("[DEBUG] Library response status:", response.status);
+          logger.debug("[DEBUG] Library response status:", response.status);
 
           if (!response.ok) {
             const errorText = await response.text();
@@ -93,17 +94,17 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
           }
 
           const data = await response.json();
-          console.log("[DEBUG] Library data received:", data);
-          console.log("[DEBUG] Number of assets:", data.assets?.length || 0);
+          logger.debug("[DEBUG] Library data received:", data);
+          logger.debug("[DEBUG] Number of assets:", data.assets?.length || 0);
 
           if (data.assets && data.assets.length > 0) {
-            console.log("[DEBUG] First asset:", data.assets[0]);
-            console.log(
+            logger.debug("[DEBUG] First asset:", data.assets[0]);
+            logger.debug(
               "[DEBUG] Asset IDs:",
               data.assets.map((a: any) => a.id),
             );
           } else {
-            console.log(
+            logger.debug(
               "[DEBUG] No assets returned - backend may not be saving generated images",
             );
           }
@@ -130,7 +131,7 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
       ref,
       () => ({
         refresh: () => {
-          console.log("[AssetLibrary] External refresh triggered");
+          logger.debug("[AssetLibrary] External refresh triggered");
           fetchAssets();
         },
       }),
@@ -140,7 +141,7 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
     // Load assets when panel opens
     useEffect(() => {
       if (open) {
-        console.log("[AssetLibrary] Panel opened, fetching assets");
+        logger.debug("[AssetLibrary] Panel opened, fetching assets");
         fetchAssets();
       }
     }, [open, fetchAssets]);
@@ -230,7 +231,7 @@ const AssetLibrary = forwardRef<AssetLibraryRef, AssetLibraryProps>(
         );
         event.dataTransfer.effectAllowed = "copy";
 
-        console.log("[AssetLibrary] Drag started:", payload);
+        logger.debug("[AssetLibrary] Drag started:", payload);
       },
       [],
     );

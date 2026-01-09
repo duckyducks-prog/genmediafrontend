@@ -55,7 +55,7 @@ export async function executeCompoundNode(
     controlValues = {},
   } = compoundNode.data as any;
 
-  console.log("[executeCompoundNode] Starting execution:", {
+  logger.debug("[executeCompoundNode] Starting execution:", {
     nodeId: compoundNode.id,
     name: compoundNode.data.name,
     externalInputs: Object.keys(externalInputs),
@@ -70,7 +70,7 @@ export async function executeCompoundNode(
     const nodes: Node[] = JSON.parse(JSON.stringify(internalWorkflow.nodes));
     const edges: Edge[] = JSON.parse(JSON.stringify(internalWorkflow.edges));
 
-    console.log("[executeCompoundNode] Cloned internal workflow:", {
+    logger.debug("[executeCompoundNode] Cloned internal workflow:", {
       nodeCount: nodes.length,
       edgeCount: edges.length,
     });
@@ -87,7 +87,7 @@ export async function executeCompoundNode(
           const node = nodes.find((n) => n.id === (mapping as any).nodeId);
           if (node) {
             setNestedValue(node, (mapping as any).param, inputValue);
-            console.log(
+            logger.debug(
               `[executeCompoundNode] Injected input "${exposedId}" -> ${(mapping as any).nodeId}.${(mapping as any).param}`,
             );
           }
@@ -110,7 +110,7 @@ export async function executeCompoundNode(
             const node = nodes.find((n) => n.id === (mapping as any).nodeId);
             if (node) {
               setNestedValue(node, (mapping as any).param, value);
-              console.log(
+              logger.debug(
                 `[executeCompoundNode] Applied control "${controlId}" (${value}) -> ${(mapping as any).nodeId}.${(mapping as any).param}`,
               );
             }
@@ -123,7 +123,7 @@ export async function executeCompoundNode(
     // STEP 4: Execute the internal workflow
     // ========================================================================
 
-    console.log("[executeCompoundNode] Executing internal workflow...");
+    logger.debug("[executeCompoundNode] Executing internal workflow...");
     const result = await executeWorkflow(nodes, edges);
 
     if (!result.success) {
@@ -149,7 +149,7 @@ export async function executeCompoundNode(
         if (node) {
           const outputValue = getNestedValue(node, (mapping as any).param);
           outputs[exposedId] = outputValue;
-          console.log(
+          logger.debug(
             `[executeCompoundNode] Extracted output "${exposedId}":`,
             outputValue ? "✓" : "✗",
           );
@@ -157,7 +157,7 @@ export async function executeCompoundNode(
       }
     }
 
-    console.log("[executeCompoundNode] Execution completed successfully:", {
+    logger.debug("[executeCompoundNode] Execution completed successfully:", {
       outputCount: Object.keys(outputs).length,
     });
 

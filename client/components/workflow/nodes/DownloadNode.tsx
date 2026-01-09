@@ -20,7 +20,7 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
     const incomingEdges = edges.filter((edge) => edge.target === id);
     const media: Array<{ type: "image" | "video"; url: string }> = [];
 
-    console.log(
+    logger.debug(
       `[DownloadNode] Updating media for ${id}:`,
       incomingEdges.length,
       "incoming edges",
@@ -29,7 +29,7 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
     for (const edge of incomingEdges) {
       const sourceNode = nodes.find((n) => n.id === edge.source);
       if (!sourceNode || !sourceNode.data) {
-        console.log(`[DownloadNode] No source node found for edge`, edge);
+        logger.debug(`[DownloadNode] No source node found for edge`, edge);
         continue;
       }
 
@@ -37,7 +37,7 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
       const nodeType = sourceNode.type;
       const allDataKeys = Object.keys(nodeData);
 
-      console.log(
+      logger.debug(
         `[DownloadNode] Processing source node ${edge.source} (type: ${nodeType}):`,
         {
           hasImageUrl: !!nodeData.imageUrl,
@@ -103,7 +103,7 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
         nodeData.outputs?.video &&
         nodeData.outputs.video.startsWith("data:")
       ) {
-        console.log(
+        logger.debug(
           `[DownloadNode] Preferring data URL over blob URL for video`,
         );
         videoUrl = nodeData.outputs.video;
@@ -114,12 +114,12 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
         for (const [key, value] of Object.entries(nodeData.outputs)) {
           if (typeof value === "string" && value.startsWith("data:")) {
             if (!videoUrl && isVideoUrl(value)) {
-              console.log(
+              logger.debug(
                 `[DownloadNode] Found video in outputs.${key} by MIME type`,
               );
               videoUrl = value;
             } else if (!imageUrl && isImageUrl(value)) {
-              console.log(
+              logger.debug(
                 `[DownloadNode] Found image in outputs.${key} by MIME type`,
               );
               imageUrl = value;
@@ -131,7 +131,7 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
       const textContent =
         nodeData.textContent || nodeData.outputs?.text || nodeData.text;
 
-      console.log(`[DownloadNode] Extracted media:`, {
+      logger.debug(`[DownloadNode] Extracted media:`, {
         hasImageUrl: !!imageUrl,
         hasVideoUrl: !!videoUrl,
         imageUrlStart: imageUrl?.substring(0, 50),
@@ -139,13 +139,13 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
       });
 
       if (imageUrl && typeof imageUrl === "string") {
-        console.log(
+        logger.debug(
           `[DownloadNode] ✓ Adding image URL:`,
           imageUrl.substring(0, 80),
         );
         media.push({ type: "image", url: imageUrl });
       } else if (videoUrl && typeof videoUrl === "string") {
-        console.log(
+        logger.debug(
           `[DownloadNode] ✓ Adding video URL:`,
           videoUrl.substring(0, 80),
         );
@@ -156,10 +156,10 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
         textContent.startsWith("data:")
       ) {
         // Handle text that's been converted to data URL
-        console.log(`[DownloadNode] ✓ Adding text as data URL`);
+        logger.debug(`[DownloadNode] ✓ Adding text as data URL`);
         media.push({ type: "image", url: textContent });
       } else {
-        console.log(
+        logger.debug(
           `[DownloadNode] ✗ No media found in node ${edge.source} (type: ${nodeType}).`,
         );
       }
@@ -171,7 +171,7 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
           Array.isArray(nodeData.outputs?.images))
       ) {
         const images = nodeData.images || nodeData.outputs?.images;
-        console.log(`[DownloadNode] Found ${images.length} images in array`);
+        logger.debug(`[DownloadNode] Found ${images.length} images in array`);
         for (const img of images) {
           if (typeof img === "string") {
             media.push({ type: "image", url: img });
@@ -186,7 +186,7 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
           Array.isArray(nodeData.outputs?.videos))
       ) {
         const videos = nodeData.videos || nodeData.outputs?.videos;
-        console.log(`[DownloadNode] Found ${videos.length} videos in array`);
+        logger.debug(`[DownloadNode] Found ${videos.length} videos in array`);
         for (const vid of videos) {
           if (typeof vid === "string") {
             media.push({ type: "video", url: vid });
@@ -195,7 +195,7 @@ function DownloadNode({ data, id }: NodeProps<DownloadNodeData>) {
       }
     }
 
-    console.log(`[DownloadNode] Total media found:`, media.length);
+    logger.debug(`[DownloadNode] Total media found:`, media.length);
     setConnectedMedia(media);
   }, [id, edges, nodes]);
 

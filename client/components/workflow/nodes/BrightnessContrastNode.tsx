@@ -51,7 +51,7 @@ function BrightnessContrastNode({
       const thisConfig = createConfig(brightness, contrast);
       const updatedFilters = [...upstreamFiltersRaw, thisConfig];
 
-      console.log("[BrightnessContrastNode] Dispatching node-update:", {
+      logger.debug("[BrightnessContrastNode] Dispatching node-update:", {
         nodeId: id,
         brightness,
         contrast,

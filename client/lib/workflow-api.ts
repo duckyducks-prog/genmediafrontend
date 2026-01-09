@@ -155,19 +155,19 @@ export async function testWorkflowAPI(): Promise<APITestResult> {
     endpoints: {},
   };
 
-  console.log("[testWorkflowAPI] Starting API connectivity test...");
+  logger.debug("[testWorkflowAPI] Starting API connectivity test...");
 
   // Test 1: List public workflows (GET /workflows?scope=public)
   try {
     const url = `${WORKFLOW_API_BASE}/workflows?scope=public`;
-    console.log("[testWorkflowAPI] Testing:", url);
+    logger.debug("[testWorkflowAPI] Testing:", url);
 
     const response = await fetch(url, {
       headers: { Authorization: `Bearer ${token}` },
       signal: AbortSignal.timeout(10000), // 10 second timeout
     });
 
-    console.log("[testWorkflowAPI] List endpoint response:", {
+    logger.debug("[testWorkflowAPI] List endpoint response:", {
       status: response.status,
       ok: response.ok,
     });
@@ -176,7 +176,7 @@ export async function testWorkflowAPI(): Promise<APITestResult> {
 
     if (!response.ok) {
       const body = await response.text();
-      console.log("[testWorkflowAPI] List endpoint error body:", body);
+      logger.debug("[testWorkflowAPI] List endpoint error body:", body);
 
       if (response.status === 404) {
         results.details =
@@ -226,7 +226,7 @@ export async function testWorkflowAPI(): Promise<APITestResult> {
   // Determine overall availability
   results.available = Object.values(results.endpoints).some((v) => v === true);
 
-  console.log("[testWorkflowAPI] Test complete:", results);
+  logger.debug("[testWorkflowAPI] Test complete:", results);
   return results;
 }
 
@@ -334,7 +334,7 @@ export async function saveWorkflow(
   const token = await user.getIdToken();
   const url = `${WORKFLOW_API_BASE}/workflows/save`;
 
-  console.log("[saveWorkflow] Request:", {
+  logger.debug("[saveWorkflow] Request:", {
     method: "POST",
     url,
     hasAuth: !!token,
@@ -352,7 +352,7 @@ export async function saveWorkflow(
     const payloadSize = new Blob([payload]).size;
     const payloadSizeMB = (payloadSize / (1024 * 1024)).toFixed(2);
 
-    console.log(
+    logger.debug(
       "[saveWorkflow] Payload size:",
       `${payloadSizeMB} MB (${payloadSize} bytes)`,
     );
@@ -373,7 +373,7 @@ export async function saveWorkflow(
       body: payload,
     });
 
-    console.log("[saveWorkflow] Response:", {
+    logger.debug("[saveWorkflow] Response:", {
       status: response.status,
       statusText: response.statusText,
       ok: response.ok,
@@ -428,7 +428,7 @@ export async function saveWorkflow(
     }
 
     const result = await response.json();
-    console.log("[saveWorkflow] Success:", result);
+    logger.debug("[saveWorkflow] Success:", result);
 
     // Validate response
     if (!result.id) {
@@ -557,7 +557,7 @@ export async function listMyWorkflows(): Promise<WorkflowListItem[]> {
   const token = await user.getIdToken();
   const url = `${WORKFLOW_API_BASE}/workflows?scope=my`;
 
-  console.log("[listMyWorkflows] Request:", { url });
+  logger.debug("[listMyWorkflows] Request:", { url });
 
   try {
     const response = await fetch(url, {
@@ -566,7 +566,7 @@ export async function listMyWorkflows(): Promise<WorkflowListItem[]> {
       },
     });
 
-    console.log("[listMyWorkflows] Response:", {
+    logger.debug("[listMyWorkflows] Response:", {
       status: response.status,
       ok: response.ok,
     });
@@ -585,7 +585,7 @@ export async function listMyWorkflows(): Promise<WorkflowListItem[]> {
     // ✅ List returns metadata only (no nodes/edges for performance)
     const workflows = (data.workflows || []) as WorkflowListItem[];
 
-    console.log("[listMyWorkflows] Loaded", workflows.length, "workflows");
+    logger.debug("[listMyWorkflows] Loaded", workflows.length, "workflows");
     return workflows;
   } catch (error) {
     if (
@@ -612,7 +612,7 @@ export async function listPublicWorkflows(): Promise<WorkflowListItem[]> {
   const token = await user.getIdToken();
   const url = `${WORKFLOW_API_BASE}/workflows?scope=public`;
 
-  console.log("[listPublicWorkflows] Request:", { url });
+  logger.debug("[listPublicWorkflows] Request:", { url });
 
   try {
     const response = await fetch(url, {
@@ -621,7 +621,7 @@ export async function listPublicWorkflows(): Promise<WorkflowListItem[]> {
       },
     });
 
-    console.log("[listPublicWorkflows] Response:", {
+    logger.debug("[listPublicWorkflows] Response:", {
       status: response.status,
       ok: response.ok,
     });
@@ -640,7 +640,7 @@ export async function listPublicWorkflows(): Promise<WorkflowListItem[]> {
     // ✅ List returns metadata only (no nodes/edges for performance)
     const workflows = (data.workflows || []) as WorkflowListItem[];
 
-    console.log("[listPublicWorkflows] Loaded", workflows.length, "templates");
+    logger.debug("[listPublicWorkflows] Loaded", workflows.length, "templates");
     return workflows;
   } catch (error) {
     if (

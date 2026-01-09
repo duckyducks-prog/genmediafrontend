@@ -256,7 +256,7 @@ export default function Index() {
   // Listen for browse-library events from WorkflowCanvas
   useEffect(() => {
     const handleBrowseLibrary = () => {
-      console.log("[Index] Browse library event received");
+      logger.debug("[Index] Browse library event received");
       setIsLibraryOpen(true);
     };
 
@@ -267,7 +267,7 @@ export default function Index() {
 
   // Handle adding asset from library to workflow
   const handleAddAssetNode = (asset: any) => {
-    console.log("[Index] Adding asset to workflow:", asset);
+    logger.debug("[Index] Adding asset to workflow:", asset);
 
     // Dispatch event to WorkflowCanvas with asset data
     window.dispatchEvent(
@@ -781,13 +781,13 @@ export default function Index() {
                 <WorkflowCanvas
                   ref={workflowCanvasRef}
                   onAssetGenerated={() => {
-                    console.log("[Index] Asset generated callback triggered");
-                    console.log(
+                    logger.debug("[Index] Asset generated callback triggered");
+                    logger.debug(
                       "[Index] AssetLibrary ref:",
                       assetLibraryRef.current,
                     );
                     if (assetLibraryRef.current) {
-                      console.log("[Index] Calling refresh on asset library");
+                      logger.debug("[Index] Calling refresh on asset library");
                       assetLibraryRef.current.refresh();
                     } else {
                       console.warn(

@@ -43,7 +43,7 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
     const textInput = (data as any).text || (data as any).textContent;
     const filters: FilterConfig[] = (data as any).filters || [];
 
-    console.log("[PreviewNode] Data update:", {
+    logger.debug("[PreviewNode] Data update:", {
       nodeId: id,
       hasImage: !!imageInput,
       hasVideo: !!videoInput,
@@ -59,7 +59,7 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
         // Increment request ID to track this render
         const currentRequestId = ++renderRequestId.current;
 
-        console.log(
+        logger.debug(
           "[PreviewNode] Starting PixiJS render with",
           filters.length,
           "filters (request #" + currentRequestId + ")",
@@ -70,7 +70,7 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
           .then((rendered) => {
             // Only update if this is still the latest request
             if (currentRequestId === renderRequestId.current) {
-              console.log(
+              logger.debug(
                 "[PreviewNode] Render completed successfully (request #" +
                   currentRequestId +
                   ")",
@@ -91,7 +91,7 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
               });
               window.dispatchEvent(updateEvent);
             } else {
-              console.log(
+              logger.debug(
                 "[PreviewNode] Discarding stale render result (request #" +
                   currentRequestId +
                   ", current is #" +
@@ -121,7 +121,7 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
           });
       } else {
         // No filters, show original
-        console.log("[PreviewNode] Showing original image (no filters)");
+        logger.debug("[PreviewNode] Showing original image (no filters)");
         setDisplayContent({ type: "image", content: imageInput });
 
         // Dispatch the original image as output

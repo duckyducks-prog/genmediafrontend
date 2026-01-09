@@ -25,7 +25,7 @@ function sanitizeValue(value: any, fieldName: string): any {
   if (typeof value === 'string' && isBase64DataUri(value)) {
     const size = getBase64Size(value);
     const sizeKB = Math.round(size / 1024);
-    console.log(`[Sanitizer] Stripping ${sizeKB}KB base64 data from field: ${fieldName}`);
+    logger.debug(`[Sanitizer] Stripping ${sizeKB}KB base64 data from field: ${fieldName}`);
     
     // Keep just the mime type as a reference
     const mimeMatch = value.match(/^data:([^;]+)/);
@@ -124,15 +124,15 @@ export function sanitizeWorkflowForSave(nodes: WorkflowNode[], edges: WorkflowEd
   sanitizedSize: number;
   removed: number;
 } {
-  console.log('[Sanitizer] Starting workflow sanitization...');
-  console.log(`[Sanitizer] Input: ${nodes.length} nodes, ${edges.length} edges`);
+  logger.debug('[Sanitizer] Starting workflow sanitization...');
+  logger.debug(`[Sanitizer] Input: ${nodes.length} nodes, ${edges.length} edges`);
 
   // Calculate original size
   const originalSize = calculatePayloadSize({ nodes, edges });
-  console.log(`[Sanitizer] Original payload size: ${formatBytes(originalSize)}`);
+  logger.debug(`[Sanitizer] Original payload size: ${formatBytes(originalSize)}`);
 
   // Log sample of original data to debug
-  console.log('[Sanitizer] Sample node data before sanitization:', {
+  logger.debug('[Sanitizer] Sample node data before sanitization:', {
     nodeCount: nodes.length,
     sampleNode: nodes[0] ? {
       id: nodes[0].id,
@@ -157,11 +157,11 @@ export function sanitizeWorkflowForSave(nodes: WorkflowNode[], edges: WorkflowEd
   const sanitizedSize = calculatePayloadSize({ nodes: sanitizedNodes, edges: sanitizedEdges });
   const removed = originalSize - sanitizedSize;
 
-  console.log(`[Sanitizer] Sanitized payload size: ${formatBytes(sanitizedSize)}`);
-  console.log(`[Sanitizer] Removed: ${formatBytes(removed)} (${((removed / originalSize) * 100).toFixed(1)}%)`);
+  logger.debug(`[Sanitizer] Sanitized payload size: ${formatBytes(sanitizedSize)}`);
+  logger.debug(`[Sanitizer] Removed: ${formatBytes(removed)} (${((removed / originalSize) * 100).toFixed(1)}%)`);
 
   // Log sample of sanitized data
-  console.log('[Sanitizer] Sample node data after sanitization:', {
+  logger.debug('[Sanitizer] Sample node data after sanitization:', {
     sampleNode: sanitizedNodes[0] ? {
       id: sanitizedNodes[0].id,
       type: sanitizedNodes[0].type,

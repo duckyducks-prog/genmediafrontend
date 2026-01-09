@@ -82,7 +82,7 @@ export default function WorkflowGallery({
 
       // Use mock templates as fallback when API is not available
       if (publicWf.length === 0) {
-        console.log(
+        logger.debug(
           "[WorkflowGallery] Using mock templates (API not available)",
         );
         setPublicWorkflows(MOCK_WORKFLOW_TEMPLATES);

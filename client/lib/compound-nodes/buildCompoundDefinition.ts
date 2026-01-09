@@ -52,7 +52,7 @@ export function buildCompoundDefinition(
   const slug = slugify(name);
   const id = `compound_${slug}_${timestamp}`;
 
-  console.log("[buildCompoundDefinition] Building compound node:", {
+  logger.debug("[buildCompoundDefinition] Building compound node:", {
     id,
     name,
     nodeCount: nodes.length,
@@ -74,7 +74,7 @@ export function buildCompoundDefinition(
       type: item.type as ConnectorType,
     }));
 
-  console.log(
+  logger.debug(
     "[buildCompoundDefinition] Built inputs:",
     inputs.map((i) => i.name),
   );
@@ -120,7 +120,7 @@ export function buildCompoundDefinition(
     }
   });
 
-  console.log(
+  logger.debug(
     "[buildCompoundDefinition] Auto-generated outputs:",
     outputs.map((o) => o.name),
   );
@@ -159,7 +159,7 @@ export function buildCompoundDefinition(
       };
     });
 
-  console.log(
+  logger.debug(
     "[buildCompoundDefinition] Built controls:",
     controls.map((c) => `${c.name} (${c.type})`),
   );
@@ -206,7 +206,7 @@ export function buildCompoundDefinition(
   // Use the auto-generated output mappings (already built above)
   mappings.outputs = outputMappings;
 
-  console.log("[buildCompoundDefinition] Built mappings:", {
+  logger.debug("[buildCompoundDefinition] Built mappings:", {
     inputMappings: Object.keys(mappings.inputs).length,
     controlMappings: Object.keys(mappings.controls).length,
     outputMappings: Object.keys(mappings.outputs).length,
@@ -222,7 +222,7 @@ export function buildCompoundDefinition(
     edges: JSON.parse(JSON.stringify(edges)),
   };
 
-  console.log("[buildCompoundDefinition] Cloned internal workflow:", {
+  logger.debug("[buildCompoundDefinition] Cloned internal workflow:", {
     nodes: internalWorkflow.nodes.length,
     edges: internalWorkflow.edges.length,
   });
@@ -246,7 +246,7 @@ export function buildCompoundDefinition(
     updatedAt: new Date().toISOString(),
   };
 
-  console.log("[buildCompoundDefinition] Complete definition built:", {
+  logger.debug("[buildCompoundDefinition] Complete definition built:", {
     id: definition.id,
     name: definition.name,
     inputCount: definition.inputs.length,

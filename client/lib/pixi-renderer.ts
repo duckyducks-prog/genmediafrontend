@@ -47,7 +47,7 @@ async function getSharedApp(): Promise<Application> {
       // preserveDrawingBuffer is CRITICAL for canvas readback (toDataURL/extract)
       const app = new Application();
 
-      console.log("[PixiJS] Calling app.init()...");
+      logger.debug("[PixiJS] Calling app.init()...");
       await app.init({
         backgroundAlpha: 0,
         antialias: true,
@@ -57,7 +57,7 @@ async function getSharedApp(): Promise<Application> {
         preserveDrawingBuffer: true, // Essential for extract/toDataURL to work
       });
 
-      console.log("[PixiJS] app.init() completed");
+      logger.debug("[PixiJS] app.init() completed");
 
       // Verify renderer is ready
       if (!app.renderer) {
@@ -70,7 +70,7 @@ async function getSharedApp(): Promise<Application> {
         throw new Error("PixiJS canvas not available after init");
       }
 
-      console.log("[PixiJS] Renderer and canvas verified");
+      logger.debug("[PixiJS] Renderer and canvas verified");
 
       // Add WebGL context loss/restore event listeners for better recovery
       canvas.addEventListener("webglcontextlost", (event) => {
@@ -81,14 +81,14 @@ async function getSharedApp(): Promise<Application> {
       });
 
       canvas.addEventListener("webglcontextrestored", () => {
-        console.log(
+        logger.debug(
           "[PixiJS] WebGL context restored! Disposing and allowing re-initialization.",
         );
         // Dispose the app so next render will create a fresh one
         disposeSharedPixiApp();
       });
 
-      console.log("[PixiJS] Shared application initialized successfully");
+      logger.debug("[PixiJS] Shared application initialized successfully");
       sharedApp = app;
       sharedAppInitPromise = null; // Clear promise after success
       return app;
@@ -186,7 +186,7 @@ function createFilterFromConfig(
         width: width ?? 1920,
         height: height ?? 1080,
       });
-      console.log("[pixi-renderer] FilmGrainFilter created:", {
+      logger.debug("[pixi-renderer] FilmGrainFilter created:", {
         width: width ?? 1920,
         height: height ?? 1080,
         intensity: config.params.intensity,
@@ -233,7 +233,7 @@ async function performRender(
   imageSource: string,
   filterConfigs: FilterConfig[],
 ): Promise<string> {
-  console.log("[performRender] Starting render:", {
+  logger.debug("[performRender] Starting render:", {
     imageSourceLength: imageSource?.length,
     imageSourcePrefix: imageSource?.substring(0, 30),
     filterCount: filterConfigs.length,
@@ -244,7 +244,7 @@ async function performRender(
   let app;
   try {
     app = await getSharedApp();
-    console.log("[performRender] Pixi app obtained successfully");
+    logger.debug("[performRender] Pixi app obtained successfully");
   } catch (error) {
     console.error("[performRender] Failed to get Pixi app:", error);
     throw error;
@@ -262,18 +262,18 @@ async function performRender(
   }
 
   // 2. Load image into HTMLImageElement with timeout (prevent hanging)
-  console.log("[performRender] Creating HTMLImageElement");
+  logger.debug("[performRender] Creating HTMLImageElement");
   const img = new Image();
 
   // Only set crossOrigin for remote URLs (not data: URIs)
   if (!imageSource.startsWith("data:")) {
-    console.log("[performRender] Setting crossOrigin for remote URL");
+    logger.debug("[performRender] Setting crossOrigin for remote URL");
     img.crossOrigin = "anonymous";
   } else {
-    console.log("[performRender] Using data URI (no crossOrigin needed)");
+    logger.debug("[performRender] Using data URI (no crossOrigin needed)");
   }
 
-  console.log("[performRender] Starting image load");
+  logger.debug("[performRender] Starting image load");
   try {
     // Use timeout with proper cleanup to avoid race condition
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -281,7 +281,7 @@ async function performRender(
     await Promise.race([
       new Promise<void>((resolve, reject) => {
         img.onload = () => {
-          console.log("[performRender] Image loaded successfully");
+          logger.debug("[performRender] Image loaded successfully");
           if (timeoutId !== null) {
             clearTimeout(timeoutId);
             timeoutId = null;
@@ -355,7 +355,7 @@ async function performRender(
       height - cropY,
     );
 
-    console.log("[PixiJS] Applying crop:", {
+    logger.debug("[PixiJS] Applying crop:", {
       x: cropX,
       y: cropY,
       width: cropWidth,
@@ -389,12 +389,12 @@ async function performRender(
 
   // 7. Apply remaining filters to sprite
   if (otherFilters.length > 0) {
-    console.log(
+    logger.debug(
       "[performRender] Applying filters:",
       otherFilters.map((f) => f.type),
     );
     const filters = otherFilters.map((config) => {
-      console.log(
+      logger.debug(
         "[performRender] Creating filter:",
         config.type,
         "with width:",
@@ -404,12 +404,12 @@ async function performRender(
       );
       return createFilterFromConfig(config, width, height);
     });
-    console.log(
+    logger.debug(
       "[performRender] Filters created, applying to sprite:",
       filters.length,
     );
     sprite.filters = filters; // PixiJS applies all filters on GPU
-    console.log("[performRender] Filters applied to sprite");
+    logger.debug("[performRender] Filters applied to sprite");
   }
 
   // 8. Add to stage and render
@@ -424,7 +424,7 @@ async function performRender(
     // PixiJS extract API handles WebGL readback properly
     // In Pixi v8, base64() takes only the target parameter (format is PNG by default)
     dataURL = await app.renderer.extract.base64(app.stage);
-    console.log("[PixiJS] Successfully extracted rendered image");
+    logger.debug("[PixiJS] Successfully extracted rendered image");
   } catch (extractError) {
     // Handle CORS/SecurityError specifically
     if (
@@ -516,7 +516,7 @@ async function performComposite(
   opacity: number,
   filterConfigs: FilterConfig[],
 ): Promise<string> {
-  console.log("[performComposite] Starting composite:", {
+  logger.debug("[performComposite] Starting composite:", {
     imageCount: imageSources.length,
     blendMode,
     opacity,
@@ -532,7 +532,7 @@ async function performComposite(
   let app;
   try {
     app = await getSharedApp();
-    console.log("[performComposite] Pixi app obtained successfully");
+    logger.debug("[performComposite] Pixi app obtained successfully");
   } catch (error) {
     console.error("[performComposite] Failed to get Pixi app:", error);
     throw error;
@@ -550,7 +550,7 @@ async function performComposite(
 
   // 2. Load all images into HTMLImageElements
   const images: HTMLImageElement[] = [];
-  console.log("[performComposite] Loading images");
+  logger.debug("[performComposite] Loading images");
 
   for (let i = 0; i < imageSources.length; i++) {
     const imageSource = imageSources[i];
@@ -590,7 +590,7 @@ async function performComposite(
       ]);
 
       images.push(img);
-      console.log(
+      logger.debug(
         `[performComposite] Image ${i + 1}/${imageSources.length} loaded`,
       );
     } catch (error) {
@@ -647,7 +647,7 @@ async function performComposite(
 
     sprites.push(sprite);
     app.stage.addChild(sprite);
-    console.log(
+    logger.debug(
       `[performComposite] Sprite ${i + 1} added with blendMode=${sprite.blendMode}, alpha=${sprite.alpha}`,
     );
   }
@@ -658,7 +658,7 @@ async function performComposite(
       createFilterFromConfig(config),
     );
     app.stage.filters = filters;
-    console.log(
+    logger.debug(
       `[performComposite] Applied ${filters.length} filters to composite`,
     );
   }
@@ -671,7 +671,7 @@ async function performComposite(
 
   try {
     dataURL = await app.renderer.extract.base64(app.stage);
-    console.log("[performComposite] Successfully extracted composite image");
+    logger.debug("[performComposite] Successfully extracted composite image");
   } catch (extractError) {
     if (
       extractError instanceof DOMException &&

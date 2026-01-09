@@ -49,7 +49,7 @@ function ImageCompositeNode({ data, id }: NodeProps<ImageCompositeNodeData>) {
     const imageInputs = inputs.images;
     const filters = inputs.filters || [];
 
-    console.log("[ImageCompositeNode] Live update triggered:", {
+    logger.debug("[ImageCompositeNode] Live update triggered:", {
       imageCount: Array.isArray(imageInputs) ? imageInputs.length : 0,
       blendMode: data.blendMode,
       opacity: data.opacity,
@@ -84,7 +84,7 @@ function ImageCompositeNode({ data, id }: NodeProps<ImageCompositeNodeData>) {
     // Execute composite rendering
     const executeComposite = async () => {
       try {
-        console.log(
+        logger.debug(
           `[ImageCompositeNode] Starting composite render (request #${currentRequestId})`,
         );
 
@@ -97,7 +97,7 @@ function ImageCompositeNode({ data, id }: NodeProps<ImageCompositeNodeData>) {
 
         // Only update if this is still the latest request
         if (currentRequestId === renderRequestId.current) {
-          console.log(
+          logger.debug(
             `[ImageCompositeNode] Composite completed (request #${currentRequestId})`,
           );
 
@@ -115,7 +115,7 @@ function ImageCompositeNode({ data, id }: NodeProps<ImageCompositeNodeData>) {
           });
           window.dispatchEvent(event);
         } else {
-          console.log(
+          logger.debug(
             `[ImageCompositeNode] Discarding stale render (request #${currentRequestId})`,
           );
         }

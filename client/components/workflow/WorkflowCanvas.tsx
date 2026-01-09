@@ -185,11 +185,11 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           data &&
           ("status" in data || "isGenerating" in data || "error" in data);
         if (isReadOnly && !isStatusUpdate) {
-          console.log("[WorkflowCanvas] Ignoring node update - read-only mode");
+          logger.debug("[WorkflowCanvas] Ignoring node update - read-only mode");
           return;
         }
 
-        console.log("[WorkflowCanvas] node-update received:", {
+        logger.debug("[WorkflowCanvas] node-update received:", {
           nodeId: id,
           hasOutputs: !!data?.outputs,
           outputs: data?.outputs,
@@ -207,7 +207,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
             // Find all edges going OUT from this node
             const outgoingEdges = edges.filter((e) => e.source === id);
 
-            console.log(
+            logger.debug(
               "[WorkflowCanvas] Propagating to",
               outgoingEdges.length,
               "downstream nodes",
@@ -224,7 +224,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
                 // This ensures both 'image' and 'filters' are passed to downstream nodes
                 const allOutputs = sourceNode.data.outputs;
 
-                console.log("[WorkflowCanvas] Propagating to node:", {
+                logger.debug("[WorkflowCanvas] Propagating to node:", {
                   targetId: edge.target,
                   targetType: targetNode.type,
                   propagatedData: {
@@ -329,7 +329,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           return;
         }
 
-        console.log("[onConnect] Creating edge:", {
+        logger.debug("[onConnect] Creating edge:", {
           source: params.source,
           target: params.target,
           sourceHandle: params.sourceHandle,
@@ -338,7 +338,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
 
         // Get the source node to determine connector type
         const sourceNode = nodes.find((n) => n.id === params.source);
-        console.log("[onConnect] Source node:", {
+        logger.debug("[onConnect] Source node:", {
           found: !!sourceNode,
           type: sourceNode?.type,
           hasOutputs: !!sourceNode?.data?.outputs,
@@ -359,7 +359,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
             className: `connector-type-${connectorType || "any"}`,
             data: { connectorType: connectorType || "any" },
           };
-          console.log("[onConnect] ✓ Edge created:", {
+          logger.debug("[onConnect] ✓ Edge created:", {
             id: newEdge.id,
             source: newEdge.source,
             target: newEdge.target,
@@ -445,7 +445,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               label: "Image Input",
               outputs: {}, // Ensure outputs is always initialized
             };
-            console.log("[addNode] Created ImageInput node with data:", data);
+            logger.debug("[addNode] Created ImageInput node with data:", data);
             break;
 
           case NodeType.VideoInput:
@@ -455,7 +455,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               label: "Video Input",
               outputs: {}, // Ensure outputs is always initialized
             };
-            console.log("[addNode] Created VideoInput node with data:", data);
+            logger.debug("[addNode] Created VideoInput node with data:", data);
             break;
 
           // Modifier nodes
@@ -780,7 +780,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               description: `${asset.assetType === "video" ? "Video" : "Image"} input node created from library`,
             });
 
-            console.log("[WorkflowCanvas] Asset dropped:", asset);
+            logger.debug("[WorkflowCanvas] Asset dropped:", asset);
             return;
           } catch (error) {
             console.error("Failed to parse asset data:", error);
@@ -923,7 +923,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
     // Load a workflow
     const loadWorkflow = useCallback(
       (workflow: SavedWorkflow, options?: { readOnly?: boolean }) => {
-        console.log("[WorkflowCanvas] Loading workflow:", {
+        logger.debug("[WorkflowCanvas] Loading workflow:", {
           id: workflow.id,
           name: workflow.name,
           nodeCount: workflow.nodes?.length || 0,
@@ -1193,7 +1193,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
       }
 
       try {
-        console.log("[WorkflowCanvas] Capturing thumbnail...");
+        logger.debug("[WorkflowCanvas] Capturing thumbnail...");
 
         // If no nodes, return null
         if (nodes.length === 0) {
@@ -1224,7 +1224,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           0.1, // default padding
         );
 
-        console.log("[WorkflowCanvas] Calculated viewport for thumbnail:", {
+        logger.debug("[WorkflowCanvas] Calculated viewport for thumbnail:", {
           nodesBounds,
           viewport,
         });
@@ -1266,7 +1266,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
         // Convert to PNG data URL
         const dataUrl = canvas.toDataURL("image/png", 0.8);
 
-        console.log("[WorkflowCanvas] Thumbnail captured:", {
+        logger.debug("[WorkflowCanvas] Thumbnail captured:", {
           size: `${Math.round(dataUrl.length / 1024)}KB`,
           dimensions: `${canvas.width}x${canvas.height}`,
         });
@@ -1292,7 +1292,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
     useEffect(() => {
       const handleNodeExecute = (event: any) => {
         const { nodeId } = event.detail;
-        console.log("Execute node:", nodeId);
+        logger.debug("Execute node:", nodeId);
         // Call the single node execution function
         executeSingleNode(nodeId);
       };
@@ -1304,7 +1304,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
 
     // Dispatch browse library event (for external handlers to catch)
     const handleBrowseLibrary = useCallback(() => {
-      console.log("[WorkflowCanvas] Dispatching browse-library event");
+      logger.debug("[WorkflowCanvas] Dispatching browse-library event");
       window.dispatchEvent(new CustomEvent("browse-library"));
     }, []);
 
@@ -1346,7 +1346,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           description: `${assetType === "video" ? "Video" : "Image"} input node created`,
         });
 
-        console.log("[WorkflowCanvas] Asset node added:", nodeType);
+        logger.debug("[WorkflowCanvas] Asset node added:", nodeType);
       };
 
       window.addEventListener("add-asset-node", handleAddAssetNode);

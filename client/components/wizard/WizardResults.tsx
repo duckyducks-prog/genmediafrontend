@@ -58,7 +58,7 @@ export default function WizardResults({
 
   const handleSaveToLibrary = () => {
     // TODO: Implement save to library functionality
-    console.log("Save to library not yet implemented");
+    logger.debug("Save to library not yet implemented");
   };
 
   return (

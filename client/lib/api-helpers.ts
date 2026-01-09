@@ -29,7 +29,7 @@ export async function saveToLibrary(params: SaveToLibraryParams) {
     }
   }
 
-  console.log("[saveToLibrary] Saving to library:", {
+  logger.debug("[saveToLibrary] Saving to library:", {
     assetType: params.assetType,
     mimeType,
     promptLength: params.prompt.length,
@@ -62,6 +62,6 @@ export async function saveToLibrary(params: SaveToLibraryParams) {
   }
 
   const result = await response.json();
-  console.log("[saveToLibrary] Success:", result);
+  logger.debug("[saveToLibrary] Success:", result);
   return result;
 }

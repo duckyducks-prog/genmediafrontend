@@ -22,7 +22,7 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
   // Sync local state with node data on mount
   useEffect(() => {
     if (data.videoUrl && data.videoUrl !== videoUrl) {
-      console.log(
+      logger.debug(
         "[VideoUploadNode] Syncing videoUrl from data:",
         data.videoUrl,
       );
@@ -47,7 +47,7 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
   useEffect(() => {
     // If we have video in local state but not in node data, update node data
     if (videoUrl && videoUrl !== data.videoUrl) {
-      console.log("[VideoUploadNode] Syncing local state to node data:", {
+      logger.debug("[VideoUploadNode] Syncing local state to node data:", {
         videoUrl: videoUrl.substring(0, 100),
         hasOutputs: !!data.outputs?.video,
       });
@@ -69,7 +69,7 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
                 outputs: { video: dataUrl },
               };
 
-              console.log(
+              logger.debug(
                 "[VideoUploadNode] Updated node data with library video",
               );
 
@@ -164,7 +164,7 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
       const url = URL.createObjectURL(file);
       setVideoUrl(url);
 
-      console.log("[VideoUploadNode] Starting video upload:", {
+      logger.debug("[VideoUploadNode] Starting video upload:", {
         nodeId: id,
         fileName: file.name,
         fileSize: file.size,
@@ -180,7 +180,7 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
         const videoDuration = tempVideo.duration;
         setDuration(videoDuration);
 
-        console.log("[VideoUploadNode] Video metadata loaded:", {
+        logger.debug("[VideoUploadNode] Video metadata loaded:", {
           nodeId: id,
           duration: videoDuration,
         });
@@ -189,7 +189,7 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
         const thumb = await generateThumbnail(tempVideo);
         setThumbnailUrl(thumb);
 
-        console.log(
+        logger.debug(
           "[VideoUploadNode] Thumbnail generated, reading file as data URL...",
         );
 
@@ -198,7 +198,7 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
         reader.onload = () => {
           const dataUrl = reader.result as string;
 
-          console.log("[VideoUploadNode] File read complete:", {
+          logger.debug("[VideoUploadNode] File read complete:", {
             nodeId: id,
             dataUrlLength: dataUrl.length,
             dataUrlStart: dataUrl.substring(0, 100),
@@ -213,7 +213,7 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
             outputs: { video: dataUrl }, // Data URL for downstream nodes
           };
 
-          console.log("[VideoUploadNode] Video loaded:", {
+          logger.debug("[VideoUploadNode] Video loaded:", {
             nodeId: id,
             duration: videoDuration,
             fileSize: file.size,
@@ -269,7 +269,7 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
   // Generate thumbnail and convert video to data URL for pre-loaded videos from library
   useEffect(() => {
     if (videoUrl && (!thumbnailUrl || !data.outputs?.video)) {
-      console.log("[VideoUploadNode] Processing pre-loaded video:", {
+      logger.debug("[VideoUploadNode] Processing pre-loaded video:", {
         videoUrl: videoUrl.substring(0, 100),
         hasThumbnail: !!thumbnailUrl,
         hasOutputs: !!data.outputs?.video,
@@ -285,7 +285,7 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
         generateThumbnail(tempVideo)
           .then((thumb) => {
             if (thumb) {
-              console.log("[VideoUploadNode] Thumbnail generated successfully");
+              logger.debug("[VideoUploadNode] Thumbnail generated successfully");
               setThumbnailUrl(thumb);
             }
           })
@@ -302,7 +302,7 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
         (!outputVideo ||
           (typeof outputVideo === "string" && outputVideo.startsWith("http")));
 
-      console.log("[VideoUploadNode] Checking if conversion needed:", {
+      logger.debug("[VideoUploadNode] Checking if conversion needed:", {
         videoUrlScheme: videoUrl.substring(0, 20),
         hasOutputVideo: !!outputVideo,
         outputVideoScheme: outputVideo
@@ -314,7 +314,7 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
       });
 
       if (needsConversion) {
-        console.log(
+        logger.debug(
           "[VideoUploadNode] Converting HTTP video to data URL...",
         );
 
@@ -325,7 +325,7 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
             reader.onload = () => {
               const dataUrl = reader.result as string;
 
-              console.log(
+              logger.debug(
                 "[VideoUploadNode] Library video converted to data URL:",
                 {
                   nodeId: id,
@@ -361,7 +361,7 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
       }
       // Handle data URLs that don't need conversion
       else if (videoUrl.startsWith("data:") && !data.outputs?.video) {
-        console.log(
+        logger.debug(
           "[VideoUploadNode] Video is already a data URL, setting outputs directly",
         );
 

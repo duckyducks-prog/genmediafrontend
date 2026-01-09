@@ -127,7 +127,7 @@ export class FilmGrainFilter extends Filter {
     const width = options.width ?? 1920;
     const height = options.height ?? 1080;
 
-    console.log("[FilmGrainFilter] Initializing with options:", {
+    logger.debug("[FilmGrainFilter] Initializing with options:", {
       intensity: options.intensity,
       size: options.size,
       shadows: options.shadows,
@@ -175,7 +175,7 @@ export class FilmGrainFilter extends Filter {
     this._width = width;
     this._height = height;
 
-    console.log("[FilmGrainFilter] Filter created successfully", {
+    logger.debug("[FilmGrainFilter] Filter created successfully", {
       uniforms: this._uniforms,
       width: this._width,
       height: this._height,

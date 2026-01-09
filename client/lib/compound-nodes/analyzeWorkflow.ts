@@ -151,7 +151,7 @@ export function analyzeWorkflow(
     }
   }
 
-  console.log("[analyzeWorkflow] Analysis complete:", {
+  logger.debug("[analyzeWorkflow] Analysis complete:", {
     totalNodes: nodes.length,
     availableInputs: availableInputs.length,
     availableControls: availableControls.length,

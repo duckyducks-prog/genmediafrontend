@@ -41,7 +41,7 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
 
   // Debug logging
   useEffect(() => {
-    console.log("[ImageOutputNode] Data update:", {
+    logger.debug("[ImageOutputNode] Data update:", {
       nodeId: id,
       incomingImageUrl: incomingImageUrl
         ? `${incomingImageUrl.substring(0, 50)}...`
@@ -57,7 +57,7 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
   // Reset to new incoming image when workflow executes
   useEffect(() => {
     if (incomingImageUrl && incomingImageUrl !== currentImageUrl) {
-      console.log("[ImageOutputNode] Resetting to new incoming image");
+      logger.debug("[ImageOutputNode] Resetting to new incoming image");
       setCurrentImageUrl(null); // Reset to show the new incoming image
       setRenderedImageUrl(null); // Reset rendered image
       setUpscaleError(null); // Clear any previous errors

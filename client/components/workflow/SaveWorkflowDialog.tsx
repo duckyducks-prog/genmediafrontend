@@ -148,11 +148,11 @@ export default function SaveWorkflowDialog({
       // Capture thumbnail before sanitizing
       let thumbnail: string | undefined;
       if (onCaptureThumbnail) {
-        console.log('[SaveWorkflowDialog] Capturing thumbnail...');
+        logger.debug('[SaveWorkflowDialog] Capturing thumbnail...');
         const thumbnailData = await onCaptureThumbnail();
         if (thumbnailData) {
           thumbnail = thumbnailData;
-          console.log('[SaveWorkflowDialog] Thumbnail captured:',
+          logger.debug('[SaveWorkflowDialog] Thumbnail captured:',
             `${Math.round(thumbnailData.length / 1024)}KB`);
         } else {
           console.warn('[SaveWorkflowDialog] Thumbnail capture returned null');
@@ -160,7 +160,7 @@ export default function SaveWorkflowDialog({
       }
 
       // Sanitize workflow data (remove large base64 images)
-      console.log('[SaveWorkflowDialog] Sanitizing workflow before save...');
+      logger.debug('[SaveWorkflowDialog] Sanitizing workflow before save...');
       const sanitized = sanitizeWorkflowForSave(nodes, edges);
 
       // Validate payload size
@@ -181,7 +181,7 @@ export default function SaveWorkflowDialog({
         console.warn('[SaveWorkflowDialog]', sizeValidation.warning);
       }
 
-      console.log('[SaveWorkflowDialog] Payload stats:', {
+      logger.debug('[SaveWorkflowDialog] Payload stats:', {
         originalSize: formatBytes(sanitized.originalSize),
         sanitizedSize: formatBytes(sanitized.sanitizedSize),
         removed: formatBytes(sanitized.removed),

@@ -34,7 +34,7 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
 
   // Debug logging
   useEffect(() => {
-    console.log("[GenerateImageNode] Data updated:", {
+    logger.debug("[GenerateImageNode] Data updated:", {
       nodeId: id,
       status,
       isCompleted,

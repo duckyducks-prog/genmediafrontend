@@ -34,8 +34,8 @@ function setNestedValue(obj: any, path: string, value: any) {
 export default function WizardView({ wizardId }: WizardViewProps) {
   const wizard = getCompoundTemplate(wizardId);
 
-  console.log("[WizardView] Rendering with wizardId:", wizardId);
-  console.log("[WizardView] Wizard data:", wizard);
+  logger.debug("[WizardView] Rendering with wizardId:", wizardId);
+  logger.debug("[WizardView] Wizard data:", wizard);
 
   // State for internal workflow execution
   const [workflowNodes, setWorkflowNodes] = useState<WorkflowNode[]>([]);
@@ -73,7 +73,7 @@ export default function WizardView({ wizardId }: WizardViewProps) {
   useEffect(() => {
     // Check if execution just finished
     if (wasExecuting && !isExecuting && workflowNodes.length > 0) {
-      console.log("[WizardView] Execution completed, collecting results...");
+      logger.debug("[WizardView] Execution completed, collecting results...");
 
       // ========================================================================
       // Collect outputs using wizard.outputs definitions and wizard.mappings.outputs
@@ -96,7 +96,7 @@ export default function WizardView({ wizardId }: WizardViewProps) {
 
             if (value) {
               allOutputs[outputDef.id] = value;
-              console.log(`[WizardView] Collected "${outputDef.name}" (${outputDef.type}) from ${mapping.nodeId}`);
+              logger.debug(`[WizardView] Collected "${outputDef.name}" (${outputDef.type}) from ${mapping.nodeId}`);
             } else {
               console.warn(`[WizardView] No value found at ${mapping.nodeId}.${mapping.param}`);
             }
@@ -106,7 +106,7 @@ export default function WizardView({ wizardId }: WizardViewProps) {
         }
       });
 
-      console.log("[WizardView] All outputs collected:", {
+      logger.debug("[WizardView] All outputs collected:", {
         expected: wizard.outputs.length,
         collected: Object.keys(allOutputs).length,
         outputs: wizard.outputs.map(o => o.name),
@@ -163,7 +163,7 @@ export default function WizardView({ wizardId }: WizardViewProps) {
     setError(null);
 
     try {
-      console.log("[WizardView] Starting execution...");
+      logger.debug("[WizardView] Starting execution...");
 
       // ========================================================================
       // STEP 1: Clone the ENTIRE internal workflow
@@ -190,7 +190,7 @@ export default function WizardView({ wizardId }: WizardViewProps) {
             const node = nodes.find((n) => n.id === (mapping as any).nodeId);
             if (node) {
               setNestedValue(node, (mapping as any).param, inputValue);
-              console.log(
+              logger.debug(
                 `[WizardView] Injected input "${exposedId}" -> ${(mapping as any).nodeId}.${(mapping as any).param}`,
               );
             }
@@ -212,7 +212,7 @@ export default function WizardView({ wizardId }: WizardViewProps) {
               const node = nodes.find((n) => n.id === (mapping as any).nodeId);
               if (node) {
                 setNestedValue(node, (mapping as any).param, value);
-                console.log(
+                logger.debug(
                   `[WizardView] Applied control "${controlId}" (${value}) -> ${(mapping as any).nodeId}.${(mapping as any).param}`,
                 );
               }
