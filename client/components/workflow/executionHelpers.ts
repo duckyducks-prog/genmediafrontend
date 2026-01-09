@@ -198,17 +198,19 @@ export function gatherNodeInputs(
     }
 
     // If still not found, check common aliases
+    // Use type assertion since we're checking properties that exist on specific node types
+    const nodeData = sourceNode.data as unknown as Record<string, unknown>;
     if (outputValue === undefined && sourceHandle === "image") {
       outputValue =
-        sourceNode.data.outputs?.imageUrl || sourceNode.data.imageUrl;
+        (sourceNode.data.outputs as Record<string, unknown>)?.imageUrl || nodeData.imageUrl;
       if (outputValue !== undefined) {
         console.warn(`[gatherNodeInputs] ⚠️ Found via imageUrl alias`);
-      } else if (sourceNode.data.imageRef) {
+      } else if (nodeData.imageRef) {
         console.error(
           `[gatherNodeInputs] ❌ CRITICAL: Node has imageRef but no imageUrl!`,
           {
             nodeId: sourceNode.id,
-            imageRef: sourceNode.data.imageRef,
+            imageRef: nodeData.imageRef,
             suggestion:
               "Asset resolution needed - workflow was likely saved/reloaded",
           },
@@ -218,19 +220,20 @@ export function gatherNodeInputs(
 
     // Video handle alias
     if (outputValue === undefined && sourceHandle === "video") {
+      const outputs = sourceNode.data.outputs as Record<string, unknown> | undefined;
       outputValue =
-        sourceNode.data.outputs?.videoUrl ||
-        sourceNode.data.outputs?.video ||
-        sourceNode.data.videoUrl ||
-        sourceNode.data.video;
+        outputs?.videoUrl ||
+        outputs?.video ||
+        nodeData.videoUrl ||
+        nodeData.video;
       if (outputValue !== undefined) {
         console.warn(`[gatherNodeInputs] ⚠️ Found via video alias`);
-      } else if (sourceNode.data.videoRef) {
+      } else if (nodeData.videoRef) {
         console.error(
           `[gatherNodeInputs] ❌ CRITICAL: Node has videoRef but no videoUrl!`,
           {
             nodeId: sourceNode.id,
-            videoRef: sourceNode.data.videoRef,
+            videoRef: nodeData.videoRef,
             suggestion: "Asset resolution needed",
           },
         );
@@ -566,8 +569,9 @@ export function collectFilterConfigs(
 
       // Check if this edge carries filters
       const sourceNode = nodes.find((n) => n.id === edge.source);
-      if (sourceNode?.data?.outputs?.filters) {
-        const sourceFilters = sourceNode.data.outputs.filters;
+      const outputs = sourceNode?.data?.outputs as Record<string, unknown> | undefined;
+      if (outputs?.filters) {
+        const sourceFilters = outputs.filters;
         if (Array.isArray(sourceFilters)) {
           filters.push(...sourceFilters);
         }

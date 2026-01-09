@@ -361,7 +361,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
             data: { connectorType: connectorType || "any" },
           };
           logger.debug("[onConnect] ✓ Edge created:", {
-            id: newEdge.id,
+            id: (newEdge as { id?: string }).id,
             source: newEdge.source,
             target: newEdge.target,
             sourceHandle: newEdge.sourceHandle, // Should be "image", "video", etc.
