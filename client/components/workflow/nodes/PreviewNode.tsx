@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { memo, useState, useEffect, useRef } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { CheckCircle2, Loader2, Eye, Download } from "lucide-react";
@@ -14,6 +15,8 @@ export interface PreviewNodeData {
   videoUrl?: string;
   textContent?: string;
   outputs?: Record<string, any>;
+  locked?: boolean;
+  readOnly?: boolean;
 }
 
 function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {

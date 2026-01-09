@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { auth } from "./firebase";
 import { API_ENDPOINTS } from "./api-config";
 

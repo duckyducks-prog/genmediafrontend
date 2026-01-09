@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { useEffect, useState, useRef } from "react";
 import { Handle, Position, NodeProps, useReactFlow } from "reactflow";
 import { ImageCompositeNodeData, NODE_CONFIGURATIONS, NodeType, WorkflowNode, WorkflowEdge } from "../types";

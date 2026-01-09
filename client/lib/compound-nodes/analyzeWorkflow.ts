@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { Node, Edge } from "reactflow";
 import { NODE_CONFIGURATIONS, NodeType } from "@/components/workflow/types";
 import {

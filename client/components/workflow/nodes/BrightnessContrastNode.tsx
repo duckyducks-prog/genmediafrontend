@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { memo, useEffect, useCallback, useRef } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { BrightnessContrastNodeData } from "../types";

@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { Filter, GlProgram } from "pixi.js";
 
 const vertex = `

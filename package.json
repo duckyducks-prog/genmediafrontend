@@ -24,6 +24,7 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@radix-ui/react-separator": "^1.1.8",
     "dotenv": "^17.2.1",
     "express": "^5.2.1",
     "firebase": "^12.7.0",

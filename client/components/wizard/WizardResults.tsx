@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { Download, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { CompoundOutput } from "@/lib/compound-nodes/types";

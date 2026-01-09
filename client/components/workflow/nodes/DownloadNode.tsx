@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { memo, useState, useEffect } from "react";
 import { Handle, Position, NodeProps, useEdges, useNodes } from "reactflow";
 import { DownloadNodeData } from "../types";

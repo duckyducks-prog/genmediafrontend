@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { memo, useEffect } from "react";
 import { Handle, Position, NodeProps, useReactFlow } from "reactflow";
 import {

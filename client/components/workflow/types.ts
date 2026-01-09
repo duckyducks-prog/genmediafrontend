@@ -45,6 +45,8 @@ export enum NodeType {
   // DOCUMENTATION/UTILITY nodes
   StickyNote = "stickyNote",
 
+  // COMPOUND nodes (user-created reusable workflows)
+  Compound = "compound",
 }
 
 // Re-export FilterConfig for convenience
@@ -307,6 +309,33 @@ export interface StickyNoteNodeData extends BaseNodeData {
   height?: number; // Height in pixels (default: 256)
 }
 
+// COMPOUND node (user-created reusable workflows)
+export interface CompoundNodeData extends BaseNodeData {
+  name: string;
+  icon: string;
+  description: string;
+  inputs: InputConnector[];
+  outputs: OutputConnector[];
+  controls: Array<{
+    id: string;
+    label: string;
+    type: "text" | "number" | "select";
+    default?: string | number;
+    options?: string[];
+  }>;
+  controlValues: Record<string, string | number>;
+  internalWorkflow: {
+    nodes: Node[];
+    edges: Edge[];
+  };
+  mappings: {
+    inputs: Record<string, { nodeId: string; inputHandle: string }>;
+    controls: Record<string, { nodeId: string; paramPath: string }>;
+    outputs: Record<string, { nodeId: string; outputHandle: string }>;
+  };
+  compoundId: string;
+}
+
 // ============================================================================
 // UNION TYPE FOR ALL NODE DATA
 // ============================================================================
@@ -333,7 +362,8 @@ export type WorkflowNodeData =
   | PreviewNodeData
   | OutputNodeData
   | DownloadNodeData
-  | StickyNoteNodeData;
+  | StickyNoteNodeData
+  | CompoundNodeData;
 
 // ============================================================================
 // CUSTOM NODE & EDGE TYPES
@@ -1030,6 +1060,16 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
     description: "Add notes and documentation to explain workflow steps",
     inputConnectors: [],
     outputConnectors: [],
+  },
+
+  // ========== COMPOUND NODES ==========
+  [NodeType.Compound]: {
+    type: NodeType.Compound,
+    label: "Compound Node",
+    category: "modifier",
+    description: "User-created reusable workflow component",
+    inputConnectors: [], // Dynamic - defined by compound definition
+    outputConnectors: [], // Dynamic - defined by compound definition
   },
 
 };
