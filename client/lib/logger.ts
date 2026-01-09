@@ -2,7 +2,7 @@ const isDev = import.meta.env.DEV;
 
 export const logger = {
   debug: (...args: unknown[]) => {
-    if (isDev) logger.debug(...args);
+    if (isDev) console.debug(...args);
   },
   info: (...args: unknown[]) => {
     if (isDev) console.info(...args);
