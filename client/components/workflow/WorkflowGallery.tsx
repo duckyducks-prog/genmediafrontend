@@ -178,28 +178,28 @@ export default function WorkflowGallery({
       >
         {/* Thumbnail Image */}
         <div className="relative aspect-video bg-muted">
-          {workflow.thumbnail ? (
-            <img
-              src={workflow.thumbnail}
-              alt={workflow.name}
-              className="w-full h-full object-cover"
-            />
-          ) : (workflow as any).background_image && workflow.is_public ? (
-            // Use custom background image for templates
+          {/* Templates: prioritize custom background_image over auto-generated thumbnail */}
+          {workflow.is_public && (workflow as any).background_image ? (
             <img
               src={(workflow as any).background_image}
               alt={workflow.name}
               className="w-full h-full object-cover"
             />
+          ) : workflow.thumbnail ? (
+            <img
+              src={workflow.thumbnail}
+              alt={workflow.name}
+              className="w-full h-full object-cover"
+            />
           ) : workflow.is_public ? (
-            // Use default template image for public workflows
+            // Default template image if no background_image or thumbnail
             <img
               src="https://cdn.builder.io/api/v1/image/assets%2Fb1d3bf7cc0eb4f0daca65fdc5a7d5179%2F5cc32d6d0a324e819ef846f34c73c640?format=webp&width=800"
               alt={workflow.name}
               className="w-full h-full object-cover"
             />
           ) : (
-            // Placeholder for personal workflows
+            // Placeholder for personal workflows without thumbnail
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted via-muted to-accent/20">
               <WorkflowIcon className="w-16 h-16 opacity-30" />
             </div>
