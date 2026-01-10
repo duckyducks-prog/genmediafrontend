@@ -23,15 +23,18 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
-  listMyWorkflows,
-  listPublicWorkflows,
-  deleteWorkflow,
   loadWorkflow,
   SavedWorkflow,
   WorkflowListItem,
   testWorkflowAPI,
   APITestResult,
 } from "@/lib/workflow-api";
+import {
+  useMyWorkflows,
+  usePublicWorkflows,
+  useDeleteWorkflow,
+  useInvalidateWorkflows,
+} from "@/lib/workflow-queries";
 import { MOCK_WORKFLOW_TEMPLATES } from "@/lib/mock-workflows";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -42,60 +45,47 @@ interface WorkflowGalleryProps {
 export default function WorkflowGallery({
   onLoadWorkflow,
 }: WorkflowGalleryProps) {
-  const [myWorkflows, setMyWorkflows] = useState<WorkflowListItem[]>([]);
-  const [publicWorkflows, setPublicWorkflows] = useState<WorkflowListItem[]>(
-    [],
-  );
-  const [isLoading, setIsLoading] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [apiStatus, setApiStatus] = useState<APITestResult | null>(null);
   const [showApiTest, setShowApiTest] = useState(false);
   const { toast } = useToast();
 
-  const fetchWorkflows = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const [myWf, publicWf] = await Promise.all([
-        listMyWorkflows().catch((err) => {
-          console.error("[WorkflowGallery] Failed to fetch my workflows:", err);
-          return [];
-        }),
-        listPublicWorkflows().catch((err) => {
-          console.error(
-            "[WorkflowGallery] Failed to fetch public workflows:",
-            err,
-          );
-          return [];
-        }),
-      ]);
+  // React Query hooks for cached data fetching
+  const {
+    data: myWorkflowsData,
+    isLoading: isLoadingMy,
+    error: myError,
+    refetch: refetchMy,
+  } = useMyWorkflows();
 
-      setMyWorkflows(myWf);
+  const {
+    data: publicWorkflowsData,
+    isLoading: isLoadingPublic,
+    error: publicError,
+    refetch: refetchPublic,
+  } = usePublicWorkflows();
 
-      // Use mock templates as fallback when API is not available
-      if (publicWf.length === 0) {
-        logger.debug(
-          "[WorkflowGallery] Using mock templates (API not available)",
-        );
-        setPublicWorkflows(MOCK_WORKFLOW_TEMPLATES);
-        setShowApiTest(true);
-      } else {
-        setPublicWorkflows(publicWf);
-        setShowApiTest(false);
-      }
-    } catch (error) {
-      console.error("Error fetching workflows:", error);
-      // Use mock templates on error
-      setPublicWorkflows(MOCK_WORKFLOW_TEMPLATES);
+  const deleteWorkflowMutation = useDeleteWorkflow();
+  const { invalidateAll } = useInvalidateWorkflows();
+
+  // Derive workflow lists from query data
+  const myWorkflows = myWorkflowsData ?? [];
+  const publicWorkflows =
+    publicWorkflowsData && publicWorkflowsData.length > 0
+      ? publicWorkflowsData
+      : MOCK_WORKFLOW_TEMPLATES;
+
+  const isLoading = isLoadingMy || isLoadingPublic;
+
+  // Show API test alert if public workflows failed or returned empty
+  useEffect(() => {
+    if (publicError || (publicWorkflowsData && publicWorkflowsData.length === 0)) {
+      logger.debug("[WorkflowGallery] Using mock templates (API not available)");
       setShowApiTest(true);
-      toast({
-        title: "Using example templates",
-        description:
-          "Backend workflow API is not available. Showing example templates.",
-      });
-    } finally {
-      setIsLoading(false);
+    } else if (publicWorkflowsData && publicWorkflowsData.length > 0) {
+      setShowApiTest(false);
     }
-  }, [toast]);
+  }, [publicWorkflowsData, publicError]);
 
   // Test API connectivity on mount
   useEffect(() => {
@@ -112,14 +102,14 @@ export default function WorkflowGallery({
     testAPI();
   }, []);
 
-  useEffect(() => {
-    fetchWorkflows();
-  }, [fetchWorkflows]);
+  const fetchWorkflows = useCallback(() => {
+    refetchMy();
+    refetchPublic();
+  }, [refetchMy, refetchPublic]);
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteWorkflow(id);
-      setMyWorkflows(myWorkflows.filter((wf) => wf.id !== id));
+      await deleteWorkflowMutation.mutateAsync(id);
       toast({
         title: "Workflow deleted",
         description: "The workflow has been removed",

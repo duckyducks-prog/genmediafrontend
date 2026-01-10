@@ -15,12 +15,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Loader2, Save, Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import {
-  saveWorkflow,
-  updateWorkflow,
-  WorkflowMetadata,
-  testWorkflowAPI,
-} from "@/lib/workflow-api";
+import { WorkflowMetadata, testWorkflowAPI } from "@/lib/workflow-api";
+import { useSaveWorkflow, useUpdateWorkflow } from "@/lib/workflow-queries";
 import { WorkflowNode, WorkflowEdge } from "./types";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -53,12 +49,16 @@ export default function SaveWorkflowDialog({
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
   const [nameError, setNameError] = useState("");
   const [workflowError, setWorkflowError] = useState("");
   const [serverError, setServerError] = useState("");
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const { toast } = useToast();
+
+  // React Query mutations for save/update with automatic cache invalidation
+  const saveWorkflowMutation = useSaveWorkflow();
+  const updateWorkflowMutation = useUpdateWorkflow();
+  const isSaving = saveWorkflowMutation.isPending || updateWorkflowMutation.isPending;
 
   // Populate form when editing existing workflow
   useEffect(() => {
@@ -144,7 +144,6 @@ export default function SaveWorkflowDialog({
       return;
     }
 
-    setIsSaving(true);
     try {
       // Capture thumbnail before sanitizing
       let thumbnail: string | undefined;
@@ -174,7 +173,6 @@ export default function SaveWorkflowDialog({
           description: sizeValidation.error,
           variant: "destructive",
         });
-        setIsSaving(false);
         return;
       }
 
@@ -201,16 +199,19 @@ export default function SaveWorkflowDialog({
       };
 
       if (existingWorkflow?.id) {
-        // Update existing workflow
-        await updateWorkflow(existingWorkflow.id, workflowData);
+        // Update existing workflow using React Query mutation
+        await updateWorkflowMutation.mutateAsync({
+          workflowId: existingWorkflow.id,
+          workflow: workflowData as any,
+        });
         toast({
           title: "Workflow updated",
           description: `"${name}" has been updated successfully`,
         });
         onSaveSuccess?.(existingWorkflow.id);
       } else {
-        // Save new workflow
-        const result = await saveWorkflow(workflowData);
+        // Save new workflow using React Query mutation
+        const result = await saveWorkflowMutation.mutateAsync(workflowData);
         toast({
           title: "Workflow saved",
           description: `"${name}" has been saved successfully`,
@@ -258,8 +259,6 @@ export default function SaveWorkflowDialog({
         description: detailedMessage,
         variant: "destructive",
       });
-    } finally {
-      setIsSaving(false);
     }
   };
 
