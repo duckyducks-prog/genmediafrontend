@@ -8,32 +8,43 @@
  * - workflows/{workflowId} - Full workflow document
  */
 
-import * as admin from "firebase-admin";
-import type { Firestore } from "firebase-admin/firestore";
+import {
+  initializeApp,
+  getApps,
+  applicationDefault,
+  type App,
+} from "firebase-admin/app";
+import {
+  getFirestore as getFirestoreAdmin,
+  type Firestore,
+} from "firebase-admin/firestore";
 
 // Lazy initialization of Firestore
 let firestoreInstance: Firestore | null = null;
-let initialized = false;
+let appInstance: App | null = null;
 
 function getFirestore(): Firestore {
   if (firestoreInstance) {
     return firestoreInstance;
   }
 
-  if (!initialized && admin.apps.length === 0) {
+  // Check if app already initialized
+  const apps = getApps();
+  if (apps.length === 0) {
     try {
-      admin.initializeApp({
-        credential: admin.credential.applicationDefault(),
+      appInstance = initializeApp({
+        credential: applicationDefault(),
       });
       console.log("[WorkflowStorage] Firebase Admin initialized");
-      initialized = true;
     } catch (error) {
       console.error("[WorkflowStorage] Failed to initialize Firebase Admin:", error);
       throw error;
     }
+  } else {
+    appInstance = apps[0];
   }
 
-  firestoreInstance = admin.firestore();
+  firestoreInstance = getFirestoreAdmin(appInstance);
   console.log("[WorkflowStorage] Firestore connected");
   return firestoreInstance;
 }
