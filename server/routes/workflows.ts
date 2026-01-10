@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import * as workflowStorage from "../workflow-storage";
+import * as workflowStorage from "../workflow-storage-firestore";
 
 // =============================================================================
 // AUTHENTICATION CONFIGURATION
@@ -111,7 +111,7 @@ console.log(`[Auth] Authentication mode: ${REQUIRE_AUTH ? "REQUIRED (production)
  * GET /workflows?scope=my|public
  * List workflows by scope
  */
-export function listWorkflows(req: Request, res: Response) {
+export async function listWorkflows(req: Request, res: Response) {
   try {
     const scope = (req.query.scope as "my" | "public") || "my";
     const userId = (req as any).userId || "anonymous";
@@ -120,7 +120,7 @@ export function listWorkflows(req: Request, res: Response) {
       `[Workflows API] Listing workflows: scope=${scope}, userId=${userId}`,
     );
 
-    const workflows = workflowStorage.listWorkflows(scope, userId);
+    const workflows = await workflowStorage.listWorkflows(scope, userId);
     res.json({ workflows });
   } catch (error) {
     console.error("[Workflows API] Error listing workflows:", error);
@@ -135,7 +135,7 @@ export function listWorkflows(req: Request, res: Response) {
  * POST /workflows/save
  * Save a new workflow
  */
-export function saveWorkflow(req: Request, res: Response) {
+export async function saveWorkflow(req: Request, res: Response) {
   try {
     const userId = (req as any).userId || "anonymous";
     const userEmail = (req as any).userEmail || "anonymous@example.com";
@@ -152,7 +152,7 @@ export function saveWorkflow(req: Request, res: Response) {
       });
     }
 
-    const result = workflowStorage.saveWorkflow({
+    const result = await workflowStorage.saveWorkflow({
       name,
       description: description || "",
       is_public: is_public || false,
@@ -177,13 +177,13 @@ export function saveWorkflow(req: Request, res: Response) {
  * GET /workflows/:id
  * Get a specific workflow by ID
  */
-export function getWorkflow(req: Request, res: Response) {
+export async function getWorkflow(req: Request, res: Response) {
   try {
     const { id } = req.params;
 
     console.log(`[Workflows API] Getting workflow: ${id}`);
 
-    const workflow = workflowStorage.loadWorkflow(id);
+    const workflow = await workflowStorage.loadWorkflow(id);
     res.json(workflow);
   } catch (error) {
     console.error("[Workflows API] Error getting workflow:", error);
@@ -206,14 +206,14 @@ export function getWorkflow(req: Request, res: Response) {
  * PUT /workflows/:id
  * Update an existing workflow
  */
-export function updateWorkflow(req: Request, res: Response) {
+export async function updateWorkflow(req: Request, res: Response) {
   try {
     const { id } = req.params;
     const { name, description, is_public, nodes, edges, thumbnail } = req.body;
 
     console.log(`[Workflows API] Updating workflow: ${id}`);
 
-    workflowStorage.updateWorkflow(id, {
+    await workflowStorage.updateWorkflow(id, {
       name,
       description,
       is_public,
@@ -244,14 +244,14 @@ export function updateWorkflow(req: Request, res: Response) {
  * DELETE /workflows/:id
  * Delete a workflow
  */
-export function deleteWorkflow(req: Request, res: Response) {
+export async function deleteWorkflow(req: Request, res: Response) {
   try {
     const { id } = req.params;
     const userId = (req as any).userId || "anonymous";
 
     console.log(`[Workflows API] Deleting workflow: ${id}`);
 
-    workflowStorage.deleteWorkflow(id, userId);
+    await workflowStorage.deleteWorkflow(id, userId);
     res.json({ success: true });
   } catch (error) {
     console.error("[Workflows API] Error deleting workflow:", error);
@@ -282,7 +282,7 @@ export function deleteWorkflow(req: Request, res: Response) {
  * POST /workflows/:id/clone
  * Clone a workflow
  */
-export function cloneWorkflow(req: Request, res: Response) {
+export async function cloneWorkflow(req: Request, res: Response) {
   try {
     const { id } = req.params;
     const userId = (req as any).userId || "anonymous";
@@ -290,7 +290,7 @@ export function cloneWorkflow(req: Request, res: Response) {
 
     console.log(`[Workflows API] Cloning workflow: ${id} for user: ${userId}`);
 
-    const result = workflowStorage.cloneWorkflow(id, userId, userEmail);
+    const result = await workflowStorage.cloneWorkflow(id, userId, userEmail);
     res.json(result);
   } catch (error) {
     console.error("[Workflows API] Error cloning workflow:", error);
@@ -312,33 +312,24 @@ export function cloneWorkflow(req: Request, res: Response) {
 /**
  * POST /workflows/admin/rebuild-index
  *
- * Admin endpoint to rebuild the workflow index from existing files.
- * Use this to recover from index corruption or sync issues.
- *
- * TODO: Add proper admin authentication
+ * Admin endpoint - not needed for Firestore but kept for API compatibility
  */
-export function rebuildIndexEndpoint(_req: Request, res: Response) {
+export async function rebuildIndexEndpoint(_req: Request, res: Response) {
   try {
-    // TODO: Add admin auth check here
-    // For now, log a warning
-    console.warn(
-      "[Workflows API] ⚠️  Rebuild index requested - this should be admin-only!",
-    );
+    console.log("[Workflows API] Rebuild index requested (no-op for Firestore)");
 
-    console.log("[Workflows API] Rebuilding index from workflow files...");
-
-    const result = workflowStorage.rebuildIndex();
+    const result = await workflowStorage.rebuildIndex();
 
     res.json({
-      message: `Index rebuilt successfully: ${result.rebuilt} workflows recovered, ${result.failed} failed`,
+      message: "Firestore does not require index rebuilding",
       ...result,
       success: true,
     });
   } catch (error) {
-    console.error("[Workflows API] Error rebuilding index:", error);
+    console.error("[Workflows API] Error:", error);
     res.status(500).json({
       success: false,
-      error: "Failed to rebuild index",
+      error: "Operation failed",
       detail: error instanceof Error ? error.message : "Unknown error",
     });
   }
