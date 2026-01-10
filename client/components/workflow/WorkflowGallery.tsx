@@ -35,7 +35,6 @@ import {
   useDeleteWorkflow,
   useInvalidateWorkflows,
 } from "@/lib/workflow-queries";
-import { MOCK_WORKFLOW_TEMPLATES } from "@/lib/mock-workflows";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface WorkflowGalleryProps {
@@ -70,22 +69,19 @@ export default function WorkflowGallery({
 
   // Derive workflow lists from query data
   const myWorkflows = myWorkflowsData ?? [];
-  const publicWorkflows =
-    publicWorkflowsData && publicWorkflowsData.length > 0
-      ? publicWorkflowsData
-      : MOCK_WORKFLOW_TEMPLATES;
+  const publicWorkflows = publicWorkflowsData ?? [];
 
   const isLoading = isLoadingMy || isLoadingPublic;
 
-  // Show API test alert if public workflows failed or returned empty
+  // Show API test alert only if there was an error fetching
   useEffect(() => {
-    if (publicError || (publicWorkflowsData && publicWorkflowsData.length === 0)) {
-      logger.debug("[WorkflowGallery] Using mock templates (API not available)");
+    if (publicError) {
+      logger.debug("[WorkflowGallery] Error fetching public workflows");
       setShowApiTest(true);
-    } else if (publicWorkflowsData && publicWorkflowsData.length > 0) {
+    } else {
       setShowApiTest(false);
     }
-  }, [publicWorkflowsData, publicError]);
+  }, [publicError]);
 
   // Test API connectivity on mount
   useEffect(() => {
