@@ -35,7 +35,11 @@ import {
   useDeleteWorkflow,
   useInvalidateWorkflows,
 } from "@/lib/workflow-queries";
+import { useAuth } from "@/lib/AuthContext";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+// Admin users who can delete public templates
+const ADMIN_EMAILS = ["ldebortolialves@hubspot.com"];
 
 interface WorkflowGalleryProps {
   onLoadWorkflow: (workflow: SavedWorkflow) => void;
@@ -48,6 +52,10 @@ export default function WorkflowGallery({
   const [apiStatus, setApiStatus] = useState<APITestResult | null>(null);
   const [showApiTest, setShowApiTest] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  // Check if current user is admin (can delete public templates)
+  const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email);
 
   // React Query hooks for cached data fetching
   const {
@@ -364,6 +372,7 @@ export default function WorkflowGallery({
                 <WorkflowCard
                   key={workflow.id}
                   workflow={workflow}
+                  showDelete={isAdmin}
                 />
               ))}
             </div>
