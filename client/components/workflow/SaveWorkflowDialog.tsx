@@ -17,6 +17,7 @@ import { Loader2, Save, Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { WorkflowMetadata, testWorkflowAPI } from "@/lib/workflow-api";
 import { useSaveWorkflow, useUpdateWorkflow } from "@/lib/workflow-queries";
+import { useAuth } from "@/lib/AuthContext";
 import { WorkflowNode, WorkflowEdge } from "./types";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -25,6 +26,9 @@ import {
   validatePayloadSize,
   formatBytes,
 } from "@/lib/workflow-sanitizer";
+
+// Admin users who can create public templates
+const ADMIN_EMAILS = ["ldebortolialves@hubspot.com"];
 
 interface SaveWorkflowDialogProps {
   open: boolean;
@@ -54,6 +58,10 @@ export default function SaveWorkflowDialog({
   const [serverError, setServerError] = useState("");
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  // Check if current user is admin (can create public templates)
+  const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email);
 
   // React Query mutations for save/update with automatic cache invalidation
   const saveWorkflowMutation = useSaveWorkflow();
@@ -347,23 +355,26 @@ export default function SaveWorkflowDialog({
             />
           </div>
 
-          <div className="flex items-center justify-between rounded-lg border border-border p-4">
-            <div className="space-y-0.5">
-              <Label htmlFor="workflow-public">Share as template</Label>
-              <p className="text-sm text-muted-foreground">
-                Make this workflow available to all users
-              </p>
+          {/* Share as template - Admin only */}
+          {isAdmin && (
+            <div className="flex items-center justify-between rounded-lg border border-border p-4">
+              <div className="space-y-0.5">
+                <Label htmlFor="workflow-public">Share as template</Label>
+                <p className="text-sm text-muted-foreground">
+                  Make this workflow available to all users
+                </p>
+              </div>
+              <Switch
+                id="workflow-public"
+                checked={isPublic}
+                onCheckedChange={setIsPublic}
+                disabled={isSaving}
+              />
             </div>
-            <Switch
-              id="workflow-public"
-              checked={isPublic}
-              onCheckedChange={setIsPublic}
-              disabled={isSaving}
-            />
-          </div>
+          )}
 
-          {/* Background Image Upload - Only for templates */}
-          {isPublic && (
+          {/* Background Image Upload - Only for templates (admin only) */}
+          {isAdmin && isPublic && (
             <div className="space-y-2">
               <Label htmlFor="background-image">Template Background Image (Optional)</Label>
               <p className="text-sm text-muted-foreground">
