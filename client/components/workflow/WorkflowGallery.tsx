@@ -221,8 +221,8 @@ export default function WorkflowGallery({
             </div>
           )}
 
-          {/* Action buttons overlay for personal workflows only */}
-          {!workflow.is_public && (
+          {/* Action buttons overlay - show for personal workflows OR templates when admin can delete */}
+          {(!workflow.is_public || showDelete) && (
             <div
               className={`absolute inset-0 bg-black/60 flex items-center justify-center gap-2 transition-opacity ${
                 isHovered ? "opacity-100" : "opacity-0"
