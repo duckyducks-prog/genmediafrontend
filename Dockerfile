@@ -43,18 +43,19 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+# Install dumb-init for proper signal handling and enable pnpm
+RUN apk add --no-cache dumb-init && \
+    corepack enable && corepack prepare pnpm@latest --activate
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-# Copy only production dependencies
-COPY package.json ./
+# Copy package files for production install
+COPY package.json pnpm-lock.yaml ./
 
-# Install only production dependencies
-RUN npm install --omit=dev && npm cache clean --force
+# Install only production dependencies using pnpm (respects lockfile versions)
+RUN pnpm install --prod --frozen-lockfile && pnpm store prune
 
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
