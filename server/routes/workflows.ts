@@ -11,6 +11,30 @@ import * as workflowStorage from "../workflow-storage";
 // =============================================================================
 const REQUIRE_AUTH = process.env.REQUIRE_AUTH === "true";
 
+// =============================================================================
+// EMAIL WHITELIST
+// =============================================================================
+// Only these emails are allowed to access the application.
+// This is the authoritative check - frontend also checks but can be bypassed.
+// To disable whitelist (allow all authenticated users), set DISABLE_EMAIL_WHITELIST=true
+// =============================================================================
+const DISABLE_EMAIL_WHITELIST = process.env.DISABLE_EMAIL_WHITELIST === "true";
+const ALLOWED_EMAILS = [
+  "ldebortolialves@hubspot.com",
+  "sfiske@hubspot.com",
+  "meganzinka@gmail.com",
+];
+
+function isEmailAllowed(email: string | undefined): boolean {
+  if (DISABLE_EMAIL_WHITELIST) {
+    return true;
+  }
+  if (!email) {
+    return false;
+  }
+  return ALLOWED_EMAILS.includes(email.toLowerCase());
+}
+
 // Lazy-load Firebase Admin to avoid initialization errors when not needed
 type FirebaseAdminType = typeof import("firebase-admin");
 let firebaseAdminInstance: FirebaseAdminType | null = null;
@@ -89,6 +113,15 @@ async function requireAuth(req: Request, res: Response, next: NextFunction) {
     const firebaseApp = getFirebaseAdmin();
     const decodedToken = await firebaseApp.auth().verifyIdToken(token);
 
+    // Check email whitelist
+    if (!isEmailAllowed(decodedToken.email)) {
+      console.warn(`[Auth] Access denied for email: ${decodedToken.email}`);
+      return res.status(403).json({
+        error: "Access denied",
+        detail: "Your email is not authorized to access this application",
+      });
+    }
+
     (req as any).userId = decodedToken.uid;
     (req as any).userEmail = decodedToken.email || "unknown@example.com";
 
@@ -105,6 +138,7 @@ async function requireAuth(req: Request, res: Response, next: NextFunction) {
 
 // Log auth mode on module load
 console.log(`[Auth] Authentication mode: ${REQUIRE_AUTH ? "REQUIRED (production)" : "OPTIONAL (development)"}`);
+console.log(`[Auth] Email whitelist: ${DISABLE_EMAIL_WHITELIST ? "DISABLED (all emails allowed)" : `ENABLED (${ALLOWED_EMAILS.length} emails)`}`);
 
 
 /**
