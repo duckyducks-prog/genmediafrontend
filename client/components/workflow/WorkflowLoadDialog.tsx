@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,12 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, Search, Workflow as WorkflowIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import {
-  listMyWorkflows,
-  loadWorkflow,
-  SavedWorkflow,
-  WorkflowListItem,
-} from "@/lib/workflow-api";
+import { loadWorkflow, SavedWorkflow } from "@/lib/workflow-api";
+import { useMyWorkflows } from "@/lib/workflow-queries";
 
 interface WorkflowLoadDialogProps {
   open: boolean;
@@ -28,46 +24,28 @@ export default function WorkflowLoadDialog({
   onOpenChange,
   onLoadWorkflow,
 }: WorkflowLoadDialogProps) {
-  const [workflows, setWorkflows] = useState<WorkflowListItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [loadingWorkflowId, setLoadingWorkflowId] = useState<string | null>(
     null,
   );
   const { toast } = useToast();
 
-  // Fetch recent workflows when dialog opens
-  useEffect(() => {
-    if (open) {
-      fetchWorkflows();
-    }
-  }, [open]);
+  // Use React Query for cached workflow fetching
+  const { data: workflowsData, isLoading } = useMyWorkflows({
+    enabled: open, // Only fetch when dialog is open
+  });
 
-  const fetchWorkflows = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const myWorkflows = await listMyWorkflows();
-      // Sort by updated date (most recent first) and take top 50
-      const sorted = myWorkflows
-        .sort((a, b) => {
-          const dateA = new Date(a.updated_at || a.created_at || 0).getTime();
-          const dateB = new Date(b.updated_at || b.created_at || 0).getTime();
-          return dateB - dateA;
-        })
-        .slice(0, 50);
-
-      setWorkflows(sorted);
-    } catch (error) {
-      console.error("[WorkflowLoadDialog] Failed to fetch workflows:", error);
-      toast({
-        title: "Failed to load workflows",
-        description: error instanceof Error ? error.message : "Unknown error",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [toast]);
+  // Sort by updated date (most recent first) and take top 50
+  const workflows = useMemo(() => {
+    if (!workflowsData) return [];
+    return [...workflowsData]
+      .sort((a, b) => {
+        const dateA = new Date(a.updated_at || a.created_at || 0).getTime();
+        const dateB = new Date(b.updated_at || b.created_at || 0).getTime();
+        return dateB - dateA;
+      })
+      .slice(0, 50);
+  }, [workflowsData]);
 
   // Filter workflows based on search query
   const filteredWorkflows = useMemo(() => {

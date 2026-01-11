@@ -15,12 +15,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Loader2, Save, Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import {
-  saveWorkflow,
-  updateWorkflow,
-  WorkflowMetadata,
-  testWorkflowAPI,
-} from "@/lib/workflow-api";
+import { WorkflowMetadata, testWorkflowAPI } from "@/lib/workflow-api";
+import { useSaveWorkflow, useUpdateWorkflow } from "@/lib/workflow-queries";
+import { useAuth } from "@/lib/AuthContext";
 import { WorkflowNode, WorkflowEdge } from "./types";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -29,6 +26,9 @@ import {
   validatePayloadSize,
   formatBytes,
 } from "@/lib/workflow-sanitizer";
+
+// Admin users who can create public templates
+const ADMIN_EMAILS = ["ldebortolialves@hubspot.com"];
 
 interface SaveWorkflowDialogProps {
   open: boolean;
@@ -53,12 +53,20 @@ export default function SaveWorkflowDialog({
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [backgroundImage, setBackgroundImage] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
   const [nameError, setNameError] = useState("");
   const [workflowError, setWorkflowError] = useState("");
   const [serverError, setServerError] = useState("");
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  // Check if current user is admin (can create public templates)
+  const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email);
+
+  // React Query mutations for save/update with automatic cache invalidation
+  const saveWorkflowMutation = useSaveWorkflow();
+  const updateWorkflowMutation = useUpdateWorkflow();
+  const isSaving = saveWorkflowMutation.isPending || updateWorkflowMutation.isPending;
 
   // Populate form when editing existing workflow
   useEffect(() => {
@@ -144,7 +152,6 @@ export default function SaveWorkflowDialog({
       return;
     }
 
-    setIsSaving(true);
     try {
       // Capture thumbnail before sanitizing
       let thumbnail: string | undefined;
@@ -174,7 +181,6 @@ export default function SaveWorkflowDialog({
           description: sizeValidation.error,
           variant: "destructive",
         });
-        setIsSaving(false);
         return;
       }
 
@@ -201,16 +207,19 @@ export default function SaveWorkflowDialog({
       };
 
       if (existingWorkflow?.id) {
-        // Update existing workflow
-        await updateWorkflow(existingWorkflow.id, workflowData);
+        // Update existing workflow using React Query mutation
+        await updateWorkflowMutation.mutateAsync({
+          workflowId: existingWorkflow.id,
+          workflow: workflowData as any,
+        });
         toast({
           title: "Workflow updated",
           description: `"${name}" has been updated successfully`,
         });
         onSaveSuccess?.(existingWorkflow.id);
       } else {
-        // Save new workflow
-        const result = await saveWorkflow(workflowData);
+        // Save new workflow using React Query mutation
+        const result = await saveWorkflowMutation.mutateAsync(workflowData);
         toast({
           title: "Workflow saved",
           description: `"${name}" has been saved successfully`,
@@ -258,8 +267,6 @@ export default function SaveWorkflowDialog({
         description: detailedMessage,
         variant: "destructive",
       });
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -348,23 +355,26 @@ export default function SaveWorkflowDialog({
             />
           </div>
 
-          <div className="flex items-center justify-between rounded-lg border border-border p-4">
-            <div className="space-y-0.5">
-              <Label htmlFor="workflow-public">Share as template</Label>
-              <p className="text-sm text-muted-foreground">
-                Make this workflow available to all users
-              </p>
+          {/* Share as template - Admin only */}
+          {isAdmin && (
+            <div className="flex items-center justify-between rounded-lg border border-border p-4">
+              <div className="space-y-0.5">
+                <Label htmlFor="workflow-public">Share as template</Label>
+                <p className="text-sm text-muted-foreground">
+                  Make this workflow available to all users
+                </p>
+              </div>
+              <Switch
+                id="workflow-public"
+                checked={isPublic}
+                onCheckedChange={setIsPublic}
+                disabled={isSaving}
+              />
             </div>
-            <Switch
-              id="workflow-public"
-              checked={isPublic}
-              onCheckedChange={setIsPublic}
-              disabled={isSaving}
-            />
-          </div>
+          )}
 
-          {/* Background Image Upload - Only for templates */}
-          {isPublic && (
+          {/* Background Image Upload - Only for templates (admin only) */}
+          {isAdmin && isPublic && (
             <div className="space-y-2">
               <Label htmlFor="background-image">Template Background Image (Optional)</Label>
               <p className="text-sm text-muted-foreground">

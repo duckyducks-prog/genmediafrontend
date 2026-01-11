@@ -4,13 +4,15 @@ import cors from "cors";
 import { handleDemo } from "./routes/demo";
 import { setupWorkflowRoutes } from "./routes/workflows";
 import { setupAssetRoutes } from "./routes/assets";
-import { verifyStorageHealth } from "./workflow-storage";
+import { verifyStorageHealth } from "./workflow-storage-firestore";
 
 export function createServer() {
   const app = express();
 
-  // Verify workflow storage health on startup
-  verifyStorageHealth();
+  // Verify workflow storage health on startup (async, non-blocking)
+  verifyStorageHealth().catch((error) => {
+    console.error("[Server] Firestore health check failed:", error);
+  });
 
   // Middleware
   app.use(cors());

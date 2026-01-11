@@ -23,17 +23,23 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
-  listMyWorkflows,
-  listPublicWorkflows,
-  deleteWorkflow,
   loadWorkflow,
   SavedWorkflow,
   WorkflowListItem,
   testWorkflowAPI,
   APITestResult,
 } from "@/lib/workflow-api";
-import { MOCK_WORKFLOW_TEMPLATES } from "@/lib/mock-workflows";
+import {
+  useMyWorkflows,
+  usePublicWorkflows,
+  useDeleteWorkflow,
+  useInvalidateWorkflows,
+} from "@/lib/workflow-queries";
+import { useAuth } from "@/lib/AuthContext";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
+// Admin users who can delete public templates
+const ADMIN_EMAILS = ["ldebortolialves@hubspot.com"];
 
 interface WorkflowGalleryProps {
   onLoadWorkflow: (workflow: SavedWorkflow) => void;
@@ -42,60 +48,48 @@ interface WorkflowGalleryProps {
 export default function WorkflowGallery({
   onLoadWorkflow,
 }: WorkflowGalleryProps) {
-  const [myWorkflows, setMyWorkflows] = useState<WorkflowListItem[]>([]);
-  const [publicWorkflows, setPublicWorkflows] = useState<WorkflowListItem[]>(
-    [],
-  );
-  const [isLoading, setIsLoading] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [apiStatus, setApiStatus] = useState<APITestResult | null>(null);
   const [showApiTest, setShowApiTest] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  const fetchWorkflows = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const [myWf, publicWf] = await Promise.all([
-        listMyWorkflows().catch((err) => {
-          console.error("[WorkflowGallery] Failed to fetch my workflows:", err);
-          return [];
-        }),
-        listPublicWorkflows().catch((err) => {
-          console.error(
-            "[WorkflowGallery] Failed to fetch public workflows:",
-            err,
-          );
-          return [];
-        }),
-      ]);
+  // Check if current user is admin (can delete public templates)
+  const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email);
 
-      setMyWorkflows(myWf);
+  // React Query hooks for cached data fetching
+  const {
+    data: myWorkflowsData,
+    isLoading: isLoadingMy,
+    error: myError,
+    refetch: refetchMy,
+  } = useMyWorkflows();
 
-      // Use mock templates as fallback when API is not available
-      if (publicWf.length === 0) {
-        logger.debug(
-          "[WorkflowGallery] Using mock templates (API not available)",
-        );
-        setPublicWorkflows(MOCK_WORKFLOW_TEMPLATES);
-        setShowApiTest(true);
-      } else {
-        setPublicWorkflows(publicWf);
-        setShowApiTest(false);
-      }
-    } catch (error) {
-      console.error("Error fetching workflows:", error);
-      // Use mock templates on error
-      setPublicWorkflows(MOCK_WORKFLOW_TEMPLATES);
+  const {
+    data: publicWorkflowsData,
+    isLoading: isLoadingPublic,
+    error: publicError,
+    refetch: refetchPublic,
+  } = usePublicWorkflows();
+
+  const deleteWorkflowMutation = useDeleteWorkflow();
+  const { invalidateAll } = useInvalidateWorkflows();
+
+  // Derive workflow lists from query data
+  const myWorkflows = myWorkflowsData ?? [];
+  const publicWorkflows = publicWorkflowsData ?? [];
+
+  const isLoading = isLoadingMy || isLoadingPublic;
+
+  // Show API test alert only if there was an error fetching
+  useEffect(() => {
+    if (publicError) {
+      logger.debug("[WorkflowGallery] Error fetching public workflows");
       setShowApiTest(true);
-      toast({
-        title: "Using example templates",
-        description:
-          "Backend workflow API is not available. Showing example templates.",
-      });
-    } finally {
-      setIsLoading(false);
+    } else {
+      setShowApiTest(false);
     }
-  }, [toast]);
+  }, [publicError]);
 
   // Test API connectivity on mount
   useEffect(() => {
@@ -112,14 +106,14 @@ export default function WorkflowGallery({
     testAPI();
   }, []);
 
-  useEffect(() => {
-    fetchWorkflows();
-  }, [fetchWorkflows]);
+  const fetchWorkflows = useCallback(() => {
+    refetchMy();
+    refetchPublic();
+  }, [refetchMy, refetchPublic]);
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteWorkflow(id);
-      setMyWorkflows(myWorkflows.filter((wf) => wf.id !== id));
+      await deleteWorkflowMutation.mutateAsync(id);
       toast({
         title: "Workflow deleted",
         description: "The workflow has been removed",
@@ -158,65 +152,18 @@ export default function WorkflowGallery({
         return;
       }
 
-      const mockById = MOCK_WORKFLOW_TEMPLATES.find(
-        (w) => w.id === workflow.id,
-      );
-      const mockByName = MOCK_WORKFLOW_TEMPLATES.find(
-        (w) => w.name.toLowerCase() === workflow.name.toLowerCase(),
-      );
-
-      // Built-in templates should open even if the backend is unavailable.
-      if (mockById) {
-        onLoadWorkflow(mockById);
-        return;
-      }
-
       setIsLoadingWorkflow(true);
       try {
         const fullWorkflow = await loadWorkflow(workflow.id);
         onLoadWorkflow(fullWorkflow);
       } catch (error) {
         console.error("Failed to load workflow:", error);
-
-        // If backend can't load the workflow (missing file / 404 / offline), fall back
-        // to a built-in template with the same name.
-        const fallback = mockByName;
-        if (fallback) {
-          console.warn(
-            "[WorkflowGallery] Backend workflow unavailable, falling back to built-in template:",
-            {
-              requestedId: workflow.id,
-              templateId: fallback.id,
-              name: workflow.name,
-            },
-          );
-
-          toast({
-            title: "Loaded example template",
-            description:
-              "The saved workflow data isn't available in this environment yet. Loading a built-in template instead.",
-          });
-
-          onLoadWorkflow(fallback);
-          return;
-        }
-
-        // No fallback available - show helpful error message
-        const is404 = error instanceof Error && error.message.includes("404");
-
-        if (is404) {
-          toast({
-            title: "Workflow data not available",
-            description: `The data for "${workflow.name}" is stored in the cloud and isn't available in this local environment. To access this workflow, you'll need to sync from your cloud database or recreate it.`,
-          });
-        } else {
-          toast({
-            title: "Failed to load workflow",
-            description:
-              error instanceof Error ? error.message : "Unknown error",
-            variant: "destructive",
-          });
-        }
+        toast({
+          title: "Failed to load workflow",
+          description:
+            error instanceof Error ? error.message : "Unknown error",
+          variant: "destructive",
+        });
       } finally {
         setIsLoadingWorkflow(false);
       }
@@ -231,28 +178,28 @@ export default function WorkflowGallery({
       >
         {/* Thumbnail Image */}
         <div className="relative aspect-video bg-muted">
-          {workflow.thumbnail ? (
-            <img
-              src={workflow.thumbnail}
-              alt={workflow.name}
-              className="w-full h-full object-cover"
-            />
-          ) : (workflow as any).background_image && workflow.is_public ? (
-            // Use custom background image for templates
+          {/* Templates: prioritize custom background_image over auto-generated thumbnail */}
+          {workflow.is_public && (workflow as any).background_image ? (
             <img
               src={(workflow as any).background_image}
               alt={workflow.name}
               className="w-full h-full object-cover"
             />
+          ) : workflow.thumbnail ? (
+            <img
+              src={workflow.thumbnail}
+              alt={workflow.name}
+              className="w-full h-full object-cover"
+            />
           ) : workflow.is_public ? (
-            // Use default template image for public workflows
+            // Default template image if no background_image or thumbnail
             <img
               src="https://cdn.builder.io/api/v1/image/assets%2Fb1d3bf7cc0eb4f0daca65fdc5a7d5179%2F5cc32d6d0a324e819ef846f34c73c640?format=webp&width=800"
               alt={workflow.name}
               className="w-full h-full object-cover"
             />
           ) : (
-            // Placeholder for personal workflows
+            // Placeholder for personal workflows without thumbnail
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted via-muted to-accent/20">
               <WorkflowIcon className="w-16 h-16 opacity-30" />
             </div>
@@ -274,8 +221,8 @@ export default function WorkflowGallery({
             </div>
           )}
 
-          {/* Action buttons overlay for personal workflows only */}
-          {!workflow.is_public && (
+          {/* Action buttons overlay - show for personal workflows OR templates when admin can delete */}
+          {(!workflow.is_public || showDelete) && (
             <div
               className={`absolute inset-0 bg-black/60 flex items-center justify-center gap-2 transition-opacity ${
                 isHovered ? "opacity-100" : "opacity-0"
@@ -425,6 +372,7 @@ export default function WorkflowGallery({
                 <WorkflowCard
                   key={workflow.id}
                   workflow={workflow}
+                  showDelete={isAdmin}
                 />
               ))}
             </div>
