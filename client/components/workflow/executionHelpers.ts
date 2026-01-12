@@ -246,11 +246,18 @@ export function gatherNodeInputs(
     }
 
     // Text handle alias - Prompt nodes store value in data.prompt, not data.text
-    if (outputValue === undefined && sourceHandle === "text") {
+    // Also handle case where sourceHandle might be "default" due to missing handle ID
+    const isPromptNode = sourceNode.type === NodeType.Prompt;
+    if (outputValue === undefined && (sourceHandle === "text" || (sourceHandle === "default" && isPromptNode))) {
       const outputs = sourceNode.data.outputs as Record<string, unknown> | undefined;
-      outputValue = outputs?.text || nodeData.prompt;
+      // Try outputs.text first, then data.prompt (for Prompt nodes)
+      outputValue = outputs?.text || (isPromptNode ? nodeData.prompt : undefined);
       if (outputValue !== undefined) {
-        logger.debug(`[gatherNodeInputs] ✓ Found text via prompt alias`);
+        logger.debug(`[gatherNodeInputs] ✓ Found text via prompt alias`, {
+          sourceHandle,
+          sourceNodeType: sourceNode.type,
+          foundIn: outputs?.text ? 'outputs.text' : 'data.prompt',
+        });
       }
     }
 
