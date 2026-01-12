@@ -2001,7 +2001,12 @@ export function useWorkflowExecution(
   // Execute a single node with automatic dependency resolution
   const executeSingleNode = useCallback(
     async (nodeId: string) => {
-      const targetNode = nodes.find((n) => n.id === nodeId);
+      // ✅ CRITICAL FIX: Create a local mutable copy of nodes
+      // This allows us to synchronously update node outputs so downstream nodes
+      // can see them immediately, without waiting for React state to update
+      let currentNodes = [...nodes];
+
+      const targetNode = currentNodes.find((n) => n.id === nodeId);
 
       if (!targetNode) {
         toast({
@@ -2019,7 +2024,7 @@ export function useWorkflowExecution(
 
       try {
         // Find upstream dependencies
-        const dependencies = findUpstreamDependencies(nodeId, nodes, edges);
+        const dependencies = findUpstreamDependencies(nodeId, currentNodes, edges);
 
         logger.debug(
           `[Single Node Execution] Target: ${nodeId}, Dependencies: ${dependencies.join(", ") || "none"}`,
@@ -2027,7 +2032,7 @@ export function useWorkflowExecution(
 
         // Execute dependencies first (only if they don't have outputs already)
         for (const depNodeId of dependencies) {
-          const depNode = nodes.find((n) => n.id === depNodeId);
+          const depNode = currentNodes.find((n) => n.id === depNodeId);
           if (!depNode) continue;
 
           // Check if this dependency already has outputs - if so, skip execution
@@ -2084,7 +2089,8 @@ export function useWorkflowExecution(
           setEdgeAnimated(depNodeId, true, false);
           updateNodeState(depNodeId, "executing");
 
-          const inputs = getNodeInputs(depNodeId);
+          // ✅ Use gatherNodeInputs directly with currentNodes (not stale closure)
+          const inputs = gatherNodeInputs(depNode, currentNodes, edges);
           const validation = validateNodeInputs(depNode, inputs);
 
           if (!validation.valid) {
@@ -2107,6 +2113,31 @@ export function useWorkflowExecution(
             outputs: result.data.outputs || result.data,
           };
 
+          // ✅ CRITICAL FIX: Synchronously update currentNodes so downstream nodes
+          // can see this dependency's outputs immediately
+          currentNodes = currentNodes.map((n) =>
+            n.id === depNodeId
+              ? {
+                  ...n,
+                  data: {
+                    ...n.data,
+                    ...updateData,
+                    outputs: updateData.outputs,
+                    status: "completed",
+                  },
+                }
+              : n,
+          );
+
+          logger.debug(
+            "[Single Node Execution] ✓ Synchronously updated dependency outputs:",
+            {
+              nodeId: depNodeId,
+              nodeType: depNode.type,
+              outputKeys: Object.keys(updateData.outputs || {}),
+            },
+          );
+
           setEdgeAnimated(depNodeId, false, true);
           updateNodeState(depNodeId, "completed", updateData);
           setTimeout(() => {
@@ -2115,11 +2146,16 @@ export function useWorkflowExecution(
         }
 
         // Execute target node
+        // Get the latest version of the target node from currentNodes
+        // (in case it was updated during dependency resolution)
+        const latestTargetNode = currentNodes.find((n) => n.id === nodeId) || targetNode;
+
         setEdgeAnimated(nodeId, true, false);
         updateNodeState(nodeId, "executing");
 
-        const inputs = getNodeInputs(nodeId);
-        const validation = validateNodeInputs(targetNode, inputs);
+        // ✅ Use gatherNodeInputs directly with currentNodes (not stale closure)
+        const inputs = gatherNodeInputs(latestTargetNode, currentNodes, edges);
+        const validation = validateNodeInputs(latestTargetNode, inputs);
 
         if (!validation.valid) {
           setEdgeAnimated(nodeId, false, false);
@@ -2132,7 +2168,7 @@ export function useWorkflowExecution(
           return;
         }
 
-        const result = await executeNode(targetNode, inputs);
+        const result = await executeNode(latestTargetNode, inputs);
 
         if (!result.success) {
           setEdgeAnimated(nodeId, false, false);
@@ -2159,7 +2195,7 @@ export function useWorkflowExecution(
 
         toast({
           title: "Success",
-          description: `${targetNode.data.label || targetNode.type} executed successfully!`,
+          description: `${latestTargetNode.data.label || latestTargetNode.type} executed successfully!`,
         });
       } catch (error) {
         console.error("[Single Node Execution] Error:", error);
@@ -2170,7 +2206,7 @@ export function useWorkflowExecution(
         });
       }
     },
-    [nodes, edges, getNodeInputs, executeNode, updateNodeState],
+    [nodes, edges, executeNode, updateNodeState, setEdgeAnimated],
   );
 
   return {
