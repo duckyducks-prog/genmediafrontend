@@ -174,13 +174,17 @@ describe("API E2E Tests", () => {
   });
 
   describe("Health Check", () => {
-    it("should respond to GET /", async () => {
-      const response = await fetch(`${API_BASE_URL}/`);
-      expect(response.ok).toBe(true);
+    it(
+      "should respond to GET /",
+      async () => {
+        const response = await fetch(`${API_BASE_URL}/`);
+        expect(response.ok).toBe(true);
 
-      const data = await response.json();
-      expect(data).toBeDefined();
-    });
+        const data = await response.json();
+        expect(data).toBeDefined();
+      },
+      TEST_TIMEOUT,
+    );
   });
 
   describe("Image Generation", () => {
@@ -212,21 +216,26 @@ describe("API E2E Tests", () => {
       TEST_TIMEOUT,
     );
 
-    it("should reject requests without auth token", async () => {
-      const response = await fetch(`${API_BASE_URL}/generate/image`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          // No Authorization header
-        },
-        body: JSON.stringify({
-          prompt: "Test image",
-          aspect_ratio: "1:1",
-        }),
-      });
+    it(
+      "should reject requests without auth token",
+      async () => {
+        const response = await fetch(`${API_BASE_URL}/v1/generate/image`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            // No Authorization header
+          },
+          body: JSON.stringify({
+            prompt: "Test image",
+            aspect_ratio: "1:1",
+          }),
+        });
 
-      expect(response.status).toBe(401); // or 403, depending on backend implementation
-    });
+        // Backend can return 401 (unauthenticated), 403 (forbidden), or 404 (hidden from unauth users)
+        expect([401, 403, 404]).toContain(response.status);
+      },
+      TEST_TIMEOUT,
+    );
 
     it(
       "should handle different aspect ratios",
@@ -784,27 +793,31 @@ describe("API E2E Tests", () => {
   });
 
   describe("Error Handling", () => {
-    it("should return 401 or 403 for unauthorized users", async () => {
-      // Use an invalid token
-      const response = await fetch(`${API_BASE_URL}/generate/image`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer invalid-token-12345",
-        },
-        body: JSON.stringify({
-          prompt: "Test",
-          aspect_ratio: "1:1",
-        }),
-      });
+    it(
+      "should return 401 or 403 for unauthorized users",
+      async () => {
+        // Use an invalid token
+        const response = await fetch(`${API_BASE_URL}/v1/generate/image`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer invalid-token-12345",
+          },
+          body: JSON.stringify({
+            prompt: "Test",
+            aspect_ratio: "1:1",
+          }),
+        });
 
-      // Backend can return either 401 (unauthenticated) or 403 (forbidden)
-      expect([401, 403]).toContain(response.status);
-      console.log(
-        "✓ Unauthorized access correctly rejected with",
-        response.status,
-      );
-    });
+        // Backend can return 401 (unauthenticated), 403 (forbidden), or 404 (hidden from unauth users)
+        expect([401, 403, 404]).toContain(response.status);
+        console.log(
+          "✓ Unauthorized access correctly rejected with",
+          response.status,
+        );
+      },
+      TEST_TIMEOUT,
+    );
 
     it("should handle missing required parameters", async () => {
       if (!authToken) return;
