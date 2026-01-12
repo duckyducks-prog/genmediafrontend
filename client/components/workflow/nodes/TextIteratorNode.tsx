@@ -1,6 +1,6 @@
 import { logger } from "@/lib/logger";
-import { memo, useEffect } from "react";
-import { Handle, Position, NodeProps, useReactFlow } from "reactflow";
+import { memo, useEffect, useState, useCallback } from "react";
+import { Handle, Position, NodeProps, useReactFlow, useStore } from "reactflow";
 import {
   TextIteratorNodeData,
   NODE_CONFIGURATIONS,
@@ -28,6 +28,59 @@ function TextIteratorNode({ data, id }: NodeProps<TextIteratorNodeData>) {
   const status = data.status || "ready";
   const { getNodes, getEdges } = useReactFlow();
 
+  // Track when upstream nodes update to trigger recalculation
+  const [upstreamUpdateTrigger, setUpstreamUpdateTrigger] = useState(0);
+
+  // Subscribe to actual node changes using useStore
+  // This creates a stable selector that tracks nodes connected to this one
+  const connectedSourceOutputs = useStore(
+    useCallback(
+      (state) => {
+        const edges = state.edges as WorkflowEdge[];
+        const nodes = state.getNodes() as WorkflowNode[];
+
+        // Find edges that connect TO this node
+        const incomingEdges = edges.filter((e) => e.target === id);
+
+        // Get outputs from all source nodes
+        const sourceOutputs: Record<string, unknown> = {};
+        incomingEdges.forEach((edge) => {
+          const sourceNode = nodes.find((n) => n.id === edge.source);
+          if (sourceNode?.data?.outputs) {
+            const sourceHandle = edge.sourceHandle || "response";
+            const outputs = sourceNode.data.outputs as Record<string, unknown>;
+            sourceOutputs[edge.source + "_" + sourceHandle] = outputs[sourceHandle];
+          }
+        });
+
+        // Return a JSON string to ensure proper change detection
+        return JSON.stringify(sourceOutputs);
+      },
+      [id]
+    )
+  );
+
+  // Listen for node-update events from upstream nodes
+  useEffect(() => {
+    const handleUpstreamUpdate = (event: CustomEvent) => {
+      const { id: updatedId } = event.detail;
+      const currentEdges = getEdges() as WorkflowEdge[];
+
+      // Check if the updated node is connected to this node as a source
+      const isUpstreamNode = currentEdges.some(
+        (edge) => edge.source === updatedId && edge.target === id
+      );
+
+      if (isUpstreamNode) {
+        logger.debug('[TextIterator] Upstream node updated, triggering recalculation', { updatedId });
+        setUpstreamUpdateTrigger(prev => prev + 1);
+      }
+    };
+
+    window.addEventListener('node-update', handleUpstreamUpdate as EventListener);
+    return () => window.removeEventListener('node-update', handleUpstreamUpdate as EventListener);
+  }, [id, getEdges]);
+
   // Real-time execution: Update outputs when inputs change
   useEffect(() => {
     const nodes = getNodes() as WorkflowNode[];
@@ -54,6 +107,7 @@ function TextIteratorNode({ data, id }: NodeProps<TextIteratorNodeData>) {
       isArray: Array.isArray(connectedItems),
       connectedItems: connectedItems,
       separator: resolvedSeparator,
+      upstreamUpdateTrigger,
     });
 
     if (typeof connectedItems === "string") {
@@ -116,6 +170,8 @@ function TextIteratorNode({ data, id }: NodeProps<TextIteratorNodeData>) {
     data.customSeparator,
     getNodes,
     getEdges,
+    upstreamUpdateTrigger,
+    connectedSourceOutputs,
   ]);
 
   const handleUpdate = (field: keyof TextIteratorNodeData, value: any) => {
