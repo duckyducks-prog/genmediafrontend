@@ -729,6 +729,7 @@ export function useWorkflowExecution(
                 success: true,
                 data: {
                   response: apiData.response,
+                  responsePreview: apiData.response, // For UI display
                   outputs: { response: apiData.response },
                 },
               };
