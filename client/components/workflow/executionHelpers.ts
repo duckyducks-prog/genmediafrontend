@@ -245,6 +245,15 @@ export function gatherNodeInputs(
       }
     }
 
+    // Text handle alias - Prompt nodes store value in data.prompt, not data.text
+    if (outputValue === undefined && sourceHandle === "text") {
+      const outputs = sourceNode.data.outputs as Record<string, unknown> | undefined;
+      outputValue = outputs?.text || nodeData.prompt;
+      if (outputValue !== undefined) {
+        logger.debug(`[gatherNodeInputs] ✓ Found text via prompt alias`);
+      }
+    }
+
     if (outputValue !== undefined) {
       // Check if this input accepts multiple connections
       const inputConnector = nodeConfig.inputConnectors.find(
