@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import * as admin from "firebase-admin";
 import * as workflowStorage from "../workflow-storage-firestore";
 
 // =============================================================================
@@ -35,32 +36,23 @@ function isEmailAllowed(email: string | undefined): boolean {
   return ALLOWED_EMAILS.includes(email.toLowerCase());
 }
 
-// Lazy-load Firebase Admin to avoid initialization errors when not needed
-type FirebaseAdminType = typeof import("firebase-admin");
-let firebaseAdminInstance: FirebaseAdminType | null = null;
+// Initialize Firebase Admin SDK lazily on first use
+let firebaseInitialized = false;
 
-function getFirebaseAdmin(): FirebaseAdminType {
-  if (firebaseAdminInstance) {
-    return firebaseAdminInstance;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const admin: FirebaseAdminType = require("firebase-admin");
-
-  if (admin.apps.length === 0) {
+function getFirebaseAdmin(): typeof admin {
+  if (!firebaseInitialized && admin.apps.length === 0) {
     try {
       // Initialize with application default credentials or service account
       admin.initializeApp({
         credential: admin.credential.applicationDefault(),
       });
       console.log("[Auth] Firebase Admin initialized successfully");
+      firebaseInitialized = true;
     } catch (error) {
       console.error("[Auth] Failed to initialize Firebase Admin:", error);
       throw error;
     }
   }
-
-  firebaseAdminInstance = admin;
   return admin;
 }
 
