@@ -25,10 +25,13 @@ NC='\033[0m' # No Color
 
 echo -e "${GREEN}=== GenMedia Frontend Deployment ===${NC}"
 
-# Load environment variables from .env.production if it exists
+# Load environment variables from .env.production or .env.local if they exist
 if [ -f .env.production ]; then
     echo -e "${YELLOW}Loading environment from .env.production${NC}"
     export $(grep -v '^#' .env.production | xargs)
+elif [ -f .env.local ]; then
+    echo -e "${YELLOW}Loading environment from .env.local${NC}"
+    export $(grep -v '^#' .env.local | xargs)
 fi
 
 # Check for required GCP project

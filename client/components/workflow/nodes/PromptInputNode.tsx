@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useEffect } from "react";
 import { Handle, Position, NodeProps, useReactFlow } from "reactflow";
 import { Textarea } from "@/components/ui/textarea";
 import { PromptNodeData } from "../types";
@@ -6,6 +6,26 @@ import { Type, CheckCircle2, Loader2 } from "lucide-react";
 
 function PromptInputNode({ data, id }: NodeProps<PromptNodeData>) {
   const { setNodes } = useReactFlow();
+
+  // ✅ Initialize outputs when component mounts or prompt changes externally
+  // This ensures downstream nodes can read the prompt even before user edits
+  useEffect(() => {
+    if (data.prompt && (!data.outputs || data.outputs.text !== data.prompt)) {
+      setNodes((nodes) =>
+        nodes.map((node) =>
+          node.id === id
+            ? {
+                ...node,
+                data: {
+                  ...node.data,
+                  outputs: { text: data.prompt },
+                },
+              }
+            : node,
+        ),
+      );
+    }
+  }, [id, data.prompt, data.outputs, setNodes]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     // Block changes in read-only mode
