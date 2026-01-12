@@ -478,9 +478,9 @@ export async function rebuildIndexEndpoint(_req: Request, res: Response) {
   }
 }
 
-// Apply auth middleware to all routes
+// Apply auth middleware to API routes only (not static files)
 export function setupWorkflowRoutes(app: any) {
-  app.use(requireAuth);
+  app.use("/api", requireAuth);
 
   app.get("/api/workflows", listWorkflows);
   app.post("/api/workflows/save", saveWorkflow);
