@@ -231,8 +231,8 @@ describe("API E2E Tests", () => {
           }),
         });
 
-        // Backend can return 401 (unauthenticated) or 403 (forbidden)
-        expect([401, 403]).toContain(response.status);
+        // Backend can return 401 (unauthenticated), 403 (forbidden), or 404 (hidden from unauth users)
+        expect([401, 403, 404]).toContain(response.status);
       },
       TEST_TIMEOUT,
     );
@@ -809,8 +809,8 @@ describe("API E2E Tests", () => {
           }),
         });
 
-        // Backend can return either 401 (unauthenticated) or 403 (forbidden)
-        expect([401, 403]).toContain(response.status);
+        // Backend can return 401 (unauthenticated), 403 (forbidden), or 404 (hidden from unauth users)
+        expect([401, 403, 404]).toContain(response.status);
         console.log(
           "✓ Unauthorized access correctly rejected with",
           response.status,
