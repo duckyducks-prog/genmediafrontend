@@ -2,8 +2,9 @@ import { logger } from "@/lib/logger";
 import { memo, useState, useCallback, useRef, useEffect } from "react";
 import { Handle, Position, NodeProps, useReactFlow } from "reactflow";
 import { Button } from "@/components/ui/button";
-import { Upload, X, Film, Play, FolderOpen } from "lucide-react";
+import { Upload, X, Film, Play, FolderOpen, Loader2 } from "lucide-react";
 import { VideoInputNodeData } from "../types";
+import { saveToLibrary } from "@/lib/api-helpers";
 
 function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
   // Initialize from data, which may be pre-populated from library
@@ -17,6 +18,8 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
   const [duration, setDuration] = useState<number | null>(
     data.duration || null,
   );
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { setNodes } = useReactFlow();
 
@@ -162,6 +165,9 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
         return;
       }
 
+      setIsUploading(true);
+      setUploadError(null);
+
       const url = URL.createObjectURL(file);
       setVideoUrl(url);
 
@@ -196,7 +202,7 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
 
         // Read file as data URL for output
         const reader = new FileReader();
-        reader.onload = () => {
+        reader.onload = async () => {
           const dataUrl = reader.result as string;
 
           logger.debug("[VideoUploadNode] File read complete:", {
@@ -205,35 +211,77 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
             dataUrlStart: dataUrl.substring(0, 100),
           });
 
-          const newData = {
-            ...data,
-            videoUrl: url, // Object URL for preview
-            file,
-            duration: videoDuration,
-            thumbnailUrl: thumb,
-            outputs: { video: dataUrl }, // Data URL for downstream nodes
-          };
+          try {
+            // Upload to Asset Library to get a persistent reference
+            logger.debug("[VideoUploadNode] Uploading to Asset Library...");
+            const assetResult = await saveToLibrary({
+              imageUrl: dataUrl, // The API uses imageUrl for both image/video data
+              prompt: "User uploaded video",
+              assetType: "video",
+            });
 
-          logger.debug("[VideoUploadNode] Video loaded:", {
-            nodeId: id,
-            duration: videoDuration,
-            fileSize: file.size,
-            fileType: file.type,
-          });
+            const videoRefId = assetResult.id;
+            logger.debug("[VideoUploadNode] Asset saved:", { videoRef: videoRefId });
 
-          // Update React Flow node
-          setNodes((nodes) =>
-            nodes.map((node) =>
-              node.id === id ? { ...node, data: newData } : node,
-            ),
-          );
+            const newData = {
+              ...data,
+              videoRef: videoRefId, // Asset ID for persistence
+              videoUrl: url, // Object URL for preview
+              file,
+              duration: videoDuration,
+              thumbnailUrl: thumb,
+              outputs: { video: dataUrl }, // Data URL for downstream nodes
+            };
 
-          // Dispatch for propagation
-          window.dispatchEvent(
-            new CustomEvent("node-update", {
-              detail: { id, data: newData },
-            }),
-          );
+            logger.debug("[VideoUploadNode] Video loaded with asset ref:", {
+              nodeId: id,
+              videoRef: videoRefId,
+              duration: videoDuration,
+              fileSize: file.size,
+              fileType: file.type,
+            });
+
+            // Update React Flow node
+            setNodes((nodes) =>
+              nodes.map((node) =>
+                node.id === id ? { ...node, data: newData } : node,
+              ),
+            );
+
+            // Dispatch for propagation
+            window.dispatchEvent(
+              new CustomEvent("node-update", {
+                detail: { id, data: newData },
+              }),
+            );
+          } catch (error) {
+            logger.debug("[VideoUploadNode] Failed to save to Asset Library:", error);
+            setUploadError("Failed to save video. It won't persist when workflow is saved.");
+
+            // Still update node with base64 for immediate use
+            const newData = {
+              ...data,
+              videoUrl: url,
+              file,
+              duration: videoDuration,
+              thumbnailUrl: thumb,
+              outputs: { video: dataUrl },
+            };
+
+            setNodes((nodes) =>
+              nodes.map((node) =>
+                node.id === id ? { ...node, data: newData } : node,
+              ),
+            );
+
+            window.dispatchEvent(
+              new CustomEvent("node-update", {
+                detail: { id, data: newData },
+              }),
+            );
+          } finally {
+            setIsUploading(false);
+          }
         };
         reader.readAsDataURL(file);
       };
@@ -245,6 +293,7 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
     setVideoUrl(null);
     setThumbnailUrl(null);
     setDuration(null);
+    setUploadError(null);
 
     const newData = {
       ...data,
@@ -463,6 +512,12 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
                   </div>
                 </>
               )}
+              {/* Upload overlay */}
+              {isUploading && (
+                <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                </div>
+              )}
             </div>
 
             {/* Remove button */}
@@ -471,6 +526,7 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
               variant="destructive"
               size="icon"
               className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+              disabled={isUploading}
             >
               <X className="w-3 h-3" />
             </Button>
@@ -487,18 +543,34 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
             {/* Upload area */}
             <label
               htmlFor={`file-upload-${id}`}
-              className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-accent/10 transition-colors"
+              className={`flex flex-col items-center justify-center h-32 border-2 border-dashed border-border rounded-lg transition-colors ${
+                isUploading
+                  ? "cursor-wait opacity-50"
+                  : "cursor-pointer hover:border-primary hover:bg-accent/10"
+              }`}
             >
-              <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-              <span className="text-xs text-muted-foreground">
-                Click to upload video
-              </span>
+              {isUploading ? (
+                <>
+                  <Loader2 className="w-8 h-8 text-muted-foreground mb-2 animate-spin" />
+                  <span className="text-xs text-muted-foreground">
+                    Uploading...
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+                  <span className="text-xs text-muted-foreground">
+                    Click to upload video
+                  </span>
+                </>
+              )}
               <input
                 id={`file-upload-${id}`}
                 type="file"
                 className="hidden"
                 accept="video/*"
                 onChange={handleFileUpload}
+                disabled={isUploading}
               />
             </label>
 
@@ -508,11 +580,18 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
               variant="outline"
               size="sm"
               className="w-full"
+              disabled={isUploading}
             >
               <FolderOpen className="w-4 h-4 mr-2" />
               Browse Library
             </Button>
           </div>
+        )}
+        {uploadError && (
+          <p className="text-xs text-destructive">{uploadError}</p>
+        )}
+        {data.videoRef && !uploadError && (
+          <p className="text-xs text-muted-foreground">✓ Saved to library</p>
         )}
       </div>
 

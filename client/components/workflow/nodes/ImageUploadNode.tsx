@@ -1,47 +1,74 @@
 import { logger } from "@/lib/logger";
-import { memo, useState } from "react";
+import { memo, useState, useEffect } from "react";
 import { Handle, Position, NodeProps, useReactFlow } from "reactflow";
 import { Button } from "@/components/ui/button";
 import { ImageInputNodeData } from "../types";
-import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { Upload, X, Image as ImageIcon, Loader2 } from "lucide-react";
+import { saveToLibrary } from "@/lib/api-helpers";
 
 function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
+  // Use imageUrl from data, which may be resolved from imageRef on workflow load
   const [imageUrl, setImageUrl] = useState<string | null>(data.imageUrl ?? null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const { setNodes } = useReactFlow();
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const url = event.target?.result as string;
+  // Sync imageUrl state when data.imageUrl changes (e.g., on workflow load)
+  useEffect(() => {
+    if (data.imageUrl && data.imageUrl !== imageUrl) {
+      setImageUrl(data.imageUrl);
+    }
+  }, [data.imageUrl]);
 
-        logger.debug("[ImageUploadNode] Image loaded:", {
-          nodeId: id,
-          urlLength: url.length,
-          urlPreview: url.substring(0, 50) + "...",
-          fileType: file.type,
-          fileSize: file.size,
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setUploadError(null);
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const url = event.target?.result as string;
+
+      logger.debug("[ImageUploadNode] Image loaded:", {
+        nodeId: id,
+        urlLength: url.length,
+        urlPreview: url.substring(0, 50) + "...",
+        fileType: file.type,
+        fileSize: file.size,
+      });
+
+      // Show image immediately while uploading to asset library
+      setImageUrl(url);
+
+      try {
+        // Upload to Asset Library to get a persistent reference
+        logger.debug("[ImageUploadNode] Uploading to Asset Library...");
+        const assetResult = await saveToLibrary({
+          imageUrl: url,
+          prompt: "User uploaded image",
+          assetType: "image",
         });
 
-        setImageUrl(url);
+        const imageRef = assetResult.id;
+        logger.debug("[ImageUploadNode] Asset saved:", { imageRef });
 
-        // Create new data object with outputs
+        // Create new data object with imageRef for persistence
         const newData = {
           ...data,
-          imageUrl: url,
-          file,
-          outputs: { image: url }, // Ensure outputs is set with the image
+          imageRef, // Asset ID for persistence (survives workflow save/load)
+          imageUrl: url, // For immediate display
+          outputs: { image: url }, // For downstream nodes
         };
 
         logger.debug("[ImageUploadNode] Updating node with data:", {
           nodeId: id,
+          imageRef: newData.imageRef,
           hasOutputs: !!newData.outputs,
-          outputKeys: Object.keys(newData.outputs),
-          imageLength: newData.outputs.image?.length || 0,
         });
 
-        // Update node data first
+        // Update node data
         setNodes((nodes) =>
           nodes.map((node) =>
             node.id === id
@@ -53,7 +80,7 @@ function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
           ),
         );
 
-        // Then trigger propagation with the same data
+        // Trigger propagation to downstream nodes
         logger.debug("[ImageUploadNode] Dispatching node-update event");
         const updateEvent = new CustomEvent("node-update", {
           detail: {
@@ -62,18 +89,45 @@ function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
           },
         });
         window.dispatchEvent(updateEvent);
-      };
-      reader.readAsDataURL(file);
-    }
+      } catch (error) {
+        logger.debug("[ImageUploadNode] Failed to save to Asset Library:", error);
+        setUploadError("Failed to save image. It won't persist when workflow is saved.");
+
+        // Still update node with base64 for immediate use, but warn user
+        const newData = {
+          ...data,
+          imageUrl: url,
+          outputs: { image: url },
+        };
+
+        setNodes((nodes) =>
+          nodes.map((node) =>
+            node.id === id
+              ? { ...node, data: newData }
+              : node,
+          ),
+        );
+
+        const updateEvent = new CustomEvent("node-update", {
+          detail: { id, data: newData },
+        });
+        window.dispatchEvent(updateEvent);
+      } finally {
+        setIsUploading(false);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleRemove = () => {
     logger.debug("[ImageUploadNode] Removing image from node:", id);
 
     setImageUrl(null);
+    setUploadError(null);
 
     const newData = {
       ...data,
+      imageRef: undefined, // Clear asset reference
       imageUrl: null,
       file: null,
       outputs: {}, // Clear outputs
@@ -136,11 +190,17 @@ function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
               alt="Upload preview"
               className="max-w-full max-h-full object-contain"
             />
+            {isUploading && (
+              <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            )}
             <Button
               onClick={handleRemove}
               variant="destructive"
               size="icon"
               className="absolute top-1 right-1 h-6 w-6"
+              disabled={isUploading}
             >
               <X className="w-3 h-3" />
             </Button>
@@ -148,20 +208,42 @@ function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
         ) : (
           <label
             htmlFor={`file-upload-${id}`}
-            className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary hover:bg-accent/10 transition-colors"
+            className={`flex flex-col items-center justify-center h-32 border-2 border-dashed border-border rounded-lg transition-colors ${
+              isUploading
+                ? "cursor-wait opacity-50"
+                : "cursor-pointer hover:border-primary hover:bg-accent/10"
+            }`}
           >
-            <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-            <span className="text-xs text-muted-foreground">
-              Click to upload
-            </span>
+            {isUploading ? (
+              <>
+                <Loader2 className="w-8 h-8 text-muted-foreground mb-2 animate-spin" />
+                <span className="text-xs text-muted-foreground">
+                  Uploading...
+                </span>
+              </>
+            ) : (
+              <>
+                <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+                <span className="text-xs text-muted-foreground">
+                  Click to upload
+                </span>
+              </>
+            )}
             <input
               id={`file-upload-${id}`}
               type="file"
               className="hidden"
               accept="image/*"
               onChange={handleFileUpload}
+              disabled={isUploading}
             />
           </label>
+        )}
+        {uploadError && (
+          <p className="text-xs text-destructive">{uploadError}</p>
+        )}
+        {data.imageRef && !uploadError && (
+          <p className="text-xs text-muted-foreground">✓ Saved to library</p>
         )}
       </div>
 
