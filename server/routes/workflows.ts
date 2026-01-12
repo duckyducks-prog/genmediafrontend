@@ -207,6 +207,107 @@ export async function saveWorkflow(req: Request, res: Response) {
   }
 }
 
+const VEO_API_BASE_URL = "https://veo-api-otfo2ctxma-uc.a.run.app";
+
+/**
+ * Resolve asset references in node data to actual URLs
+ * Fetches asset metadata from the VEO API and adds resolved URLs
+ */
+async function resolveNodeAssetRefs(
+  nodes: any[],
+  authHeader: string | undefined
+): Promise<any[]> {
+  if (!authHeader) {
+    console.log("[Workflows API] No auth header, skipping asset resolution");
+    return nodes;
+  }
+
+  // Collect all unique asset refs from nodes
+  const assetRefs = new Set<string>();
+  for (const node of nodes) {
+    if (node.data?.imageRef) assetRefs.add(node.data.imageRef);
+    if (node.data?.videoRef) assetRefs.add(node.data.videoRef);
+    if (node.data?.firstFrameRef) assetRefs.add(node.data.firstFrameRef);
+    if (node.data?.lastFrameRef) assetRefs.add(node.data.lastFrameRef);
+    // Handle arrays of refs
+    if (Array.isArray(node.data?.imageRefs)) {
+      node.data.imageRefs.forEach((ref: string) => assetRefs.add(ref));
+    }
+    if (Array.isArray(node.data?.referenceImageRefs)) {
+      node.data.referenceImageRefs.forEach((ref: string) => assetRefs.add(ref));
+    }
+  }
+
+  if (assetRefs.size === 0) {
+    console.log("[Workflows API] No asset refs to resolve");
+    return nodes;
+  }
+
+  console.log(`[Workflows API] Resolving ${assetRefs.size} asset refs`);
+
+  // Fetch all assets to build a lookup map
+  let assetMap = new Map<string, { url: string; exists: boolean }>();
+  try {
+    const assetsResponse = await fetch(`${VEO_API_BASE_URL}/v1/assets`, {
+      headers: { Authorization: authHeader },
+    });
+
+    if (assetsResponse.ok) {
+      const assetsData = await assetsResponse.json();
+      const assets = Array.isArray(assetsData) ? assetsData : assetsData.assets || [];
+      for (const asset of assets) {
+        if (asset.id && asset.url) {
+          assetMap.set(asset.id, { url: asset.url, exists: true });
+        }
+      }
+      console.log(`[Workflows API] Loaded ${assetMap.size} assets for resolution`);
+    } else {
+      console.warn(`[Workflows API] Failed to fetch assets: ${assetsResponse.status}`);
+    }
+  } catch (error) {
+    console.error("[Workflows API] Error fetching assets:", error);
+  }
+
+  // Resolve refs in each node
+  return nodes.map((node) => {
+    const data = { ...node.data };
+
+    // Resolve single refs
+    if (data.imageRef) {
+      const asset = assetMap.get(data.imageRef);
+      data.imageUrl = asset?.url || null;
+      data.imageRefExists = asset?.exists || false;
+    }
+    if (data.videoRef) {
+      const asset = assetMap.get(data.videoRef);
+      data.videoUrl = asset?.url || null;
+      data.videoRefExists = asset?.exists || false;
+    }
+    if (data.firstFrameRef) {
+      const asset = assetMap.get(data.firstFrameRef);
+      data.firstFrameUrl = asset?.url || null;
+      data.firstFrameRefExists = asset?.exists || false;
+    }
+    if (data.lastFrameRef) {
+      const asset = assetMap.get(data.lastFrameRef);
+      data.lastFrameUrl = asset?.url || null;
+      data.lastFrameRefExists = asset?.exists || false;
+    }
+
+    // Resolve array refs
+    if (Array.isArray(data.imageRefs)) {
+      data.images = data.imageRefs.map((ref: string) => assetMap.get(ref)?.url || null);
+    }
+    if (Array.isArray(data.referenceImageRefs)) {
+      data.referenceImageUrls = data.referenceImageRefs.map(
+        (ref: string) => assetMap.get(ref)?.url || null
+      );
+    }
+
+    return { ...node, data };
+  });
+}
+
 /**
  * GET /workflows/:id
  * Get a specific workflow by ID
@@ -214,11 +315,19 @@ export async function saveWorkflow(req: Request, res: Response) {
 export async function getWorkflow(req: Request, res: Response) {
   try {
     const { id } = req.params;
+    const authHeader = req.headers.authorization;
 
     console.log(`[Workflows API] Getting workflow: ${id}`);
 
     const workflow = await workflowStorage.loadWorkflow(id);
-    res.json(workflow);
+
+    // Resolve asset references to URLs
+    const resolvedNodes = await resolveNodeAssetRefs(workflow.nodes, authHeader);
+
+    res.json({
+      ...workflow,
+      nodes: resolvedNodes,
+    });
   } catch (error) {
     console.error("[Workflows API] Error getting workflow:", error);
 
