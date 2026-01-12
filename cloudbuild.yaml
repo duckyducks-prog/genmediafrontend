@@ -30,6 +30,14 @@ substitutions:
   _SERVICE_NAME: genmedia-frontend
   _REPOSITORY: genmedia
   _IMAGE_TAG: latest
+  _REQUIRE_AUTH: 'true'
+  _VITE_FIREBASE_API_KEY: ''
+  _VITE_FIREBASE_AUTH_DOMAIN: ''
+  _VITE_FIREBASE_PROJECT_ID: ''
+  _VITE_FIREBASE_STORAGE_BUCKET: ''
+  _VITE_FIREBASE_MESSAGING_SENDER_ID: ''
+  _VITE_FIREBASE_APP_ID: ''
+  _VITE_FIREBASE_MEASUREMENT_ID: ''
 
 steps:
   # Step 1: Build the Docker image
