@@ -168,8 +168,29 @@ export function gatherNodeInputs(
       return;
     }
 
-    const targetHandle = edge.targetHandle || "default";
+    let targetHandle = edge.targetHandle || "default";
     const sourceHandle = edge.sourceHandle || "default";
+
+    // ✅ CRITICAL FIX: If targetHandle is "default", resolve it to the actual input connector ID
+    // This happens when React Flow doesn't capture the handle ID on edge creation
+    if (targetHandle === "default" && nodeConfig.inputConnectors.length > 0) {
+      // If there's only one input connector, use that
+      if (nodeConfig.inputConnectors.length === 1) {
+        targetHandle = nodeConfig.inputConnectors[0].id;
+        logger.debug(`[gatherNodeInputs] Resolved default targetHandle to "${targetHandle}"`);
+      } else {
+        // Multiple connectors - try to find the first required one, or first text type
+        const requiredConnector = nodeConfig.inputConnectors.find((c: { required?: boolean }) => c.required);
+        const textConnector = nodeConfig.inputConnectors.find((c: { type?: string }) => c.type === "text");
+        if (requiredConnector) {
+          targetHandle = requiredConnector.id;
+          logger.debug(`[gatherNodeInputs] Resolved default targetHandle to required input "${targetHandle}"`);
+        } else if (textConnector) {
+          targetHandle = textConnector.id;
+          logger.debug(`[gatherNodeInputs] Resolved default targetHandle to text input "${targetHandle}"`);
+        }
+      }
+    }
 
     // First, try to get from outputs object
     const outputs = sourceNode.data.outputs as Record<string, unknown> | undefined;
