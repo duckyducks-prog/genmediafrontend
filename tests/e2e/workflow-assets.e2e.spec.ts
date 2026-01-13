@@ -91,8 +91,8 @@ async function createTestAsset(
     mimeType = "video/mp4";
   }
 
-  // Use VEO API directly - /library/save is the correct endpoint for creating assets
-  const response = await veoApiRequest("/library/save", {
+  // Use VEO API directly - /v1/assets is the correct endpoint for creating assets
+  const response = await veoApiRequest("/v1/assets", {
     method: "POST",
     body: JSON.stringify({
       data: base64Data,
@@ -108,7 +108,7 @@ async function createTestAsset(
       status: response.status,
       statusText: response.statusText,
       body: errorBody,
-      url: `${VEO_API_BASE_URL}/library/save`,
+      url: `${VEO_API_BASE_URL}/v1/assets`,
     });
     throw new Error(`Failed to create test asset: ${response.status} - ${errorBody}`);
   }
@@ -165,7 +165,7 @@ afterAll(async () => {
   // Delete test assets (use VEO API directly)
   for (const assetId of createdAssetIds) {
     try {
-      await veoApiRequest(`/library/${assetId}`, { method: "DELETE" });
+      await veoApiRequest(`/v1/assets/${assetId}`, { method: "DELETE" });
       console.log(`✓ Deleted test asset ${assetId}`);
     } catch (error) {
       console.warn(`⚠️  Failed to delete asset ${assetId}`);
