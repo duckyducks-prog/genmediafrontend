@@ -12,7 +12,9 @@ FIREBASE_PROJECT_ID=$(uv run python -c "from app.config import settings; print(s
 
 # Load environment variables from .env file if it exists
 if [ -f .env ]; then
+  set -a  # Auto-export all variables
   source .env
+  set +a
 fi
 ALLOWED_EMAILS="${ALLOWED_EMAILS:-}"
 ALLOWED_DOMAINS="${ALLOWED_DOMAINS:-}"
