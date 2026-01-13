@@ -103,7 +103,14 @@ async function createTestAsset(
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to create test asset: ${response.status}`);
+    const errorBody = await response.text();
+    console.error(`[createTestAsset] Failed:`, {
+      status: response.status,
+      statusText: response.statusText,
+      body: errorBody,
+      url: `${VEO_API_BASE_URL}/library/save`,
+    });
+    throw new Error(`Failed to create test asset: ${response.status} - ${errorBody}`);
   }
 
   const data = await response.json();
