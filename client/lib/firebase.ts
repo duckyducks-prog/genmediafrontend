@@ -47,3 +47,13 @@ export const signInWithGoogle = async () => {
 
 export const logOut = () => signOut(auth);
 export { onAuthStateChanged };
+
+// Expose auth globally for debugging (get token in console)
+// Usage: window.getFirebaseToken()
+if (typeof window !== "undefined") {
+  (window as any).getFirebaseToken = async () => {
+    const token = await auth.currentUser?.getIdToken();
+    console.log("Token:", token);
+    return token;
+  };
+}
