@@ -2,13 +2,11 @@
 Workflow service using Firestore for metadata and GCS for large assets
 """
 import asyncio
-import base64
 from typing import List, Dict, Optional
 from datetime import datetime
 import secrets
 from fastapi import HTTPException
 from google.cloud.firestore_v1.base_query import FieldFilter
-from google.cloud import storage
 from app.firestore import get_firestore_client, WORKFLOWS_COLLECTION, ASSETS_COLLECTION
 from app.config import settings
 from app.logging_config import setup_logger
@@ -47,36 +45,6 @@ class WorkflowServiceFirestore:
         self.db = get_firestore_client()
         self.workflows_ref = self.db.collection(WORKFLOWS_COLLECTION)
         self.assets_ref = self.db.collection(ASSETS_COLLECTION)
-        self.storage_client = storage.Client()
-        self.bucket = self.storage_client.bucket(settings.gcs_bucket)
-
-    def _strip_base64_prefix(self, data: str) -> str:
-        """Remove data URL prefix from base64 string"""
-        if "," in data:
-            return data.split(",", 1)[1]
-        return data
-
-    async def _upload_image_to_gcs(self, data: str, workflow_id: str, image_type: str) -> str:
-        """Upload base64 image to GCS and return the public URL"""
-        clean_data = self._strip_base64_prefix(data)
-        file_bytes = base64.b64decode(clean_data)
-
-        # Determine mime type from data URL
-        mime_type = "image/png"
-        if data.startswith("data:image/jpeg") or data.startswith("data:image/jpg"):
-            mime_type = "image/jpeg"
-            ext = "jpg"
-        elif data.startswith("data:image/webp"):
-            mime_type = "image/webp"
-            ext = "webp"
-        else:
-            ext = "png"
-
-        blob_path = f"workflows/{workflow_id}/{image_type}.{ext}"
-        blob = self.bucket.blob(blob_path)
-        await run_sync(blob.upload_from_string, file_bytes, content_type=mime_type)
-
-        return f"https://storage.googleapis.com/{settings.gcs_bucket}/{blob_path}"
 
     def _generate_workflow_id(self) -> str:
         """Generate a unique workflow ID"""
@@ -204,29 +172,8 @@ class WorkflowServiceFirestore:
         workflow_id = self._generate_workflow_id()
         now = datetime.utcnow()
 
-        # Upload images to GCS if provided (to avoid Firestore 1MB field limit)
-        thumbnail_url = None
-        background_image_url = None
-
-        if thumbnail:
-            try:
-                thumbnail_url = await self._upload_image_to_gcs(thumbnail, workflow_id, "thumbnail")
-                logger.info(f"Uploaded thumbnail to GCS for workflow {workflow_id}")
-            except Exception as e:
-                logger.warning(f"Failed to upload thumbnail to GCS: {e}")
-                # Fall back to storing base64 if small enough (< 500KB)
-                if len(thumbnail) < 500000:
-                    thumbnail_url = thumbnail
-
-        if background_image:
-            try:
-                background_image_url = await self._upload_image_to_gcs(background_image, workflow_id, "background")
-                logger.info(f"Uploaded background image to GCS for workflow {workflow_id}")
-            except Exception as e:
-                logger.warning(f"Failed to upload background image to GCS: {e}")
-                # Fall back to storing base64 if small enough (< 500KB)
-                if len(background_image) < 500000:
-                    background_image_url = background_image
+        # Note: thumbnail/background_image are ignored - use static images in frontend
+        # for workflow library templates instead of storing large images in database
 
         workflow_data = {
             "id": workflow_id,
@@ -234,8 +181,8 @@ class WorkflowServiceFirestore:
             "description": description.strip() if description else "",
             "is_public": is_public,
             "thumbnail_ref": None,
-            "thumbnail": thumbnail_url,  # GCS URL or small base64
-            "background_image": background_image_url,  # GCS URL or small base64
+            "thumbnail": None,
+            "background_image": None,
             "created_at": now,
             "updated_at": now,
             "user_id": user_id,

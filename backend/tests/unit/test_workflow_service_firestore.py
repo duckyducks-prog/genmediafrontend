@@ -9,20 +9,12 @@ from fastapi import HTTPException
 
 @pytest.fixture
 def mock_firestore_client():
-    """Mock Firestore client and GCS storage client"""
-    with patch('app.services.workflow_firestore.get_firestore_client') as mock_get_client, \
-         patch('app.services.workflow_firestore.storage.Client') as mock_storage_client:
+    """Mock Firestore client"""
+    with patch('app.services.workflow_firestore.get_firestore_client') as mock_get_client:
         mock_client = MagicMock()
         mock_collection = MagicMock()
         mock_client.collection.return_value = mock_collection
         mock_get_client.return_value = mock_client
-
-        # Mock GCS storage client
-        mock_storage = MagicMock()
-        mock_bucket = MagicMock()
-        mock_storage.bucket.return_value = mock_bucket
-        mock_storage_client.return_value = mock_storage
-
         yield mock_client
 
 
