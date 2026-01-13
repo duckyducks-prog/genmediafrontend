@@ -95,6 +95,20 @@ class GenerationService:
 
         return data
 
+    def _detect_mime_type_from_bytes(self, image_bytes: bytes) -> str:
+        """Detect MIME type from image magic bytes"""
+        if image_bytes[:8] == b'\x89PNG\r\n\x1a\n':
+            return 'image/png'
+        elif image_bytes[:2] == b'\xff\xd8':
+            return 'image/jpeg'
+        elif image_bytes[:4] == b'RIFF' and len(image_bytes) > 12 and image_bytes[8:12] == b'WEBP':
+            return 'image/webp'
+        elif image_bytes[:6] in (b'GIF87a', b'GIF89a'):
+            return 'image/gif'
+        # Default to PNG
+        logger.warning(f"Could not detect image format from magic bytes: {image_bytes[:20].hex()}")
+        return 'image/png'
+
     def _detect_mime_type(self, data: str) -> str:
         """Detect MIME type from data URL prefix or default to image/png"""
         if data.startswith('data:image/jpeg') or data.startswith('data:image/jpg'):
@@ -103,6 +117,15 @@ class GenerationService:
             return 'image/webp'
         elif data.startswith('data:image/gif'):
             return 'image/gif'
+        elif data.startswith('data:image/png'):
+            return 'image/png'
+        # No prefix found - try to decode and detect from bytes
+        try:
+            clean_data = self._strip_base64_prefix(data)
+            decoded = base64.b64decode(clean_data)
+            return self._detect_mime_type_from_bytes(decoded)
+        except Exception:
+            pass
         # Default to PNG
         return 'image/png'
     
@@ -288,16 +311,31 @@ class GenerationService:
             mime_type = self._detect_mime_type(first_frame)
             cleaned_frame = self._strip_base64_prefix(first_frame)
             logger.info(f"Adding first frame to request, mime_type={mime_type}, original length: {len(first_frame)}, cleaned length: {len(cleaned_frame)}")
-            logger.info(f"First frame preview (first 100 chars): {first_frame[:100]}")
-            logger.info(f"Cleaned frame preview (first 100 chars): {cleaned_frame[:100]}")
+            logger.info(f"First frame starts with: {first_frame[:50]}")
+            logger.info(f"Cleaned frame starts with: {cleaned_frame[:50]}")
 
-            # Validate base64 before sending
+            # Validate base64 and check image magic bytes
             try:
                 decoded = base64.b64decode(cleaned_frame)
-                logger.info(f"Base64 validation OK - decoded {len(decoded)} bytes")
+                logger.info(f"Base64 decoded OK - {len(decoded)} bytes")
+
+                # Check image magic bytes
+                if decoded[:8] == b'\x89PNG\r\n\x1a\n':
+                    logger.info("Image format: PNG (magic bytes verified)")
+                elif decoded[:2] == b'\xff\xd8':
+                    logger.info("Image format: JPEG (magic bytes verified)")
+                elif decoded[:4] == b'RIFF' and decoded[8:12] == b'WEBP':
+                    logger.info("Image format: WebP (magic bytes verified)")
+                else:
+                    logger.warning(f"Unknown image format. First 20 bytes: {decoded[:20].hex()}")
+
             except Exception as e:
-                logger.error(f"Base64 validation FAILED: {e}")
-                logger.error(f"Cleaned frame length: {len(cleaned_frame)}, ends with: {cleaned_frame[-20:]}")
+                logger.error(f"Base64 decode FAILED: {e}")
+                # Try to figure out what's wrong
+                import re
+                invalid_chars = re.findall(r'[^A-Za-z0-9+/=]', cleaned_frame[:1000])
+                if invalid_chars:
+                    logger.error(f"Invalid base64 characters found: {set(invalid_chars)}")
 
             instance["image"] = {
                 "bytesBase64Encoded": cleaned_frame,
