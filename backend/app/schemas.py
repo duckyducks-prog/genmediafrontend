@@ -129,6 +129,8 @@ class SaveWorkflowRequest(BaseModel):
     is_public: bool = False
     nodes: List[dict] = Field(..., min_length=1, max_length=100)  # 1-100 nodes
     edges: List[dict] = Field(default_factory=list, max_length=500)  # Max 500 edges
+    thumbnail: Optional[str] = None  # Base64 thumbnail image
+    background_image: Optional[str] = None  # Base64 background image for public templates
 
 class UpdateWorkflowRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
@@ -136,15 +138,18 @@ class UpdateWorkflowRequest(BaseModel):
     is_public: bool = False
     nodes: List[dict] = Field(..., min_length=1, max_length=100)  # 1-100 nodes
     edges: List[dict] = Field(default_factory=list, max_length=500)  # Max 500 edges
+    thumbnail: Optional[str] = None  # Base64 thumbnail image
+    background_image: Optional[str] = None  # Base64 background image for public templates
 
 class WorkflowResponse(BaseModel):
     model_config = ConfigDict(extra="allow")
-    
+
     id: str
     name: str
     description: Optional[str] = ""
     is_public: bool
     thumbnail: Optional[str] = None
+    background_image: Optional[str] = None  # Custom background for public templates
     created_at: str
     updated_at: str
     user_id: str

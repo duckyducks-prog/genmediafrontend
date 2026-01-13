@@ -67,7 +67,9 @@ async def create_workflow(
             nodes=request.nodes,
             edges=request.edges,
             user_id=user["uid"],
-            user_email=user["email"]
+            user_email=user["email"],
+            thumbnail=request.thumbnail,
+            background_image=request.background_image
         )
         
         return {"id": workflow_id}

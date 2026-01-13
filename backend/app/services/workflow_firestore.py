@@ -151,31 +151,35 @@ class WorkflowServiceFirestore:
         nodes: List[Dict],
         edges: List[Dict],
         user_id: str,
-        user_email: str
+        user_email: str,
+        thumbnail: Optional[str] = None,
+        background_image: Optional[str] = None
     ) -> str:
         """Create a new workflow"""
         # Validate inputs
         if not name or not name.strip():
             raise HTTPException(status_code=400, detail="Workflow name is required")
-        
+
         if len(name) > 100:
             raise HTTPException(status_code=400, detail="Workflow name must be 100 characters or less")
-        
+
         if len(nodes) == 0:
             raise HTTPException(status_code=400, detail="At least one node is required")
-        
+
         if len(nodes) > 100:
             raise HTTPException(status_code=400, detail="Maximum 100 nodes allowed per workflow")
-        
+
         workflow_id = self._generate_workflow_id()
         now = datetime.utcnow()
-        
+
         workflow_data = {
             "id": workflow_id,
             "name": name.strip(),
             "description": description.strip() if description else "",
             "is_public": is_public,
             "thumbnail_ref": None,
+            "thumbnail": thumbnail,  # Base64 thumbnail
+            "background_image": background_image,  # Base64 background for public templates
             "created_at": now,
             "updated_at": now,
             "user_id": user_id,
@@ -233,6 +237,8 @@ class WorkflowServiceFirestore:
                 "description": wf.get("description", ""),
                 "is_public": wf.get("is_public", False),
                 "thumbnail_ref": wf.get("thumbnail_ref"),
+                "thumbnail": wf.get("thumbnail"),
+                "background_image": wf.get("background_image"),
                 "created_at": wf["created_at"].isoformat() if hasattr(wf["created_at"], 'isoformat') else wf["created_at"],
                 "updated_at": wf["updated_at"].isoformat() if hasattr(wf["updated_at"], 'isoformat') else wf["updated_at"],
                 "user_id": wf["user_id"],
@@ -273,6 +279,8 @@ class WorkflowServiceFirestore:
             "description": workflow.get("description", ""),
             "is_public": workflow.get("is_public", False),
             "thumbnail_ref": workflow.get("thumbnail_ref"),
+            "thumbnail": workflow.get("thumbnail"),
+            "background_image": workflow.get("background_image"),
             "created_at": created_at.isoformat() if hasattr(created_at, 'isoformat') else created_at,
             "updated_at": updated_at.isoformat() if hasattr(updated_at, 'isoformat') else updated_at,
             "user_id": workflow["user_id"],
