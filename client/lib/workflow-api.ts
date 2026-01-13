@@ -1,9 +1,10 @@
 import { logger } from "@/lib/logger";
 import { auth } from "./firebase";
 import { WorkflowNode, WorkflowEdge } from "@/components/workflow/types";
+import { API_ENDPOINTS } from "./api-config";
 
-// Workflow storage API (our backend)
-const WORKFLOW_API_BASE = "/api"; // Works for both dev (Vite proxy) and production (Express server)
+// Workflow storage API - now using VEO backend directly
+// Previously used Express server at /api, now using VEO API at /v1/workflows
 
 
 export interface APITestResult {
@@ -156,9 +157,9 @@ export async function testWorkflowAPI(): Promise<APITestResult> {
 
   logger.debug("[testWorkflowAPI] Starting API connectivity test...");
 
-  // Test 1: List public workflows (GET /workflows?scope=public)
+  // Test 1: List public workflows (GET /v1/workflows?scope=public)
   try {
-    const url = `${WORKFLOW_API_BASE}/workflows?scope=public`;
+    const url = API_ENDPOINTS.workflows.list("public");
     logger.debug("[testWorkflowAPI] Testing:", url);
 
     const response = await fetch(url, {
@@ -207,9 +208,9 @@ export async function testWorkflowAPI(): Promise<APITestResult> {
     console.error("[testWorkflowAPI] List endpoint test failed:", error);
   }
 
-  // Test 2: Try to list my workflows (GET /workflows?scope=my)
+  // Test 2: Try to list my workflows (GET /v1/workflows?scope=my)
   try {
-    const url = `${WORKFLOW_API_BASE}/workflows?scope=my`;
+    const url = API_ENDPOINTS.workflows.list("my");
     const response = await fetch(url, {
       headers: { Authorization: `Bearer ${token}` },
       signal: AbortSignal.timeout(10000),
@@ -331,7 +332,7 @@ export async function saveWorkflow(
   }
 
   const token = await user.getIdToken();
-  const url = `${WORKFLOW_API_BASE}/workflows/save`;
+  const url = API_ENDPOINTS.workflows.save;
 
   logger.debug("[saveWorkflow] Request:", {
     method: "POST",
@@ -477,7 +478,7 @@ export async function updateWorkflow(
   // ✅ Strip resolved URLs before sending (keep asset refs)
   const cleanWorkflow = cleanWorkflowForSave(workflow);
 
-  const response = await fetch(`${WORKFLOW_API_BASE}/workflows/${workflowId}`, {
+  const response = await fetch(API_ENDPOINTS.workflows.update(workflowId), {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -502,7 +503,7 @@ export async function loadWorkflow(workflowId: string): Promise<SavedWorkflow> {
 
   const token = await user.getIdToken();
 
-  const response = await fetch(`${WORKFLOW_API_BASE}/workflows/${workflowId}`, {
+  const response = await fetch(API_ENDPOINTS.workflows.get(workflowId), {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -554,7 +555,7 @@ export async function listMyWorkflows(): Promise<WorkflowListItem[]> {
   }
 
   const token = await user.getIdToken();
-  const url = `${WORKFLOW_API_BASE}/workflows?scope=my`;
+  const url = API_ENDPOINTS.workflows.list("my");
 
   logger.debug("[listMyWorkflows] Request:", { url });
 
@@ -609,7 +610,7 @@ export async function listPublicWorkflows(): Promise<WorkflowListItem[]> {
   }
 
   const token = await user.getIdToken();
-  const url = `${WORKFLOW_API_BASE}/workflows?scope=public`;
+  const url = API_ENDPOINTS.workflows.list("public");
 
   logger.debug("[listPublicWorkflows] Request:", { url });
 
@@ -664,7 +665,7 @@ export async function deleteWorkflow(workflowId: string): Promise<void> {
 
   const token = await user.getIdToken();
 
-  const response = await fetch(`${WORKFLOW_API_BASE}/workflows/${workflowId}`, {
+  const response = await fetch(API_ENDPOINTS.workflows.delete(workflowId), {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -689,15 +690,12 @@ export async function cloneWorkflow(
 
   const token = await user.getIdToken();
 
-  const response = await fetch(
-    `${WORKFLOW_API_BASE}/workflows/${workflowId}/clone`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+  const response = await fetch(API_ENDPOINTS.workflows.clone(workflowId), {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
     },
-  );
+  });
 
   if (!response.ok) {
     throw new Error(`Failed to clone workflow: ${response.status}`);
