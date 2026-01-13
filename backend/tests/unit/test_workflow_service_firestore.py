@@ -9,12 +9,20 @@ from fastapi import HTTPException
 
 @pytest.fixture
 def mock_firestore_client():
-    """Mock Firestore client"""
-    with patch('app.services.workflow_firestore.get_firestore_client') as mock_get_client:
+    """Mock Firestore client and GCS storage client"""
+    with patch('app.services.workflow_firestore.get_firestore_client') as mock_get_client, \
+         patch('app.services.workflow_firestore.storage.Client') as mock_storage_client:
         mock_client = MagicMock()
         mock_collection = MagicMock()
         mock_client.collection.return_value = mock_collection
         mock_get_client.return_value = mock_client
+
+        # Mock GCS storage client
+        mock_storage = MagicMock()
+        mock_bucket = MagicMock()
+        mock_storage.bucket.return_value = mock_bucket
+        mock_storage_client.return_value = mock_storage
+
         yield mock_client
 
 
@@ -69,7 +77,8 @@ class TestWorkflowServiceFirestoreList:
         mock_collection = mock_firestore_client.collection.return_value
         mock_collection.where.return_value = mock_query
         mock_query.order_by.return_value = mock_query
-        
+        mock_query.limit.return_value = mock_query
+
         service = WorkflowServiceFirestore()
         workflows = await service.list_workflows(scope="my", user_id="user123")
         
@@ -79,13 +88,14 @@ class TestWorkflowServiceFirestoreList:
     async def test_list_public_workflows(self, mock_firestore_client):
         """Test listing public workflows"""
         from app.services.workflow_firestore import WorkflowServiceFirestore
-        
+
         mock_query = MagicMock()
         mock_query.stream.return_value = []
         mock_collection = mock_firestore_client.collection.return_value
         mock_collection.where.return_value = mock_query
         mock_query.order_by.return_value = mock_query
-        
+        mock_query.limit.return_value = mock_query
+
         service = WorkflowServiceFirestore()
         workflows = await service.list_workflows(scope="public", user_id="user123")
         
