@@ -113,20 +113,29 @@ class GenerationService:
         """Convert unsupported image formats to PNG for Veo API.
 
         Veo only supports image/png and image/jpeg for first frames.
+        Also logs image dimensions for debugging.
         """
+        from PIL import Image
+        import io
+
         supported_formats = ['image/png', 'image/jpeg', 'image/jpg']
 
-        if detected_mime in supported_formats:
-            return image_bytes, detected_mime
-
-        # Need to convert - use PIL
-        logger.info(f"Converting {detected_mime} to PNG for Veo compatibility")
         try:
-            from PIL import Image
-            import io
-
-            # Load the image
+            # Load image to check dimensions and format
             img = Image.open(io.BytesIO(image_bytes))
+            width, height = img.size
+            logger.info(f"Image dimensions: {width}x{height}, mode: {img.mode}, detected format: {detected_mime}")
+
+            # Warn if image is below recommended resolution (720p = 1280x720)
+            if width < 720 or height < 720:
+                logger.warning(f"Image resolution ({width}x{height}) is below Veo's recommended 720p minimum")
+
+            # If format is already supported, just return original
+            if detected_mime in supported_formats:
+                return image_bytes, detected_mime
+
+            # Need to convert - convert to PNG
+            logger.info(f"Converting {detected_mime} to PNG for Veo compatibility")
 
             # Convert to RGB if necessary (for formats with alpha channel)
             if img.mode in ('RGBA', 'LA', 'P'):
@@ -148,7 +157,7 @@ class GenerationService:
             return converted_bytes, 'image/png'
 
         except Exception as e:
-            logger.error(f"Failed to convert image: {e}")
+            logger.error(f"Failed to process image: {e}")
             # Return original and hope for the best
             return image_bytes, detected_mime
 
