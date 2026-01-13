@@ -10,6 +10,22 @@ def parse_email_list(value: str | None) -> List[str]:
     return [e.strip().lower() for e in value.split(",") if e and e.strip()]
 
 
+def parse_domain_list(value: str | None) -> List[str]:
+    """Parse comma-separated domain string into list, trimming whitespace and filtering empty."""
+    if value is None or value == "":
+        return []
+    # Strip @ prefix if present, lowercase, and filter empty
+    domains = []
+    for d in value.split(","):
+        d = d.strip().lower()
+        if d:
+            # Remove leading @ if present
+            if d.startswith("@"):
+                d = d[1:]
+            domains.append(d)
+    return domains
+
+
 class Settings(BaseSettings):
     project_id: str = "genmediastudio"
     location: str = "us-central1"
@@ -18,10 +34,12 @@ class Settings(BaseSettings):
     workflows_bucket: str = "genmediastudio-workflows"
     firebase_project_id: str = "genmediastudio"
 
-    # Email allowlists - stored as comma-separated strings from env
+    # Email/domain allowlists - stored as comma-separated strings from env
     # Format: ALLOWED_EMAILS=email1@example.com,email2@example.com
+    # Format: ALLOWED_DOMAINS=hubspot.com,example.com (or @hubspot.com)
     _allowed_emails_raw: str = ""
     _admin_emails_raw: str = ""
+    _allowed_domains_raw: str = ""
 
     # Firebase config (for testing)
     firebase_api_key: str = ""
@@ -43,6 +61,11 @@ class Settings(BaseSettings):
         """List of admin emails parsed from comma-separated string."""
         return parse_email_list(self._admin_emails_raw)
 
+    @property
+    def ALLOWED_DOMAINS(self) -> List[str]:
+        """List of allowed email domains parsed from comma-separated string."""
+        return parse_domain_list(self._allowed_domains_raw)
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -52,13 +75,15 @@ class Settings(BaseSettings):
     )
 
     def model_post_init(self, __context):
-        """Load email lists from environment after init."""
+        """Load email/domain lists from environment after init."""
         import os
         # Read directly from env since pydantic-settings doesn't handle uppercase well
         allowed = os.getenv("ALLOWED_EMAILS", "")
         admin = os.getenv("ADMIN_EMAILS", "")
+        domains = os.getenv("ALLOWED_DOMAINS", "")
         object.__setattr__(self, "_allowed_emails_raw", allowed)
         object.__setattr__(self, "_admin_emails_raw", admin)
+        object.__setattr__(self, "_allowed_domains_raw", domains)
 
 
 settings = Settings()

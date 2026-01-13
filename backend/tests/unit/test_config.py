@@ -66,3 +66,50 @@ def test_allowed_emails_ignores_empty_entries(monkeypatch):
     s = Settings()
 
     assert s.ALLOWED_EMAILS == ["user1@example.com", "user2@example.com"]
+
+
+# Domain-based access control tests
+
+def test_allowed_domains_default():
+    """ALLOWED_DOMAINS defaults to empty list when env var not set"""
+    from app.config import Settings
+    s = Settings()
+
+    assert isinstance(s.ALLOWED_DOMAINS, list)
+    assert len(s.ALLOWED_DOMAINS) == 0
+
+
+def test_allowed_domains_from_env(monkeypatch):
+    """ALLOWED_DOMAINS can be configured via environment variable"""
+    monkeypatch.setenv("ALLOWED_DOMAINS", "hubspot.com,example.com")
+    from app.config import Settings
+    s = Settings()
+
+    assert s.ALLOWED_DOMAINS == ["hubspot.com", "example.com"]
+
+
+def test_allowed_domains_strips_at_prefix(monkeypatch):
+    """ALLOWED_DOMAINS strips @ prefix from domains"""
+    monkeypatch.setenv("ALLOWED_DOMAINS", "@hubspot.com, @example.com")
+    from app.config import Settings
+    s = Settings()
+
+    assert s.ALLOWED_DOMAINS == ["hubspot.com", "example.com"]
+
+
+def test_allowed_domains_handles_whitespace(monkeypatch):
+    """ALLOWED_DOMAINS trims whitespace"""
+    monkeypatch.setenv("ALLOWED_DOMAINS", " hubspot.com , example.com ")
+    from app.config import Settings
+    s = Settings()
+
+    assert s.ALLOWED_DOMAINS == ["hubspot.com", "example.com"]
+
+
+def test_allowed_domains_lowercases(monkeypatch):
+    """ALLOWED_DOMAINS lowercases domains"""
+    monkeypatch.setenv("ALLOWED_DOMAINS", "HubSpot.COM,EXAMPLE.com")
+    from app.config import Settings
+    s = Settings()
+
+    assert s.ALLOWED_DOMAINS == ["hubspot.com", "example.com"]

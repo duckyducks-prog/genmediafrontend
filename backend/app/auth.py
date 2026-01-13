@@ -45,17 +45,36 @@ def verify_firebase_token(authorization: Optional[str] = None) -> dict:
         user_email = decoded_token.get("email") or decoded_token.get("claims", {}).get("email") or ""
         user_email = user_email.lower().strip()
         user_id = decoded_token.get("uid")
-        
-        # Check whitelist - skip if no emails configured (allows all authenticated users)
-        allowed = [e.lower().strip() for e in settings.ALLOWED_EMAILS]
-        if allowed and user_email not in allowed:
-            logger.warning(f"Access denied for non-whitelisted user: {user_email}")
-            raise HTTPException(
-                status_code=403,
-                detail=f"Access denied. User {user_email} not authorized."
-            )
-        
-        logger.info(f"User authenticated successfully: {user_email}")
+
+        # Check access control (domain-based or email-based)
+        allowed_emails = settings.ALLOWED_EMAILS
+        allowed_domains = settings.ALLOWED_DOMAINS
+
+        # If no restrictions configured, allow all authenticated users
+        if not allowed_emails and not allowed_domains:
+            logger.info(f"User authenticated (no restrictions): {user_email}")
+        else:
+            # Check if user is allowed
+            is_allowed = False
+
+            # Check email whitelist
+            if user_email in allowed_emails:
+                is_allowed = True
+
+            # Check domain whitelist
+            if not is_allowed and allowed_domains:
+                email_domain = user_email.split("@")[-1] if "@" in user_email else ""
+                if email_domain in allowed_domains:
+                    is_allowed = True
+
+            if not is_allowed:
+                logger.warning(f"Access denied for user: {user_email}")
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Access denied. User {user_email} not authorized."
+                )
+
+            logger.info(f"User authenticated successfully: {user_email}")
         return {"uid": user_id, "email": user_email}
     except firebase_admin.exceptions.FirebaseError as e:
         logger.error(f"Firebase token verification failed: {str(e)}")
