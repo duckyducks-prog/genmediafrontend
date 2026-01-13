@@ -68,20 +68,38 @@ class GenerationService:
         self.library = library_service or LibraryServiceFirestore()
     
     def _strip_base64_prefix(self, data: str) -> str:
-        """Remove data URL prefix if present and ensure valid base64 padding"""
+        """Remove data URL prefix if present and ensure valid base64"""
         if not data:
             return data
-            
+
         # Remove data URL prefix if present
         if ',' in data and data.startswith('data:'):
             data = data.split(',', 1)[1]
-        
+
+        # Remove any whitespace (newlines, spaces, tabs) that might corrupt the base64
+        data = ''.join(data.split())
+
+        # Convert URL-safe base64 to standard base64
+        # URL-safe uses '-' instead of '+' and '_' instead of '/'
+        data = data.replace('-', '+').replace('_', '/')
+
         # Add padding if necessary (base64 strings must be multiple of 4)
         missing_padding = len(data) % 4
         if missing_padding:
             data += '=' * (4 - missing_padding)
-        
+
         return data
+
+    def _detect_mime_type(self, data: str) -> str:
+        """Detect MIME type from data URL prefix or default to image/png"""
+        if data.startswith('data:image/jpeg') or data.startswith('data:image/jpg'):
+            return 'image/jpeg'
+        elif data.startswith('data:image/webp'):
+            return 'image/webp'
+        elif data.startswith('data:image/gif'):
+            return 'image/gif'
+        # Default to PNG
+        return 'image/png'
     
     def _get_auth_headers(self) -> dict:
         """Get authentication headers for REST API calls"""
@@ -262,21 +280,23 @@ class GenerationService:
         instance = {"prompt": prompt}
         
         if first_frame:
+            mime_type = self._detect_mime_type(first_frame)
             cleaned_frame = self._strip_base64_prefix(first_frame)
-            logger.info(f"Adding first frame to request, original length: {len(first_frame)}, cleaned length: {len(cleaned_frame)}")
+            logger.info(f"Adding first frame to request, mime_type={mime_type}, original length: {len(first_frame)}, cleaned length: {len(cleaned_frame)}")
             instance["image"] = {
                 "bytesBase64Encoded": cleaned_frame,
-                "mimeType": "image/png"
+                "mimeType": mime_type
             }
         else:
             logger.warning("No first frame provided to generate_video")
-        
+
         if last_frame:
+            mime_type = self._detect_mime_type(last_frame)
             instance["lastFrame"] = {
                 "bytesBase64Encoded": self._strip_base64_prefix(last_frame),
-                "mimeType": "image/png"
+                "mimeType": mime_type
             }
-        
+
         # Reference images for subject consistency (Veo 3.1 feature)
         # Format: uses "image" field (not "referenceImage") and lowercase "style" type
         if reference_images:
@@ -284,7 +304,7 @@ class GenerationService:
                 {
                     "image": {
                         "bytesBase64Encoded": self._strip_base64_prefix(img),
-                        "mimeType": "image/png"
+                        "mimeType": self._detect_mime_type(img)
                     },
                     "referenceType": "style"
                 }
