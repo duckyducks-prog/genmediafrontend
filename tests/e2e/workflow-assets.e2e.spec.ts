@@ -17,7 +17,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 
 // API Configuration
-const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:5000";
+const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const VEO_API_BASE_URL = "https://veo-api-otfo2ctxma-uc.a.run.app";
 const TEST_TIMEOUT = 120000; // 2 minutes
 
@@ -91,6 +91,7 @@ async function createTestAsset(
     mimeType = "video/mp4";
   }
 
+  // Use local proxy which forwards to VEO API
   const response = await localApiRequest("/api/assets", {
     method: "POST",
     body: JSON.stringify({
@@ -102,7 +103,14 @@ async function createTestAsset(
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to create test asset: ${response.status}`);
+    const errorBody = await response.text();
+    console.error(`[createTestAsset] Failed:`, {
+      status: response.status,
+      statusText: response.statusText,
+      body: errorBody,
+      url: `${API_BASE_URL}/api/assets`,
+    });
+    throw new Error(`Failed to create test asset: ${response.status} - ${errorBody}`);
   }
 
   const data = await response.json();
@@ -154,7 +162,7 @@ afterAll(async () => {
     }
   }
 
-  // Delete test assets
+  // Delete test assets (use local proxy)
   for (const assetId of createdAssetIds) {
     try {
       await localApiRequest(`/api/assets/${assetId}`, { method: "DELETE" });
