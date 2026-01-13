@@ -10,14 +10,16 @@ GCS_BUCKET=$(uv run python -c "from app.config import settings; print(settings.g
 WORKFLOWS_BUCKET=$(uv run python -c "from app.config import settings; print(settings.workflows_bucket)")
 FIREBASE_PROJECT_ID=$(uv run python -c "from app.config import settings; print(settings.firebase_project_id)")
 
-# Load ALLOWED_EMAILS from .env file if it exists, or use environment variable
+# Load environment variables from .env file if it exists
 if [ -f .env ]; then
   source .env
 fi
 ALLOWED_EMAILS="${ALLOWED_EMAILS:-}"
+ALLOWED_DOMAINS="${ALLOWED_DOMAINS:-}"
+ADMIN_EMAILS="${ADMIN_EMAILS:-}"
 
-if [ -z "$ALLOWED_EMAILS" ]; then
-  echo "ℹ️  Note: ALLOWED_EMAILS is not set. All authenticated users will have access."
+if [ -z "$ALLOWED_EMAILS" ] && [ -z "$ALLOWED_DOMAINS" ]; then
+  echo "ℹ️  Note: No access restrictions set. All authenticated users will have access."
 fi
 
 # Cloud Run region (separate from API location - Cloud Run doesn't support "global")
@@ -30,9 +32,11 @@ echo "  API Location: $API_LOCATION"
 echo "  GCS Bucket: $GCS_BUCKET"
 echo "  Workflows Bucket: $WORKFLOWS_BUCKET"
 echo "  Firebase Project: $FIREBASE_PROJECT_ID"
+echo "  Allowed Domains: $ALLOWED_DOMAINS"
 echo "  Allowed Emails: $ALLOWED_EMAILS"
+echo "  Admin Emails: $ADMIN_EMAILS"
 
-# Create temporary env vars file (handles commas in ALLOWED_EMAILS properly)
+# Create temporary env vars file (handles commas properly)
 ENV_VARS_FILE=$(mktemp)
 cat > "$ENV_VARS_FILE" << EOF
 PROJECT_ID: "$PROJECT_ID"
@@ -40,7 +44,9 @@ LOCATION: "$API_LOCATION"
 GCS_BUCKET: "$GCS_BUCKET"
 WORKFLOWS_BUCKET: "$WORKFLOWS_BUCKET"
 FIREBASE_PROJECT_ID: "$FIREBASE_PROJECT_ID"
+ALLOWED_DOMAINS: "$ALLOWED_DOMAINS"
 ALLOWED_EMAILS: "$ALLOWED_EMAILS"
+ADMIN_EMAILS: "$ADMIN_EMAILS"
 EOF
 
 # Clean up temp file on exit
