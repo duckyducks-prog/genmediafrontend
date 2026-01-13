@@ -2,17 +2,19 @@
 # =============================================================================
 # Deploy script for Cloud Run
 # =============================================================================
-# Usage: ./scripts/deploy.sh
 #
-# Required environment variables (or set in .env.production):
-#   VITE_FIREBASE_API_KEY
-#   VITE_FIREBASE_AUTH_DOMAIN
-#   VITE_FIREBASE_PROJECT_ID
-#   VITE_FIREBASE_STORAGE_BUCKET
-#   VITE_FIREBASE_MESSAGING_SENDER_ID
-#   VITE_FIREBASE_APP_ID
-#   VITE_FIREBASE_MEASUREMENT_ID
-#   GCP_PROJECT_ID
+# Usage: ./deploy.sh
+#
+# This script reads environment variables from (in order of priority):
+#   1. .env.production
+#   2. .env.local
+#   3. .env
+#
+# Required variables:
+#   - VITE_FIREBASE_API_KEY (for frontend Firebase auth)
+#   - GCP_PROJECT_ID (or set via gcloud config)
+#
+# See .env.example for all available variables.
 # =============================================================================
 
 set -e
@@ -21,40 +23,82 @@ set -e
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo -e "${GREEN}=== GenMedia Frontend Deployment ===${NC}"
+echo ""
 
-# Load environment variables from .env.production, .env.local, or .env if they exist
+# -----------------------------------------------------------------------------
+# Load environment variables
+# -----------------------------------------------------------------------------
+ENV_FILE=""
 if [ -f .env.production ]; then
-    echo -e "${YELLOW}Loading environment from .env.production${NC}"
-    export $(grep -v '^#' .env.production | xargs)
+    ENV_FILE=".env.production"
 elif [ -f .env.local ]; then
-    echo -e "${YELLOW}Loading environment from .env.local${NC}"
-    export $(grep -v '^#' .env.local | xargs)
+    ENV_FILE=".env.local"
 elif [ -f .env ]; then
-    echo -e "${YELLOW}Loading environment from .env${NC}"
-    export $(grep -v '^#' .env | xargs)
+    ENV_FILE=".env"
 fi
 
-# Check for required GCP project
+if [ -n "$ENV_FILE" ]; then
+    echo -e "${BLUE}Loading environment from: ${ENV_FILE}${NC}"
+    export $(grep -v '^#' "$ENV_FILE" | grep -v '^$' | xargs)
+else
+    echo -e "${YELLOW}Warning: No .env file found. Using existing environment variables.${NC}"
+    echo -e "${YELLOW}Create .env.production from .env.example for production deployments.${NC}"
+fi
+
+# -----------------------------------------------------------------------------
+# Validate GCP Project
+# -----------------------------------------------------------------------------
 if [ -z "$GCP_PROJECT_ID" ]; then
-    # Try to get from gcloud config
     GCP_PROJECT_ID=$(gcloud config get-value project 2>/dev/null)
     if [ -z "$GCP_PROJECT_ID" ]; then
-        echo -e "${RED}Error: GCP_PROJECT_ID not set and no default project configured${NC}"
-        echo "Set it with: export GCP_PROJECT_ID=your-project-id"
-        echo "Or run: gcloud config set project your-project-id"
+        echo -e "${RED}Error: GCP_PROJECT_ID not set${NC}"
+        echo "Set it in your .env file or run: gcloud config set project your-project-id"
         exit 1
     fi
 fi
 
-echo -e "${GREEN}Deploying to project: ${GCP_PROJECT_ID}${NC}"
+# -----------------------------------------------------------------------------
+# Validate Firebase Configuration
+# -----------------------------------------------------------------------------
+echo ""
+echo -e "${BLUE}Firebase Configuration:${NC}"
+if [ -n "$VITE_FIREBASE_API_KEY" ]; then
+    echo -e "  API Key:      ${GREEN}[SET]${NC} (${VITE_FIREBASE_API_KEY:0:10}...)"
+else
+    echo -e "  API Key:      ${RED}[MISSING]${NC}"
+fi
+echo -e "  Auth Domain:  ${VITE_FIREBASE_AUTH_DOMAIN:-${RED}[MISSING]${NC}}"
+echo -e "  Project ID:   ${VITE_FIREBASE_PROJECT_ID:-${RED}[MISSING]${NC}}"
+echo -e "  Storage:      ${VITE_FIREBASE_STORAGE_BUCKET:-${RED}[MISSING]${NC}}"
+echo -e "  App ID:       ${VITE_FIREBASE_APP_ID:+${GREEN}[SET]${NC}}${VITE_FIREBASE_APP_ID:-${RED}[MISSING]${NC}}"
+echo ""
 
-# Build substitutions string
+# Check if API key is set (required)
+if [ -z "$VITE_FIREBASE_API_KEY" ]; then
+    echo -e "${RED}Error: VITE_FIREBASE_API_KEY is required${NC}"
+    echo "Add it to your .env.production file or export it:"
+    echo "  export VITE_FIREBASE_API_KEY=your-api-key"
+    exit 1
+fi
+
+# -----------------------------------------------------------------------------
+# Build Configuration
+# -----------------------------------------------------------------------------
+echo -e "${BLUE}Deployment Configuration:${NC}"
+echo -e "  GCP Project:  ${GCP_PROJECT_ID}"
+echo -e "  REQUIRE_AUTH: ${GREEN}true${NC} (always enabled for production)"
+echo ""
+
+# -----------------------------------------------------------------------------
+# Build substitutions for Cloud Build
+# -----------------------------------------------------------------------------
 SUBSTITUTIONS="_REQUIRE_AUTH=true"
 
-# Add Firebase config if available
+# Add Firebase config
 [ -n "$VITE_FIREBASE_API_KEY" ] && SUBSTITUTIONS="${SUBSTITUTIONS},_VITE_FIREBASE_API_KEY=${VITE_FIREBASE_API_KEY}"
 [ -n "$VITE_FIREBASE_AUTH_DOMAIN" ] && SUBSTITUTIONS="${SUBSTITUTIONS},_VITE_FIREBASE_AUTH_DOMAIN=${VITE_FIREBASE_AUTH_DOMAIN}"
 [ -n "$VITE_FIREBASE_PROJECT_ID" ] && SUBSTITUTIONS="${SUBSTITUTIONS},_VITE_FIREBASE_PROJECT_ID=${VITE_FIREBASE_PROJECT_ID}"
@@ -63,14 +107,20 @@ SUBSTITUTIONS="_REQUIRE_AUTH=true"
 [ -n "$VITE_FIREBASE_APP_ID" ] && SUBSTITUTIONS="${SUBSTITUTIONS},_VITE_FIREBASE_APP_ID=${VITE_FIREBASE_APP_ID}"
 [ -n "$VITE_FIREBASE_MEASUREMENT_ID" ] && SUBSTITUTIONS="${SUBSTITUTIONS},_VITE_FIREBASE_MEASUREMENT_ID=${VITE_FIREBASE_MEASUREMENT_ID}"
 
+# -----------------------------------------------------------------------------
+# Deploy
+# -----------------------------------------------------------------------------
 echo -e "${YELLOW}Starting Cloud Build...${NC}"
+echo ""
 
-# Submit build to Cloud Build
 gcloud builds submit \
     --project="${GCP_PROJECT_ID}" \
     --config=cloudbuild.yaml \
     --substitutions="${SUBSTITUTIONS}"
 
+echo ""
 echo -e "${GREEN}=== Deployment complete! ===${NC}"
-echo -e "View your app at: https://genmedia-frontend-*.run.app"
-echo -e "Check logs: gcloud run logs read --project=${GCP_PROJECT_ID} genmedia-frontend"
+echo ""
+echo -e "App URL:  https://genmedia-frontend-otfo2ctxma-uc.a.run.app"
+echo -e "Logs:     gcloud run logs read --project=${GCP_PROJECT_ID} genmedia-frontend"
+echo ""
