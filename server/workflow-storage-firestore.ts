@@ -92,6 +92,13 @@ export async function saveWorkflow(
     updated_at: now,
   };
 
+  // Remove undefined fields to avoid Firestore validation errors
+  Object.keys(fullWorkflow).forEach(key => {
+    if (fullWorkflow[key as keyof WorkflowData] === undefined) {
+      delete fullWorkflow[key as keyof WorkflowData];
+    }
+  });
+
   await db.collection(WORKFLOWS_COLLECTION).doc(id).set(fullWorkflow);
 
   console.log(`[WorkflowStorage] Saved workflow: ${id} - "${workflowData.name}"`);

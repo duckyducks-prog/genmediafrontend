@@ -47,3 +47,28 @@ export const signInWithGoogle = async () => {
 
 export const logOut = () => signOut(auth);
 export { onAuthStateChanged };
+
+// Helper function to get Firebase ID token (for testing)
+// Usage in browser console: window.getFirebaseToken()
+if (typeof window !== "undefined") {
+  (window as any).getFirebaseToken = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        console.error("❌ No user logged in. Please sign in first.");
+        return null;
+      }
+      const token = await user.getIdToken();
+      console.log("🔑 Firebase ID Token:");
+      console.log(token);
+      await navigator.clipboard.writeText(token);
+      console.log("✅ Token copied to clipboard!");
+      console.log("\nTo use in tests, add to .env.test:");
+      console.log(`FIREBASE_TEST_TOKEN=${token}`);
+      return token;
+    } catch (error) {
+      console.error("❌ Error getting token:", error);
+      return null;
+    }
+  };
+}
