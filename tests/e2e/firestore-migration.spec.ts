@@ -11,6 +11,7 @@ import { API_ENDPOINTS } from "@/lib/api-config";
  *
  * Setup:
  * 1. Set environment variable: FIREBASE_TEST_TOKEN=<your-firebase-id-token>
+ * 2. Make sure the dev server is running: npm run dev
  *
  * Covers:
  * 1. Workflows with asset references (assetRef, imageRef, videoRef)
@@ -22,6 +23,9 @@ import { API_ENDPOINTS } from "@/lib/api-config";
 
 const TEST_TIMEOUT = 120000; // 2 minutes
 const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
+
+// Base URL for local API proxy (vite dev server)
+const LOCAL_API_BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 
 // Helper to make API requests
 async function apiRequest(

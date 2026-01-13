@@ -42,11 +42,14 @@ let firebaseInitialized = false;
 function getFirebaseAdmin(): typeof admin {
   if (!firebaseInitialized && admin.apps.length === 0) {
     try {
-      // Initialize with application default credentials or service account
+      // Initialize with application default credentials
+      // Use FIREBASE_PROJECT_ID or GCP_PROJECT_ID to ensure correct project
+      const projectId = process.env.FIREBASE_PROJECT_ID || process.env.GCP_PROJECT_ID || "genmediastudio";
       admin.initializeApp({
         credential: admin.credential.applicationDefault(),
+        projectId: projectId,
       });
-      console.log("[Auth] Firebase Admin initialized successfully");
+      console.log(`[Auth] Firebase Admin initialized successfully for project: ${projectId}`);
       firebaseInitialized = true;
     } catch (error) {
       console.error("[Auth] Failed to initialize Firebase Admin:", error);
