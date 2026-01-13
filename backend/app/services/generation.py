@@ -283,6 +283,17 @@ class GenerationService:
             mime_type = self._detect_mime_type(first_frame)
             cleaned_frame = self._strip_base64_prefix(first_frame)
             logger.info(f"Adding first frame to request, mime_type={mime_type}, original length: {len(first_frame)}, cleaned length: {len(cleaned_frame)}")
+            logger.info(f"First frame preview (first 100 chars): {first_frame[:100]}")
+            logger.info(f"Cleaned frame preview (first 100 chars): {cleaned_frame[:100]}")
+
+            # Validate base64 before sending
+            try:
+                decoded = base64.b64decode(cleaned_frame)
+                logger.info(f"Base64 validation OK - decoded {len(decoded)} bytes")
+            except Exception as e:
+                logger.error(f"Base64 validation FAILED: {e}")
+                logger.error(f"Cleaned frame length: {len(cleaned_frame)}, ends with: {cleaned_frame[-20:]}")
+
             instance["image"] = {
                 "bytesBase64Encoded": cleaned_frame,
                 "mimeType": mime_type
