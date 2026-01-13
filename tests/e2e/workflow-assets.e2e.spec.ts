@@ -17,7 +17,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 
 // API Configuration
-const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:5000";
+const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 const VEO_API_BASE_URL = "https://veo-api-otfo2ctxma-uc.a.run.app";
 const TEST_TIMEOUT = 120000; // 2 minutes
 
