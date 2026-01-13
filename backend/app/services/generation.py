@@ -109,6 +109,49 @@ class GenerationService:
         logger.warning(f"Could not detect image format from magic bytes: {image_bytes[:20].hex()}")
         return 'image/png'
 
+    def _convert_to_supported_format(self, image_bytes: bytes, detected_mime: str) -> tuple[bytes, str]:
+        """Convert unsupported image formats to PNG for Veo API.
+
+        Veo only supports image/png and image/jpeg for first frames.
+        """
+        supported_formats = ['image/png', 'image/jpeg', 'image/jpg']
+
+        if detected_mime in supported_formats:
+            return image_bytes, detected_mime
+
+        # Need to convert - use PIL
+        logger.info(f"Converting {detected_mime} to PNG for Veo compatibility")
+        try:
+            from PIL import Image
+            import io
+
+            # Load the image
+            img = Image.open(io.BytesIO(image_bytes))
+
+            # Convert to RGB if necessary (for formats with alpha channel)
+            if img.mode in ('RGBA', 'LA', 'P'):
+                # Create white background for transparency
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                if img.mode == 'P':
+                    img = img.convert('RGBA')
+                background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+                img = background
+            elif img.mode != 'RGB':
+                img = img.convert('RGB')
+
+            # Save as PNG
+            output = io.BytesIO()
+            img.save(output, format='PNG')
+            converted_bytes = output.getvalue()
+
+            logger.info(f"Converted image from {detected_mime} to PNG ({len(image_bytes)} -> {len(converted_bytes)} bytes)")
+            return converted_bytes, 'image/png'
+
+        except Exception as e:
+            logger.error(f"Failed to convert image: {e}")
+            # Return original and hope for the best
+            return image_bytes, detected_mime
+
     def _detect_mime_type(self, data: str) -> str:
         """Detect MIME type from data URL prefix or default to image/png"""
         if data.startswith('data:image/jpeg') or data.startswith('data:image/jpg'):
@@ -308,34 +351,34 @@ class GenerationService:
         instance = {"prompt": prompt}
         
         if first_frame:
-            mime_type = self._detect_mime_type(first_frame)
             cleaned_frame = self._strip_base64_prefix(first_frame)
-            logger.info(f"Adding first frame to request, mime_type={mime_type}, original length: {len(first_frame)}, cleaned length: {len(cleaned_frame)}")
-            logger.info(f"First frame starts with: {first_frame[:50]}")
-            logger.info(f"Cleaned frame starts with: {cleaned_frame[:50]}")
+            logger.info(f"Processing first frame, original length: {len(first_frame)}, cleaned length: {len(cleaned_frame)}")
 
-            # Validate base64 and check image magic bytes
+            # Decode, detect format, and convert if needed
             try:
                 decoded = base64.b64decode(cleaned_frame)
                 logger.info(f"Base64 decoded OK - {len(decoded)} bytes")
 
-                # Check image magic bytes
-                if decoded[:8] == b'\x89PNG\r\n\x1a\n':
-                    logger.info("Image format: PNG (magic bytes verified)")
-                elif decoded[:2] == b'\xff\xd8':
-                    logger.info("Image format: JPEG (magic bytes verified)")
-                elif decoded[:4] == b'RIFF' and decoded[8:12] == b'WEBP':
-                    logger.info("Image format: WebP (magic bytes verified)")
-                else:
-                    logger.warning(f"Unknown image format. First 20 bytes: {decoded[:20].hex()}")
+                # Detect MIME type from actual bytes
+                detected_mime = self._detect_mime_type_from_bytes(decoded)
+                logger.info(f"Detected MIME type: {detected_mime}")
+
+                # Convert unsupported formats (WebP, GIF) to PNG
+                converted_bytes, final_mime = self._convert_to_supported_format(decoded, detected_mime)
+
+                # Re-encode to base64 if conversion happened
+                if converted_bytes != decoded:
+                    cleaned_frame = base64.b64encode(converted_bytes).decode('utf-8')
+                    logger.info(f"Using converted image: {final_mime}, {len(cleaned_frame)} base64 chars")
+
+                mime_type = final_mime
 
             except Exception as e:
-                logger.error(f"Base64 decode FAILED: {e}")
-                # Try to figure out what's wrong
-                import re
-                invalid_chars = re.findall(r'[^A-Za-z0-9+/=]', cleaned_frame[:1000])
-                if invalid_chars:
-                    logger.error(f"Invalid base64 characters found: {set(invalid_chars)}")
+                logger.error(f"Image processing FAILED: {e}")
+                # Fall back to detection from data URL prefix
+                mime_type = self._detect_mime_type(first_frame)
+
+            logger.info(f"Final first frame: mime_type={mime_type}, base64 length={len(cleaned_frame)}")
 
             instance["image"] = {
                 "bytesBase64Encoded": cleaned_frame,
