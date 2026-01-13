@@ -49,17 +49,19 @@ def _get_http_client() -> httpx.AsyncClient:
     return _http_client
 
 
-# Initialize the client
+# Initialize the client for text generation (Gemini 3 Flash preview requires global)
 client = genai.Client(
     vertexai=True,
     project=settings.project_id,
-    location=settings.location
+    location="global"  # Required for gemini-3-flash-preview and other 3.x preview models
 )
 
+# Image client uses 'global' location for Gemini 2.5+ preview models
+# These models are only available in global location per Vertex AI docs
 image_client = genai.Client(
     vertexai=True,
     project=settings.project_id,
-    location=settings.location  # Use configured location
+    location="global"  # Required for gemini-2.5-flash-image and other 2.5+ preview models
 )
 
 
