@@ -2,17 +2,10 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
-import { setupWorkflowRoutes } from "./routes/workflows";
 import { setupAssetRoutes } from "./routes/assets";
-import { verifyStorageHealth } from "./workflow-storage-firestore";
 
 export function createServer() {
   const app = express();
-
-  // Verify workflow storage health on startup (async, non-blocking)
-  verifyStorageHealth().catch((error) => {
-    console.error("[Server] Firestore health check failed:", error);
-  });
 
   // Middleware
   app.use(cors());
@@ -26,9 +19,6 @@ export function createServer() {
   });
 
   app.get("/api/demo", handleDemo);
-
-  // Workflow API routes
-  setupWorkflowRoutes(app);
 
   // Asset proxy routes (bypasses CORS to Veo API)
   setupAssetRoutes(app);
