@@ -72,6 +72,11 @@ class GenerationService:
         if not data:
             return data
 
+        # Check if this is a URL instead of base64 data
+        if data.startswith('http://') or data.startswith('https://'):
+            logger.error(f"Received URL instead of base64 data: {data[:100]}")
+            raise ValueError(f"Expected base64 data but received URL: {data[:50]}...")
+
         # Remove data URL prefix if present
         if ',' in data and data.startswith('data:'):
             data = data.split(',', 1)[1]
