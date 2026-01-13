@@ -5,7 +5,7 @@ def test_default_settings():
     from app.config import Settings
     s = Settings()
     assert s.project_id == "genmediastudio"
-    assert s.location == "global"
+    assert s.location == "us-central1"  # Default location for GCP
 
 def test_env_override(monkeypatch):
     """Environment variables override defaults"""
