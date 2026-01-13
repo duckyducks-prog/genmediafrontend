@@ -21,6 +21,7 @@ import { API_ENDPOINTS } from "@/lib/api-config";
  */
 
 const TEST_TIMEOUT = 120000; // 2 minutes
+const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 
 // Helper to make API requests
 async function apiRequest(
@@ -46,7 +47,8 @@ async function apiRequest(
     options.body = JSON.stringify(body);
   }
 
-  const response = await fetch(endpoint, options);
+  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+  const response = await fetch(url, options);
   return response;
 }
 
