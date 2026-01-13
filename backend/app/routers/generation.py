@@ -200,7 +200,7 @@ async def generate_text(
         logger.error(f"Text generation failed for user {user['email']}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/videos/{operation_id}/status", response_model=VideoStatusResponse)
+@router.get("/videos/{operation_id:path}/status", response_model=VideoStatusResponse)
 async def check_video_status(
     operation_id: str,
     prompt: Optional[str] = None,
@@ -209,9 +209,12 @@ async def check_video_status(
 ):
     """Check video generation status"""
     try:
-        logger.debug(f"Video status check from user {user['email']}: {operation_id}")
+        # URL-decode the operation_id in case it was encoded
+        from urllib.parse import unquote
+        decoded_operation_id = unquote(operation_id)
+        logger.debug(f"Video status check from user {user['email']}: {decoded_operation_id}")
         return await service.check_video_status(
-            operation_name=operation_id,
+            operation_name=decoded_operation_id,
             user_id=user["uid"],
             prompt=prompt
         )
