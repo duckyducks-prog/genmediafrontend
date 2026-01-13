@@ -22,6 +22,7 @@ import { API_ENDPOINTS } from "@/lib/api-config";
  */
 
 const TEST_TIMEOUT = 120000; // 2 minutes
+const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
 
 // Base URL for local API proxy (vite dev server)
 const LOCAL_API_BASE_URL = process.env.API_BASE_URL || "http://localhost:8080";
@@ -50,8 +51,7 @@ async function apiRequest(
     options.body = JSON.stringify(body);
   }
 
-  // Prepend base URL for relative paths (local proxy endpoints)
-  const url = endpoint.startsWith("/") ? `${LOCAL_API_BASE_URL}${endpoint}` : endpoint;
+  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
   const response = await fetch(url, options);
   return response;
 }
