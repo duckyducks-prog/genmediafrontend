@@ -97,7 +97,7 @@ steps:
       - '--max-instances'
       - '10'
       - '--set-env-vars'
-      - 'NODE_ENV=production,REQUIRE_AUTH=${_REQUIRE_AUTH}'
+      - 'NODE_ENV=production,REQUIRE_AUTH=${_REQUIRE_AUTH},GCP_PROJECT_ID=${PROJECT_ID}'
 
 # Store images in Artifact Registry
 images:
