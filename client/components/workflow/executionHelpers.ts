@@ -706,11 +706,32 @@ export async function pollVideoStatus(
           statusData.videoBase64 ||
           statusData.video_url ||
           statusData.videoUrl ||
+          statusData.storage_uri ||
+          statusData.storageUri ||
           statusData.video;
 
         if (videoData) {
           // If it's already a data URI, use it directly
           if (typeof videoData === "string" && videoData.startsWith("data:")) {
+            return {
+              success: true,
+              videoUrl: videoData,
+            };
+          }
+          // If it's a GCS URL (gs://...), convert to HTTPS URL
+          if (typeof videoData === "string" && videoData.startsWith("gs://")) {
+            const httpsUrl = videoData.replace(
+              "gs://",
+              "https://storage.googleapis.com/",
+            );
+            logger.debug("[pollVideoStatus] Converted GCS URL to HTTPS:", httpsUrl);
+            return {
+              success: true,
+              videoUrl: httpsUrl,
+            };
+          }
+          // If it's already an HTTPS URL, use it directly
+          if (typeof videoData === "string" && videoData.startsWith("http")) {
             return {
               success: true,
               videoUrl: videoData,

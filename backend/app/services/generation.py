@@ -436,10 +436,15 @@ class GenerationService:
             return response.json()
         
         result = await self._retry_with_backoff(_do_status_check, "Video status check")
-        
+
+        logger.info(f"Video status check result: done={result.get('done')}, keys={list(result.keys())}")
+
         if result.get("done"):
             if "response" in result:
                 response_data = result["response"]
+                logger.info(f"Video response keys: {list(response_data.keys())}")
+                logger.info(f"Full video response (truncated): {str(response_data)[:2000]}")
+
                 video_base64 = None
                 storage_uri = None
                 mime_type = "video/mp4"  # Default mime type
@@ -447,8 +452,10 @@ class GenerationService:
                 # Try different response structures
                 # Structure 1: generateVideoResponse.generatedSamples
                 videos = response_data.get("generateVideoResponse", {}).get("generatedSamples", [])
+                logger.info(f"Structure 1 (generateVideoResponse.generatedSamples): found {len(videos)} videos")
                 if videos:
                     video_data = videos[0].get("video", {})
+                    logger.info(f"Video data keys: {list(video_data.keys())}")
                     video_base64 = video_data.get("bytesBase64Encoded") or video_data.get("videoBytes")
                     storage_uri = video_data.get("uri") or video_data.get("gcsUri")
                     mime_type = video_data.get("mimeType", "video/mp4")
@@ -456,10 +463,14 @@ class GenerationService:
                 # Structure 2: videos array (Veo 3.1)
                 if not video_base64 and not storage_uri:
                     videos = response_data.get("videos", [])
+                    logger.info(f"Structure 2 (videos array): found {len(videos)} videos")
                     if videos:
+                        logger.info(f"First video keys: {list(videos[0].keys())}")
                         video_base64 = videos[0].get("bytesBase64Encoded") or videos[0].get("videoBytes")
                         storage_uri = videos[0].get("uri") or videos[0].get("gcsUri")
                         mime_type = videos[0].get("mimeType", "video/mp4")
+
+                logger.info(f"Parsed result: video_base64={len(video_base64) if video_base64 else None}, storage_uri={storage_uri}")
 
                 if video_base64:
                     # Try to save to library
