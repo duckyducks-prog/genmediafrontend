@@ -200,7 +200,7 @@ async def generate_text(
         logger.error(f"Text generation failed for user {user['email']}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/videos/{operation_id}/status", response_model=VideoStatusResponse)
+@router.get("/videos/{operation_id:path}/status", response_model=VideoStatusResponse)
 async def check_video_status(
     operation_id: str,
     prompt: Optional[str] = None,
