@@ -334,7 +334,14 @@ class GenerationService:
         if first_frame:
             cleaned_frame = self._strip_base64_prefix(first_frame)
             first_frame_mime = self._detect_mime_type(first_frame)
-            logger.info(f"Adding first frame to request, original length: {len(first_frame)}, cleaned length: {len(cleaned_frame)}, mime_type: {first_frame_mime}")
+
+            # Validate and log image details
+            try:
+                frame_bytes = base64.b64decode(cleaned_frame)
+                logger.info(f"First frame: mime={first_frame_mime}, base64_len={len(cleaned_frame)}, decoded_bytes={len(frame_bytes)}, header_hex={frame_bytes[:16].hex()}")
+            except Exception as e:
+                logger.error(f"First frame decode failed: {e}")
+
             instance["image"] = {
                 "bytesBase64Encoded": cleaned_frame,
                 "mimeType": first_frame_mime
@@ -354,12 +361,20 @@ class GenerationService:
         # Format: uses "image" field (not "referenceImage") and lowercase "style" type
         if reference_images:
             ref_images_with_mime = []
-            for img in reference_images[:3]:
+            for idx, img in enumerate(reference_images[:3]):
                 img_mime = self._detect_mime_type(img)
-                logger.info(f"Adding reference image with mime_type: {img_mime}")
+                cleaned_img = self._strip_base64_prefix(img)
+
+                # Validate and log image details
+                try:
+                    img_bytes = base64.b64decode(cleaned_img)
+                    logger.info(f"Reference image {idx+1}: mime={img_mime}, base64_len={len(cleaned_img)}, decoded_bytes={len(img_bytes)}, header_hex={img_bytes[:16].hex()}")
+                except Exception as e:
+                    logger.error(f"Reference image {idx+1} decode failed: {e}")
+
                 ref_images_with_mime.append({
                     "image": {
-                        "bytesBase64Encoded": self._strip_base64_prefix(img),
+                        "bytesBase64Encoded": cleaned_img,
                         "mimeType": img_mime
                     },
                     "referenceType": "style"
