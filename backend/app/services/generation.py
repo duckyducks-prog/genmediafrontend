@@ -520,7 +520,55 @@ class GenerationService:
                     )
 
                 if storage_uri:
-                    # Note: storage_uri videos aren't auto-saved (user needs to download first)
+                    # Download video from GCS and convert to base64
+                    if storage_uri.startswith("gs://"):
+                        logger.info(f"Downloading video from GCS: {storage_uri}")
+                        try:
+                            from google.cloud import storage
+
+                            # Parse GCS URI: gs://bucket-name/path/to/file
+                            gcs_path = storage_uri[5:]  # Remove "gs://"
+                            bucket_name = gcs_path.split("/")[0]
+                            blob_path = "/".join(gcs_path.split("/")[1:])
+
+                            storage_client = storage.Client()
+                            bucket = storage_client.bucket(bucket_name)
+                            blob = bucket.blob(blob_path)
+
+                            # Download as bytes
+                            video_bytes = blob.download_as_bytes()
+                            video_base64 = base64.b64encode(video_bytes).decode('utf-8')
+
+                            logger.info(f"Downloaded video from GCS: {len(video_bytes)} bytes, base64 length: {len(video_base64)}")
+
+                            # Try to save to library
+                            saved_to_library = True
+                            save_error = None
+                            try:
+                                await self.library.save_asset(
+                                    data=video_base64,
+                                    asset_type="video",
+                                    user_id=user_id,
+                                    prompt=prompt
+                                )
+                            except Exception as e:
+                                error_msg = f"{type(e).__name__}: {e}"
+                                logger.error(f"Failed to save video to library: {error_msg}")
+                                saved_to_library = False
+                                save_error = f"Failed to save video: {error_msg}"
+
+                            return VideoStatusResponse(
+                                status="complete",
+                                video_base64=video_base64,
+                                mimeType=mime_type,
+                                saved_to_library=saved_to_library,
+                                save_error=save_error
+                            )
+                        except Exception as e:
+                            logger.error(f"Failed to download video from GCS: {e}")
+                            # Fall through to return storage_uri as fallback
+
+                    # Fallback: return storage_uri if we couldn't download
                     return VideoStatusResponse(
                         status="complete",
                         storage_uri=storage_uri,
