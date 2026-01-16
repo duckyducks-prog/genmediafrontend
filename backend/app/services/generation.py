@@ -452,10 +452,16 @@ class GenerationService:
             return response.json()
         
         result = await self._retry_with_backoff(_do_status_check, "Video status check")
-        
+
+        # Log the full response structure for debugging
+        logger.info(f"Video status response: done={result.get('done')}, keys={list(result.keys())}")
+
         if result.get("done"):
             if "response" in result:
                 response_data = result["response"]
+                logger.info(f"Response data keys: {list(response_data.keys())}")
+                logger.info(f"Full response data: {str(response_data)[:2000]}")  # Log first 2000 chars
+
                 video_base64 = None
                 storage_uri = None
                 mime_type = "video/mp4"  # Default mime type
@@ -464,6 +470,7 @@ class GenerationService:
                 # Structure 1: generateVideoResponse.generatedSamples
                 videos = response_data.get("generateVideoResponse", {}).get("generatedSamples", [])
                 if videos:
+                    logger.info(f"Found videos in generateVideoResponse.generatedSamples: {len(videos)}")
                     video_data = videos[0].get("video", {})
                     video_base64 = video_data.get("bytesBase64Encoded") or video_data.get("videoBytes")
                     storage_uri = video_data.get("uri") or video_data.get("gcsUri")
@@ -473,9 +480,19 @@ class GenerationService:
                 if not video_base64 and not storage_uri:
                     videos = response_data.get("videos", [])
                     if videos:
+                        logger.info(f"Found videos in videos array: {len(videos)}")
                         video_base64 = videos[0].get("bytesBase64Encoded") or videos[0].get("videoBytes")
                         storage_uri = videos[0].get("uri") or videos[0].get("gcsUri")
                         mime_type = videos[0].get("mimeType", "video/mp4")
+
+                # Structure 3: predictions array (some Vertex AI models)
+                if not video_base64 and not storage_uri:
+                    predictions = response_data.get("predictions", [])
+                    if predictions:
+                        logger.info(f"Found predictions array: {len(predictions)}, keys: {list(predictions[0].keys()) if predictions else 'none'}")
+                        video_base64 = predictions[0].get("bytesBase64Encoded") or predictions[0].get("videoBytes")
+                        storage_uri = predictions[0].get("uri") or predictions[0].get("gcsUri")
+                        mime_type = predictions[0].get("mimeType", "video/mp4")
 
                 if video_base64:
                     # Try to save to library
