@@ -71,17 +71,57 @@ class GenerationService:
         """Remove data URL prefix if present and ensure valid base64 padding"""
         if not data:
             return data
-            
+
         # Remove data URL prefix if present
         if ',' in data and data.startswith('data:'):
             data = data.split(',', 1)[1]
-        
+
         # Add padding if necessary (base64 strings must be multiple of 4)
         missing_padding = len(data) % 4
         if missing_padding:
             data += '=' * (4 - missing_padding)
-        
+
         return data
+
+    def _detect_mime_type(self, data: str) -> str:
+        """Detect MIME type from base64 encoded image data by checking file headers.
+
+        Returns 'image/png' for PNG files, 'image/jpeg' for JPEG files.
+        Defaults to 'image/png' if unable to detect.
+        """
+        if not data:
+            return "image/png"
+
+        try:
+            # Strip prefix if present
+            clean_data = self._strip_base64_prefix(data)
+
+            # Decode enough bytes to check the header (first 16 bytes is plenty)
+            # We only need first 8 bytes for PNG and 2 bytes for JPEG
+            header_b64 = clean_data[:24]  # 24 base64 chars = 18 bytes
+            header_bytes = base64.b64decode(header_b64)
+
+            # Check for PNG signature: 89 50 4E 47 0D 0A 1A 0A
+            if header_bytes[:8] == b'\x89PNG\r\n\x1a\n':
+                logger.debug("Detected MIME type: image/png")
+                return "image/png"
+
+            # Check for JPEG signature: FF D8
+            if header_bytes[:2] == b'\xff\xd8':
+                logger.debug("Detected MIME type: image/jpeg")
+                return "image/jpeg"
+
+            # Check for WebP signature: RIFF....WEBP
+            if header_bytes[:4] == b'RIFF' and len(header_bytes) >= 12 and header_bytes[8:12] == b'WEBP':
+                logger.debug("Detected MIME type: image/webp")
+                return "image/webp"
+
+            logger.warning(f"Could not detect MIME type from header bytes: {header_bytes[:8].hex()}, defaulting to image/png")
+            return "image/png"
+
+        except Exception as e:
+            logger.warning(f"Error detecting MIME type: {e}, defaulting to image/png")
+            return "image/png"
     
     def _get_auth_headers(self) -> dict:
         """Get authentication headers for REST API calls"""
@@ -263,33 +303,38 @@ class GenerationService:
         
         if first_frame:
             cleaned_frame = self._strip_base64_prefix(first_frame)
-            logger.info(f"Adding first frame to request, original length: {len(first_frame)}, cleaned length: {len(cleaned_frame)}")
+            first_frame_mime = self._detect_mime_type(first_frame)
+            logger.info(f"Adding first frame to request, original length: {len(first_frame)}, cleaned length: {len(cleaned_frame)}, mime_type: {first_frame_mime}")
             instance["image"] = {
                 "bytesBase64Encoded": cleaned_frame,
-                "mimeType": "image/png"
+                "mimeType": first_frame_mime
             }
         else:
             logger.warning("No first frame provided to generate_video")
-        
+
         if last_frame:
+            last_frame_mime = self._detect_mime_type(last_frame)
+            logger.info(f"Adding last frame with mime_type: {last_frame_mime}")
             instance["lastFrame"] = {
                 "bytesBase64Encoded": self._strip_base64_prefix(last_frame),
-                "mimeType": "image/png"
+                "mimeType": last_frame_mime
             }
-        
+
         # Reference images for subject consistency (Veo 3.1 feature)
         # Format: uses "image" field (not "referenceImage") and lowercase "style" type
         if reference_images:
-            instance["referenceImages"] = [
-                {
+            ref_images_with_mime = []
+            for img in reference_images[:3]:
+                img_mime = self._detect_mime_type(img)
+                logger.info(f"Adding reference image with mime_type: {img_mime}")
+                ref_images_with_mime.append({
                     "image": {
                         "bytesBase64Encoded": self._strip_base64_prefix(img),
-                        "mimeType": "image/png"
+                        "mimeType": img_mime
                     },
                     "referenceType": "style"
-                }
-                for img in reference_images[:3]
-            ]
+                })
+            instance["referenceImages"] = ref_images_with_mime
         
         payload = {
             "instances": [instance],
