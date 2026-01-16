@@ -1,6 +1,7 @@
 import base64
 import httpx
 import asyncio
+import re
 import google.auth
 import google.auth.transport.requests
 from google import genai
@@ -68,7 +69,15 @@ class GenerationService:
         self.library = library_service or LibraryServiceFirestore()
     
     def _strip_base64_prefix(self, data: str) -> str:
-        """Remove data URL prefix if present and ensure valid base64 padding"""
+        """Remove data URL prefix, clean invalid characters, and ensure valid base64.
+
+        This method:
+        1. Strips data URL prefix (data:image/...;base64,)
+        2. Removes whitespace, newlines, and carriage returns
+        3. Removes any non-base64 characters
+        4. Fixes padding to ensure length is multiple of 4
+        5. Validates the result can be decoded
+        """
         if not data:
             return data
 
@@ -76,10 +85,31 @@ class GenerationService:
         if ',' in data and data.startswith('data:'):
             data = data.split(',', 1)[1]
 
-        # Add padding if necessary (base64 strings must be multiple of 4)
+        # Remove all whitespace (spaces, tabs, newlines, carriage returns)
+        # This is crucial - base64 from some sources includes line breaks
+        data = re.sub(r'\s', '', data)
+
+        # Remove any characters that aren't valid base64
+        # Valid base64 chars: A-Z, a-z, 0-9, +, /, =
+        data = re.sub(r'[^A-Za-z0-9+/=]', '', data)
+
+        # Remove any existing padding to recalculate
+        data = data.rstrip('=')
+
+        # Add correct padding (base64 strings must be multiple of 4)
         missing_padding = len(data) % 4
         if missing_padding:
             data += '=' * (4 - missing_padding)
+
+        # Validate the base64 can be decoded
+        try:
+            base64.b64decode(data)
+            logger.debug(f"Base64 validation passed, length: {len(data)}")
+        except Exception as e:
+            logger.error(f"Base64 validation failed after cleaning: {e}")
+            logger.error(f"Data preview (first 100 chars): {data[:100]}")
+            # Return the data anyway - let the API give a more specific error
+            # rather than failing silently here
 
         return data
 
