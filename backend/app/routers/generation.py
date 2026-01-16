@@ -209,9 +209,12 @@ async def check_video_status(
 ):
     """Check video generation status"""
     try:
-        logger.debug(f"Video status check from user {user['email']}: {operation_id}")
+        # URL-decode the operation_id in case it was encoded
+        from urllib.parse import unquote
+        decoded_operation_id = unquote(operation_id)
+        logger.debug(f"Video status check from user {user['email']}: {decoded_operation_id}")
         return await service.check_video_status(
-            operation_name=operation_id,
+            operation_name=decoded_operation_id,
             user_id=user["uid"],
             prompt=prompt
         )

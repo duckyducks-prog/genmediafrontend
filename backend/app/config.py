@@ -47,7 +47,7 @@ class Settings(BaseSettings):
 
     # Model names
     gemini_image_model: str = "gemini-2.5-flash-image"  # GA model available in us-central1
-    gemini_text_model: str = "gemini-3-flash-preview"  # Latest Gemini 3 model
+    gemini_text_model: str = "gemini-2.0-flash"  # Gemini 2.0 Flash model
     veo_model: str = "veo-3.1-generate-preview"
     upscale_model: str = "imagen-4.0-upscale-preview"
 
