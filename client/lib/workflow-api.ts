@@ -48,10 +48,30 @@ export interface WorkflowListItem extends WorkflowMetadata {
 }
 
 /**
- * Strip resolved URLs and existence flags from node data before saving to backend.
- * The backend will compute these fields when you fetch the workflow.
+ * Check if a value looks like base64 image/video data
+ * Detects both data URIs (data:image/...) and raw base64 strings
+ */
+function isBase64Data(value: unknown): boolean {
+  if (typeof value !== "string") return false;
+  // Data URI format
+  if (value.startsWith("data:image/") || value.startsWith("data:video/")) {
+    return true;
+  }
+  // Raw base64: long string with only base64 characters (at least 1000 chars to avoid false positives)
+  if (value.length > 1000 && /^[A-Za-z0-9+/=]+$/.test(value)) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Strip resolved URLs, existence flags, and base64 data from node data before saving to backend.
+ * The backend will compute URLs when you fetch the workflow.
  *
- * Removes: *Url, *Exists fields (e.g., imageUrl, imageRefExists, etc.)
+ * Removes:
+ * - *Url, *Exists fields (e.g., imageUrl, imageRefExists, etc.)
+ * - outputs.image, outputs.video, outputs.images (can contain base64 data)
+ * - Any field containing base64 data (data URIs or raw base64)
  * Keeps: *Ref fields (e.g., imageRef) which store asset IDs
  */
 export function stripResolvedUrls(data: any): any {
@@ -60,18 +80,42 @@ export function stripResolvedUrls(data: any): any {
   const cleaned = { ...data };
 
   // Remove all *Url and *Exists fields (backend computes these)
+  // Also remove any field containing base64 data
   const keysToRemove = Object.keys(cleaned).filter(
-    (k) => k.endsWith("Url") || k.endsWith("Exists"),
+    (k) =>
+      k.endsWith("Url") ||
+      k.endsWith("Exists") ||
+      isBase64Data(cleaned[k]),
   );
   keysToRemove.forEach((k) => delete cleaned[k]);
 
-  // Also clean outputs object if present
+  // Also clean outputs object if present - this is where base64 data often ends up
   if (cleaned.outputs && typeof cleaned.outputs === "object") {
     const cleanedOutputs = { ...cleaned.outputs };
+
+    // Remove *Url, *Exists fields
+    // Remove image/video/images fields (these contain execution results, not config)
+    // Remove any field containing base64 data
     const outputKeysToRemove = Object.keys(cleanedOutputs).filter(
-      (k) => k.endsWith("Url") || k.endsWith("Exists"),
+      (k) =>
+        k.endsWith("Url") ||
+        k.endsWith("Exists") ||
+        k === "image" ||
+        k === "video" ||
+        k === "images" ||
+        k === "videos" ||
+        isBase64Data(cleanedOutputs[k]),
     );
     outputKeysToRemove.forEach((k) => delete cleanedOutputs[k]);
+
+    // Also check for arrays containing base64 data
+    Object.keys(cleanedOutputs).forEach((k) => {
+      const value = cleanedOutputs[k];
+      if (Array.isArray(value) && value.some(isBase64Data)) {
+        delete cleanedOutputs[k];
+      }
+    });
+
     cleaned.outputs = cleanedOutputs;
   }
 
@@ -537,9 +581,31 @@ export async function loadWorkflow(workflowId: string): Promise<SavedWorkflow> {
     }
   }
 
+  // Clean up any corrupted outputs.image/video data from old saved workflows
+  // This ensures fresh asset resolution via imageUrl/videoUrl instead of stale base64
+  const cleanedNodes = (nodes || []).map((node: WorkflowNode) => {
+    if (node.data?.outputs && typeof node.data.outputs === "object") {
+      const cleanedOutputs = { ...node.data.outputs };
+      // Remove potentially corrupted execution results
+      // These should be regenerated on execution, not loaded from saved state
+      delete cleanedOutputs.image;
+      delete cleanedOutputs.images;
+      delete cleanedOutputs.video;
+      delete cleanedOutputs.videos;
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          outputs: cleanedOutputs,
+        },
+      };
+    }
+    return node;
+  });
+
   return {
     ...workflow,
-    nodes: nodes || [],
+    nodes: cleanedNodes,
     edges: edges || [],
   };
 }
