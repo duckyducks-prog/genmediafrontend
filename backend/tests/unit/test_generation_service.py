@@ -9,15 +9,117 @@ def mock_library_service():
     return service
 
 
+class TestDetectMimeType:
+    """Test MIME type detection from base64 image data"""
+
+    # Valid PNG header (first 8 bytes): \x89PNG\r\n\x1a\n followed by IHDR chunk
+    # Minimal PNG base64 that starts with valid header
+    PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+
+    # Valid JPEG header: \xff\xd8\xff\xe0 (SOI + APP0 marker)
+    JPEG_BASE64 = "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/"
+
+    # Valid WebP header: RIFF + size + WEBP
+    # "RIFF" + 4 bytes size + "WEBP" = 52 49 46 46 XX XX XX XX 57 45 42 50
+    WEBP_BASE64 = "UklGRlYAAABXRUJQVlA4IEoAAADQAQCdASoBAAEAAUAmJYgCdAEO/hOMAAD++O9u329x9ur9IF960z38u9rbGrLO/C0k/xDzB1VV2dOAr/7v/AAAAAAA"
+
+    def test_detects_png_from_raw_base64(self, mock_library_service):
+        """Detects PNG MIME type from raw base64 data"""
+        from app.services.generation import GenerationService
+        with patch("app.services.generation.client"):
+            service = GenerationService(library_service=mock_library_service)
+
+        result = service._detect_mime_type(self.PNG_BASE64)
+        assert result == "image/png"
+
+    def test_detects_png_from_data_uri(self, mock_library_service):
+        """Detects PNG MIME type from data URI"""
+        from app.services.generation import GenerationService
+        with patch("app.services.generation.client"):
+            service = GenerationService(library_service=mock_library_service)
+
+        data_uri = f"data:image/png;base64,{self.PNG_BASE64}"
+        result = service._detect_mime_type(data_uri)
+        assert result == "image/png"
+
+    def test_detects_jpeg_from_raw_base64(self, mock_library_service):
+        """Detects JPEG MIME type from raw base64 data"""
+        from app.services.generation import GenerationService
+        with patch("app.services.generation.client"):
+            service = GenerationService(library_service=mock_library_service)
+
+        result = service._detect_mime_type(self.JPEG_BASE64)
+        assert result == "image/jpeg"
+
+    def test_detects_jpeg_from_data_uri(self, mock_library_service):
+        """Detects JPEG MIME type from data URI (ignores declared type, uses actual bytes)"""
+        from app.services.generation import GenerationService
+        with patch("app.services.generation.client"):
+            service = GenerationService(library_service=mock_library_service)
+
+        # Even if data URI says PNG, actual bytes are JPEG
+        data_uri = f"data:image/png;base64,{self.JPEG_BASE64}"
+        result = service._detect_mime_type(data_uri)
+        assert result == "image/jpeg"
+
+    def test_detects_webp_from_raw_base64(self, mock_library_service):
+        """Detects WebP MIME type from raw base64 data"""
+        from app.services.generation import GenerationService
+        with patch("app.services.generation.client"):
+            service = GenerationService(library_service=mock_library_service)
+
+        result = service._detect_mime_type(self.WEBP_BASE64)
+        assert result == "image/webp"
+
+    def test_returns_default_for_unknown_format(self, mock_library_service):
+        """Returns default image/png for unknown image format"""
+        from app.services.generation import GenerationService
+        with patch("app.services.generation.client"):
+            service = GenerationService(library_service=mock_library_service)
+
+        # Random base64 data that doesn't match any known format
+        import base64
+        unknown_data = base64.b64encode(b"UNKNOWN_FORMAT_DATA_HERE").decode()
+        result = service._detect_mime_type(unknown_data)
+        assert result == "image/png"
+
+    def test_returns_default_for_empty_string(self, mock_library_service):
+        """Returns default image/png for empty string"""
+        from app.services.generation import GenerationService
+        with patch("app.services.generation.client"):
+            service = GenerationService(library_service=mock_library_service)
+
+        result = service._detect_mime_type("")
+        assert result == "image/png"
+
+    def test_returns_default_for_none(self, mock_library_service):
+        """Returns default image/png for None"""
+        from app.services.generation import GenerationService
+        with patch("app.services.generation.client"):
+            service = GenerationService(library_service=mock_library_service)
+
+        result = service._detect_mime_type(None)
+        assert result == "image/png"
+
+    def test_returns_default_for_invalid_base64(self, mock_library_service):
+        """Returns default image/png for invalid base64"""
+        from app.services.generation import GenerationService
+        with patch("app.services.generation.client"):
+            service = GenerationService(library_service=mock_library_service)
+
+        result = service._detect_mime_type("not-valid-base64!!!")
+        assert result == "image/png"
+
+
 class TestStripBase64Prefix:
     """Test base64 prefix stripping"""
-    
+
     def test_strips_data_url_prefix(self, mock_library_service):
         """Strips data URL prefix from base64 string"""
         from app.services.generation import GenerationService
         with patch("app.services.generation.client"):
             service = GenerationService(library_service=mock_library_service)
-        
+
         result = service._strip_base64_prefix("data:image/png;base64,abc123")
         assert result == "abc123"
     
@@ -263,6 +365,105 @@ class TestGenerateVideo:
         assert result["operation_name"] == "operations/video-op-123"
 
     @pytest.mark.asyncio
+    @patch("app.services.generation._get_http_client")
+    @patch("app.services.generation.client")
+    async def test_video_with_jpeg_first_frame_uses_correct_mime(self, mock_genai_client, mock_get_client, mock_library_service):
+        """Video generation with JPEG first frame sends correct MIME type"""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"name": "operations/video-op-123"}
+
+        mock_http_client = MagicMock()
+        mock_http_client.post = AsyncMock(return_value=mock_response)
+        mock_get_client.return_value = mock_http_client
+
+        from app.services.generation import GenerationService
+        service = GenerationService(library_service=mock_library_service)
+
+        # JPEG base64 data (starts with /9j/ which decodes to FF D8 FF)
+        jpeg_base64 = "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/"
+
+        result = await service.generate_video(
+            prompt="animate this",
+            user_id="user-123",
+            first_frame=jpeg_base64
+        )
+
+        assert result["status"] == "processing"
+
+        # Verify the API was called with correct MIME type
+        call_args = mock_http_client.post.call_args
+        payload = call_args.kwargs["json"]
+        assert payload["instances"][0]["image"]["mimeType"] == "image/jpeg"
+
+    @pytest.mark.asyncio
+    @patch("app.services.generation._get_http_client")
+    @patch("app.services.generation.client")
+    async def test_video_with_png_first_frame_uses_correct_mime(self, mock_genai_client, mock_get_client, mock_library_service):
+        """Video generation with PNG first frame sends correct MIME type"""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"name": "operations/video-op-123"}
+
+        mock_http_client = MagicMock()
+        mock_http_client.post = AsyncMock(return_value=mock_response)
+        mock_get_client.return_value = mock_http_client
+
+        from app.services.generation import GenerationService
+        service = GenerationService(library_service=mock_library_service)
+
+        # PNG base64 data (starts with iVBOR which decodes to 89 50 4E 47 = PNG header)
+        png_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+
+        result = await service.generate_video(
+            prompt="animate this",
+            user_id="user-123",
+            first_frame=png_base64
+        )
+
+        assert result["status"] == "processing"
+
+        # Verify the API was called with correct MIME type
+        call_args = mock_http_client.post.call_args
+        payload = call_args.kwargs["json"]
+        assert payload["instances"][0]["image"]["mimeType"] == "image/png"
+
+    @pytest.mark.asyncio
+    @patch("app.services.generation._get_http_client")
+    @patch("app.services.generation.client")
+    async def test_video_with_jpeg_reference_images_uses_correct_mime(self, mock_genai_client, mock_get_client, mock_library_service):
+        """Video generation with JPEG reference images sends correct MIME types"""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"name": "operations/video-op-123"}
+
+        mock_http_client = MagicMock()
+        mock_http_client.post = AsyncMock(return_value=mock_response)
+        mock_get_client.return_value = mock_http_client
+
+        from app.services.generation import GenerationService
+        service = GenerationService(library_service=mock_library_service)
+
+        # JPEG base64 data
+        jpeg_base64 = "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/"
+
+        result = await service.generate_video(
+            prompt="video with subjects",
+            user_id="user-123",
+            reference_images=[jpeg_base64, jpeg_base64]
+        )
+
+        assert result["status"] == "processing"
+
+        # Verify the API was called with correct MIME types for reference images
+        call_args = mock_http_client.post.call_args
+        payload = call_args.kwargs["json"]
+        ref_images = payload["instances"][0]["referenceImages"]
+        assert len(ref_images) == 2
+        assert ref_images[0]["image"]["mimeType"] == "image/jpeg"
+        assert ref_images[1]["image"]["mimeType"] == "image/jpeg"
+
+    @pytest.mark.asyncio
     @patch("app.services.generation.httpx.AsyncClient")
     @patch("app.services.generation.client")
     async def test_video_with_first_frame(self, mock_genai_client, mock_httpx, mock_library_service):
@@ -270,20 +471,20 @@ class TestGenerateVideo:
         mock_response = MagicMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"name": "operations/video-op-123"}
-        
+
         mock_http_client = AsyncMock()
         mock_http_client.post.return_value = mock_response
         mock_httpx.return_value.__aenter__.return_value = mock_http_client
-        
+
         from app.services.generation import GenerationService
         service = GenerationService(library_service=mock_library_service)
-        
+
         result = await service.generate_video(
-            prompt="animate this", 
+            prompt="animate this",
             user_id="user-123",
             first_frame="data:image/png;base64,abc123"
         )
-        
+
         assert result["status"] == "processing"
 
     @pytest.mark.asyncio

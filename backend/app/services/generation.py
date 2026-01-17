@@ -1,6 +1,7 @@
 import base64
 import httpx
 import asyncio
+import re
 import google.auth
 import google.auth.transport.requests
 from google import genai
@@ -68,20 +69,89 @@ class GenerationService:
         self.library = library_service or LibraryServiceFirestore()
     
     def _strip_base64_prefix(self, data: str) -> str:
-        """Remove data URL prefix if present and ensure valid base64 padding"""
+        """Remove data URL prefix, clean invalid characters, and ensure valid base64.
+
+        This method:
+        1. Strips data URL prefix (data:image/...;base64,)
+        2. Removes whitespace, newlines, and carriage returns
+        3. Removes any non-base64 characters
+        4. Fixes padding to ensure length is multiple of 4
+        5. Validates the result can be decoded
+        """
         if not data:
             return data
-            
+
         # Remove data URL prefix if present
         if ',' in data and data.startswith('data:'):
             data = data.split(',', 1)[1]
-        
-        # Add padding if necessary (base64 strings must be multiple of 4)
+
+        # Remove all whitespace (spaces, tabs, newlines, carriage returns)
+        # This is crucial - base64 from some sources includes line breaks
+        data = re.sub(r'\s', '', data)
+
+        # Remove any characters that aren't valid base64
+        # Valid base64 chars: A-Z, a-z, 0-9, +, /, =
+        data = re.sub(r'[^A-Za-z0-9+/=]', '', data)
+
+        # Remove any existing padding to recalculate
+        data = data.rstrip('=')
+
+        # Add correct padding (base64 strings must be multiple of 4)
         missing_padding = len(data) % 4
         if missing_padding:
             data += '=' * (4 - missing_padding)
-        
+
+        # Validate the base64 can be decoded
+        try:
+            base64.b64decode(data)
+            logger.debug(f"Base64 validation passed, length: {len(data)}")
+        except Exception as e:
+            logger.error(f"Base64 validation failed after cleaning: {e}")
+            logger.error(f"Data preview (first 100 chars): {data[:100]}")
+            # Return the data anyway - let the API give a more specific error
+            # rather than failing silently here
+
         return data
+
+    def _detect_mime_type(self, data: str) -> str:
+        """Detect MIME type from base64 encoded image data by checking file headers.
+
+        Returns 'image/png' for PNG files, 'image/jpeg' for JPEG files.
+        Defaults to 'image/png' if unable to detect.
+        """
+        if not data:
+            return "image/png"
+
+        try:
+            # Strip prefix if present
+            clean_data = self._strip_base64_prefix(data)
+
+            # Decode enough bytes to check the header (first 16 bytes is plenty)
+            # We only need first 8 bytes for PNG and 2 bytes for JPEG
+            header_b64 = clean_data[:24]  # 24 base64 chars = 18 bytes
+            header_bytes = base64.b64decode(header_b64)
+
+            # Check for PNG signature: 89 50 4E 47 0D 0A 1A 0A
+            if header_bytes[:8] == b'\x89PNG\r\n\x1a\n':
+                logger.debug("Detected MIME type: image/png")
+                return "image/png"
+
+            # Check for JPEG signature: FF D8
+            if header_bytes[:2] == b'\xff\xd8':
+                logger.debug("Detected MIME type: image/jpeg")
+                return "image/jpeg"
+
+            # Check for WebP signature: RIFF....WEBP
+            if header_bytes[:4] == b'RIFF' and len(header_bytes) >= 12 and header_bytes[8:12] == b'WEBP':
+                logger.debug("Detected MIME type: image/webp")
+                return "image/webp"
+
+            logger.warning(f"Could not detect MIME type from header bytes: {header_bytes[:8].hex()}, defaulting to image/png")
+            return "image/png"
+
+        except Exception as e:
+            logger.warning(f"Error detecting MIME type: {e}, defaulting to image/png")
+            return "image/png"
     
     def _get_auth_headers(self) -> dict:
         """Get authentication headers for REST API calls"""
@@ -263,33 +333,53 @@ class GenerationService:
         
         if first_frame:
             cleaned_frame = self._strip_base64_prefix(first_frame)
-            logger.info(f"Adding first frame to request, original length: {len(first_frame)}, cleaned length: {len(cleaned_frame)}")
+            first_frame_mime = self._detect_mime_type(first_frame)
+
+            # Validate and log image details
+            try:
+                frame_bytes = base64.b64decode(cleaned_frame)
+                logger.info(f"First frame: mime={first_frame_mime}, base64_len={len(cleaned_frame)}, decoded_bytes={len(frame_bytes)}, header_hex={frame_bytes[:16].hex()}")
+            except Exception as e:
+                logger.error(f"First frame decode failed: {e}")
+
             instance["image"] = {
                 "bytesBase64Encoded": cleaned_frame,
-                "mimeType": "image/png"
+                "mimeType": first_frame_mime
             }
         else:
             logger.warning("No first frame provided to generate_video")
-        
+
         if last_frame:
+            last_frame_mime = self._detect_mime_type(last_frame)
+            logger.info(f"Adding last frame with mime_type: {last_frame_mime}")
             instance["lastFrame"] = {
                 "bytesBase64Encoded": self._strip_base64_prefix(last_frame),
-                "mimeType": "image/png"
+                "mimeType": last_frame_mime
             }
-        
+
         # Reference images for subject consistency (Veo 3.1 feature)
         # Format: uses "image" field (not "referenceImage") and lowercase "style" type
         if reference_images:
-            instance["referenceImages"] = [
-                {
+            ref_images_with_mime = []
+            for idx, img in enumerate(reference_images[:3]):
+                img_mime = self._detect_mime_type(img)
+                cleaned_img = self._strip_base64_prefix(img)
+
+                # Validate and log image details
+                try:
+                    img_bytes = base64.b64decode(cleaned_img)
+                    logger.info(f"Reference image {idx+1}: mime={img_mime}, base64_len={len(cleaned_img)}, decoded_bytes={len(img_bytes)}, header_hex={img_bytes[:16].hex()}")
+                except Exception as e:
+                    logger.error(f"Reference image {idx+1} decode failed: {e}")
+
+                ref_images_with_mime.append({
                     "image": {
-                        "bytesBase64Encoded": self._strip_base64_prefix(img),
-                        "mimeType": "image/png"
+                        "bytesBase64Encoded": cleaned_img,
+                        "mimeType": img_mime
                     },
                     "referenceType": "style"
-                }
-                for img in reference_images[:3]
-            ]
+                })
+            instance["referenceImages"] = ref_images_with_mime
         
         payload = {
             "instances": [instance],
@@ -362,10 +452,16 @@ class GenerationService:
             return response.json()
         
         result = await self._retry_with_backoff(_do_status_check, "Video status check")
-        
+
+        # Log the full response structure for debugging
+        logger.info(f"Video status response: done={result.get('done')}, keys={list(result.keys())}")
+
         if result.get("done"):
             if "response" in result:
                 response_data = result["response"]
+                logger.info(f"Response data keys: {list(response_data.keys())}")
+                logger.info(f"Full response data: {str(response_data)[:2000]}")  # Log first 2000 chars
+
                 video_base64 = None
                 storage_uri = None
                 mime_type = "video/mp4"  # Default mime type
@@ -374,6 +470,7 @@ class GenerationService:
                 # Structure 1: generateVideoResponse.generatedSamples
                 videos = response_data.get("generateVideoResponse", {}).get("generatedSamples", [])
                 if videos:
+                    logger.info(f"Found videos in generateVideoResponse.generatedSamples: {len(videos)}")
                     video_data = videos[0].get("video", {})
                     video_base64 = video_data.get("bytesBase64Encoded") or video_data.get("videoBytes")
                     storage_uri = video_data.get("uri") or video_data.get("gcsUri")
@@ -383,9 +480,19 @@ class GenerationService:
                 if not video_base64 and not storage_uri:
                     videos = response_data.get("videos", [])
                     if videos:
+                        logger.info(f"Found videos in videos array: {len(videos)}")
                         video_base64 = videos[0].get("bytesBase64Encoded") or videos[0].get("videoBytes")
                         storage_uri = videos[0].get("uri") or videos[0].get("gcsUri")
                         mime_type = videos[0].get("mimeType", "video/mp4")
+
+                # Structure 3: predictions array (some Vertex AI models)
+                if not video_base64 and not storage_uri:
+                    predictions = response_data.get("predictions", [])
+                    if predictions:
+                        logger.info(f"Found predictions array: {len(predictions)}, keys: {list(predictions[0].keys()) if predictions else 'none'}")
+                        video_base64 = predictions[0].get("bytesBase64Encoded") or predictions[0].get("videoBytes")
+                        storage_uri = predictions[0].get("uri") or predictions[0].get("gcsUri")
+                        mime_type = predictions[0].get("mimeType", "video/mp4")
 
                 if video_base64:
                     # Try to save to library
@@ -413,7 +520,55 @@ class GenerationService:
                     )
 
                 if storage_uri:
-                    # Note: storage_uri videos aren't auto-saved (user needs to download first)
+                    # Download video from GCS and convert to base64
+                    if storage_uri.startswith("gs://"):
+                        logger.info(f"Downloading video from GCS: {storage_uri}")
+                        try:
+                            from google.cloud import storage
+
+                            # Parse GCS URI: gs://bucket-name/path/to/file
+                            gcs_path = storage_uri[5:]  # Remove "gs://"
+                            bucket_name = gcs_path.split("/")[0]
+                            blob_path = "/".join(gcs_path.split("/")[1:])
+
+                            storage_client = storage.Client()
+                            bucket = storage_client.bucket(bucket_name)
+                            blob = bucket.blob(blob_path)
+
+                            # Download as bytes
+                            video_bytes = blob.download_as_bytes()
+                            video_base64 = base64.b64encode(video_bytes).decode('utf-8')
+
+                            logger.info(f"Downloaded video from GCS: {len(video_bytes)} bytes, base64 length: {len(video_base64)}")
+
+                            # Try to save to library
+                            saved_to_library = True
+                            save_error = None
+                            try:
+                                await self.library.save_asset(
+                                    data=video_base64,
+                                    asset_type="video",
+                                    user_id=user_id,
+                                    prompt=prompt
+                                )
+                            except Exception as e:
+                                error_msg = f"{type(e).__name__}: {e}"
+                                logger.error(f"Failed to save video to library: {error_msg}")
+                                saved_to_library = False
+                                save_error = f"Failed to save video: {error_msg}"
+
+                            return VideoStatusResponse(
+                                status="complete",
+                                video_base64=video_base64,
+                                mimeType=mime_type,
+                                saved_to_library=saved_to_library,
+                                save_error=save_error
+                            )
+                        except Exception as e:
+                            logger.error(f"Failed to download video from GCS: {e}")
+                            # Fall through to return storage_uri as fallback
+
+                    # Fallback: return storage_uri if we couldn't download
                     return VideoStatusResponse(
                         status="complete",
                         storage_uri=storage_uri,
