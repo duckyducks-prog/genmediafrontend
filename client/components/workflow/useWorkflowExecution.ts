@@ -248,17 +248,60 @@ export function useWorkflowExecution(
 
           case NodeType.ImageInput: {
             let imageUrl = (node.data as any).imageUrl || null;
+            const imageRef = (node.data as any).imageRef;
 
-            // Resolve imageRef if imageUrl is missing
-            if (!imageUrl && (node.data as any).imageRef) {
+            // If imageUrl is a GCS URL (not a data URI), we need to fetch and convert it
+            // This happens when loading saved workflows where imageUrl is resolved by backend
+            if (imageUrl && !imageUrl.startsWith("data:") && imageUrl.startsWith("http")) {
               logger.debug(
-                "[ImageInput] ⚠️ imageUrl missing, resolving imageRef:",
-                (node.data as any).imageRef,
+                "[ImageInput] imageUrl is a GCS URL, fetching and converting to data URI:",
+                imageUrl.substring(0, 80),
               );
               try {
-                imageUrl = await resolveAssetToDataUrl(
-                  (node.data as any).imageRef,
+                const response = await fetch(imageUrl, { mode: "cors" });
+                if (!response.ok) {
+                  throw new Error(`Failed to fetch image: ${response.status}`);
+                }
+                const blob = await response.blob();
+                imageUrl = await new Promise<string>((resolve, reject) => {
+                  const reader = new FileReader();
+                  reader.onload = () => resolve(reader.result as string);
+                  reader.onerror = () => reject(new Error("Failed to convert image to data URI"));
+                  reader.readAsDataURL(blob);
+                });
+                logger.debug(
+                  "[ImageInput] ✓ Converted GCS URL to data URL, length:",
+                  imageUrl.length,
                 );
+
+                // Update node with resolved data URL
+                updateNodeState(node.id, node.data.status || "ready", {
+                  imageUrl,
+                  outputs: { image: imageUrl },
+                });
+              } catch (error) {
+                console.error("[ImageInput] ❌ Failed to fetch GCS URL:", error);
+                // Try falling back to imageRef resolution
+                if (imageRef) {
+                  logger.debug("[ImageInput] Falling back to imageRef resolution");
+                  imageUrl = null; // Clear to trigger resolution below
+                } else {
+                  return {
+                    success: false,
+                    error: `Failed to load image: ${error instanceof Error ? error.message : "Unknown error"}`,
+                  };
+                }
+              }
+            }
+
+            // Resolve imageRef if imageUrl is missing or was cleared
+            if (!imageUrl && imageRef) {
+              logger.debug(
+                "[ImageInput] ⚠️ imageUrl missing, resolving imageRef:",
+                imageRef,
+              );
+              try {
+                imageUrl = await resolveAssetToDataUrl(imageRef);
                 logger.debug(
                   "[ImageInput] ✓ Resolved to data URL, length:",
                   imageUrl.length,
