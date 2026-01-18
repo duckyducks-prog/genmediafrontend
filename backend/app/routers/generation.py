@@ -64,6 +64,33 @@ def is_asset_id(value: str) -> bool:
     uuid_pattern = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
     return bool(re.match(uuid_pattern, value, re.IGNORECASE))
 
+def is_gcs_url(value: str) -> bool:
+    """Check if a string is a GCS URL"""
+    return value.startswith("https://storage.googleapis.com/") or value.startswith("gs://")
+
+async def resolve_gcs_url_to_base64(gcs_url: str) -> str:
+    """Fetch image from GCS URL and return as base64.
+
+    This handles the case where frontend sends a GCS URL instead of base64 data,
+    which can happen when loading saved workflows.
+    """
+    try:
+        logger.info(f"Fetching image from GCS URL: {gcs_url[:80]}...")
+        async with httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=10.0)) as client:
+            response = await client.get(gcs_url)
+            response.raise_for_status()
+            image_bytes = response.content
+
+        result = base64.b64encode(image_bytes).decode('utf-8')
+        logger.info(f"Converted GCS URL to base64: {len(result)} chars, {len(image_bytes)} bytes")
+        return result
+    except httpx.TimeoutException as e:
+        logger.error(f"Timeout fetching GCS URL {gcs_url}: {e}")
+        raise ValueError(f"Timeout fetching image from GCS. The file may be too large.")
+    except Exception as e:
+        logger.error(f"Failed to fetch GCS URL {gcs_url}: {e}")
+        raise ValueError(f"Failed to fetch image: {e}")
+
 @lru_cache
 def get_generation_service() -> GenerationService:
     """
@@ -127,6 +154,11 @@ async def generate_video(
                 logger.info(f"Resolving first_frame asset ID: {request.first_frame}")
                 async_tasks.append(resolve_asset_to_base64(request.first_frame, user["uid"]))
                 task_mapping.append(("first_frame", 0))
+            elif is_gcs_url(request.first_frame):
+                # Handle GCS URLs from saved workflows
+                logger.info(f"Resolving first_frame GCS URL: {request.first_frame[:80]}...")
+                async_tasks.append(resolve_gcs_url_to_base64(request.first_frame))
+                task_mapping.append(("first_frame", 0))
             else:
                 first_frame_data = request.first_frame
                 frame_preview = first_frame_data[:100] if len(first_frame_data) > 100 else first_frame_data
@@ -140,6 +172,12 @@ async def generate_video(
                 if is_asset_id(ref_img):
                     logger.info(f"Resolving reference_image asset ID: {ref_img}")
                     async_tasks.append(resolve_asset_to_base64(ref_img, user["uid"]))
+                    task_mapping.append(("ref_img", i))
+                    ref_img_indices.append(i)
+                elif is_gcs_url(ref_img):
+                    # Handle GCS URLs from saved workflows
+                    logger.info(f"Resolving reference_image GCS URL: {ref_img[:80]}...")
+                    async_tasks.append(resolve_gcs_url_to_base64(ref_img))
                     task_mapping.append(("ref_img", i))
                     ref_img_indices.append(i)
                 else:
