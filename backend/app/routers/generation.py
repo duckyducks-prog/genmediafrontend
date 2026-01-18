@@ -142,6 +142,7 @@ async def generate_video(
         # Resolve asset IDs to base64 image data in parallel
         # All inputs to a single generation request are independent
         first_frame_data = None
+        last_frame_data = None
         reference_images_data = None
 
         # Collect all async tasks for parallel execution
@@ -163,6 +164,22 @@ async def generate_video(
                 first_frame_data = request.first_frame
                 frame_preview = first_frame_data[:100] if len(first_frame_data) > 100 else first_frame_data
                 logger.info(f"First frame data length: {len(first_frame_data)}, preview: {frame_preview}")
+
+        # Last frame resolution
+        if request.last_frame:
+            if is_asset_id(request.last_frame):
+                logger.info(f"Resolving last_frame asset ID: {request.last_frame}")
+                async_tasks.append(resolve_asset_to_base64(request.last_frame, user["uid"]))
+                task_mapping.append(("last_frame", 0))
+            elif is_gcs_url(request.last_frame):
+                # Handle GCS URLs from saved workflows
+                logger.info(f"Resolving last_frame GCS URL: {request.last_frame[:80]}...")
+                async_tasks.append(resolve_gcs_url_to_base64(request.last_frame))
+                task_mapping.append(("last_frame", 0))
+            else:
+                last_frame_data = request.last_frame
+                frame_preview = last_frame_data[:100] if len(last_frame_data) > 100 else last_frame_data
+                logger.info(f"Last frame data length: {len(last_frame_data)}, preview: {frame_preview}")
 
         # Reference images resolution - collect tasks for parallel execution
         ref_img_indices = []  # Track which reference images need async resolution
@@ -196,14 +213,16 @@ async def generate_video(
                     raise result
                 if task_type == "first_frame":
                     first_frame_data = result
+                elif task_type == "last_frame":
+                    last_frame_data = result
                 elif task_type == "ref_img":
                     reference_images_data[target_idx] = result
-        
+
         return await service.generate_video(
             prompt=request.prompt,
             user_id=user["uid"],
             first_frame=first_frame_data,
-            last_frame=request.last_frame,
+            last_frame=last_frame_data,
             reference_images=reference_images_data,
             aspect_ratio=request.aspect_ratio,
             duration_seconds=request.duration_seconds,
