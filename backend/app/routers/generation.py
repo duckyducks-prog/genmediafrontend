@@ -114,10 +114,50 @@ async def generate_image(
     try:
         ref_count = len(request.reference_images) if request.reference_images else 0
         logger.info(f"Image generation request from user {user['email']}, prompt={request.prompt[:50]}..., reference_images={ref_count}")
+
+        # Resolve asset IDs and GCS URLs to base64 image data
+        reference_images_data = None
+
+        if request.reference_images:
+            async_tasks = []
+            task_mapping = []  # Track which reference images need async resolution
+            reference_images_data = [None] * len(request.reference_images)
+
+            for i, ref_img in enumerate(request.reference_images):
+                if is_asset_id(ref_img):
+                    logger.info(f"Resolving reference_image asset ID: {ref_img}")
+                    async_tasks.append(resolve_asset_to_base64(ref_img, user["uid"]))
+                    task_mapping.append(i)
+                elif is_gcs_url(ref_img):
+                    # Handle GCS URLs from saved workflows
+                    logger.info(f"Resolving reference_image GCS URL: {ref_img[:80]}...")
+                    async_tasks.append(resolve_gcs_url_to_base64(ref_img))
+                    task_mapping.append(i)
+                else:
+                    # Already base64 data
+                    reference_images_data[i] = ref_img
+                    if len(ref_img) < 200:
+                        logger.info(f"Reference image {i} appears to be raw data: {ref_img[:100]}...")
+                    else:
+                        logger.info(f"Reference image {i} is base64 data: {len(ref_img)} chars")
+
+            # Execute all asset resolutions in parallel
+            if async_tasks:
+                logger.info(f"Resolving {len(async_tasks)} reference image assets in parallel")
+                results = await asyncio.gather(*async_tasks, return_exceptions=True)
+
+                for idx, target_idx in enumerate(task_mapping):
+                    result = results[idx]
+                    if isinstance(result, Exception):
+                        logger.error(f"Failed to resolve reference image asset: {result}")
+                        raise result
+                    reference_images_data[target_idx] = result
+                    logger.info(f"Resolved reference image {target_idx}: {len(result)} chars")
+
         return await service.generate_image(
             prompt=request.prompt,
             user_id=user["uid"],
-            reference_images=request.reference_images,
+            reference_images=reference_images_data,
             aspect_ratio=request.aspect_ratio,
             resolution=request.resolution
         )
