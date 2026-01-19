@@ -43,6 +43,8 @@ import { useToast } from "@/hooks/use-toast";
 import { SavedWorkflow, cloneWorkflow } from "@/lib/workflow-api";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
+import { NodeContextMenu } from "./NodeContextMenu";
+import { FloatingLabels } from "./FloatingLabels";
 import {
   useWorkflowNodes,
   useWorkflowEdges,
@@ -144,6 +146,13 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
     const [copiedNodes, setCopiedNodes] = useState<WorkflowNode[]>([]);
     const [copiedEdges, setCopiedEdges] = useState<WorkflowEdge[]>([]);
     const [isReadOnly, setIsReadOnly] = useState(false);
+
+    // Context menu state
+    const [contextMenu, setContextMenu] = useState<{
+      x: number;
+      y: number;
+      nodeId: string;
+    } | null>(null);
     const hasInitialized = useRef(false);
     const { toast } = useToast();
 
@@ -1181,6 +1190,82 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
       return () => window.removeEventListener("keydown", handleKeyDown);
     }, [copySelectedNodes, pasteNodes, nodes, setNodes, setEdges, toast]);
 
+    // Context menu handlers
+    const handleNodeContextMenu = useCallback(
+      (event: React.MouseEvent, node: WorkflowNode) => {
+        event.preventDefault();
+        if (isReadOnly) return;
+        setContextMenu({
+          x: event.clientX,
+          y: event.clientY,
+          nodeId: node.id,
+        });
+      },
+      [isReadOnly]
+    );
+
+    const handleDeleteNode = useCallback(
+      (nodeId: string) => {
+        setNodes((nds) => nds.filter((n) => n.id !== nodeId));
+        setEdges((eds) =>
+          eds.filter((e) => e.source !== nodeId && e.target !== nodeId)
+        );
+        toast({
+          title: "Deleted",
+          description: "Node deleted",
+        });
+      },
+      [setNodes, setEdges, toast]
+    );
+
+    const handleDuplicateNode = useCallback(
+      (nodeId: string) => {
+        const nodeToDuplicate = nodes.find((n) => n.id === nodeId);
+        if (!nodeToDuplicate) return;
+
+        const newNode: WorkflowNode = {
+          ...nodeToDuplicate,
+          id: `${nodeToDuplicate.type}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          position: {
+            x: nodeToDuplicate.position.x + 50,
+            y: nodeToDuplicate.position.y + 50,
+          },
+          selected: false,
+          data: {
+            ...nodeToDuplicate.data,
+            outputs: undefined, // Clear outputs for duplicated node
+            status: "ready",
+          },
+        };
+
+        setNodes((nds) => [...nds, newNode]);
+        toast({
+          title: "Duplicated",
+          description: "Node duplicated",
+        });
+      },
+      [nodes, setNodes, toast]
+    );
+
+    const handleSetNodeLabel = useCallback(
+      (nodeId: string, label: string | undefined) => {
+        setNodes((nds) =>
+          nds.map((n) =>
+            n.id === nodeId
+              ? { ...n, data: { ...n.data, customLabel: label } }
+              : n
+          )
+        );
+        if (label) {
+          toast({
+            title: "Label Set",
+            description: `Node labeled "${label}"`,
+          });
+        }
+      },
+      [setNodes, toast]
+    );
+
     // Capture thumbnail of the canvas
     const captureThumbnail = useCallback(async (): Promise<string | null> => {
       if (!reactFlowWrapper.current || !reactFlowInstance) {
@@ -1427,6 +1512,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
             onDrop={onDrop}
             onDragOver={onDragOver}
             onMoveEnd={handleMoveEnd}
+            onNodeContextMenu={handleNodeContextMenu}
             isValidConnection={isValidConnection}
             nodeTypes={nodeTypes}
             connectionMode={ConnectionMode.Loose}
@@ -1472,7 +1558,24 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               totalNodes={totalNodes}
               isReadOnly={isReadOnly}
             />
+            <FloatingLabels nodes={nodes} />
           </ReactFlow>
+
+          {/* Node context menu */}
+          {contextMenu && (
+            <NodeContextMenu
+              x={contextMenu.x}
+              y={contextMenu.y}
+              nodeId={contextMenu.nodeId}
+              currentLabel={
+                nodes.find((n) => n.id === contextMenu.nodeId)?.data.customLabel
+              }
+              onClose={() => setContextMenu(null)}
+              onDelete={handleDeleteNode}
+              onDuplicate={handleDuplicateNode}
+              onSetLabel={handleSetNodeLabel}
+            />
+          )}
 
           {/* Empty state message */}
           {nodes.length === 0 && (
