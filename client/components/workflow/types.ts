@@ -89,6 +89,7 @@ export interface OutputConnector {
 // Base interface for all nodes
 export interface BaseNodeData {
   label: string;
+  customLabel?: string; // User-defined label displayed above the node (like DaVinci Resolve)
   status?: "ready" | "executing" | "completed" | "error";
   error?: string;
   outputs?: Record<string, any>; // Store output values from execution
