@@ -2,7 +2,7 @@ import { logger } from "@/lib/logger";
 import { memo, useEffect, useCallback, useRef } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { BrightnessContrastNodeData } from "../types";
-import { Slider } from "@/components/ui/slider";
+import { ModifierSlider as Slider } from "@/components/ui/modifier-slider";
 import { Sun } from "lucide-react";
 import { FilterConfig, FILTER_DEFINITIONS } from "@/lib/pixi-filter-configs";
 import { NodeLockToggle } from "../NodeLockToggle";

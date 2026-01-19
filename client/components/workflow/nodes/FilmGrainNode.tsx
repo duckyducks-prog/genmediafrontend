@@ -1,7 +1,7 @@
 import { memo, useEffect, useCallback, useRef, useState } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { FilmGrainNodeData } from "../types";
-import { Slider } from "@/components/ui/slider";
+import { ModifierSlider as Slider } from "@/components/ui/modifier-slider";
 import { Film, ChevronDown, ChevronUp } from "lucide-react";
 import { FilterConfig, FILTER_DEFINITIONS } from "@/lib/pixi-filter-configs";
 import {
