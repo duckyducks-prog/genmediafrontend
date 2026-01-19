@@ -1,7 +1,7 @@
 import { memo, useEffect, useCallback, useRef } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { VignetteNodeData } from "../types";
-import { Slider } from "@/components/ui/slider";
+import { ModifierSlider as Slider } from "@/components/ui/modifier-slider";
 import { Circle } from "lucide-react";
 import { FilterConfig, FILTER_DEFINITIONS } from "@/lib/pixi-filter-configs";
 
