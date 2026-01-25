@@ -1085,12 +1085,12 @@ export function useWorkflowExecution(
               const apiData = await response.json();
 
               logger.debug("[GenerateMusic] API Response:", {
-                hasAudio: !!apiData.audio,
-                audioLength: apiData.audio?.length || 0,
+                hasAudio: !!apiData.audio_base64,
+                audioLength: apiData.audio_base64?.length || 0,
               });
 
-              if (apiData.audio) {
-                const audioUrl = `data:audio/wav;base64,${apiData.audio}`;
+              if (apiData.audio_base64) {
+                const audioUrl = `data:${apiData.mime_type || 'audio/wav'};base64,${apiData.audio_base64}`;
 
                 // Notify that an asset was generated
                 if (onAssetGenerated) {
@@ -1102,15 +1102,15 @@ export function useWorkflowExecution(
 
                 const resultData = {
                   audioUrl,
-                  audioDuration: apiData.duration || 30,
+                  audioDuration: apiData.duration_seconds || 30,
                   outputs: {
                     audio: audioUrl,
                   },
                 };
 
                 toast({
-                  title: "Music Generated ✓",
-                  description: `Generated ${apiData.duration || 30}s of music`,
+                  title: "Music Generated",
+                  description: `Generated ${apiData.duration_seconds || 30}s of music`,
                 });
 
                 return {
