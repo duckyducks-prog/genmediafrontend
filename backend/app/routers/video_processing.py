@@ -90,14 +90,20 @@ async def merge_videos(
                 for path in video_paths:
                     f.write(f"file '{path}'\n")
 
-            # Merge videos using ffmpeg concat demuxer
+            # Merge videos using ffmpeg concat demuxer with re-encoding
+            # Re-encoding ensures compatibility between different video sources
             output_path = os.path.join(tmpdir, "output.mp4")
             merge_cmd = [
                 "ffmpeg", "-y",
                 "-f", "concat",
                 "-safe", "0",
                 "-i", concat_file,
-                "-c", "copy",  # Copy streams without re-encoding
+                "-c:v", "libx264",
+                "-preset", "fast",
+                "-crf", "23",
+                "-c:a", "aac",
+                "-b:a", "128k",
+                "-movflags", "+faststart",
                 output_path
             ]
 
@@ -105,25 +111,8 @@ async def merge_videos(
             result = subprocess.run(merge_cmd, capture_output=True, text=True)
 
             if result.returncode != 0:
-                # Try with re-encoding if copy fails (different codecs)
-                logger.warning(f"ffmpeg copy failed, trying re-encode: {result.stderr}")
-                merge_cmd = [
-                    "ffmpeg", "-y",
-                    "-f", "concat",
-                    "-safe", "0",
-                    "-i", concat_file,
-                    "-c:v", "libx264",
-                    "-preset", "fast",
-                    "-crf", "23",
-                    "-c:a", "aac",
-                    "-b:a", "128k",
-                    output_path
-                ]
-                result = subprocess.run(merge_cmd, capture_output=True, text=True)
-
-                if result.returncode != 0:
-                    logger.error(f"ffmpeg merge failed: {result.stderr}")
-                    raise HTTPException(status_code=500, detail="Failed to merge videos")
+                logger.error(f"ffmpeg merge failed: {result.stderr}")
+                raise HTTPException(status_code=500, detail=f"Failed to merge videos: {result.stderr[:200]}")
 
             # Read output and return
             with open(output_path, "rb") as f:
