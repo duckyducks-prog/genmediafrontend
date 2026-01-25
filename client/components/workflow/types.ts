@@ -148,19 +148,10 @@ export interface VoiceChangerNodeData extends BaseNodeData {
   outputVideoUrl?: string; // Output video with changed voice
 }
 
-// Video trim configuration for merge
-export interface VideoTrimConfig {
-  startTime?: number; // Start time / merge point in seconds
-  endTime?: number; // End time in seconds
-  trimStart?: number; // Seconds to trim from start
-  trimEnd?: number; // Seconds to trim from end
-}
-
 // MERGE VIDEOS node - concatenates multiple videos
 export interface MergeVideosNodeData extends BaseNodeData {
   isMerging: boolean; // Is merge in progress
   outputVideoUrl?: string; // Output merged video
-  trimConfigs?: VideoTrimConfig[]; // Trim config for each video input
 }
 
 // ADD MUSIC TO VIDEO node - mixes audio into video
@@ -977,7 +968,7 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
     type: NodeType.GenerateMusic,
     label: "Generate Music",
     category: "action",
-    description: "Generate background music using Lyria AI",
+    description: "Generate background music using ElevenLabs",
     inputConnectors: [
       {
         id: "prompt",

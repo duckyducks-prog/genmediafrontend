@@ -598,6 +598,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               isGenerating: false,
               status: "ready",
               label: "Generate Music",
+              selectedDuration: "auto",
               outputs: {},
             };
             break;

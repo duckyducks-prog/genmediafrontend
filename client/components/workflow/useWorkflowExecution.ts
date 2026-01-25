@@ -1418,9 +1418,6 @@ export function useWorkflowExecution(
               const user = auth.currentUser;
               const token = await user?.getIdToken();
 
-              // Get trim configs from node data
-              const trimConfigs = (node.data as any).trimConfigs || [];
-
               const response = await fetch(API_ENDPOINTS.video.merge, {
                 method: "POST",
                 headers: {
@@ -1429,12 +1426,6 @@ export function useWorkflowExecution(
                 },
                 body: JSON.stringify({
                   videos_base64: resolvedVideos.map(v => v.replace(/^data:video\/[^;]+;base64,/, "").replace(/^data:application\/[^;]+;base64,/, "")),
-                  trim_configs: trimConfigs.length > 0 ? trimConfigs.map((cfg: any) => ({
-                    start_time: cfg?.startTime || null,
-                    end_time: cfg?.endTime || null,
-                    trim_start: cfg?.trimStart || null,
-                    trim_end: cfg?.trimEnd || null,
-                  })) : null,
                 }),
               });
 

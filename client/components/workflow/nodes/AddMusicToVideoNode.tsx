@@ -13,6 +13,7 @@ import {
   AlertCircle,
   Info,
   Volume2,
+  Play,
 } from "lucide-react";
 import {
   AddMusicToVideoNodeData,
@@ -22,6 +23,13 @@ import {
 
 function AddMusicToVideoNode({ data, id }: NodeProps<AddMusicToVideoNodeData>) {
   const config = NODE_CONFIGURATIONS[NodeType.AddMusicToVideo];
+
+  const handleRunNode = () => {
+    const event = new CustomEvent("node-execute", {
+      detail: { nodeId: id },
+    });
+    window.dispatchEvent(event);
+  };
 
   const handleUpdate = (field: keyof AddMusicToVideoNodeData, value: any) => {
     if (data.readOnly) return;
@@ -156,8 +164,9 @@ function AddMusicToVideoNode({ data, id }: NodeProps<AddMusicToVideoNodeData>) {
           </div>
         )}
 
-        {/* Action Button */}
+        {/* Run Node Button */}
         <Button
+          onClick={handleRunNode}
           variant="outline"
           className="w-full"
           disabled={data.isMixing || data.readOnly}
@@ -165,12 +174,12 @@ function AddMusicToVideoNode({ data, id }: NodeProps<AddMusicToVideoNodeData>) {
           {data.isMixing ? (
             <>
               <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-              Adding Music...
+              Mixing...
             </>
           ) : (
             <>
-              <Music className="w-3 h-3 mr-1" />
-              Add Music
+              <Play className="w-3 h-3 mr-1" />
+              Run Node
             </>
           )}
         </Button>
