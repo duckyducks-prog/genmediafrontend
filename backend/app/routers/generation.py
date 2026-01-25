@@ -6,7 +6,8 @@ from app.schemas import (
     ImageRequest, ImageResponse,
     VideoRequest, StatusRequest, VideoStatusResponse,
     TextRequest, TextResponse,
-    UpscaleRequest, UpscaleResponse
+    UpscaleRequest, UpscaleResponse,
+    MusicRequest, MusicResponse
 )
 from app.auth import get_current_user
 from app.services.generation import GenerationService
@@ -339,4 +340,23 @@ async def upscale_image(
         raise
     except Exception as e:
         logger.error(f"Image upscale failed for user {user['email']}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/music", response_model=MusicResponse)
+async def generate_music(
+    request: MusicRequest,
+    user: dict = Depends(get_current_user),
+    service: GenerationService = Depends(get_generation_service)
+):
+    """Generate music using Google Lyria"""
+    try:
+        logger.info(f"Music generation request from user {user['email']}, prompt={request.prompt[:50]}...")
+        return await service.generate_music(
+            prompt=request.prompt,
+            user_id=user["uid"]
+        )
+    except AppError:
+        raise
+    except Exception as e:
+        logger.error(f"Music generation failed for user {user['email']}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

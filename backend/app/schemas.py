@@ -60,6 +60,9 @@ class UpscaleRequest(BaseModel):
     upscale_factor: Optional[str] = "x2"
     output_mime_type: Optional[str] = "image/png"
 
+class MusicRequest(BaseModel):
+    prompt: str = Field(..., min_length=1, max_length=MAX_PROMPT_LENGTH)
+
 class SaveAssetRequest(BaseModel):
     data: str = Field(..., min_length=100, max_length=MAX_VIDEO_BASE64)  # Supports video uploads
     asset_type: str = Field(..., pattern=r'^(image|video)$')
@@ -79,6 +82,11 @@ class TextResponse(BaseModel):
 class UpscaleResponse(BaseModel):
     image: str
     mime_type: str
+
+class MusicResponse(BaseModel):
+    audio_base64: str
+    mime_type: str = "audio/wav"
+    duration_seconds: int = 30
 
 class AssetResponse(BaseModel):
     id: str

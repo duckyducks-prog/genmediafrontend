@@ -246,11 +246,6 @@ export function useWorkflowExecution(
             return { success: true, data: { text: prompt } };
           }
 
-          case NodeType.MusicPrompt: {
-            const musicPrompt = (node.data as any).musicPrompt || "";
-            return { success: true, data: { music_prompt: musicPrompt } };
-          }
-
           case NodeType.ImageInput: {
             let imageUrl = (node.data as any).imageUrl || null;
             const imageRef = (node.data as any).imageRef;
@@ -1033,6 +1028,105 @@ export function useWorkflowExecution(
                   error instanceof Error
                     ? error.message
                     : "Image generation failed",
+              };
+            }
+          }
+
+          case NodeType.GenerateMusic: {
+            // Get prompt from input connector or node data
+            let prompt = inputs.prompt || (node.data as any).prompt || "";
+
+            if (!prompt) {
+              return { success: false, error: "No music prompt provided" };
+            }
+
+            logger.debug("[GenerateMusic] Starting execution with prompt:", {
+              promptLength: prompt.length,
+              promptPreview: prompt.substring(0, 50),
+            });
+
+            try {
+              const user = auth.currentUser;
+              const token = await user?.getIdToken();
+
+              const response = await fetch(API_ENDPOINTS.generate.music, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ prompt }),
+              });
+
+              if (response.status === 403) {
+                return {
+                  success: false,
+                  error: "Access denied. Your email may not be whitelisted.",
+                };
+              }
+
+              if (response.status === 401) {
+                return {
+                  success: false,
+                  error: "Unauthorized. Please sign out and sign in again.",
+                };
+              }
+
+              if (!response.ok) {
+                const errorText = await response.text();
+                console.error("[GenerateMusic] API Error:", {
+                  status: response.status,
+                  statusText: response.statusText,
+                  body: errorText,
+                });
+                throw new Error(`API error: ${response.status} - ${errorText}`);
+              }
+
+              const apiData = await response.json();
+
+              logger.debug("[GenerateMusic] API Response:", {
+                hasAudio: !!apiData.audio,
+                audioLength: apiData.audio?.length || 0,
+              });
+
+              if (apiData.audio) {
+                const audioUrl = `data:audio/wav;base64,${apiData.audio}`;
+
+                // Notify that an asset was generated
+                if (onAssetGenerated) {
+                  logger.debug(
+                    "[useWorkflowExecution] Music generated, triggering asset refresh",
+                  );
+                  onAssetGenerated();
+                }
+
+                const resultData = {
+                  audioUrl,
+                  audioDuration: apiData.duration || 30,
+                  outputs: {
+                    audio: audioUrl,
+                  },
+                };
+
+                toast({
+                  title: "Music Generated ✓",
+                  description: `Generated ${apiData.duration || 30}s of music`,
+                });
+
+                return {
+                  success: true,
+                  data: resultData,
+                };
+              } else {
+                return { success: false, error: "No audio returned from API" };
+              }
+            } catch (error) {
+              return {
+                success: false,
+                error:
+                  error instanceof Error
+                    ? error.message
+                    : "Music generation failed",
               };
             }
           }

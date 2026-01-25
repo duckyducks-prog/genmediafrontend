@@ -8,7 +8,7 @@ from google import genai
 from google.genai import types
 from typing import Optional, List
 from app.config import settings
-from app.schemas import ImageResponse, TextResponse, UpscaleResponse, VideoStatusResponse
+from app.schemas import ImageResponse, TextResponse, UpscaleResponse, VideoStatusResponse, MusicResponse
 from app.services.library_firestore import LibraryServiceFirestore
 from app.logging_config import setup_logger
 from app.exceptions import (
@@ -661,3 +661,54 @@ class GenerationService:
                 return UpscaleResponse(image=upscaled_image, mime_type=mime_type)
 
         raise NoContentGeneratedError("upscaled image")
+
+    async def generate_music(
+        self,
+        prompt: str,
+        user_id: str
+    ) -> MusicResponse:
+        """Generate music using Google Lyria API"""
+        endpoint = f"https://{settings.location}-aiplatform.googleapis.com/v1/projects/{settings.project_id}/locations/{settings.location}/publishers/google/models/{settings.lyria_model}:predict"
+
+        payload = {
+            "instances": [{"prompt": prompt}],
+            "parameters": {
+                "sampleCount": 1
+            }
+        }
+
+        logger.info(f"Lyria API request: endpoint={endpoint}, prompt={prompt[:50]}...")
+
+        async def _do_music_request():
+            http_client = _get_http_client()
+            response = await http_client.post(endpoint, json=payload, headers=self._get_auth_headers())
+
+            if response.status_code == 429:
+                raise RateLimitError(f"Music API rate limited: {response.text[:200]}")
+
+            if response.status_code != 200:
+                logger.error(f"Lyria API error: status={response.status_code}")
+                logger.error(f"Lyria API response: {response.text[:1000]}")
+                raise UpstreamAPIError(response.status_code, response.text[:500])
+
+            return response.json()
+
+        result = await self._retry_with_backoff(_do_music_request, "Music generation")
+
+        # Extract audio from response
+        predictions = result.get("predictions", [])
+        if not predictions:
+            raise NoContentGeneratedError("music")
+
+        audio_base64 = predictions[0].get("bytesBase64Encoded") or predictions[0].get("audioBytes")
+        if not audio_base64:
+            logger.error(f"Lyria response structure: {list(predictions[0].keys())}")
+            raise NoContentGeneratedError("music")
+
+        logger.info(f"Generated music successfully: {len(audio_base64)} base64 chars")
+
+        return MusicResponse(
+            audio_base64=audio_base64,
+            mime_type="audio/wav",
+            duration_seconds=30
+        )
