@@ -100,10 +100,9 @@ async def change_voice(
 
     Process:
     1. Decode video from base64
-    2. Extract audio from video using ffmpeg
-    3. Send audio to ElevenLabs Speech-to-Speech API
-    4. Merge new audio back into video using ffmpeg
-    5. Return new video as base64
+    2. Send video directly to ElevenLabs STS API (it extracts audio)
+    3. Merge new audio back into video using ffmpeg
+    4. Return new video as base64
     """
     try:
         logger.info(f"Voice change request from user {user['email']}, voice_id={request.voice_id}")
@@ -126,37 +125,14 @@ async def change_voice(
 
             logger.info(f"Saved input video: {len(video_bytes)} bytes")
 
-            # 2. Extract audio from video using ffmpeg
-            extracted_audio_path = os.path.join(tmpdir, "extracted.mp3")
-            extract_cmd = [
-                "ffmpeg", "-y",
-                "-i", input_video_path,
-                "-vn",  # No video
-                "-acodec", "libmp3lame",
-                "-ar", "44100",
-                "-ac", "1",  # Mono for better voice processing
-                "-b:a", "128k",
-                extracted_audio_path
-            ]
-
-            result = subprocess.run(extract_cmd, capture_output=True, text=True)
-            if result.returncode != 0:
-                logger.error(f"ffmpeg extract failed: {result.stderr}")
-                raise HTTPException(status_code=500, detail="Failed to extract audio from video")
-
-            logger.info("Extracted audio from video")
-
-            # 3. Send audio to ElevenLabs Speech-to-Speech API
-            with open(extracted_audio_path, "rb") as f:
-                audio_data = f.read()
-
+            # 2. Send video directly to ElevenLabs Speech-to-Speech API
+            # ElevenLabs can extract audio from video files
             async with httpx.AsyncClient(timeout=120.0) as client:
-                # ElevenLabs Speech-to-Speech endpoint
                 sts_url = f"{ELEVENLABS_API_BASE}/speech-to-speech/{request.voice_id}"
 
-                # Prepare multipart form data
+                # Send video file directly - ElevenLabs extracts audio
                 files = {
-                    "audio": ("audio.mp3", audio_data, "audio/mpeg"),
+                    "audio": ("video.mp4", video_bytes, "video/mp4"),
                 }
                 data = {
                     "model_id": "eleven_english_sts_v2",
@@ -186,7 +162,7 @@ async def change_voice(
 
                 logger.info(f"Received converted audio: {len(response.content)} bytes")
 
-            # 4. Merge new audio back into video using ffmpeg
+            # 3. Merge new audio back into video using ffmpeg
             output_video_path = os.path.join(tmpdir, "output.mp4")
             merge_cmd = [
                 "ffmpeg", "-y",
@@ -206,7 +182,7 @@ async def change_voice(
 
             logger.info("Merged converted audio with video")
 
-            # 5. Read output video and return as base64
+            # 4. Read output video and return as base64
             with open(output_video_path, "rb") as f:
                 output_bytes = f.read()
 
