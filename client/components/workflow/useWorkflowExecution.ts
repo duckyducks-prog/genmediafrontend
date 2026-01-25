@@ -246,6 +246,11 @@ export function useWorkflowExecution(
             return { success: true, data: { text: prompt } };
           }
 
+          case NodeType.MusicPrompt: {
+            const musicPrompt = (node.data as any).musicPrompt || "";
+            return { success: true, data: { music_prompt: musicPrompt } };
+          }
+
           case NodeType.ImageInput: {
             let imageUrl = (node.data as any).imageUrl || null;
             const imageRef = (node.data as any).imageRef;

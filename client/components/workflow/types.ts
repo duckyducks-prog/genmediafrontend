@@ -10,6 +10,7 @@ export enum NodeType {
   ImageInput = "imageInput",
   VideoInput = "videoInput",
   Prompt = "prompt",
+  MusicPrompt = "musicPrompt",
 
   // MODIFIER nodes (both input and output connectors)
   PromptConcatenator = "promptConcatenator",
@@ -120,6 +121,11 @@ export interface VideoInputNodeData extends BaseNodeData {
 // PROMPT node
 export interface PromptNodeData extends BaseNodeData {
   prompt: string;
+}
+
+// MUSIC PROMPT node
+export interface MusicPromptNodeData extends BaseNodeData {
+  musicPrompt: string;
 }
 
 // PROMPT CONCATENATOR node
@@ -345,6 +351,7 @@ export type WorkflowNodeData =
   | ImageInputNodeData
   | VideoInputNodeData
   | PromptNodeData
+  | MusicPromptNodeData
   | PromptConcatenatorNodeData
   | TextIteratorNodeData
   | BrightnessContrastNodeData
@@ -428,6 +435,21 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
       {
         id: "text",
         label: "Text",
+        type: ConnectorType.Text,
+      },
+    ],
+  },
+
+  [NodeType.MusicPrompt]: {
+    type: NodeType.MusicPrompt,
+    label: "Music Prompt",
+    category: "input",
+    description: "Describe background music for video",
+    inputConnectors: [],
+    outputConnectors: [
+      {
+        id: "music_prompt",
+        label: "Music Prompt",
         type: ConnectorType.Text,
       },
     ],
