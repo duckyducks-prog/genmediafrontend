@@ -166,7 +166,7 @@ const paletteNodes: PaletteNode[] = [
     label: "Generate Music",
     icon: <Music className="w-4 h-4" />,
     category: "action",
-    description: "Create AI music with Lyria",
+    description: "Create AI music with ElevenLabs",
   },
   {
     type: NodeType.VoiceChanger,

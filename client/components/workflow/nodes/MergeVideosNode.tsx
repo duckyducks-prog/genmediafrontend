@@ -1,48 +1,20 @@
 "use client";
 
-import { memo, useState } from "react";
+import { memo } from "react";
 import { NodeProps, Handle, Position } from "reactflow";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Loader2, Combine, CheckCircle, AlertCircle, Info, ChevronDown, ChevronUp, Scissors } from "lucide-react";
-import { MergeVideosNodeData, NODE_CONFIGURATIONS, NodeType, VideoTrimConfig } from "../types";
+import { Loader2, Combine, CheckCircle, AlertCircle, Info, Play } from "lucide-react";
+import { MergeVideosNodeData, NODE_CONFIGURATIONS, NodeType } from "../types";
 
 function MergeVideosNode({ data, id }: NodeProps<MergeVideosNodeData>) {
   const config = NODE_CONFIGURATIONS[NodeType.MergeVideos];
-  const [showTrimSettings, setShowTrimSettings] = useState(false);
 
-  const handleUpdate = (field: keyof MergeVideosNodeData, value: any) => {
-    if (data.readOnly) return;
-
-    const event = new CustomEvent("node-update", {
-      detail: {
-        id,
-        data: {
-          ...data,
-          [field]: value,
-        },
-      },
+  const handleRunNode = () => {
+    const event = new CustomEvent("node-execute", {
+      detail: { nodeId: id },
     });
     window.dispatchEvent(event);
-  };
-
-  const updateTrimConfig = (index: number, field: keyof VideoTrimConfig, value: number | undefined) => {
-    if (data.readOnly) return;
-
-    const trimConfigs = [...(data.trimConfigs || [{}, {}, {}, {}])];
-    while (trimConfigs.length < 4) {
-      trimConfigs.push({});
-    }
-    trimConfigs[index] = {
-      ...trimConfigs[index],
-      [field]: value,
-    };
-    handleUpdate("trimConfigs", trimConfigs);
-  };
-
-  const getTrimConfig = (index: number): VideoTrimConfig => {
-    return data.trimConfigs?.[index] || {};
   };
 
   const getStatusIcon = () => {
@@ -69,7 +41,7 @@ function MergeVideosNode({ data, id }: NodeProps<MergeVideosNodeData>) {
   };
 
   return (
-    <Card className="w-[320px] bg-card border-border shadow-lg">
+    <Card className="w-[280px] bg-card border-border shadow-lg">
       {/* Input Handles */}
       {config.inputConnectors.map((connector, index) => (
         <Handle
@@ -78,7 +50,7 @@ function MergeVideosNode({ data, id }: NodeProps<MergeVideosNodeData>) {
           position={Position.Left}
           id={connector.id}
           className="!w-3 !h-3 !bg-blue-500 !border-2 !border-background"
-          style={{ top: showTrimSettings ? 70 + index * 90 : 60 + index * 40 }}
+          style={{ top: 60 + index * 40 }}
         />
       ))}
 
@@ -92,71 +64,26 @@ function MergeVideosNode({ data, id }: NodeProps<MergeVideosNodeData>) {
           {getStatusIcon()}
         </div>
 
-        {/* Input Labels with Trim Controls */}
+        {/* Input Labels */}
         <div className="space-y-2 mb-4">
-          {config.inputConnectors.map((connector, index) => (
-            <div key={connector.id} className="space-y-1">
-              <div className="flex items-center gap-2 text-xs">
-                <span
-                  className={
-                    connector.required
-                      ? "text-red-400"
-                      : "text-muted-foreground"
-                  }
-                >
-                  {connector.label}
-                  {connector.required && " *"}
-                </span>
-              </div>
-
-              {/* Trim controls for each video */}
-              {showTrimSettings && (
-                <div className="pl-2 space-y-1 border-l-2 border-border ml-1">
-                  <div className="flex items-center gap-1">
-                    <label className="text-[10px] text-muted-foreground w-14">Start (s):</label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      placeholder="0"
-                      value={getTrimConfig(index).startTime || ""}
-                      onChange={(e) => updateTrimConfig(index, "startTime", e.target.value ? Number(e.target.value) : undefined)}
-                      className="h-5 text-[10px] w-16 px-1 nodrag"
-                      disabled={data.readOnly || data.isMerging}
-                    />
-                    <label className="text-[10px] text-muted-foreground w-14 ml-1">End (s):</label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      placeholder="auto"
-                      value={getTrimConfig(index).endTime || ""}
-                      onChange={(e) => updateTrimConfig(index, "endTime", e.target.value ? Number(e.target.value) : undefined)}
-                      className="h-5 text-[10px] w-16 px-1 nodrag"
-                      disabled={data.readOnly || data.isMerging}
-                    />
-                  </div>
-                </div>
-              )}
+          {config.inputConnectors.map((connector) => (
+            <div
+              key={connector.id}
+              className="flex items-center gap-2 text-xs"
+            >
+              <span
+                className={
+                  connector.required
+                    ? "text-red-400"
+                    : "text-muted-foreground"
+                }
+              >
+                {connector.label}
+                {connector.required && " *"}
+              </span>
             </div>
           ))}
         </div>
-
-        {/* Trim Settings Toggle */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="w-full h-6 text-xs mb-2"
-          onClick={() => setShowTrimSettings(!showTrimSettings)}
-        >
-          <Scissors className="w-3 h-3 mr-1" />
-          Trim Settings
-          {showTrimSettings ? (
-            <ChevronUp className="w-3 h-3 ml-1" />
-          ) : (
-            <ChevronDown className="w-3 h-3 ml-1" />
-          )}
-        </Button>
 
         {/* Status */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
@@ -170,7 +97,7 @@ function MergeVideosNode({ data, id }: NodeProps<MergeVideosNodeData>) {
             <p className="text-xs text-muted-foreground">
               Connect 2-4 videos to merge
               <br />
-              {showTrimSettings ? "Set start/end times to trim clips" : "Click Trim Settings to adjust"}
+              Click Run to concatenate
             </p>
           </div>
         </div>
@@ -182,8 +109,9 @@ function MergeVideosNode({ data, id }: NodeProps<MergeVideosNodeData>) {
           </div>
         )}
 
-        {/* Action Button */}
+        {/* Run Node Button */}
         <Button
+          onClick={handleRunNode}
           variant="outline"
           className="w-full"
           disabled={data.isMerging || data.readOnly}
@@ -191,12 +119,12 @@ function MergeVideosNode({ data, id }: NodeProps<MergeVideosNodeData>) {
           {data.isMerging ? (
             <>
               <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-              Merging Videos...
+              Merging...
             </>
           ) : (
             <>
-              <Combine className="w-3 h-3 mr-1" />
-              Merge Videos
+              <Play className="w-3 h-3 mr-1" />
+              Run Node
             </>
           )}
         </Button>
