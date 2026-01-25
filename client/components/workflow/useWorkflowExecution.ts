@@ -1387,7 +1387,7 @@ export function useWorkflowExecution(
                   // HTTP URL or Blob URL - fetch and convert to data URL
                   logger.debug(`[MergeVideos] Video ${i + 1} is ${video.startsWith('blob:') ? 'blob' : 'HTTP'} URL, fetching...`);
                   try {
-                    const response = await fetch(video);
+                    const response = await fetch(video, { mode: 'cors' });
                     if (!response.ok) {
                       throw new Error(`Failed to fetch video: ${response.status}`);
                     }
@@ -1496,7 +1496,7 @@ export function useWorkflowExecution(
               // Resolve video to data URL if needed (handles HTTP URLs, blob URLs from library)
               if (videoInput.startsWith('http://') || videoInput.startsWith('https://') || videoInput.startsWith('blob:')) {
                 logger.debug(`[AddMusicToVideo] Fetching video from ${videoInput.startsWith('blob:') ? 'blob' : 'HTTP'} URL...`);
-                const response = await fetch(videoInput);
+                const response = await fetch(videoInput, { mode: 'cors' });
                 if (!response.ok) {
                   throw new Error(`Failed to fetch video: ${response.status}`);
                 }
@@ -1513,7 +1513,7 @@ export function useWorkflowExecution(
               // Resolve audio to data URL if needed
               if (audioInput.startsWith('http://') || audioInput.startsWith('https://') || audioInput.startsWith('blob:')) {
                 logger.debug(`[AddMusicToVideo] Fetching audio from ${audioInput.startsWith('blob:') ? 'blob' : 'HTTP'} URL...`);
-                const response = await fetch(audioInput);
+                const response = await fetch(audioInput, { mode: 'cors' });
                 if (!response.ok) {
                   throw new Error(`Failed to fetch audio: ${response.status}`);
                 }
