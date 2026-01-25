@@ -3,7 +3,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from fastapi import HTTPException
 from app.routers.generation import generate_image, generate_video, generate_text, check_video_status, upscale_image
-from app.routers.library import save_asset, list_assets, get_asset, delete_asset
+from app.routers.library import create_asset, list_assets, get_asset, delete_asset
 from app.schemas import (
     ImageRequest, VideoRequest, TextRequest, StatusRequest, UpscaleRequest,
     SaveAssetRequest
@@ -97,7 +97,7 @@ class TestLibraryRouterErrors:
         request = SaveAssetRequest(data="base64", asset_type="invalid")
         
         with pytest.raises(HTTPException) as exc:
-            await save_asset(request, user, mock_service)
+            await create_asset(request, user, mock_service)
         
         assert exc.value.status_code == 400
         assert "Invalid asset type" in exc.value.detail
@@ -112,7 +112,7 @@ class TestLibraryRouterErrors:
         request = SaveAssetRequest(data="base64", asset_type="image")
         
         with pytest.raises(HTTPException) as exc:
-            await save_asset(request, user, mock_service)
+            await create_asset(request, user, mock_service)
         
         assert exc.value.status_code == 500
         assert "Storage error" in exc.value.detail
