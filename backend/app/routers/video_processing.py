@@ -7,7 +7,7 @@ import subprocess
 import os
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List
 from app.auth import get_current_user
 from app.logging_config import setup_logger
 
@@ -56,21 +56,47 @@ def clean_base64(b64_string: str) -> bytes:
     return base64.b64decode(b64_string)
 
 
+def run_ffmpeg(cmd: List[str], error_msg: str) -> subprocess.CompletedProcess:
+    """Run ffmpeg command with proper error handling."""
+    # Always add -hide_banner to suppress version info
+    if "-hide_banner" not in cmd:
+        cmd.insert(1, "-hide_banner")
+
+    logger.info(f"Running: {' '.join(cmd)}")
+    result = subprocess.run(cmd, capture_output=True, text=True)
+
+    if result.returncode != 0:
+        # Get the actual error, not version info
+        stderr = result.stderr
+        # Find actual error after the configuration line
+        if "configuration:" in stderr:
+            parts = stderr.split("\n")
+            # Skip header lines, get actual error
+            error_lines = [l for l in parts if l.strip() and not l.startswith(" ") and "version" not in l.lower() and "built with" not in l.lower() and "configuration:" not in l.lower() and "lib" not in l.lower()]
+            stderr = "\n".join(error_lines[-5:]) if error_lines else stderr[-500:]
+        logger.error(f"ffmpeg failed: {stderr}")
+        raise HTTPException(status_code=500, detail=f"{error_msg}: {stderr[:300]}")
+
+    return result
+
+
 @router.post("/merge", response_model=MergeVideosResponse)
 async def merge_videos(
     request: MergeVideosRequest,
     user: dict = Depends(get_current_user)
 ):
     """
-    Merge multiple videos into one using ffmpeg concat.
+    Merge multiple videos into one using ffmpeg concat filter.
+    Uses re-encoding for compatibility between different video sources.
     """
     try:
-        logger.info(f"Merge videos request from user {user['email']}, count={len(request.videos_base64)}")
+        num_videos = len(request.videos_base64)
+        logger.info(f"Merge videos request from user {user['email']}, count={num_videos}")
 
-        if len(request.videos_base64) < 2:
+        if num_videos < 2:
             raise HTTPException(status_code=400, detail="At least 2 videos required")
 
-        if len(request.videos_base64) > 10:
+        if num_videos > 10:
             raise HTTPException(status_code=400, detail="Maximum 10 videos allowed")
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -84,35 +110,42 @@ async def merge_videos(
                 video_paths.append(video_path)
                 logger.info(f"Saved video {i}: {len(video_bytes)} bytes")
 
-            # Create concat file for ffmpeg
-            concat_file = os.path.join(tmpdir, "concat.txt")
-            with open(concat_file, "w") as f:
-                for path in video_paths:
-                    f.write(f"file '{path}'\n")
-
-            # Merge videos using ffmpeg concat demuxer with re-encoding
-            # Re-encoding ensures compatibility between different video sources
             output_path = os.path.join(tmpdir, "output.mp4")
+
+            # Build the concat filter command
+            # This method re-encodes and handles different codecs/resolutions
+            # Format: [0:v][0:a][1:v][1:a]...concat=n=N:v=1:a=1[outv][outa]
+
+            inputs = []
+            filter_inputs = []
+
+            for i, path in enumerate(video_paths):
+                inputs.extend(["-i", path])
+                filter_inputs.append(f"[{i}:v]")
+                filter_inputs.append(f"[{i}:a]")
+
+            # Build filter: scale all to same size, then concat
+            filter_complex = (
+                f"{''.join(filter_inputs)}concat=n={num_videos}:v=1:a=1[outv][outa]"
+            )
+
             merge_cmd = [
                 "ffmpeg", "-y",
-                "-f", "concat",
-                "-safe", "0",
-                "-i", concat_file,
+                *inputs,
+                "-filter_complex", filter_complex,
+                "-map", "[outv]",
+                "-map", "[outa]",
                 "-c:v", "libx264",
                 "-preset", "fast",
                 "-crf", "23",
                 "-c:a", "aac",
                 "-b:a", "128k",
                 "-movflags", "+faststart",
+                "-vsync", "vfr",
                 output_path
             ]
 
-            logger.info(f"Running ffmpeg merge: {' '.join(merge_cmd)}")
-            result = subprocess.run(merge_cmd, capture_output=True, text=True)
-
-            if result.returncode != 0:
-                logger.error(f"ffmpeg merge failed: {result.stderr}")
-                raise HTTPException(status_code=500, detail=f"Failed to merge videos: {result.stderr[:200]}")
+            run_ffmpeg(merge_cmd, "Failed to merge videos")
 
             # Read output and return
             with open(output_path, "rb") as f:
@@ -140,6 +173,7 @@ async def add_music_to_video(
 ):
     """
     Add/mix music into a video using ffmpeg.
+    Handles videos with or without existing audio.
     """
     try:
         logger.info(f"Add music request from user {user['email']}, music_vol={request.music_volume}, orig_vol={request.original_volume}")
@@ -159,7 +193,7 @@ async def add_music_to_video(
             audio_ext = "mp3"
             if audio_bytes[:4] == b'RIFF':
                 audio_ext = "wav"
-            elif audio_bytes[:3] == b'ID3' or (audio_bytes[0:2] == b'\xff\xfb'):
+            elif audio_bytes[:3] == b'ID3' or (len(audio_bytes) > 1 and audio_bytes[0:2] == b'\xff\xfb'):
                 audio_ext = "mp3"
             elif audio_bytes[:4] == b'fLaC':
                 audio_ext = "flac"
@@ -190,11 +224,14 @@ async def add_music_to_video(
             logger.info(f"Video has audio: {has_audio}")
 
             if has_audio and orig_vol > 0:
-                # Mix original audio with music
+                # Mix original audio with music using amix
+                # [1:a] = music, adjust volume, pad to match video length
+                # [0:a] = original audio, adjust volume
+                # amerge combines them
                 filter_complex = (
-                    f"[0:a]volume={orig_vol}[a0];"
-                    f"[1:a]volume={music_vol}[a1];"
-                    f"[a0][a1]amix=inputs=2:duration=first:dropout_transition=2[aout]"
+                    f"[0:a]volume={orig_vol}[orig];"
+                    f"[1:a]volume={music_vol}[music];"
+                    f"[orig][music]amix=inputs=2:duration=first:dropout_transition=2[aout]"
                 )
 
                 mix_cmd = [
@@ -211,7 +248,7 @@ async def add_music_to_video(
                     output_path
                 ]
             else:
-                # No original audio or volume is 0 - just add music track
+                # No original audio - just add music track with volume adjustment
                 filter_complex = f"[1:a]volume={music_vol}[aout]"
 
                 mix_cmd = [
@@ -228,27 +265,24 @@ async def add_music_to_video(
                     output_path
                 ]
 
-            logger.info(f"Running ffmpeg mix (has_audio={has_audio})")
-            result = subprocess.run(mix_cmd, capture_output=True, text=True)
-
-            if result.returncode != 0:
-                logger.error(f"ffmpeg mix failed: {result.stderr}")
-                # Fallback: just replace audio entirely
+            try:
+                run_ffmpeg(mix_cmd, "Failed to mix audio")
+            except HTTPException:
+                # Fallback: just add music without mixing (replace any existing audio)
+                logger.warning("Mix failed, trying simple audio replacement")
                 simple_cmd = [
                     "ffmpeg", "-y",
                     "-i", video_path,
                     "-i", audio_path,
-                    "-c:v", "copy",
                     "-map", "0:v",
                     "-map", "1:a",
+                    "-c:v", "copy",
                     "-c:a", "aac",
+                    "-b:a", "192k",
                     "-shortest",
                     output_path
                 ]
-                result = subprocess.run(simple_cmd, capture_output=True, text=True)
-                if result.returncode != 0:
-                    logger.error(f"ffmpeg simple add failed: {result.stderr}")
-                    raise HTTPException(status_code=500, detail=f"Failed to add music: {result.stderr[:200]}")
+                run_ffmpeg(simple_cmd, "Failed to add music")
 
             # Read output and return
             with open(output_path, "rb") as f:
