@@ -163,37 +163,65 @@ async def add_music_to_video(
             music_vol = request.music_volume / 100.0
             orig_vol = request.original_volume / 100.0
 
-            # Mix audio using ffmpeg
             output_path = os.path.join(tmpdir, "output.mp4")
 
-            # Complex filter to mix audio streams
-            # -filter_complex mixes the original audio with the music
-            filter_complex = (
-                f"[0:a]volume={orig_vol}[a0];"
-                f"[1:a]volume={music_vol}[a1];"
-                f"[a0][a1]amix=inputs=2:duration=first:dropout_transition=2[aout]"
-            )
-
-            mix_cmd = [
-                "ffmpeg", "-y",
-                "-i", video_path,
-                "-i", audio_path,
-                "-filter_complex", filter_complex,
-                "-map", "0:v",  # Video from first input
-                "-map", "[aout]",  # Mixed audio
-                "-c:v", "copy",  # Copy video without re-encoding
-                "-c:a", "aac",
-                "-b:a", "192k",
-                "-shortest",  # Cut to shortest stream
-                output_path
+            # First, check if video has audio stream
+            probe_cmd = [
+                "ffprobe", "-v", "error",
+                "-select_streams", "a",
+                "-show_entries", "stream=codec_type",
+                "-of", "csv=p=0",
+                video_path
             ]
+            probe_result = subprocess.run(probe_cmd, capture_output=True, text=True)
+            has_audio = bool(probe_result.stdout.strip())
+            logger.info(f"Video has audio: {has_audio}")
 
-            logger.info(f"Running ffmpeg mix")
+            if has_audio and orig_vol > 0:
+                # Mix original audio with music
+                filter_complex = (
+                    f"[0:a]volume={orig_vol}[a0];"
+                    f"[1:a]volume={music_vol}[a1];"
+                    f"[a0][a1]amix=inputs=2:duration=first:dropout_transition=2[aout]"
+                )
+
+                mix_cmd = [
+                    "ffmpeg", "-y",
+                    "-i", video_path,
+                    "-i", audio_path,
+                    "-filter_complex", filter_complex,
+                    "-map", "0:v",
+                    "-map", "[aout]",
+                    "-c:v", "copy",
+                    "-c:a", "aac",
+                    "-b:a", "192k",
+                    "-shortest",
+                    output_path
+                ]
+            else:
+                # No original audio or volume is 0 - just add music track
+                filter_complex = f"[1:a]volume={music_vol}[aout]"
+
+                mix_cmd = [
+                    "ffmpeg", "-y",
+                    "-i", video_path,
+                    "-i", audio_path,
+                    "-filter_complex", filter_complex,
+                    "-map", "0:v",
+                    "-map", "[aout]",
+                    "-c:v", "copy",
+                    "-c:a", "aac",
+                    "-b:a", "192k",
+                    "-shortest",
+                    output_path
+                ]
+
+            logger.info(f"Running ffmpeg mix (has_audio={has_audio})")
             result = subprocess.run(mix_cmd, capture_output=True, text=True)
 
             if result.returncode != 0:
                 logger.error(f"ffmpeg mix failed: {result.stderr}")
-                # Try simpler approach - just replace audio
+                # Fallback: just replace audio entirely
                 simple_cmd = [
                     "ffmpeg", "-y",
                     "-i", video_path,
@@ -201,12 +229,14 @@ async def add_music_to_video(
                     "-c:v", "copy",
                     "-map", "0:v",
                     "-map", "1:a",
+                    "-c:a", "aac",
                     "-shortest",
                     output_path
                 ]
                 result = subprocess.run(simple_cmd, capture_output=True, text=True)
                 if result.returncode != 0:
-                    raise HTTPException(status_code=500, detail="Failed to add music to video")
+                    logger.error(f"ffmpeg simple add failed: {result.stderr}")
+                    raise HTTPException(status_code=500, detail=f"Failed to add music: {result.stderr[:200]}")
 
             # Read output and return
             with open(output_path, "rb") as f:
