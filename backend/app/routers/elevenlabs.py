@@ -228,8 +228,8 @@ async def generate_music(
         # The SDK should have a music.generate or similar method
         import httpx
 
-        # Use direct API call since SDK might not have music endpoint yet
-        api_url = "https://api.elevenlabs.io/v1/music"
+        # Use direct API call - endpoint is /v1/music/compose
+        api_url = "https://api.elevenlabs.io/v1/music/compose"
         headers = {
             "xi-api-key": settings.elevenlabs_api_key,
             "Content-Type": "application/json"
@@ -242,7 +242,7 @@ async def generate_music(
         if duration_ms is not None:
             payload["duration_ms"] = duration_ms
 
-        logger.info(f"Calling ElevenLabs Music API with payload: {payload}")
+        logger.info(f"Calling ElevenLabs Music API: {api_url} with payload: {payload}")
 
         async with httpx.AsyncClient(timeout=300.0) as http_client:
             response = await http_client.post(api_url, json=payload, headers=headers)
