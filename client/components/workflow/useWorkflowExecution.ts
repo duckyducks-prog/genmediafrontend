@@ -1237,6 +1237,161 @@ export function useWorkflowExecution(
             }
           }
 
+          case NodeType.MergeVideos: {
+            // Get videos from input connectors
+            const video1 = inputs.video1;
+            const video2 = inputs.video2;
+            const video3 = inputs.video3;
+            const video4 = inputs.video4;
+
+            // Collect all connected videos
+            const videos: string[] = [];
+            if (video1) videos.push(video1);
+            if (video2) videos.push(video2);
+            if (video3) videos.push(video3);
+            if (video4) videos.push(video4);
+
+            if (videos.length < 2) {
+              return { success: false, error: "At least 2 videos required to merge" };
+            }
+
+            logger.debug("[MergeVideos] Starting execution:", {
+              videoCount: videos.length,
+            });
+
+            try {
+              const user = auth.currentUser;
+              const token = await user?.getIdToken();
+
+              const response = await fetch(API_ENDPOINTS.video.merge, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  videos_base64: videos.map(v => v.replace(/^data:video\/[^;]+;base64,/, "")),
+                }),
+              });
+
+              if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`API error: ${response.status} - ${errorText}`);
+              }
+
+              const apiData = await response.json();
+
+              if (apiData.video_base64) {
+                const videoUrl = `data:video/mp4;base64,${apiData.video_base64}`;
+
+                if (onAssetGenerated) {
+                  onAssetGenerated();
+                }
+
+                toast({
+                  title: "Videos Merged",
+                  description: `Successfully merged ${videos.length} videos`,
+                });
+
+                return {
+                  success: true,
+                  data: {
+                    outputVideoUrl: videoUrl,
+                    outputs: {
+                      video: videoUrl,
+                    },
+                  },
+                };
+              } else {
+                return { success: false, error: "No video returned from API" };
+              }
+            } catch (error) {
+              return {
+                success: false,
+                error: error instanceof Error ? error.message : "Merge failed",
+              };
+            }
+          }
+
+          case NodeType.AddMusicToVideo: {
+            const videoInput = inputs.video;
+            const audioInput = inputs.audio;
+
+            if (!videoInput) {
+              return { success: false, error: "No video input connected" };
+            }
+
+            if (!audioInput) {
+              return { success: false, error: "No audio input connected" };
+            }
+
+            const musicVolume = (node.data as any).musicVolume ?? 50;
+            const originalVolume = (node.data as any).originalVolume ?? 100;
+
+            logger.debug("[AddMusicToVideo] Starting execution:", {
+              hasVideo: !!videoInput,
+              hasAudio: !!audioInput,
+              musicVolume,
+              originalVolume,
+            });
+
+            try {
+              const user = auth.currentUser;
+              const token = await user?.getIdToken();
+
+              const response = await fetch(API_ENDPOINTS.video.addMusic, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  video_base64: videoInput.replace(/^data:video\/[^;]+;base64,/, ""),
+                  audio_base64: audioInput.replace(/^data:audio\/[^;]+;base64,/, ""),
+                  music_volume: musicVolume,
+                  original_volume: originalVolume,
+                }),
+              });
+
+              if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`API error: ${response.status} - ${errorText}`);
+              }
+
+              const apiData = await response.json();
+
+              if (apiData.video_base64) {
+                const videoUrl = `data:video/mp4;base64,${apiData.video_base64}`;
+
+                if (onAssetGenerated) {
+                  onAssetGenerated();
+                }
+
+                toast({
+                  title: "Music Added",
+                  description: "Music has been added to the video",
+                });
+
+                return {
+                  success: true,
+                  data: {
+                    outputVideoUrl: videoUrl,
+                    outputs: {
+                      video: videoUrl,
+                    },
+                  },
+                };
+              } else {
+                return { success: false, error: "No video returned from API" };
+              }
+            } catch (error) {
+              return {
+                success: false,
+                error: error instanceof Error ? error.message : "Add music failed",
+              };
+            }
+          }
+
           case NodeType.GenerateVideo: {
             logger.debug("[GenerateVideo] Starting execution with inputs:", {
               inputKeys: Object.keys(inputs),

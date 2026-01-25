@@ -34,6 +34,8 @@ export enum NodeType {
   GenerateImage = "generateImage",
   GenerateMusic = "generateMusic",
   VoiceChanger = "voiceChanger",
+  MergeVideos = "mergeVideos",
+  AddMusicToVideo = "addMusicToVideo",
   LLM = "llm",
 
   // ACTION/OUTPUT nodes
@@ -139,6 +141,20 @@ export interface VoiceChangerNodeData extends BaseNodeData {
   selectedVoiceName?: string; // Display name of selected voice
   isChanging: boolean; // Is voice change in progress
   outputVideoUrl?: string; // Output video with changed voice
+}
+
+// MERGE VIDEOS node - concatenates multiple videos
+export interface MergeVideosNodeData extends BaseNodeData {
+  isMerging: boolean; // Is merge in progress
+  outputVideoUrl?: string; // Output merged video
+}
+
+// ADD MUSIC TO VIDEO node - mixes audio into video
+export interface AddMusicToVideoNodeData extends BaseNodeData {
+  isMixing: boolean; // Is mixing in progress
+  musicVolume: number; // 0-100 volume percentage for music
+  originalVolume: number; // 0-100 volume percentage for original audio
+  outputVideoUrl?: string; // Output video with music
 }
 
 // PROMPT CONCATENATOR node
@@ -366,6 +382,8 @@ export type WorkflowNodeData =
   | PromptNodeData
   | GenerateMusicNodeData
   | VoiceChangerNodeData
+  | MergeVideosNodeData
+  | AddMusicToVideoNodeData
   | PromptConcatenatorNodeData
   | TextIteratorNodeData
   | BrightnessContrastNodeData
@@ -974,6 +992,80 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "video",
         label: "Video",
         type: ConnectorType.Video,
+        required: true,
+        acceptsMultiple: false,
+      },
+    ],
+    outputConnectors: [
+      {
+        id: "video",
+        label: "Video",
+        type: ConnectorType.Video,
+      },
+    ],
+  },
+
+  [NodeType.MergeVideos]: {
+    type: NodeType.MergeVideos,
+    label: "Merge Videos",
+    category: "action",
+    description: "Concatenate multiple videos into one",
+    inputConnectors: [
+      {
+        id: "video1",
+        label: "Video 1",
+        type: ConnectorType.Video,
+        required: true,
+        acceptsMultiple: false,
+      },
+      {
+        id: "video2",
+        label: "Video 2",
+        type: ConnectorType.Video,
+        required: true,
+        acceptsMultiple: false,
+      },
+      {
+        id: "video3",
+        label: "Video 3",
+        type: ConnectorType.Video,
+        required: false,
+        acceptsMultiple: false,
+      },
+      {
+        id: "video4",
+        label: "Video 4",
+        type: ConnectorType.Video,
+        required: false,
+        acceptsMultiple: false,
+      },
+    ],
+    outputConnectors: [
+      {
+        id: "video",
+        label: "Video",
+        type: ConnectorType.Video,
+      },
+    ],
+  },
+
+  [NodeType.AddMusicToVideo]: {
+    type: NodeType.AddMusicToVideo,
+    label: "Add Music",
+    category: "action",
+    description: "Mix music/audio into a video",
+    inputConnectors: [
+      {
+        id: "video",
+        label: "Video",
+        type: ConnectorType.Video,
+        required: true,
+        acceptsMultiple: false,
+      },
+      {
+        id: "audio",
+        label: "Audio",
+        type: ConnectorType.Audio,
         required: true,
         acceptsMultiple: false,
       },
