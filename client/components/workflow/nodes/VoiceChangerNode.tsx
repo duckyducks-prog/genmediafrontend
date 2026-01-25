@@ -98,9 +98,21 @@ function VoiceChangerNode({ data, id }: NodeProps<VoiceChangerNodeData>) {
   };
 
   const handleVoiceSelect = (voiceId: string) => {
+    if (data.readOnly) return;
+
     const voice = voices.find((v) => v.voice_id === voiceId);
-    handleUpdate("selectedVoiceId", voiceId);
-    handleUpdate("selectedVoiceName", voice?.name || "");
+    // Update both fields in a single event to avoid race condition
+    const event = new CustomEvent("node-update", {
+      detail: {
+        id,
+        data: {
+          ...data,
+          selectedVoiceId: voiceId,
+          selectedVoiceName: voice?.name || "",
+        },
+      },
+    });
+    window.dispatchEvent(event);
   };
 
   const handlePlayPreview = (voice: ElevenLabsVoice) => {
