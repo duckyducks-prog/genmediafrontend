@@ -328,6 +328,103 @@ export function useWorkflowExecution(
             return { success: true, data: { image: imageUrl } };
           }
 
+          case NodeType.VideoInput: {
+            let videoUrl = (node.data as any).videoUrl || null;
+            const videoRef = (node.data as any).videoRef;
+
+            logger.debug("[VideoInput] Starting execution:", {
+              hasVideoUrl: !!videoUrl,
+              videoUrlType: videoUrl ? (videoUrl.startsWith('data:') ? 'dataUrl' : videoUrl.startsWith('blob:') ? 'blobUrl' : videoUrl.startsWith('http') ? 'httpUrl' : 'unknown') : 'none',
+              hasVideoRef: !!videoRef,
+            });
+
+            // If videoUrl is an HTTP URL (GCS) or blob URL, fetch and convert to data URL
+            if (videoUrl && !videoUrl.startsWith("data:") && (videoUrl.startsWith("http") || videoUrl.startsWith("blob:"))) {
+              logger.debug(
+                "[VideoInput] videoUrl is a fetchable URL, converting to data URI:",
+                videoUrl.substring(0, 80),
+              );
+              try {
+                const response = await fetch(videoUrl, { mode: "cors" });
+                if (!response.ok) {
+                  throw new Error(`Failed to fetch video: ${response.status}`);
+                }
+                const blob = await response.blob();
+                videoUrl = await new Promise<string>((resolve, reject) => {
+                  const reader = new FileReader();
+                  reader.onload = () => resolve(reader.result as string);
+                  reader.onerror = () => reject(new Error("Failed to convert video to data URI"));
+                  reader.readAsDataURL(blob);
+                });
+                logger.debug(
+                  "[VideoInput] ✓ Converted to data URL, length:",
+                  videoUrl.length,
+                );
+
+                // Update node with resolved data URL
+                updateNodeState(node.id, node.data.status || "ready", {
+                  videoUrl,
+                  outputs: { video: videoUrl },
+                });
+              } catch (error) {
+                console.error("[VideoInput] ❌ Failed to fetch URL:", error);
+                // Try falling back to videoRef resolution
+                if (videoRef) {
+                  logger.debug("[VideoInput] Falling back to videoRef resolution");
+                  videoUrl = null; // Clear to trigger resolution below
+                } else {
+                  return {
+                    success: false,
+                    error: `Failed to load video: ${error instanceof Error ? error.message : "Unknown error"}`,
+                  };
+                }
+              }
+            }
+
+            // Resolve videoRef if videoUrl is missing or was cleared
+            if (!videoUrl && videoRef) {
+              logger.debug(
+                "[VideoInput] ⚠️ videoUrl missing, resolving videoRef:",
+                videoRef,
+              );
+              try {
+                videoUrl = await resolveAssetToDataUrl(videoRef);
+                logger.debug(
+                  "[VideoInput] ✓ Resolved to data URL, length:",
+                  videoUrl.length,
+                );
+
+                // Update node with resolved URL
+                updateNodeState(node.id, node.data.status || "ready", {
+                  videoUrl,
+                  outputs: { video: videoUrl },
+                });
+              } catch (error) {
+                console.error("[VideoInput] ❌ Resolution failed:", error);
+                return {
+                  success: false,
+                  error: `Failed to load video: ${error instanceof Error ? error.message : "Unknown error"}`,
+                };
+              }
+            }
+
+            if (!videoUrl) {
+              console.warn("[VideoInput] ⚠️ No videoUrl or videoRef available");
+              return {
+                success: false,
+                error: "No video selected. Please upload a video or select from library.",
+              };
+            }
+
+            return {
+              success: true,
+              data: {
+                video: videoUrl,
+                outputs: { video: videoUrl },
+              },
+            };
+          }
+
           // MODIFIER NODES
           case NodeType.PromptConcatenator: {
             const separator = (node.data as any).separator || "Space";
