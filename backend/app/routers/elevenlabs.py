@@ -112,27 +112,58 @@ async def change_voice(
             # 1. Save input video
             input_video_path = os.path.join(tmpdir, "input.mp4")
 
-            # Fix base64 padding if needed
+            # Clean up base64 string
             video_b64 = request.video_base64
-            # Add padding if necessary (base64 length must be multiple of 4)
+
+            # Remove data URL prefix if present (e.g., "data:video/mp4;base64,")
+            if video_b64.startswith("data:"):
+                # Find the base64 part after the comma
+                comma_idx = video_b64.find(",")
+                if comma_idx != -1:
+                    video_b64 = video_b64[comma_idx + 1:]
+
+            # Remove any whitespace/newlines
+            video_b64 = video_b64.strip().replace("\n", "").replace("\r", "").replace(" ", "")
+
+            # Fix base64 padding if needed
             padding_needed = len(video_b64) % 4
             if padding_needed:
                 video_b64 += "=" * (4 - padding_needed)
 
             video_bytes = base64.b64decode(video_b64)
+
+            # Log first bytes to verify it's a valid video
+            header_hex = video_bytes[:12].hex() if len(video_bytes) > 12 else video_bytes.hex()
+            logger.info(f"Video header (hex): {header_hex}, total size: {len(video_bytes)} bytes")
+
             with open(input_video_path, "wb") as f:
                 f.write(video_bytes)
 
             logger.info(f"Saved input video: {len(video_bytes)} bytes")
+
+            # Detect actual file type from header
+            mime_type = "video/mp4"
+            extension = "mp4"
+            if video_bytes[:4] == b'\x1a\x45\xdf\xa3':  # WebM magic bytes
+                mime_type = "video/webm"
+                extension = "webm"
+            elif video_bytes[4:8] == b'ftyp':  # MP4 magic bytes
+                mime_type = "video/mp4"
+                extension = "mp4"
+
+            logger.info(f"Detected file type: {mime_type}")
 
             # 2. Send video directly to ElevenLabs Speech-to-Speech API
             # ElevenLabs can extract audio from video files
             async with httpx.AsyncClient(timeout=120.0) as client:
                 sts_url = f"{ELEVENLABS_API_BASE}/speech-to-speech/{request.voice_id}"
 
-                # Send video file - ElevenLabs accepts video and extracts audio
+                # Read file from disk and send as file object
+                with open(input_video_path, "rb") as video_file:
+                    file_content = video_file.read()
+
                 files = {
-                    "audio": ("input.mp4", video_bytes, "video/mp4"),
+                    "audio": (f"input.{extension}", file_content, mime_type),
                 }
                 data = {
                     "model_id": "eleven_multilingual_sts_v2",
@@ -140,7 +171,7 @@ async def change_voice(
 
                 headers = {"xi-api-key": settings.elevenlabs_api_key}
 
-                logger.info(f"Sending to ElevenLabs: {sts_url}, file size: {len(video_bytes)}")
+                logger.info(f"Sending to ElevenLabs: {sts_url}, file size: {len(file_content)}, mime: {mime_type}")
 
                 response = await client.post(
                     sts_url,
