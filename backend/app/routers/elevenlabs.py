@@ -5,21 +5,18 @@ import base64
 import tempfile
 import subprocess
 import os
-import httpx
+from io import BytesIO
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional, List
+from elevenlabs import ElevenLabs
 from app.auth import get_current_user
 from app.config import settings
 from app.logging_config import setup_logger
-from app.exceptions import AppError
 
 logger = setup_logger(__name__)
 
 router = APIRouter(prefix="/v1/elevenlabs", tags=["elevenlabs"])
-
-# ElevenLabs API base URL
-ELEVENLABS_API_BASE = "https://api.elevenlabs.io/v1"
 
 
 class VoiceInfo(BaseModel):
@@ -43,14 +40,11 @@ class VoiceChangeResponse(BaseModel):
     mime_type: str = "video/mp4"
 
 
-def get_elevenlabs_headers() -> dict:
-    """Get headers for ElevenLabs API requests."""
+def get_elevenlabs_client() -> ElevenLabs:
+    """Get ElevenLabs client instance."""
     if not settings.elevenlabs_api_key:
         raise HTTPException(status_code=500, detail="ElevenLabs API key not configured")
-    return {
-        "xi-api-key": settings.elevenlabs_api_key,
-        "Content-Type": "application/json",
-    }
+    return ElevenLabs(api_key=settings.elevenlabs_api_key)
 
 
 @router.get("/voices", response_model=VoicesResponse)
@@ -59,29 +53,20 @@ async def list_voices(user: dict = Depends(get_current_user)):
     try:
         logger.info(f"Fetching ElevenLabs voices for user {user['email']}")
 
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                f"{ELEVENLABS_API_BASE}/voices",
-                headers=get_elevenlabs_headers(),
-            )
+        client = get_elevenlabs_client()
+        response = client.voices.get_all()
 
-            if response.status_code != 200:
-                logger.error(f"ElevenLabs API error: {response.status_code} - {response.text[:500]}")
-                raise HTTPException(status_code=502, detail=f"ElevenLabs API error: {response.status_code}")
+        voices = []
+        for voice in response.voices:
+            voices.append(VoiceInfo(
+                voice_id=voice.voice_id,
+                name=voice.name,
+                preview_url=voice.preview_url,
+                labels=voice.labels,
+            ))
 
-            data = response.json()
-            voices = []
-
-            for voice in data.get("voices", []):
-                voices.append(VoiceInfo(
-                    voice_id=voice.get("voice_id"),
-                    name=voice.get("name"),
-                    preview_url=voice.get("preview_url"),
-                    labels=voice.get("labels"),
-                ))
-
-            logger.info(f"Found {len(voices)} voices")
-            return VoicesResponse(voices=voices)
+        logger.info(f"Found {len(voices)} voices")
+        return VoicesResponse(voices=voices)
 
     except HTTPException:
         raise
@@ -109,15 +94,14 @@ async def change_voice(
 
         # Create temp directory for processing
         with tempfile.TemporaryDirectory() as tmpdir:
-            # 1. Save input video
+            # 1. Decode and save input video
             input_video_path = os.path.join(tmpdir, "input.mp4")
 
             # Clean up base64 string
             video_b64 = request.video_base64
 
-            # Remove data URL prefix if present (e.g., "data:video/mp4;base64,")
+            # Remove data URL prefix if present
             if video_b64.startswith("data:"):
-                # Find the base64 part after the comma
                 comma_idx = video_b64.find(",")
                 if comma_idx != -1:
                     video_b64 = video_b64[comma_idx + 1:]
@@ -141,59 +125,28 @@ async def change_voice(
 
             logger.info(f"Saved input video: {len(video_bytes)} bytes")
 
-            # Detect actual file type from header
-            mime_type = "video/mp4"
-            extension = "mp4"
-            if video_bytes[:4] == b'\x1a\x45\xdf\xa3':  # WebM magic bytes
-                mime_type = "video/webm"
-                extension = "webm"
-            elif video_bytes[4:8] == b'ftyp':  # MP4 magic bytes
-                mime_type = "video/mp4"
-                extension = "mp4"
+            # 2. Send video to ElevenLabs using official SDK
+            client = get_elevenlabs_client()
 
-            logger.info(f"Detected file type: {mime_type}")
+            logger.info(f"Sending to ElevenLabs STS, voice_id={request.voice_id}")
 
-            # 2. Send video directly to ElevenLabs Speech-to-Speech API
-            # ElevenLabs can extract audio from video files
-            async with httpx.AsyncClient(timeout=120.0) as client:
-                sts_url = f"{ELEVENLABS_API_BASE}/speech-to-speech/{request.voice_id}"
+            # Use the official SDK - it handles file upload correctly
+            audio_generator = client.speech_to_speech.convert(
+                voice_id=request.voice_id,
+                audio=video_bytes,  # SDK accepts bytes directly
+                model_id="eleven_multilingual_sts_v2",
+                output_format="mp3_44100_128",
+            )
 
-                # Read file from disk and send as file object
-                with open(input_video_path, "rb") as video_file:
-                    file_content = video_file.read()
+            # Collect audio bytes from generator
+            converted_audio = b"".join(audio_generator)
 
-                files = {
-                    "audio": (f"input.{extension}", file_content, mime_type),
-                }
-                data = {
-                    "model_id": "eleven_multilingual_sts_v2",
-                }
+            logger.info(f"Received converted audio: {len(converted_audio)} bytes")
 
-                headers = {"xi-api-key": settings.elevenlabs_api_key}
-
-                logger.info(f"Sending to ElevenLabs: {sts_url}, file size: {len(file_content)}, mime: {mime_type}")
-
-                response = await client.post(
-                    sts_url,
-                    files=files,
-                    data=data,
-                    headers=headers,
-                )
-
-                if response.status_code != 200:
-                    error_detail = response.text[:500] if response.text else "No error details"
-                    logger.error(f"ElevenLabs STS error: {response.status_code} - {error_detail}")
-                    raise HTTPException(
-                        status_code=502,
-                        detail=f"ElevenLabs error: {error_detail}"
-                    )
-
-                # Save the converted audio
-                converted_audio_path = os.path.join(tmpdir, "converted.mp3")
-                with open(converted_audio_path, "wb") as f:
-                    f.write(response.content)
-
-                logger.info(f"Received converted audio: {len(response.content)} bytes")
+            # Save converted audio
+            converted_audio_path = os.path.join(tmpdir, "converted.mp3")
+            with open(converted_audio_path, "wb") as f:
+                f.write(converted_audio)
 
             # 3. Merge new audio back into video using ffmpeg
             output_video_path = os.path.join(tmpdir, "output.mp4")
