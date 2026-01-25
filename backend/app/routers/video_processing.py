@@ -152,12 +152,24 @@ async def add_music_to_video(
                 f.write(video_bytes)
             logger.info(f"Saved video: {len(video_bytes)} bytes")
 
-            # Save input audio
+            # Save input audio - detect format from header
             audio_bytes = clean_base64(request.audio_base64)
-            audio_path = os.path.join(tmpdir, "music.mp3")
+
+            # Detect audio format from magic bytes
+            audio_ext = "mp3"
+            if audio_bytes[:4] == b'RIFF':
+                audio_ext = "wav"
+            elif audio_bytes[:3] == b'ID3' or (audio_bytes[0:2] == b'\xff\xfb'):
+                audio_ext = "mp3"
+            elif audio_bytes[:4] == b'fLaC':
+                audio_ext = "flac"
+            elif audio_bytes[:4] == b'OggS':
+                audio_ext = "ogg"
+
+            audio_path = os.path.join(tmpdir, f"music.{audio_ext}")
             with open(audio_path, "wb") as f:
                 f.write(audio_bytes)
-            logger.info(f"Saved audio: {len(audio_bytes)} bytes")
+            logger.info(f"Saved audio: {len(audio_bytes)} bytes, format: {audio_ext}")
 
             # Calculate volume multipliers (0-1 scale)
             music_vol = request.music_volume / 100.0
