@@ -112,14 +112,30 @@ async def change_voice(
             # 1. Save input video
             input_video_path = os.path.join(tmpdir, "input.mp4")
 
-            # Fix base64 padding if needed
+            # Clean up base64 string
             video_b64 = request.video_base64
-            # Add padding if necessary (base64 length must be multiple of 4)
+
+            # Remove data URL prefix if present (e.g., "data:video/mp4;base64,")
+            if video_b64.startswith("data:"):
+                # Find the base64 part after the comma
+                comma_idx = video_b64.find(",")
+                if comma_idx != -1:
+                    video_b64 = video_b64[comma_idx + 1:]
+
+            # Remove any whitespace/newlines
+            video_b64 = video_b64.strip().replace("\n", "").replace("\r", "").replace(" ", "")
+
+            # Fix base64 padding if needed
             padding_needed = len(video_b64) % 4
             if padding_needed:
                 video_b64 += "=" * (4 - padding_needed)
 
             video_bytes = base64.b64decode(video_b64)
+
+            # Log first bytes to verify it's a valid video
+            header_hex = video_bytes[:12].hex() if len(video_bytes) > 12 else video_bytes.hex()
+            logger.info(f"Video header (hex): {header_hex}, total size: {len(video_bytes)} bytes")
+
             with open(input_video_path, "wb") as f:
                 f.write(video_bytes)
 
