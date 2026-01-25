@@ -2,7 +2,8 @@ import { memo, useState, useEffect, useRef } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { GenerateMusicNodeData, NODE_CONFIGURATIONS, NodeType } from "../types";
+import { Input } from "@/components/ui/input";
+import { GenerateMusicNodeData, NODE_CONFIGURATIONS, NodeType, MusicDuration } from "../types";
 import { API_ENDPOINTS } from "@/lib/api-config";
 import {
   Music,
@@ -13,9 +14,19 @@ import {
   Play,
   Pause,
   Volume2,
+  Clock,
 } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
+
+const DURATION_OPTIONS: { label: string; value: MusicDuration }[] = [
+  { label: "Auto", value: "auto" },
+  { label: "30s", value: 30 },
+  { label: "1m", value: 60 },
+  { label: "2m", value: 120 },
+  { label: "4m", value: 240 },
+  { label: "6m", value: 360 },
+];
 
 function GenerateMusicNode({ data, id }: NodeProps<GenerateMusicNodeData>) {
   const config = NODE_CONFIGURATIONS[NodeType.GenerateMusic];
@@ -24,12 +35,37 @@ function GenerateMusicNode({ data, id }: NodeProps<GenerateMusicNodeData>) {
   const isCompleted = status === "completed";
   const isError = status === "error";
   const audioUrl = data.audioUrl;
+  const selectedDuration = data.selectedDuration || "auto";
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [customDurationInput, setCustomDurationInput] = useState("");
+  const [showCustomInput, setShowCustomInput] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const { toast } = useToast();
+
+  // Parse custom duration input (format: "M:SS" or just seconds)
+  const parseCustomDuration = (input: string): number | null => {
+    if (!input) return null;
+    if (input.includes(":")) {
+      const [mins, secs] = input.split(":").map(Number);
+      if (!isNaN(mins) && !isNaN(secs)) {
+        return mins * 60 + secs;
+      }
+    } else {
+      const num = Number(input);
+      if (!isNaN(num)) return num;
+    }
+    return null;
+  };
+
+  // Format duration for display
+  const formatDurationDisplay = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
 
   // Handle audio time updates
   useEffect(() => {
@@ -163,6 +199,92 @@ function GenerateMusicNode({ data, id }: NodeProps<GenerateMusicNodeData>) {
           />
         </div>
 
+        {/* Duration Selector */}
+        <div>
+          <label className="text-xs font-medium text-muted-foreground block mb-2">
+            Duration
+          </label>
+          <div className="flex flex-wrap gap-1.5">
+            {DURATION_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => {
+                  if (!data.readOnly && !isGenerating) {
+                    handleUpdate("selectedDuration", option.value);
+                    setShowCustomInput(false);
+                  }
+                }}
+                className={`px-2.5 py-1 text-xs rounded-full border transition-colors ${
+                  selectedDuration === option.value && !showCustomInput
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-muted border-border hover:bg-muted/80"
+                } ${isGenerating || data.readOnly ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                disabled={isGenerating || data.readOnly}
+              >
+                {option.label}
+              </button>
+            ))}
+            {/* Custom duration input */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  if (!data.readOnly && !isGenerating) {
+                    setShowCustomInput(true);
+                  }
+                }}
+                className={`px-2.5 py-1 text-xs rounded-full border transition-colors flex items-center gap-1 ${
+                  showCustomInput || (typeof selectedDuration === "number" && !DURATION_OPTIONS.some(o => o.value === selectedDuration))
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-muted border-border hover:bg-muted/80"
+                } ${isGenerating || data.readOnly ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                disabled={isGenerating || data.readOnly}
+              >
+                <Clock className="w-3 h-3" />
+                {typeof selectedDuration === "number" && !DURATION_OPTIONS.some(o => o.value === selectedDuration)
+                  ? formatDurationDisplay(selectedDuration)
+                  : customDurationInput || "0:00"}
+              </button>
+            </div>
+          </div>
+          {showCustomInput && (
+            <div className="mt-2 flex items-center gap-2">
+              <Input
+                type="text"
+                placeholder="M:SS (e.g., 1:30)"
+                value={customDurationInput}
+                onChange={(e) => setCustomDurationInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    const parsed = parseCustomDuration(customDurationInput);
+                    if (parsed && parsed >= 30 && parsed <= 300) {
+                      handleUpdate("selectedDuration", parsed);
+                      setShowCustomInput(false);
+                    }
+                  }
+                }}
+                className="h-7 text-xs w-24 nodrag"
+                disabled={isGenerating || data.readOnly}
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs"
+                onClick={() => {
+                  const parsed = parseCustomDuration(customDurationInput);
+                  if (parsed && parsed >= 30 && parsed <= 300) {
+                    handleUpdate("selectedDuration", parsed);
+                    setShowCustomInput(false);
+                  }
+                }}
+                disabled={isGenerating || data.readOnly}
+              >
+                Set
+              </Button>
+              <span className="text-xs text-muted-foreground">30s - 5min</span>
+            </div>
+          )}
+        </div>
+
         {/* Status */}
         <div className="text-xs text-muted-foreground">
           Status: <span className="font-medium">{getStatusText()}</span>
@@ -170,7 +292,7 @@ function GenerateMusicNode({ data, id }: NodeProps<GenerateMusicNodeData>) {
 
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Music className="w-3 h-3" />
-          <span>Lyria AI (30s clips)</span>
+          <span>ElevenLabs Music</span>
         </div>
 
         {/* Audio Player */}

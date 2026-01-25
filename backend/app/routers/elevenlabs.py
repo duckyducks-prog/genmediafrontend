@@ -40,6 +40,17 @@ class VoiceChangeResponse(BaseModel):
     mime_type: str = "video/mp4"
 
 
+class GenerateMusicRequest(BaseModel):
+    prompt: str = Field(..., description="Music description prompt")
+    duration_seconds: Optional[int] = Field(default=None, description="Duration in seconds (30-300). None for auto.")
+
+
+class GenerateMusicResponse(BaseModel):
+    audio_base64: str
+    mime_type: str = "audio/mpeg"
+    duration_seconds: Optional[int] = None
+
+
 def get_elevenlabs_client() -> ElevenLabs:
     """Get ElevenLabs client instance."""
     if not settings.elevenlabs_api_key:
@@ -185,4 +196,83 @@ async def change_voice(
         raise
     except Exception as e:
         logger.error(f"Voice change failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/generate-music", response_model=GenerateMusicResponse)
+async def generate_music(
+    request: GenerateMusicRequest,
+    user: dict = Depends(get_current_user)
+):
+    """
+    Generate music using ElevenLabs Music API.
+
+    Supports duration from 30 seconds to 5 minutes (300 seconds).
+    If duration_seconds is None, uses auto mode.
+    """
+    try:
+        logger.info(f"Music generation request from user {user['email']}, prompt={request.prompt[:50]}..., duration={request.duration_seconds}")
+
+        client = get_elevenlabs_client()
+
+        # Convert duration to milliseconds for ElevenLabs API
+        # ElevenLabs accepts 3000ms (3s) to 600000ms (10min), but we limit to 30s-300s (5min)
+        duration_ms = None
+        if request.duration_seconds is not None:
+            # Clamp to valid range: 30 seconds to 300 seconds (5 minutes)
+            clamped_duration = max(30, min(300, request.duration_seconds))
+            duration_ms = clamped_duration * 1000
+            logger.info(f"Using duration: {clamped_duration}s ({duration_ms}ms)")
+
+        # Call ElevenLabs Music API
+        # The SDK should have a music.generate or similar method
+        import httpx
+
+        # Use direct API call since SDK might not have music endpoint yet
+        api_url = "https://api.elevenlabs.io/v1/music"
+        headers = {
+            "xi-api-key": settings.elevenlabs_api_key,
+            "Content-Type": "application/json"
+        }
+
+        payload = {
+            "prompt": request.prompt,
+        }
+
+        if duration_ms is not None:
+            payload["duration_ms"] = duration_ms
+
+        logger.info(f"Calling ElevenLabs Music API with payload: {payload}")
+
+        async with httpx.AsyncClient(timeout=300.0) as http_client:
+            response = await http_client.post(api_url, json=payload, headers=headers)
+
+            if response.status_code == 401:
+                raise HTTPException(status_code=401, detail="Invalid ElevenLabs API key")
+
+            if response.status_code == 422:
+                error_detail = response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
+                logger.error(f"ElevenLabs validation error: {error_detail}")
+                raise HTTPException(status_code=422, detail=f"Invalid request: {error_detail}")
+
+            if response.status_code != 200:
+                logger.error(f"ElevenLabs API error: {response.status_code} - {response.text[:500]}")
+                raise HTTPException(status_code=response.status_code, detail=f"ElevenLabs API error: {response.text[:200]}")
+
+            # Response is audio bytes directly
+            audio_bytes = response.content
+            audio_base64 = base64.b64encode(audio_bytes).decode("utf-8")
+
+            logger.info(f"Generated music: {len(audio_bytes)} bytes")
+
+            return GenerateMusicResponse(
+                audio_base64=audio_base64,
+                mime_type="audio/mpeg",
+                duration_seconds=request.duration_seconds
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Music generation failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
