@@ -36,6 +36,7 @@ export const API_ENDPOINTS = {
   elevenlabs: {
     voices: `${VEO_API_BASE_URL}/v1/elevenlabs/voices`,
     voiceChange: `${VEO_API_BASE_URL}/v1/elevenlabs/voice-change`,
+    generateMusic: `${VEO_API_BASE_URL}/v1/elevenlabs/generate-music`,
   },
 
   // Video processing endpoints

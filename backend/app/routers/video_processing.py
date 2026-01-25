@@ -47,8 +47,17 @@ def get_ffmpeg_error(stderr: str) -> str:
     return '; '.join(non_empty[-3:]) if non_empty else "Unknown FFmpeg error"
 
 
+class VideoTrimConfig(BaseModel):
+    """Configuration for trimming a single video in the merge."""
+    start_time: Optional[float] = Field(default=None, description="Start time in seconds (merge point)")
+    end_time: Optional[float] = Field(default=None, description="End time in seconds (trim end)")
+    trim_start: Optional[float] = Field(default=None, description="Seconds to trim from start")
+    trim_end: Optional[float] = Field(default=None, description="Seconds to trim from end")
+
+
 class MergeVideosRequest(BaseModel):
     videos_base64: List[str] = Field(..., description="List of base64 encoded videos to merge")
+    trim_configs: Optional[List[VideoTrimConfig]] = Field(default=None, description="Trim/merge point config for each video")
 
 
 class MergeVideosResponse(BaseModel):
@@ -109,6 +118,8 @@ async def merge_videos(
             # Save all input videos and probe them
             video_paths = []
             video_infos = []
+            trim_configs = request.trim_configs or []
+
             for i, video_b64 in enumerate(request.videos_base64):
                 video_bytes = clean_base64(video_b64)
                 video_path = os.path.join(tmpdir, f"input_{i}.mp4")
@@ -124,10 +135,30 @@ async def merge_videos(
             output_path = os.path.join(tmpdir, "output.mp4")
             n = len(video_paths)
 
-            # Build input arguments
+            # Build input arguments with optional trim/seek
             input_args = []
-            for path in video_paths:
+            for i, path in enumerate(video_paths):
+                # Get trim config for this video (if provided)
+                trim_cfg = trim_configs[i] if i < len(trim_configs) else None
+
+                # Handle start time / merge point (seek)
+                if trim_cfg:
+                    start_time = trim_cfg.start_time
+                    if start_time is None and trim_cfg.trim_start:
+                        start_time = trim_cfg.trim_start
+
+                    if start_time and start_time > 0:
+                        input_args.extend(["-ss", str(start_time)])
+                        logger.info(f"Video {i}: seeking to {start_time}s")
+
                 input_args.extend(["-i", path])
+
+                # Handle end time / duration (will be applied in filter)
+                if trim_cfg:
+                    end_time = trim_cfg.end_time
+                    trim_end = trim_cfg.trim_end
+                    if end_time or trim_end:
+                        logger.info(f"Video {i}: end_time={end_time}, trim_end={trim_end}")
 
             # Check if all videos have audio streams
             has_audio_list = []
@@ -149,21 +180,65 @@ async def merge_videos(
             concat_inputs = ""
 
             for i in range(n):
-                # Scale and pad video to consistent size, set framerate
-                filter_parts.append(
-                    f"[{i}:v]scale=1280:720:force_original_aspect_ratio=decrease,"
-                    f"pad=1280:720:(ow-iw)/2:(oh-ih)/2:black,"
-                    f"setsar=1,fps=30[v{i}]"
-                )
+                # Get trim config and video duration
+                trim_cfg = trim_configs[i] if i < len(trim_configs) else None
+                video_duration = None
+                for stream in video_infos[i].get("streams", []):
+                    if stream.get("codec_type") == "video":
+                        video_duration = float(stream.get("duration", 0)) or None
+                        break
+                if not video_duration:
+                    format_info = video_infos[i].get("format", {})
+                    video_duration = float(format_info.get("duration", 0)) or None
+
+                # Build video filter chain
+                video_filters = [
+                    f"scale=1280:720:force_original_aspect_ratio=decrease",
+                    f"pad=1280:720:(ow-iw)/2:(oh-ih)/2:black",
+                    f"setsar=1",
+                    f"fps=30"
+                ]
+
+                # Add trim filter for end trimming
+                if trim_cfg and (trim_cfg.end_time or trim_cfg.trim_end):
+                    if trim_cfg.end_time:
+                        # Absolute end time (adjusted for start seek)
+                        start_offset = trim_cfg.start_time or trim_cfg.trim_start or 0
+                        trim_duration = trim_cfg.end_time - start_offset
+                        if trim_duration > 0:
+                            video_filters.insert(0, f"trim=duration={trim_duration},setpts=PTS-STARTPTS")
+                    elif trim_cfg.trim_end and video_duration:
+                        # Relative trim from end
+                        start_offset = trim_cfg.start_time or trim_cfg.trim_start or 0
+                        actual_duration = video_duration - start_offset - trim_cfg.trim_end
+                        if actual_duration > 0:
+                            video_filters.insert(0, f"trim=duration={actual_duration},setpts=PTS-STARTPTS")
+
+                filter_parts.append(f"[{i}:v]{','.join(video_filters)}[v{i}]")
                 concat_inputs += f"[v{i}]"
 
                 # Handle audio - generate silence if missing
+                audio_filters = ["aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo"]
+
+                # Add audio trim if needed
+                if trim_cfg and (trim_cfg.end_time or trim_cfg.trim_end):
+                    if trim_cfg.end_time:
+                        start_offset = trim_cfg.start_time or trim_cfg.trim_start or 0
+                        trim_duration = trim_cfg.end_time - start_offset
+                        if trim_duration > 0:
+                            audio_filters.insert(0, f"atrim=duration={trim_duration},asetpts=PTS-STARTPTS")
+                    elif trim_cfg.trim_end and video_duration:
+                        start_offset = trim_cfg.start_time or trim_cfg.trim_start or 0
+                        actual_duration = video_duration - start_offset - trim_cfg.trim_end
+                        if actual_duration > 0:
+                            audio_filters.insert(0, f"atrim=duration={actual_duration},asetpts=PTS-STARTPTS")
+
                 if all_have_audio:
-                    filter_parts.append(f"[{i}:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[a{i}]")
+                    filter_parts.append(f"[{i}:a]{','.join(audio_filters)}[a{i}]")
                     concat_inputs += f"[a{i}]"
                 elif any_has_audio:
                     if has_audio_list[i]:
-                        filter_parts.append(f"[{i}:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[a{i}]")
+                        filter_parts.append(f"[{i}:a]{','.join(audio_filters)}[a{i}]")
                     else:
                         # Generate silent audio for videos without audio
                         filter_parts.append(f"anullsrc=r=44100:cl=stereo[a{i}]")

@@ -1137,22 +1137,32 @@ export function useWorkflowExecution(
               return { success: false, error: "No music prompt provided" };
             }
 
+            // Get duration setting
+            const selectedDuration = (node.data as any).selectedDuration || "auto";
+            const durationSeconds = selectedDuration === "auto" ? null : Number(selectedDuration);
+
             logger.debug("[GenerateMusic] Starting execution with prompt:", {
               promptLength: prompt.length,
               promptPreview: prompt.substring(0, 50),
+              selectedDuration,
+              durationSeconds,
             });
 
             try {
               const user = auth.currentUser;
               const token = await user?.getIdToken();
 
-              const response = await fetch(API_ENDPOINTS.generate.music, {
+              // Use ElevenLabs Music API with duration support
+              const response = await fetch(API_ENDPOINTS.elevenlabs.generateMusic, {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
                   Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({ prompt }),
+                body: JSON.stringify({
+                  prompt,
+                  duration_seconds: durationSeconds,
+                }),
               });
 
               if (response.status === 403) {
@@ -1408,6 +1418,9 @@ export function useWorkflowExecution(
               const user = auth.currentUser;
               const token = await user?.getIdToken();
 
+              // Get trim configs from node data
+              const trimConfigs = (node.data as any).trimConfigs || [];
+
               const response = await fetch(API_ENDPOINTS.video.merge, {
                 method: "POST",
                 headers: {
@@ -1416,6 +1429,12 @@ export function useWorkflowExecution(
                 },
                 body: JSON.stringify({
                   videos_base64: resolvedVideos.map(v => v.replace(/^data:video\/[^;]+;base64,/, "").replace(/^data:application\/[^;]+;base64,/, "")),
+                  trim_configs: trimConfigs.length > 0 ? trimConfigs.map((cfg: any) => ({
+                    start_time: cfg?.startTime || null,
+                    end_time: cfg?.endTime || null,
+                    trim_start: cfg?.trimStart || null,
+                    trim_end: cfg?.trimEnd || null,
+                  })) : null,
                 }),
               });
 

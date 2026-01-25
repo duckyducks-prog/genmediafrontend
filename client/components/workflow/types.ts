@@ -127,12 +127,17 @@ export interface PromptNodeData extends BaseNodeData {
   prompt: string;
 }
 
+// Music duration options
+export type MusicDuration = "auto" | 30 | 60 | 120 | 240 | 360 | number;
+
 // GENERATE MUSIC node
 export interface GenerateMusicNodeData extends BaseNodeData {
   prompt: string; // Music description prompt
   isGenerating: boolean;
   audioUrl?: string; // Generated audio URL (base64 or URL)
   audioDuration?: number; // Duration in seconds
+  selectedDuration: MusicDuration; // User-selected duration (auto, 30, 60, 120, 240, 360, or custom)
+  customDuration?: number; // Custom duration in seconds when selectedDuration is a number
 }
 
 // VOICE CHANGER node - uses ElevenLabs Speech-to-Speech
@@ -143,10 +148,19 @@ export interface VoiceChangerNodeData extends BaseNodeData {
   outputVideoUrl?: string; // Output video with changed voice
 }
 
+// Video trim configuration for merge
+export interface VideoTrimConfig {
+  startTime?: number; // Start time / merge point in seconds
+  endTime?: number; // End time in seconds
+  trimStart?: number; // Seconds to trim from start
+  trimEnd?: number; // Seconds to trim from end
+}
+
 // MERGE VIDEOS node - concatenates multiple videos
 export interface MergeVideosNodeData extends BaseNodeData {
   isMerging: boolean; // Is merge in progress
   outputVideoUrl?: string; // Output merged video
+  trimConfigs?: VideoTrimConfig[]; // Trim config for each video input
 }
 
 // ADD MUSIC TO VIDEO node - mixes audio into video
