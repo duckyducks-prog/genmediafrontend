@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     project_id: str = "genmediastudio"
     location: str = "us-central1"
     veo_location: str = "us-central1"  # Veo API only available in us-central1
+    gemini_image_location: str = "global"  # Gemini 3 Pro Image requires global endpoint
     gcs_bucket: str = "genmediastudio-assets"
     workflows_bucket: str = "genmediastudio-workflows"
     firebase_project_id: str = "genmediastudio"
