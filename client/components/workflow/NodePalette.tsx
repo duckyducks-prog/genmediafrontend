@@ -21,6 +21,7 @@ import {
   Film,
   List,
   MessageSquare,
+  Music,
 } from "lucide-react";
 import { NodeType } from "./types";
 import { Input } from "@/components/ui/input";
@@ -56,6 +57,13 @@ const paletteNodes: PaletteNode[] = [
     icon: <Type className="w-4 h-4" />,
     category: "input",
     description: "Text input for AI generation",
+  },
+  {
+    type: NodeType.MusicPrompt,
+    label: "Music Prompt",
+    icon: <Music className="w-4 h-4" />,
+    category: "input",
+    description: "Describe background music for video",
   },
 
   // MODIFIER NODES

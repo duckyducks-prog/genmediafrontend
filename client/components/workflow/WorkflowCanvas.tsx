@@ -54,6 +54,7 @@ import { useUnsavedChangesWarning } from "@/hooks/useUnsavedChangesWarning";
 
 // Import all custom node components
 import PromptInputNode from "./nodes/PromptInputNode";
+import MusicPromptNode from "./nodes/MusicPromptNode";
 import ImageUploadNode from "./nodes/ImageUploadNode";
 import VideoUploadNode from "./nodes/VideoUploadNode";
 import GenerateImageNode from "./nodes/GenerateImageNode";
@@ -80,6 +81,7 @@ import StickyNoteNode from "./nodes/StickyNoteNode";
 const nodeTypes: NodeTypes = {
   // Input nodes
   [NodeType.Prompt]: PromptInputNode,
+  [NodeType.MusicPrompt]: MusicPromptNode,
   [NodeType.ImageInput]: ImageUploadNode,
   [NodeType.VideoInput]: VideoUploadNode,
 
@@ -444,6 +446,9 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           // Input nodes
           case NodeType.Prompt:
             data = { prompt: "", label: "Prompt", outputs: {} };
+            break;
+          case NodeType.MusicPrompt:
+            data = { musicPrompt: "", label: "Music Prompt", outputs: {} };
             break;
           case NodeType.ImageInput:
             data = {
