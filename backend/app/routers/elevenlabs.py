@@ -112,7 +112,15 @@ async def change_voice(
         with tempfile.TemporaryDirectory() as tmpdir:
             # 1. Save input video
             input_video_path = os.path.join(tmpdir, "input.mp4")
-            video_bytes = base64.b64decode(request.video_base64)
+
+            # Fix base64 padding if needed
+            video_b64 = request.video_base64
+            # Add padding if necessary (base64 length must be multiple of 4)
+            padding_needed = len(video_b64) % 4
+            if padding_needed:
+                video_b64 += "=" * (4 - padding_needed)
+
+            video_bytes = base64.b64decode(video_b64)
             with open(input_video_path, "wb") as f:
                 f.write(video_bytes)
 
