@@ -22,6 +22,7 @@ import {
   List,
   MessageSquare,
   Music,
+  Mic,
 } from "lucide-react";
 import { NodeType } from "./types";
 import { Input } from "@/components/ui/input";
@@ -166,6 +167,13 @@ const paletteNodes: PaletteNode[] = [
     icon: <Music className="w-4 h-4" />,
     category: "action",
     description: "Create AI music with Lyria",
+  },
+  {
+    type: NodeType.VoiceChanger,
+    label: "Voice Changer",
+    icon: <Mic className="w-4 h-4" />,
+    category: "action",
+    description: "Change voice in video with ElevenLabs",
   },
   {
     type: NodeType.LLM,

@@ -32,6 +32,12 @@ export const API_ENDPOINTS = {
     music: `${VEO_API_BASE_URL}/v1/generate/music`,
   },
 
+  // ElevenLabs endpoints
+  elevenlabs: {
+    voices: `${VEO_API_BASE_URL}/v1/elevenlabs/voices`,
+    voiceChange: `${VEO_API_BASE_URL}/v1/elevenlabs/voice-change`,
+  },
+
   // Assets endpoints - routed through local proxy to avoid CORS
   assets: {
     save: `/api/assets`,

@@ -59,6 +59,7 @@ import VideoUploadNode from "./nodes/VideoUploadNode";
 import GenerateImageNode from "./nodes/GenerateImageNode";
 import GenerateVideoNode from "./nodes/GenerateVideoNode";
 import GenerateMusicNode from "./nodes/GenerateMusicNode";
+import VoiceChangerNode from "./nodes/VoiceChangerNode";
 import ImageOutputNode from "./nodes/ImageOutputNode";
 import VideoOutputNode from "./nodes/VideoOutputNode";
 import DownloadNode from "./nodes/DownloadNode";
@@ -102,6 +103,7 @@ const nodeTypes: NodeTypes = {
   [NodeType.GenerateImage]: GenerateImageNode,
   [NodeType.GenerateVideo]: GenerateVideoNode,
   [NodeType.GenerateMusic]: GenerateMusicNode,
+  [NodeType.VoiceChanger]: VoiceChangerNode,
   [NodeType.LLM]: LLMNode,
   [NodeType.Preview]: PreviewNode,
   [NodeType.Download]: DownloadNode,
@@ -592,6 +594,16 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               isGenerating: false,
               status: "ready",
               label: "Generate Music",
+              outputs: {},
+            };
+            break;
+          case NodeType.VoiceChanger:
+            data = {
+              selectedVoiceId: "",
+              selectedVoiceName: "",
+              isChanging: false,
+              status: "ready",
+              label: "Voice Changer",
               outputs: {},
             };
             break;

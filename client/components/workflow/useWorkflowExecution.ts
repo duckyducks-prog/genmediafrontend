@@ -1131,6 +1131,112 @@ export function useWorkflowExecution(
             }
           }
 
+          case NodeType.VoiceChanger: {
+            // Get video from input connector
+            const videoInput = inputs.video;
+            const selectedVoiceId = (node.data as any).selectedVoiceId;
+
+            if (!videoInput) {
+              return { success: false, error: "No video input connected" };
+            }
+
+            if (!selectedVoiceId) {
+              return { success: false, error: "No voice selected" };
+            }
+
+            logger.debug("[VoiceChanger] Starting execution:", {
+              hasVideo: !!videoInput,
+              voiceId: selectedVoiceId,
+            });
+
+            try {
+              const user = auth.currentUser;
+              const token = await user?.getIdToken();
+
+              const response = await fetch(API_ENDPOINTS.elevenlabs.voiceChange, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  video_base64: videoInput.replace(/^data:video\/[^;]+;base64,/, ""),
+                  voice_id: selectedVoiceId,
+                }),
+              });
+
+              if (response.status === 403) {
+                return {
+                  success: false,
+                  error: "Access denied. Your email may not be whitelisted.",
+                };
+              }
+
+              if (response.status === 401) {
+                return {
+                  success: false,
+                  error: "Unauthorized. Please sign out and sign in again.",
+                };
+              }
+
+              if (!response.ok) {
+                const errorText = await response.text();
+                console.error("[VoiceChanger] API Error:", {
+                  status: response.status,
+                  statusText: response.statusText,
+                  body: errorText,
+                });
+                throw new Error(`API error: ${response.status} - ${errorText}`);
+              }
+
+              const apiData = await response.json();
+
+              logger.debug("[VoiceChanger] API Response:", {
+                hasVideo: !!apiData.video_base64,
+                videoLength: apiData.video_base64?.length || 0,
+              });
+
+              if (apiData.video_base64) {
+                const videoUrl = `data:video/mp4;base64,${apiData.video_base64}`;
+
+                // Notify that an asset was generated
+                if (onAssetGenerated) {
+                  logger.debug(
+                    "[useWorkflowExecution] Voice changed video generated, triggering asset refresh",
+                  );
+                  onAssetGenerated();
+                }
+
+                const resultData = {
+                  outputVideoUrl: videoUrl,
+                  outputs: {
+                    video: videoUrl,
+                  },
+                };
+
+                toast({
+                  title: "Voice Changed",
+                  description: "Video voice has been changed successfully",
+                });
+
+                return {
+                  success: true,
+                  data: resultData,
+                };
+              } else {
+                return { success: false, error: "No video returned from API" };
+              }
+            } catch (error) {
+              return {
+                success: false,
+                error:
+                  error instanceof Error
+                    ? error.message
+                    : "Voice change failed",
+              };
+            }
+          }
+
           case NodeType.GenerateVideo: {
             logger.debug("[GenerateVideo] Starting execution with inputs:", {
               inputKeys: Object.keys(inputs),
