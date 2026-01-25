@@ -1352,69 +1352,21 @@ export function useWorkflowExecution(
             const video4 = inputs.video4;
 
             // Collect all connected videos
-            const rawVideos: (string | undefined)[] = [video1, video2, video3, video4].filter(Boolean);
+            const videos: string[] = [];
+            if (video1) videos.push(video1);
+            if (video2) videos.push(video2);
+            if (video3) videos.push(video3);
+            if (video4) videos.push(video4);
 
-            if (rawVideos.length < 2) {
+            if (videos.length < 2) {
               return { success: false, error: "At least 2 videos required to merge" };
             }
 
             logger.debug("[MergeVideos] Starting execution:", {
-              videoCount: rawVideos.length,
-              videoTypes: rawVideos.map(v => {
-                if (!v) return 'undefined';
-                if (v.startsWith('data:')) return 'dataUrl';
-                if (v.startsWith('http://') || v.startsWith('https://')) return 'httpUrl';
-                if (v.startsWith('blob:')) return 'blobUrl';
-                return `unknown(${v.substring(0, 20)}...)`;
-              }),
+              videoCount: videos.length,
             });
 
             try {
-              // Resolve all videos to data URLs (handles HTTP URLs, blob URLs from library)
-              const resolvedVideos: string[] = [];
-              for (let i = 0; i < rawVideos.length; i++) {
-                const video = rawVideos[i];
-                if (!video) {
-                  logger.warn(`[MergeVideos] Video ${i + 1} is undefined, skipping`);
-                  continue;
-                }
-
-                if (video.startsWith('data:video/') || video.startsWith('data:application/') || video.startsWith('data:')) {
-                  // Already a data URL, use directly
-                  resolvedVideos.push(video);
-                  logger.debug(`[MergeVideos] Video ${i + 1} is already a data URL`);
-                } else if (video.startsWith('http://') || video.startsWith('https://') || video.startsWith('blob:')) {
-                  // HTTP URL or Blob URL - fetch and convert to data URL
-                  logger.debug(`[MergeVideos] Video ${i + 1} is ${video.startsWith('blob:') ? 'blob' : 'HTTP'} URL, fetching...`);
-                  try {
-                    const response = await fetch(video, { mode: 'cors' });
-                    if (!response.ok) {
-                      throw new Error(`Failed to fetch video: ${response.status}`);
-                    }
-                    const blob = await response.blob();
-                    const dataUrl = await new Promise<string>((resolve, reject) => {
-                      const reader = new FileReader();
-                      reader.onload = () => resolve(reader.result as string);
-                      reader.onerror = () => reject(new Error('Failed to read video blob'));
-                      reader.readAsDataURL(blob);
-                    });
-                    resolvedVideos.push(dataUrl);
-                    logger.debug(`[MergeVideos] Video ${i + 1} converted to data URL (${dataUrl.length} chars)`);
-                  } catch (fetchError) {
-                    logger.error(`[MergeVideos] Failed to fetch video ${i + 1}:`, fetchError);
-                    return { success: false, error: `Failed to fetch video ${i + 1}: ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}` };
-                  }
-                } else {
-                  // Unknown format - log details for debugging
-                  logger.error(`[MergeVideos] Video ${i + 1} has unknown format:`, video.substring(0, 100));
-                  return { success: false, error: `Video ${i + 1} has invalid format (${video.substring(0, 30)}...). Please re-upload or re-select from library.` };
-                }
-              }
-
-              if (resolvedVideos.length < 2) {
-                return { success: false, error: "At least 2 valid videos required to merge" };
-              }
-
               const user = auth.currentUser;
               const token = await user?.getIdToken();
 
@@ -1425,7 +1377,7 @@ export function useWorkflowExecution(
                   Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
-                  videos_base64: resolvedVideos.map(v => v.replace(/^data:video\/[^;]+;base64,/, "").replace(/^data:application\/[^;]+;base64,/, "")),
+                  videos_base64: videos.map(v => v.replace(/^data:video\/[^;]+;base64,/, "")),
                 }),
               });
 
@@ -1445,7 +1397,7 @@ export function useWorkflowExecution(
 
                 toast({
                   title: "Videos Merged",
-                  description: `Successfully merged ${resolvedVideos.length} videos`,
+                  description: `Successfully merged ${videos.length} videos`,
                 });
 
                 return {
@@ -1469,8 +1421,8 @@ export function useWorkflowExecution(
           }
 
           case NodeType.AddMusicToVideo: {
-            let videoInput = inputs.video;
-            let audioInput = inputs.audio;
+            const videoInput = inputs.video;
+            const audioInput = inputs.audio;
 
             if (!videoInput) {
               return { success: false, error: "No video input connected" };
@@ -1486,47 +1438,11 @@ export function useWorkflowExecution(
             logger.debug("[AddMusicToVideo] Starting execution:", {
               hasVideo: !!videoInput,
               hasAudio: !!audioInput,
-              videoType: videoInput.startsWith('data:') ? 'dataUrl' : (videoInput.startsWith('http') || videoInput.startsWith('blob:')) ? 'fetchableUrl' : 'unknown',
-              audioType: audioInput.startsWith('data:') ? 'dataUrl' : (audioInput.startsWith('http') || audioInput.startsWith('blob:')) ? 'fetchableUrl' : 'unknown',
               musicVolume,
               originalVolume,
             });
 
             try {
-              // Resolve video to data URL if needed (handles HTTP URLs, blob URLs from library)
-              if (videoInput.startsWith('http://') || videoInput.startsWith('https://') || videoInput.startsWith('blob:')) {
-                logger.debug(`[AddMusicToVideo] Fetching video from ${videoInput.startsWith('blob:') ? 'blob' : 'HTTP'} URL...`);
-                const response = await fetch(videoInput, { mode: 'cors' });
-                if (!response.ok) {
-                  throw new Error(`Failed to fetch video: ${response.status}`);
-                }
-                const blob = await response.blob();
-                videoInput = await new Promise<string>((resolve, reject) => {
-                  const reader = new FileReader();
-                  reader.onload = () => resolve(reader.result as string);
-                  reader.onerror = () => reject(new Error('Failed to read video blob'));
-                  reader.readAsDataURL(blob);
-                });
-                logger.debug(`[AddMusicToVideo] Video converted to data URL (${videoInput.length} chars)`);
-              }
-
-              // Resolve audio to data URL if needed
-              if (audioInput.startsWith('http://') || audioInput.startsWith('https://') || audioInput.startsWith('blob:')) {
-                logger.debug(`[AddMusicToVideo] Fetching audio from ${audioInput.startsWith('blob:') ? 'blob' : 'HTTP'} URL...`);
-                const response = await fetch(audioInput, { mode: 'cors' });
-                if (!response.ok) {
-                  throw new Error(`Failed to fetch audio: ${response.status}`);
-                }
-                const blob = await response.blob();
-                audioInput = await new Promise<string>((resolve, reject) => {
-                  const reader = new FileReader();
-                  reader.onload = () => resolve(reader.result as string);
-                  reader.onerror = () => reject(new Error('Failed to read audio blob'));
-                  reader.readAsDataURL(blob);
-                });
-                logger.debug(`[AddMusicToVideo] Audio converted to data URL (${audioInput.length} chars)`);
-              }
-
               const user = auth.currentUser;
               const token = await user?.getIdToken();
 
