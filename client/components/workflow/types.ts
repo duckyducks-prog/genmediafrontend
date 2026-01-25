@@ -33,6 +33,7 @@ export enum NodeType {
   GenerateVideo = "generateVideo",
   GenerateImage = "generateImage",
   GenerateMusic = "generateMusic",
+  VoiceChanger = "voiceChanger",
   LLM = "llm",
 
   // ACTION/OUTPUT nodes
@@ -130,6 +131,14 @@ export interface GenerateMusicNodeData extends BaseNodeData {
   isGenerating: boolean;
   audioUrl?: string; // Generated audio URL (base64 or URL)
   audioDuration?: number; // Duration in seconds
+}
+
+// VOICE CHANGER node - uses ElevenLabs Speech-to-Speech
+export interface VoiceChangerNodeData extends BaseNodeData {
+  selectedVoiceId?: string; // Selected ElevenLabs voice ID
+  selectedVoiceName?: string; // Display name of selected voice
+  isChanging: boolean; // Is voice change in progress
+  outputVideoUrl?: string; // Output video with changed voice
 }
 
 // PROMPT CONCATENATOR node
@@ -356,6 +365,7 @@ export type WorkflowNodeData =
   | VideoInputNodeData
   | PromptNodeData
   | GenerateMusicNodeData
+  | VoiceChangerNodeData
   | PromptConcatenatorNodeData
   | TextIteratorNodeData
   | BrightnessContrastNodeData
@@ -950,6 +960,29 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "audio",
         label: "Audio",
         type: ConnectorType.Audio,
+      },
+    ],
+  },
+
+  [NodeType.VoiceChanger]: {
+    type: NodeType.VoiceChanger,
+    label: "Voice Changer",
+    category: "action",
+    description: "Change the voice in a video using ElevenLabs",
+    inputConnectors: [
+      {
+        id: "video",
+        label: "Video",
+        type: ConnectorType.Video,
+        required: true,
+        acceptsMultiple: false,
+      },
+    ],
+    outputConnectors: [
+      {
+        id: "video",
+        label: "Video",
+        type: ConnectorType.Video,
       },
     ],
   },
