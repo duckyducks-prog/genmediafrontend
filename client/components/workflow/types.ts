@@ -10,7 +10,6 @@ export enum NodeType {
   ImageInput = "imageInput",
   VideoInput = "videoInput",
   Prompt = "prompt",
-  MusicPrompt = "musicPrompt",
 
   // MODIFIER nodes (both input and output connectors)
   PromptConcatenator = "promptConcatenator",
@@ -33,6 +32,7 @@ export enum NodeType {
   // ACTION nodes (inputs and outputs)
   GenerateVideo = "generateVideo",
   GenerateImage = "generateImage",
+  GenerateMusic = "generateMusic",
   LLM = "llm",
 
   // ACTION/OUTPUT nodes
@@ -62,6 +62,7 @@ export enum ConnectorType {
   Image = "image", // Single base64 image
   Images = "images", // Array of base64 images
   Video = "video", // Base64 video
+  Audio = "audio", // Base64 audio (WAV, MP3)
   Any = "any", // Pass-through for any data
 }
 
@@ -123,9 +124,12 @@ export interface PromptNodeData extends BaseNodeData {
   prompt: string;
 }
 
-// MUSIC PROMPT node
-export interface MusicPromptNodeData extends BaseNodeData {
-  musicPrompt: string;
+// GENERATE MUSIC node
+export interface GenerateMusicNodeData extends BaseNodeData {
+  prompt: string; // Music description prompt
+  isGenerating: boolean;
+  audioUrl?: string; // Generated audio URL (base64 or URL)
+  audioDuration?: number; // Duration in seconds
 }
 
 // PROMPT CONCATENATOR node
@@ -351,7 +355,7 @@ export type WorkflowNodeData =
   | ImageInputNodeData
   | VideoInputNodeData
   | PromptNodeData
-  | MusicPromptNodeData
+  | GenerateMusicNodeData
   | PromptConcatenatorNodeData
   | TextIteratorNodeData
   | BrightnessContrastNodeData
@@ -435,21 +439,6 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
       {
         id: "text",
         label: "Text",
-        type: ConnectorType.Text,
-      },
-    ],
-  },
-
-  [NodeType.MusicPrompt]: {
-    type: NodeType.MusicPrompt,
-    label: "Music Prompt",
-    category: "input",
-    description: "Describe background music for video",
-    inputConnectors: [],
-    outputConnectors: [
-      {
-        id: "music_prompt",
-        label: "Music Prompt",
         type: ConnectorType.Text,
       },
     ],
@@ -938,6 +927,29 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "image",
         label: "Image",
         type: ConnectorType.Image,
+      },
+    ],
+  },
+
+  [NodeType.GenerateMusic]: {
+    type: NodeType.GenerateMusic,
+    label: "Generate Music",
+    category: "action",
+    description: "Generate background music using Lyria AI",
+    inputConnectors: [
+      {
+        id: "prompt",
+        label: "Prompt",
+        type: ConnectorType.Text,
+        required: false,
+        acceptsMultiple: false,
+      },
+    ],
+    outputConnectors: [
+      {
+        id: "audio",
+        label: "Audio",
+        type: ConnectorType.Audio,
       },
     ],
   },

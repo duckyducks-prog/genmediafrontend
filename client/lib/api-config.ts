@@ -29,6 +29,7 @@ export const API_ENDPOINTS = {
       `${VEO_API_BASE_URL}/v1/generate/video/status?operation_id=${encodeURIComponent(operationId)}&prompt=${encodeURIComponent(prompt)}`,
     text: `${VEO_API_BASE_URL}/v1/generate/text`,
     upscale: `${VEO_API_BASE_URL}/v1/generate/upscale`,
+    music: `${VEO_API_BASE_URL}/v1/generate/music`,
   },
 
   // Assets endpoints - routed through local proxy to avoid CORS

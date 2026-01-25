@@ -51,6 +51,7 @@ class Settings(BaseSettings):
     gemini_text_model: str = "gemini-2.0-flash"  # Gemini 2.0 Flash model
     veo_model: str = "veo-3.1-generate-preview"
     upscale_model: str = "imagen-4.0-upscale-preview"
+    lyria_model: str = "lyria-002"  # Google Lyria music generation model
 
     @property
     def ALLOWED_EMAILS(self) -> List[str]:

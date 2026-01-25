@@ -54,11 +54,11 @@ import { useUnsavedChangesWarning } from "@/hooks/useUnsavedChangesWarning";
 
 // Import all custom node components
 import PromptInputNode from "./nodes/PromptInputNode";
-import MusicPromptNode from "./nodes/MusicPromptNode";
 import ImageUploadNode from "./nodes/ImageUploadNode";
 import VideoUploadNode from "./nodes/VideoUploadNode";
 import GenerateImageNode from "./nodes/GenerateImageNode";
 import GenerateVideoNode from "./nodes/GenerateVideoNode";
+import GenerateMusicNode from "./nodes/GenerateMusicNode";
 import ImageOutputNode from "./nodes/ImageOutputNode";
 import VideoOutputNode from "./nodes/VideoOutputNode";
 import DownloadNode from "./nodes/DownloadNode";
@@ -81,7 +81,6 @@ import StickyNoteNode from "./nodes/StickyNoteNode";
 const nodeTypes: NodeTypes = {
   // Input nodes
   [NodeType.Prompt]: PromptInputNode,
-  [NodeType.MusicPrompt]: MusicPromptNode,
   [NodeType.ImageInput]: ImageUploadNode,
   [NodeType.VideoInput]: VideoUploadNode,
 
@@ -102,6 +101,7 @@ const nodeTypes: NodeTypes = {
   // Action nodes
   [NodeType.GenerateImage]: GenerateImageNode,
   [NodeType.GenerateVideo]: GenerateVideoNode,
+  [NodeType.GenerateMusic]: GenerateMusicNode,
   [NodeType.LLM]: LLMNode,
   [NodeType.Preview]: PreviewNode,
   [NodeType.Download]: DownloadNode,
@@ -447,9 +447,6 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           case NodeType.Prompt:
             data = { prompt: "", label: "Prompt", outputs: {} };
             break;
-          case NodeType.MusicPrompt:
-            data = { musicPrompt: "", label: "Music Prompt", outputs: {} };
-            break;
           case NodeType.ImageInput:
             data = {
               imageUrl: null,
@@ -586,6 +583,15 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               durationSeconds: 8,
               useConsistentVoice: false,
               seed: 42,
+              outputs: {},
+            };
+            break;
+          case NodeType.GenerateMusic:
+            data = {
+              prompt: "",
+              isGenerating: false,
+              status: "ready",
+              label: "Generate Music",
               outputs: {},
             };
             break;

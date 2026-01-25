@@ -58,13 +58,6 @@ const paletteNodes: PaletteNode[] = [
     category: "input",
     description: "Text input for AI generation",
   },
-  {
-    type: NodeType.MusicPrompt,
-    label: "Music Prompt",
-    icon: <Music className="w-4 h-4" />,
-    category: "input",
-    description: "Describe background music for video",
-  },
 
   // MODIFIER NODES
   {
@@ -166,6 +159,13 @@ const paletteNodes: PaletteNode[] = [
     icon: <Video className="w-4 h-4" />,
     category: "action",
     description: "Create AI video with Veo 3.1",
+  },
+  {
+    type: NodeType.GenerateMusic,
+    label: "Generate Music",
+    icon: <Music className="w-4 h-4" />,
+    category: "action",
+    description: "Create AI music with Lyria",
   },
   {
     type: NodeType.LLM,
