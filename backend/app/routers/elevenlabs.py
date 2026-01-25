@@ -130,16 +130,17 @@ async def change_voice(
             async with httpx.AsyncClient(timeout=120.0) as client:
                 sts_url = f"{ELEVENLABS_API_BASE}/speech-to-speech/{request.voice_id}"
 
-                # Send video file directly - ElevenLabs extracts audio
+                # Send video file - ElevenLabs accepts video and extracts audio
                 files = {
-                    "audio": ("video.mp4", video_bytes, "video/mp4"),
+                    "audio": ("input.mp4", video_bytes, "video/mp4"),
                 }
                 data = {
-                    "model_id": "eleven_english_sts_v2",
-                    "voice_settings": '{"stability": 0.5, "similarity_boost": 0.75}',
+                    "model_id": "eleven_multilingual_sts_v2",
                 }
 
                 headers = {"xi-api-key": settings.elevenlabs_api_key}
+
+                logger.info(f"Sending to ElevenLabs: {sts_url}, file size: {len(video_bytes)}")
 
                 response = await client.post(
                     sts_url,
@@ -149,10 +150,11 @@ async def change_voice(
                 )
 
                 if response.status_code != 200:
-                    logger.error(f"ElevenLabs STS error: {response.status_code} - {response.text[:500]}")
+                    error_detail = response.text[:500] if response.text else "No error details"
+                    logger.error(f"ElevenLabs STS error: {response.status_code} - {error_detail}")
                     raise HTTPException(
                         status_code=502,
-                        detail=f"ElevenLabs voice conversion failed: {response.status_code}"
+                        detail=f"ElevenLabs error: {error_detail}"
                     )
 
                 # Save the converted audio
