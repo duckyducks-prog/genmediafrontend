@@ -176,6 +176,20 @@ const paletteNodes: PaletteNode[] = [
     description: "Change voice in video with ElevenLabs",
   },
   {
+    type: NodeType.MergeVideos,
+    label: "Merge Videos",
+    icon: <Combine className="w-4 h-4" />,
+    category: "action",
+    description: "Concatenate multiple videos into one",
+  },
+  {
+    type: NodeType.AddMusicToVideo,
+    label: "Add Music",
+    icon: <Music className="w-4 h-4" />,
+    category: "action",
+    description: "Mix music/audio into a video",
+  },
+  {
     type: NodeType.LLM,
     label: "LLM",
     icon: <Brain className="w-4 h-4" />,

@@ -3,7 +3,7 @@ from uuid import uuid4
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from app.routers import generation, library, health, workflow, elevenlabs
+from app.routers import generation, library, health, workflow, elevenlabs, video_processing
 from app.logging_config import setup_logger
 from app.exceptions import AppError
 
@@ -92,3 +92,4 @@ app.include_router(generation.router, prefix="/v1/generate", tags=["generation"]
 app.include_router(library.router, prefix="/v1/assets", tags=["assets"])
 app.include_router(workflow.router, prefix="/v1/workflows", tags=["workflows"])
 app.include_router(elevenlabs.router, tags=["elevenlabs"])
+app.include_router(video_processing.router, tags=["video-processing"])

@@ -60,6 +60,8 @@ import GenerateImageNode from "./nodes/GenerateImageNode";
 import GenerateVideoNode from "./nodes/GenerateVideoNode";
 import GenerateMusicNode from "./nodes/GenerateMusicNode";
 import VoiceChangerNode from "./nodes/VoiceChangerNode";
+import MergeVideosNode from "./nodes/MergeVideosNode";
+import AddMusicToVideoNode from "./nodes/AddMusicToVideoNode";
 import ImageOutputNode from "./nodes/ImageOutputNode";
 import VideoOutputNode from "./nodes/VideoOutputNode";
 import DownloadNode from "./nodes/DownloadNode";
@@ -104,6 +106,8 @@ const nodeTypes: NodeTypes = {
   [NodeType.GenerateVideo]: GenerateVideoNode,
   [NodeType.GenerateMusic]: GenerateMusicNode,
   [NodeType.VoiceChanger]: VoiceChangerNode,
+  [NodeType.MergeVideos]: MergeVideosNode,
+  [NodeType.AddMusicToVideo]: AddMusicToVideoNode,
   [NodeType.LLM]: LLMNode,
   [NodeType.Preview]: PreviewNode,
   [NodeType.Download]: DownloadNode,
@@ -604,6 +608,24 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               isChanging: false,
               status: "ready",
               label: "Voice Changer",
+              outputs: {},
+            };
+            break;
+          case NodeType.MergeVideos:
+            data = {
+              isMerging: false,
+              status: "ready",
+              label: "Merge Videos",
+              outputs: {},
+            };
+            break;
+          case NodeType.AddMusicToVideo:
+            data = {
+              isMixing: false,
+              musicVolume: 50,
+              originalVolume: 100,
+              status: "ready",
+              label: "Add Music",
               outputs: {},
             };
             break;
