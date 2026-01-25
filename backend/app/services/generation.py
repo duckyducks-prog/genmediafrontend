@@ -60,7 +60,7 @@ client = genai.Client(
 image_client = genai.Client(
     vertexai=True,
     project=settings.project_id,
-    location=settings.location  # Use configured location
+    location=settings.gemini_image_location  # Gemini 3 Pro Image requires global endpoint
 )
 
 
