@@ -328,6 +328,103 @@ export function useWorkflowExecution(
             return { success: true, data: { image: imageUrl } };
           }
 
+          case NodeType.VideoInput: {
+            let videoUrl = (node.data as any).videoUrl || null;
+            const videoRef = (node.data as any).videoRef;
+
+            logger.debug("[VideoInput] Starting execution:", {
+              hasVideoUrl: !!videoUrl,
+              videoUrlType: videoUrl ? (videoUrl.startsWith('data:') ? 'dataUrl' : videoUrl.startsWith('blob:') ? 'blobUrl' : videoUrl.startsWith('http') ? 'httpUrl' : 'unknown') : 'none',
+              hasVideoRef: !!videoRef,
+            });
+
+            // If videoUrl is an HTTP URL (GCS) or blob URL, fetch and convert to data URL
+            if (videoUrl && !videoUrl.startsWith("data:") && (videoUrl.startsWith("http") || videoUrl.startsWith("blob:"))) {
+              logger.debug(
+                "[VideoInput] videoUrl is a fetchable URL, converting to data URI:",
+                videoUrl.substring(0, 80),
+              );
+              try {
+                const response = await fetch(videoUrl, { mode: "cors" });
+                if (!response.ok) {
+                  throw new Error(`Failed to fetch video: ${response.status}`);
+                }
+                const blob = await response.blob();
+                videoUrl = await new Promise<string>((resolve, reject) => {
+                  const reader = new FileReader();
+                  reader.onload = () => resolve(reader.result as string);
+                  reader.onerror = () => reject(new Error("Failed to convert video to data URI"));
+                  reader.readAsDataURL(blob);
+                });
+                logger.debug(
+                  "[VideoInput] ✓ Converted to data URL, length:",
+                  videoUrl.length,
+                );
+
+                // Update node with resolved data URL
+                updateNodeState(node.id, node.data.status || "ready", {
+                  videoUrl,
+                  outputs: { video: videoUrl },
+                });
+              } catch (error) {
+                console.error("[VideoInput] ❌ Failed to fetch URL:", error);
+                // Try falling back to videoRef resolution
+                if (videoRef) {
+                  logger.debug("[VideoInput] Falling back to videoRef resolution");
+                  videoUrl = null; // Clear to trigger resolution below
+                } else {
+                  return {
+                    success: false,
+                    error: `Failed to load video: ${error instanceof Error ? error.message : "Unknown error"}`,
+                  };
+                }
+              }
+            }
+
+            // Resolve videoRef if videoUrl is missing or was cleared
+            if (!videoUrl && videoRef) {
+              logger.debug(
+                "[VideoInput] ⚠️ videoUrl missing, resolving videoRef:",
+                videoRef,
+              );
+              try {
+                videoUrl = await resolveAssetToDataUrl(videoRef);
+                logger.debug(
+                  "[VideoInput] ✓ Resolved to data URL, length:",
+                  videoUrl.length,
+                );
+
+                // Update node with resolved URL
+                updateNodeState(node.id, node.data.status || "ready", {
+                  videoUrl,
+                  outputs: { video: videoUrl },
+                });
+              } catch (error) {
+                console.error("[VideoInput] ❌ Resolution failed:", error);
+                return {
+                  success: false,
+                  error: `Failed to load video: ${error instanceof Error ? error.message : "Unknown error"}`,
+                };
+              }
+            }
+
+            if (!videoUrl) {
+              console.warn("[VideoInput] ⚠️ No videoUrl or videoRef available");
+              return {
+                success: false,
+                error: "No video selected. Please upload a video or select from library.",
+              };
+            }
+
+            return {
+              success: true,
+              data: {
+                video: videoUrl,
+                outputs: { video: videoUrl },
+              },
+            };
+          }
+
           // MODIFIER NODES
           case NodeType.PromptConcatenator: {
             const separator = (node.data as any).separator || "Space";
@@ -1253,11 +1350,17 @@ export function useWorkflowExecution(
 
             logger.debug("[MergeVideos] Starting execution:", {
               videoCount: rawVideos.length,
-              videoTypes: rawVideos.map(v => v ? (v.startsWith('data:') ? 'dataUrl' : v.startsWith('http') ? 'httpUrl' : 'unknown') : 'undefined'),
+              videoTypes: rawVideos.map(v => {
+                if (!v) return 'undefined';
+                if (v.startsWith('data:')) return 'dataUrl';
+                if (v.startsWith('http://') || v.startsWith('https://')) return 'httpUrl';
+                if (v.startsWith('blob:')) return 'blobUrl';
+                return `unknown(${v.substring(0, 20)}...)`;
+              }),
             });
 
             try {
-              // Resolve all videos to data URLs (handles HTTP URLs from library)
+              // Resolve all videos to data URLs (handles HTTP URLs, blob URLs from library)
               const resolvedVideos: string[] = [];
               for (let i = 0; i < rawVideos.length; i++) {
                 const video = rawVideos[i];
@@ -1266,15 +1369,15 @@ export function useWorkflowExecution(
                   continue;
                 }
 
-                if (video.startsWith('data:video/') || video.startsWith('data:application/')) {
+                if (video.startsWith('data:video/') || video.startsWith('data:application/') || video.startsWith('data:')) {
                   // Already a data URL, use directly
                   resolvedVideos.push(video);
                   logger.debug(`[MergeVideos] Video ${i + 1} is already a data URL`);
-                } else if (video.startsWith('http://') || video.startsWith('https://')) {
-                  // HTTP URL - fetch and convert to data URL
-                  logger.debug(`[MergeVideos] Video ${i + 1} is HTTP URL, fetching...`);
+                } else if (video.startsWith('http://') || video.startsWith('https://') || video.startsWith('blob:')) {
+                  // HTTP URL or Blob URL - fetch and convert to data URL
+                  logger.debug(`[MergeVideos] Video ${i + 1} is ${video.startsWith('blob:') ? 'blob' : 'HTTP'} URL, fetching...`);
                   try {
-                    const response = await fetch(video, { mode: 'cors' });
+                    const response = await fetch(video);
                     if (!response.ok) {
                       throw new Error(`Failed to fetch video: ${response.status}`);
                     }
@@ -1292,9 +1395,9 @@ export function useWorkflowExecution(
                     return { success: false, error: `Failed to fetch video ${i + 1}: ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}` };
                   }
                 } else {
-                  // Unknown format - likely an asset ref or invalid data
+                  // Unknown format - log details for debugging
                   logger.error(`[MergeVideos] Video ${i + 1} has unknown format:`, video.substring(0, 100));
-                  return { success: false, error: `Video ${i + 1} has invalid format. Please re-upload or re-select from library.` };
+                  return { success: false, error: `Video ${i + 1} has invalid format (${video.substring(0, 30)}...). Please re-upload or re-select from library.` };
                 }
               }
 
@@ -1373,17 +1476,17 @@ export function useWorkflowExecution(
             logger.debug("[AddMusicToVideo] Starting execution:", {
               hasVideo: !!videoInput,
               hasAudio: !!audioInput,
-              videoType: videoInput.startsWith('data:') ? 'dataUrl' : videoInput.startsWith('http') ? 'httpUrl' : 'unknown',
-              audioType: audioInput.startsWith('data:') ? 'dataUrl' : audioInput.startsWith('http') ? 'httpUrl' : 'unknown',
+              videoType: videoInput.startsWith('data:') ? 'dataUrl' : (videoInput.startsWith('http') || videoInput.startsWith('blob:')) ? 'fetchableUrl' : 'unknown',
+              audioType: audioInput.startsWith('data:') ? 'dataUrl' : (audioInput.startsWith('http') || audioInput.startsWith('blob:')) ? 'fetchableUrl' : 'unknown',
               musicVolume,
               originalVolume,
             });
 
             try {
-              // Resolve video to data URL if needed (handles HTTP URLs from library)
-              if (videoInput.startsWith('http://') || videoInput.startsWith('https://')) {
-                logger.debug("[AddMusicToVideo] Fetching video from HTTP URL...");
-                const response = await fetch(videoInput, { mode: 'cors' });
+              // Resolve video to data URL if needed (handles HTTP URLs, blob URLs from library)
+              if (videoInput.startsWith('http://') || videoInput.startsWith('https://') || videoInput.startsWith('blob:')) {
+                logger.debug(`[AddMusicToVideo] Fetching video from ${videoInput.startsWith('blob:') ? 'blob' : 'HTTP'} URL...`);
+                const response = await fetch(videoInput);
                 if (!response.ok) {
                   throw new Error(`Failed to fetch video: ${response.status}`);
                 }
@@ -1398,9 +1501,9 @@ export function useWorkflowExecution(
               }
 
               // Resolve audio to data URL if needed
-              if (audioInput.startsWith('http://') || audioInput.startsWith('https://')) {
-                logger.debug("[AddMusicToVideo] Fetching audio from HTTP URL...");
-                const response = await fetch(audioInput, { mode: 'cors' });
+              if (audioInput.startsWith('http://') || audioInput.startsWith('https://') || audioInput.startsWith('blob:')) {
+                logger.debug(`[AddMusicToVideo] Fetching audio from ${audioInput.startsWith('blob:') ? 'blob' : 'HTTP'} URL...`);
+                const response = await fetch(audioInput);
                 if (!response.ok) {
                   throw new Error(`Failed to fetch audio: ${response.status}`);
                 }
