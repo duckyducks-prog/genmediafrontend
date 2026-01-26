@@ -240,7 +240,7 @@ async def generate_music(
         }
 
         if duration_ms is not None:
-            payload["duration_ms"] = duration_ms
+            payload["music_length_ms"] = duration_ms
 
         logger.info(f"Calling ElevenLabs Music API: {api_url} with payload: {payload}")
 
