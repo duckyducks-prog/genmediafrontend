@@ -100,6 +100,7 @@ class AssetResponse(BaseModel):
 class VideoStatusResponse(BaseModel):
     status: str
     video_base64: Optional[str] = None
+    video_url: Optional[str] = None  # GCS public URL for the video (use this for downstream processing)
     storage_uri: Optional[str] = None
     mimeType: Optional[str] = None  # video/mp4 - at top level for frontend access
     progress: Optional[int] = None

@@ -1366,22 +1366,22 @@ export function useWorkflowExecution(
               return { success: false, error: "At least 2 videos required to merge" };
             }
 
-            // Validate all videos are either data URLs or HTTP URLs
-            // Separate into URLs (for server-side download) and base64 (for direct upload)
+            // Separate videos by type: URLs (GCS) vs data URLs (base64)
+            // URLs are preferred as they avoid the 32MB request limit
             const videoUrls: string[] = [];
             const videosBase64: string[] = [];
 
             for (let i = 0; i < videos.length; i++) {
               const v = videos[i];
-              if (v.startsWith('data:')) {
-                // Data URL - extract base64 and add to base64 list
+              if (v.startsWith('https://') || v.startsWith('http://')) {
+                // GCS/HTTP URL - backend will download directly
+                videoUrls.push(v);
+              } else if (v.startsWith('data:')) {
+                // Data URL - extract base64
                 videosBase64.push(
                   v.replace(/^data:video\/[^;]+;base64,/, "")
                    .replace(/^data:application\/[^;]+;base64,/, "")
                 );
-              } else if (v.startsWith('http://') || v.startsWith('https://')) {
-                // HTTP URL - server will download directly (avoids request size limits)
-                videoUrls.push(v);
               } else {
                 logger.error(`[MergeVideos] Video ${i + 1} has invalid format:`, v.substring(0, 50));
                 return {
@@ -1391,38 +1391,40 @@ export function useWorkflowExecution(
               }
             }
 
-            // Determine which format to use (prefer URLs to avoid request size limits)
-            // All videos must be same type - either all URLs or all base64
-            const hasUrls = videoUrls.length > 0;
-            const hasBase64 = videosBase64.length > 0;
-
-            if (hasUrls && hasBase64) {
-              // Mixed format - need to standardize. Prefer URLs for large payloads.
-              // For now, error out and ask user to standardize
-              logger.warn("[MergeVideos] Mixed URL and base64 formats detected");
-              // Fall back to base64 for all (convert URLs on client)
-              // But this defeats the purpose - better to error
-              return {
-                success: false,
-                error: "Mixed video sources detected. Please ensure all videos come from the same type of source (all generated or all uploaded)."
-              };
-            }
+            // Decide which format to send
+            // Prefer URLs to avoid 32MB request limit
+            const useUrls = videoUrls.length === videos.length;
+            const useBase64 = videosBase64.length === videos.length;
 
             logger.debug("[MergeVideos] Starting execution:", {
               videoCount: videos.length,
-              useUrls: hasUrls,
+              urlCount: videoUrls.length,
+              base64Count: videosBase64.length,
+              useUrls,
+              useBase64,
             });
+
+            if (!useUrls && !useBase64) {
+              // Mixed formats - not supported yet
+              logger.warn("[MergeVideos] Mixed URL and base64 formats");
+              return {
+                success: false,
+                error: "Mixed video formats detected. Please ensure all videos are from the same source type."
+              };
+            }
 
             try {
               const user = auth.currentUser;
               const token = await user?.getIdToken();
 
-              // Build request body based on format
+              // Build request body - prefer URLs (no size limit)
               const requestBody: { video_urls?: string[]; videos_base64?: string[] } = {};
-              if (hasUrls) {
+              if (useUrls) {
                 requestBody.video_urls = videoUrls;
+                logger.info(`[MergeVideos] Sending ${videoUrls.length} video URLs to backend`);
               } else {
                 requestBody.videos_base64 = videosBase64;
+                logger.info(`[MergeVideos] Sending ${videosBase64.length} videos as base64`);
               }
 
               const response = await fetch(API_ENDPOINTS.video.merge, {
@@ -1923,13 +1925,23 @@ export function useWorkflowExecution(
                   onAssetGenerated();
                 }
 
+                // Use GCS URL for downstream processing (avoids 32MB limit)
+                // Fall back to data URL if GCS URL not available
+                const outputUrl = result.gcsUrl || result.videoUrl;
+                logger.debug("[GenerateVideo] Output URLs:", {
+                  gcsUrl: result.gcsUrl ? result.gcsUrl.substring(0, 80) + "..." : null,
+                  videoUrl: result.videoUrl.substring(0, 50) + "...",
+                  usingGcsUrl: !!result.gcsUrl,
+                });
+
                 return {
                   success: true,
                   data: {
-                    video: result.videoUrl,
-                    videoUrl: result.videoUrl,
+                    video: result.videoUrl,  // Data URL for preview
+                    videoUrl: result.videoUrl,  // Data URL for preview
+                    gcsUrl: result.gcsUrl,  // GCS URL for downstream processing
                     outputs: {
-                      video: result.videoUrl, // ✓ Explicit for downstream connections
+                      video: outputUrl, // Use GCS URL for downstream (merge, etc.)
                     },
                   },
                 };

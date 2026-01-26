@@ -700,12 +700,14 @@ export async function pollVideoStatus(
           },
         );
 
-        // Try multiple possible field names for the video data
+        // Get the GCS URL for downstream processing (merge videos, etc.)
+        // This avoids 32MB request limit by letting backend download from URL
+        const gcsUrl = statusData.video_url || statusData.videoUrl || null;
+
+        // Try multiple possible field names for the video data (base64)
         const videoData =
           statusData.video_base64 ||
           statusData.videoBase64 ||
-          statusData.video_url ||
-          statusData.videoUrl ||
           statusData.video;
 
         if (videoData) {
@@ -714,6 +716,7 @@ export async function pollVideoStatus(
             return {
               success: true,
               videoUrl: videoData,
+              gcsUrl: gcsUrl,  // Include GCS URL for downstream use
             };
           }
           // If it's base64, convert to data URI
@@ -721,6 +724,7 @@ export async function pollVideoStatus(
             return {
               success: true,
               videoUrl: `data:video/mp4;base64,${videoData}`,
+              gcsUrl: gcsUrl,  // Include GCS URL for downstream use
             };
           }
           // Unknown format
@@ -729,6 +733,16 @@ export async function pollVideoStatus(
             typeof videoData,
             videoData,
           );
+        }
+
+        // Fallback: if we only have GCS URL (no base64), still return success
+        if (gcsUrl) {
+          logger.info("[pollVideoStatus] No base64 data, using GCS URL directly");
+          return {
+            success: true,
+            videoUrl: gcsUrl,  // Use GCS URL as the video URL
+            gcsUrl: gcsUrl,
+          };
         }
 
         return {

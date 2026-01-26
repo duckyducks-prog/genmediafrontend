@@ -495,16 +495,19 @@ class GenerationService:
                         mime_type = predictions[0].get("mimeType", "video/mp4")
 
                 if video_base64:
-                    # Try to save to library
+                    # Try to save to library and get the URL
                     saved_to_library = True
                     save_error = None
+                    video_url = None
                     try:
-                        await self.library.save_asset(
+                        asset_response = await self.library.save_asset(
                             data=video_base64,
                             asset_type="video",
                             user_id=user_id,
                             prompt=prompt
                         )
+                        video_url = asset_response.url  # Get the GCS URL for downstream use
+                        logger.info(f"Video saved to library, URL: {video_url[:80]}...")
                     except Exception as e:
                         error_msg = f"{type(e).__name__}: {e}"
                         logger.error(f"Failed to save video to library: {error_msg}")
@@ -514,6 +517,7 @@ class GenerationService:
                     return VideoStatusResponse(
                         status="complete",
                         video_base64=video_base64,
+                        video_url=video_url,  # Include URL for downstream processing (merge, etc.)
                         mimeType=mime_type,
                         saved_to_library=saved_to_library,
                         save_error=save_error
@@ -541,16 +545,19 @@ class GenerationService:
 
                             logger.info(f"Downloaded video from GCS: {len(video_bytes)} bytes, base64 length: {len(video_base64)}")
 
-                            # Try to save to library
+                            # Try to save to library and get the URL
                             saved_to_library = True
                             save_error = None
+                            video_url = None
                             try:
-                                await self.library.save_asset(
+                                asset_response = await self.library.save_asset(
                                     data=video_base64,
                                     asset_type="video",
                                     user_id=user_id,
                                     prompt=prompt
                                 )
+                                video_url = asset_response.url  # Get the GCS URL for downstream use
+                                logger.info(f"Video saved to library, URL: {video_url[:80]}...")
                             except Exception as e:
                                 error_msg = f"{type(e).__name__}: {e}"
                                 logger.error(f"Failed to save video to library: {error_msg}")
@@ -560,6 +567,7 @@ class GenerationService:
                             return VideoStatusResponse(
                                 status="complete",
                                 video_base64=video_base64,
+                                video_url=video_url,  # Include URL for downstream processing (merge, etc.)
                                 mimeType=mime_type,
                                 saved_to_library=saved_to_library,
                                 save_error=save_error
