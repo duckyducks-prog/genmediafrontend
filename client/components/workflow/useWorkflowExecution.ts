@@ -1366,25 +1366,66 @@ export function useWorkflowExecution(
               return { success: false, error: "At least 2 videos required to merge" };
             }
 
-            // Validate all videos are data URLs
+            // Separate videos by type: URLs (GCS) vs data URLs (base64)
+            // URLs are preferred as they avoid the 32MB request limit
+            const videoUrls: string[] = [];
+            const videosBase64: string[] = [];
+
             for (let i = 0; i < videos.length; i++) {
               const v = videos[i];
-              if (!v.startsWith('data:')) {
-                logger.error(`[MergeVideos] Video ${i + 1} is not a data URL:`, v.substring(0, 50));
+              if (v.startsWith('https://') || v.startsWith('http://')) {
+                // GCS/HTTP URL - backend will download directly
+                videoUrls.push(v);
+              } else if (v.startsWith('data:')) {
+                // Data URL - extract base64
+                videosBase64.push(
+                  v.replace(/^data:video\/[^;]+;base64,/, "")
+                   .replace(/^data:application\/[^;]+;base64,/, "")
+                );
+              } else {
+                logger.error(`[MergeVideos] Video ${i + 1} has invalid format:`, v.substring(0, 50));
                 return {
                   success: false,
-                  error: `Video ${i + 1} is not ready. Please run the Video Input node first or re-select the video.`
+                  error: `Video ${i + 1} is not ready. Please run the source node first.`
                 };
               }
             }
 
+            // Decide which format to send
+            // Prefer URLs to avoid 32MB request limit
+            const useUrls = videoUrls.length === videos.length;
+            const useBase64 = videosBase64.length === videos.length;
+
             logger.debug("[MergeVideos] Starting execution:", {
               videoCount: videos.length,
+              urlCount: videoUrls.length,
+              base64Count: videosBase64.length,
+              useUrls,
+              useBase64,
             });
+
+            if (!useUrls && !useBase64) {
+              // Mixed formats - not supported yet
+              logger.warn("[MergeVideos] Mixed URL and base64 formats");
+              return {
+                success: false,
+                error: "Mixed video formats detected. Please ensure all videos are from the same source type."
+              };
+            }
 
             try {
               const user = auth.currentUser;
               const token = await user?.getIdToken();
+
+              // Build request body - prefer URLs (no size limit)
+              const requestBody: { video_urls?: string[]; videos_base64?: string[] } = {};
+              if (useUrls) {
+                requestBody.video_urls = videoUrls;
+                logger.info(`[MergeVideos] Sending ${videoUrls.length} video URLs to backend`);
+              } else {
+                requestBody.videos_base64 = videosBase64;
+                logger.info(`[MergeVideos] Sending ${videosBase64.length} videos as base64`);
+              }
 
               const response = await fetch(API_ENDPOINTS.video.merge, {
                 method: "POST",
@@ -1392,12 +1433,7 @@ export function useWorkflowExecution(
                   "Content-Type": "application/json",
                   Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({
-                  videos_base64: videos.map(v =>
-                    v.replace(/^data:video\/[^;]+;base64,/, "")
-                     .replace(/^data:application\/[^;]+;base64,/, "")
-                  ),
-                }),
+                body: JSON.stringify(requestBody),
               });
 
               if (!response.ok) {
@@ -1889,13 +1925,23 @@ export function useWorkflowExecution(
                   onAssetGenerated();
                 }
 
+                // Use GCS URL for downstream processing (avoids 32MB limit)
+                // Fall back to data URL if GCS URL not available
+                const outputUrl = result.gcsUrl || result.videoUrl;
+                logger.debug("[GenerateVideo] Output URLs:", {
+                  gcsUrl: result.gcsUrl ? result.gcsUrl.substring(0, 80) + "..." : null,
+                  videoUrl: result.videoUrl.substring(0, 50) + "...",
+                  usingGcsUrl: !!result.gcsUrl,
+                });
+
                 return {
                   success: true,
                   data: {
-                    video: result.videoUrl,
-                    videoUrl: result.videoUrl,
+                    video: result.videoUrl,  // Data URL for preview
+                    videoUrl: result.videoUrl,  // Data URL for preview
+                    gcsUrl: result.gcsUrl,  // GCS URL for downstream processing
                     outputs: {
-                      video: result.videoUrl, // ✓ Explicit for downstream connections
+                      video: outputUrl, // Use GCS URL for downstream (merge, etc.)
                     },
                   },
                 };
