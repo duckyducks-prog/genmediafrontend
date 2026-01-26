@@ -331,6 +331,9 @@ export function useWorkflowExecution(
           case NodeType.VideoInput: {
             let videoUrl = (node.data as any).videoUrl || null;
             const videoRef = (node.data as any).videoRef;
+            // Preserve the original URL for downstream processing (e.g., MergeVideos)
+            // This avoids the 32MB request limit when merging multiple videos
+            let originalUrl: string | null = null;
 
             logger.debug("[VideoInput] Starting execution:", {
               hasVideoUrl: !!videoUrl,
@@ -338,10 +341,41 @@ export function useWorkflowExecution(
               hasVideoRef: !!videoRef,
             });
 
-            // If videoUrl is an HTTP URL (GCS) or blob URL, fetch and convert to data URL
-            if (videoUrl && !videoUrl.startsWith("data:") && (videoUrl.startsWith("http") || videoUrl.startsWith("blob:"))) {
+            // If videoUrl is an HTTP URL (GCS), preserve it for downstream AND convert for preview
+            if (videoUrl && !videoUrl.startsWith("data:") && videoUrl.startsWith("http")) {
+              // Save the original GCS URL for downstream nodes like MergeVideos
+              originalUrl = videoUrl;
               logger.debug(
-                "[VideoInput] videoUrl is a fetchable URL, converting to data URI:",
+                "[VideoInput] Preserving GCS URL for downstream:",
+                originalUrl.substring(0, 80),
+              );
+
+              // Also convert to data URL for preview (but keep original for processing)
+              try {
+                const response = await fetch(videoUrl, { mode: "cors" });
+                if (!response.ok) {
+                  throw new Error(`Failed to fetch video: ${response.status}`);
+                }
+                const blob = await response.blob();
+                const dataUrl = await new Promise<string>((resolve, reject) => {
+                  const reader = new FileReader();
+                  reader.onload = () => resolve(reader.result as string);
+                  reader.onerror = () => reject(new Error("Failed to convert video to data URI"));
+                  reader.readAsDataURL(blob);
+                });
+                videoUrl = dataUrl;  // Use data URL for preview
+                logger.debug(
+                  "[VideoInput] ✓ Also converted to data URL for preview, length:",
+                  videoUrl.length,
+                );
+              } catch (error) {
+                // If fetch fails, we can still use the HTTP URL directly
+                logger.warn("[VideoInput] Failed to convert to data URL, will use HTTP URL:", error);
+              }
+            } else if (videoUrl && videoUrl.startsWith("blob:")) {
+              // Blob URLs need to be converted
+              logger.debug(
+                "[VideoInput] videoUrl is a blob URL, converting to data URI:",
                 videoUrl.substring(0, 80),
               );
               try {
@@ -357,21 +391,13 @@ export function useWorkflowExecution(
                   reader.readAsDataURL(blob);
                 });
                 logger.debug(
-                  "[VideoInput] ✓ Converted to data URL, length:",
+                  "[VideoInput] ✓ Converted blob to data URL, length:",
                   videoUrl.length,
                 );
-
-                // Update node with resolved data URL
-                updateNodeState(node.id, node.data.status || "ready", {
-                  videoUrl,
-                  outputs: { video: videoUrl },
-                });
               } catch (error) {
-                console.error("[VideoInput] ❌ Failed to fetch URL:", error);
-                // Try falling back to videoRef resolution
+                console.error("[VideoInput] ❌ Failed to fetch blob URL:", error);
                 if (videoRef) {
-                  logger.debug("[VideoInput] Falling back to videoRef resolution");
-                  videoUrl = null; // Clear to trigger resolution below
+                  videoUrl = null;
                 } else {
                   return {
                     success: false,
@@ -388,17 +414,31 @@ export function useWorkflowExecution(
                 videoRef,
               );
               try {
+                // Get the asset info to get the GCS URL
+                const { auth } = await import("@/lib/firebase");
+                const user = auth.currentUser;
+                const token = await user?.getIdToken();
+
+                const response = await fetch(API_ENDPOINTS.library.list(), {
+                  headers: { Authorization: `Bearer ${token}` },
+                });
+
+                if (response.ok) {
+                  const assets = await response.json();
+                  const asset = assets.find((a: any) => a.id === videoRef);
+                  if (asset?.url) {
+                    // Preserve the GCS URL for downstream
+                    originalUrl = asset.url;
+                    logger.debug("[VideoInput] Got GCS URL from asset:", originalUrl.substring(0, 80));
+                  }
+                }
+
+                // Still resolve to data URL for preview
                 videoUrl = await resolveAssetToDataUrl(videoRef);
                 logger.debug(
                   "[VideoInput] ✓ Resolved to data URL, length:",
                   videoUrl.length,
                 );
-
-                // Update node with resolved URL
-                updateNodeState(node.id, node.data.status || "ready", {
-                  videoUrl,
-                  outputs: { video: videoUrl },
-                });
               } catch (error) {
                 console.error("[VideoInput] ❌ Resolution failed:", error);
                 return {
@@ -416,11 +456,24 @@ export function useWorkflowExecution(
               };
             }
 
+            // Output the GCS URL if available (for downstream processing like MergeVideos)
+            // Fall back to data URL if no GCS URL available
+            const outputUrl = originalUrl || videoUrl;
+            logger.debug("[VideoInput] Output URL type:", originalUrl ? "GCS URL" : "data URL");
+
+            // Update node state
+            updateNodeState(node.id, node.data.status || "ready", {
+              videoUrl,  // Data URL for preview
+              gcsUrl: originalUrl,  // GCS URL for downstream
+              outputs: { video: outputUrl },  // Use GCS URL for downstream if available
+            });
+
             return {
               success: true,
               data: {
-                video: videoUrl,
-                outputs: { video: videoUrl },
+                video: videoUrl,  // Data URL for preview
+                gcsUrl: originalUrl,  // GCS URL for downstream
+                outputs: { video: outputUrl },  // Use GCS URL for downstream if available
               },
             };
           }
@@ -1402,7 +1455,19 @@ export function useWorkflowExecution(
               base64Count: videosBase64.length,
               useUrls,
               useBase64,
+              firstVideoPreview: videos[0]?.substring(0, 100),
             });
+
+            // CRITICAL: Check if we're trying to send 3+ videos as base64
+            // This will fail due to Cloud Run's 32MB request limit
+            if (useBase64 && videosBase64.length >= 3) {
+              logger.error("[MergeVideos] Cannot merge 3+ videos as base64 - would exceed 32MB limit");
+              logger.error("[MergeVideos] Videos are data URLs instead of GCS URLs.");
+              return {
+                success: false,
+                error: "Cannot merge 3+ videos: size limit exceeded. Please use videos from your library (not locally uploaded files) which have GCS URLs, or re-generate videos after deploying latest backend."
+              };
+            }
 
             if (!useUrls && !useBase64) {
               // Mixed formats - not supported yet
