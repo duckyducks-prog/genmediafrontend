@@ -6,6 +6,7 @@ import tempfile
 import subprocess
 import os
 import json
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
@@ -48,7 +49,8 @@ def get_ffmpeg_error(stderr: str) -> str:
 
 
 class MergeVideosRequest(BaseModel):
-    videos_base64: List[str] = Field(..., description="List of base64 encoded videos to merge")
+    videos_base64: Optional[List[str]] = Field(default=None, description="List of base64 encoded videos to merge")
+    video_urls: Optional[List[str]] = Field(default=None, description="List of GCS/HTTP URLs to merge (preferred for large files)")
 
 
 class MergeVideosResponse(BaseModel):
@@ -87,6 +89,14 @@ def clean_base64(b64_string: str) -> bytes:
     return base64.b64decode(b64_string)
 
 
+async def download_video_from_url(url: str, timeout: float = 120.0) -> bytes:
+    """Download video from URL (GCS or HTTP)."""
+    async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+        response = await client.get(url)
+        response.raise_for_status()
+        return response.content
+
+
 @router.post("/merge", response_model=MergeVideosResponse)
 async def merge_videos(
     request: MergeVideosRequest,
@@ -95,22 +105,50 @@ async def merge_videos(
     """
     Merge multiple videos into one using ffmpeg concat filter.
     Uses concat filter (not demuxer) for better compatibility with different video sources.
+
+    Accepts either:
+    - videos_base64: List of base64 encoded videos (for small files)
+    - video_urls: List of GCS/HTTP URLs (preferred for large files, avoids request size limits)
     """
     try:
-        logger.info(f"Merge videos request from user {user['email']}, count={len(request.videos_base64)}")
+        # Determine which input format was provided
+        videos_data: List[str] = []
+        use_urls = False
 
-        if len(request.videos_base64) < 2:
+        if request.video_urls and len(request.video_urls) > 0:
+            videos_data = request.video_urls
+            use_urls = True
+            logger.info(f"Merge videos request from user {user['email']}, count={len(videos_data)} (using URLs)")
+        elif request.videos_base64 and len(request.videos_base64) > 0:
+            videos_data = request.videos_base64
+            use_urls = False
+            logger.info(f"Merge videos request from user {user['email']}, count={len(videos_data)} (using base64)")
+        else:
+            raise HTTPException(status_code=400, detail="Either videos_base64 or video_urls must be provided")
+
+        if len(videos_data) < 2:
             raise HTTPException(status_code=400, detail="At least 2 videos required")
 
-        if len(request.videos_base64) > 10:
+        if len(videos_data) > 10:
             raise HTTPException(status_code=400, detail="Maximum 10 videos allowed")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # Save all input videos and probe them
             video_paths = []
             video_infos = []
-            for i, video_b64 in enumerate(request.videos_base64):
-                video_bytes = clean_base64(video_b64)
+            for i, video_input in enumerate(videos_data):
+                if use_urls:
+                    # Download from URL
+                    logger.info(f"Downloading video {i} from URL: {video_input[:80]}...")
+                    try:
+                        video_bytes = await download_video_from_url(video_input)
+                    except httpx.HTTPError as e:
+                        logger.error(f"Failed to download video {i}: {e}")
+                        raise HTTPException(status_code=400, detail=f"Failed to download video {i+1}: {str(e)}")
+                else:
+                    # Decode from base64
+                    video_bytes = clean_base64(video_input)
+
                 video_path = os.path.join(tmpdir, f"input_{i}.mp4")
                 with open(video_path, "wb") as f:
                     f.write(video_bytes)
