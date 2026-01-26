@@ -1044,6 +1044,20 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         required: false,
         acceptsMultiple: false,
       },
+      {
+        id: "video5",
+        label: "Video 5",
+        type: ConnectorType.Video,
+        required: false,
+        acceptsMultiple: false,
+      },
+      {
+        id: "video6",
+        label: "Video 6",
+        type: ConnectorType.Video,
+        required: false,
+        acceptsMultiple: false,
+      },
     ],
     outputConnectors: [
       {

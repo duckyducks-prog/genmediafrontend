@@ -50,7 +50,7 @@ function MergeVideosNode({ data, id }: NodeProps<MergeVideosNodeData>) {
           position={Position.Left}
           id={connector.id}
           className="!w-3 !h-3 !bg-blue-500 !border-2 !border-background"
-          style={{ top: 60 + index * 40 }}
+          style={{ top: 60 + index * 28 }}
         />
       ))}
 
@@ -65,11 +65,11 @@ function MergeVideosNode({ data, id }: NodeProps<MergeVideosNodeData>) {
         </div>
 
         {/* Input Labels */}
-        <div className="space-y-2 mb-4">
+        <div className="space-y-1 mb-4">
           {config.inputConnectors.map((connector) => (
             <div
               key={connector.id}
-              className="flex items-center gap-2 text-xs"
+              className="flex items-center gap-2 text-xs h-5"
             >
               <span
                 className={
@@ -95,7 +95,7 @@ function MergeVideosNode({ data, id }: NodeProps<MergeVideosNodeData>) {
           <div className="flex flex-col items-center text-center gap-2">
             <Combine className="w-6 h-6 text-muted-foreground" />
             <p className="text-xs text-muted-foreground">
-              Connect 2-4 videos to merge
+              Connect 2-6 videos to merge
               <br />
               Click Run to concatenate
             </p>
