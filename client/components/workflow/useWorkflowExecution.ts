@@ -1345,11 +1345,13 @@ export function useWorkflowExecution(
           }
 
           case NodeType.MergeVideos: {
-            // Get videos from input connectors
+            // Get videos from input connectors (support up to 6)
             const video1 = inputs.video1;
             const video2 = inputs.video2;
             const video3 = inputs.video3;
             const video4 = inputs.video4;
+            const video5 = inputs.video5;
+            const video6 = inputs.video6;
 
             // Collect all connected videos
             const videos: string[] = [];
@@ -1357,9 +1359,23 @@ export function useWorkflowExecution(
             if (video2) videos.push(video2);
             if (video3) videos.push(video3);
             if (video4) videos.push(video4);
+            if (video5) videos.push(video5);
+            if (video6) videos.push(video6);
 
             if (videos.length < 2) {
               return { success: false, error: "At least 2 videos required to merge" };
+            }
+
+            // Validate all videos are data URLs
+            for (let i = 0; i < videos.length; i++) {
+              const v = videos[i];
+              if (!v.startsWith('data:')) {
+                logger.error(`[MergeVideos] Video ${i + 1} is not a data URL:`, v.substring(0, 50));
+                return {
+                  success: false,
+                  error: `Video ${i + 1} is not ready. Please run the Video Input node first or re-select the video.`
+                };
+              }
             }
 
             logger.debug("[MergeVideos] Starting execution:", {
@@ -1377,7 +1393,10 @@ export function useWorkflowExecution(
                   Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
-                  videos_base64: videos.map(v => v.replace(/^data:video\/[^;]+;base64,/, "")),
+                  videos_base64: videos.map(v =>
+                    v.replace(/^data:video\/[^;]+;base64,/, "")
+                     .replace(/^data:application\/[^;]+;base64,/, "")
+                  ),
                 }),
               });
 
