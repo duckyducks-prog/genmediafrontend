@@ -45,12 +45,11 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
-// Allowed emails list
-const ALLOWED_EMAILS = [
-  "ldebortolialves@hubspot.com",
-  "sfiske@hubspot.com",
-  "meganzinka@gmail.com",
-];
+// Allowed emails list - loaded from environment variable (comma-separated)
+const ALLOWED_EMAILS: string[] = (import.meta.env.VITE_ALLOWED_EMAILS || "")
+  .split(",")
+  .map((email: string) => email.trim().toLowerCase())
+  .filter((email: string) => email.length > 0);
 
 export const signInWithGoogle = async () => {
   try {
