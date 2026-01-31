@@ -20,6 +20,7 @@ import {
   Download,
   Play,
   ChevronDown,
+  Power,
 } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
@@ -32,6 +33,7 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
   const isError = status === "error";
   const incomingImageUrl = data.imageUrl;
   const images = data.images || [];
+  const isEnabled = data.enabled !== false; // Default to enabled
 
   // Debug logging
   useEffect(() => {
@@ -81,7 +83,13 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
     window.dispatchEvent(event);
   };
 
+  const handleToggleEnabled = () => {
+    if (data.readOnly) return;
+    handleUpdate("enabled", !isEnabled);
+  };
+
   const getBorderColor = () => {
+    if (!isEnabled) return "border-muted";
     if (isError) return "border-red-500";
     return "border-border";
   };
@@ -189,7 +197,7 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
 
   return (
     <div
-      className={`bg-card border-2 rounded-lg p-4 min-w-[300px] shadow-lg transition-colors ${getBorderColor()}`}
+      className={`bg-card border-2 rounded-lg p-4 min-w-[300px] shadow-lg transition-colors ${getBorderColor()} ${!isEnabled ? "opacity-50" : ""}`}
     >
       {/* Node Header */}
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
@@ -200,6 +208,19 @@ function GenerateImageNode({ data, id }: NodeProps<GenerateImageNodeData>) {
           </div>
         </div>
         <div className="flex items-center gap-1">
+          {/* Enable/Disable Toggle */}
+          <button
+            onClick={handleToggleEnabled}
+            disabled={data.readOnly}
+            className={`p-1 rounded transition-colors ${
+              isEnabled
+                ? "text-green-500 hover:bg-green-500/10"
+                : "text-muted-foreground hover:bg-muted"
+            }`}
+            title={isEnabled ? "Disable node" : "Enable node"}
+          >
+            <Power className="w-4 h-4" />
+          </button>
           {isGenerating && (
             <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />
           )}

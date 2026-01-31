@@ -54,7 +54,7 @@ const paletteNodes: PaletteNode[] = [
   },
   {
     type: NodeType.Prompt,
-    label: "Prompt",
+    label: "Text Input",
     icon: <Type className="w-4 h-4" />,
     category: "input",
     description: "Text input for AI generation",
@@ -209,6 +209,13 @@ const paletteNodes: PaletteNode[] = [
     icon: <Download className="w-4 h-4" />,
     category: "output",
     description: "Download media result",
+  },
+  {
+    type: NodeType.TextOutput,
+    label: "Text Output",
+    icon: <Type className="w-4 h-4" />,
+    category: "output",
+    description: "Display text output from LLM",
   },
 
   // UTILITY NODES

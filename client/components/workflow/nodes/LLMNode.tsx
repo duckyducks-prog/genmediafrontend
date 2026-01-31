@@ -1,15 +1,17 @@
 import { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { LLMNodeData } from '../types';
-import { Brain, Loader2, Play, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Brain, Loader2, Play, CheckCircle2, AlertCircle, Power } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
 function LLMNode({ data, id }: NodeProps<LLMNodeData>) {
   const status = data.status || 'ready';
   const isGenerating = data.isGenerating || status === 'executing';
+  const isEnabled = data.enabled !== false; // Default to enabled
 
   const getBorderColor = () => {
+    if (!isEnabled) return 'border-muted';
     if (status === 'error') return 'border-red-500';
     return 'border-border';
   };
@@ -24,6 +26,11 @@ function LLMNode({ data, id }: NodeProps<LLMNodeData>) {
     window.dispatchEvent(event);
   };
 
+  const handleToggleEnabled = () => {
+    if (data.readOnly) return;
+    handleUpdate('enabled', !isEnabled);
+  };
+
   const handleRun = () => {
     const event = new CustomEvent('node-execute', {
       detail: { nodeId: id },
@@ -32,7 +39,7 @@ function LLMNode({ data, id }: NodeProps<LLMNodeData>) {
   };
 
   return (
-    <div className={`bg-card border-2 rounded-lg p-4 min-w-[320px] max-w-[400px] shadow-lg transition-colors ${getBorderColor()}`}>
+    <div className={`bg-card border-2 rounded-lg p-4 min-w-[320px] max-w-[400px] shadow-lg transition-colors ${getBorderColor()} ${!isEnabled ? 'opacity-50' : ''}`}>
       {/* Node Header */}
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
         <div className="flex items-center gap-2">
@@ -40,6 +47,19 @@ function LLMNode({ data, id }: NodeProps<LLMNodeData>) {
           <div className="font-semibold text-sm">{data.label || 'LLM'}</div>
         </div>
         <div className="flex items-center gap-1">
+          {/* Enable/Disable Toggle */}
+          <button
+            onClick={handleToggleEnabled}
+            disabled={data.readOnly}
+            className={`p-1 rounded transition-colors ${
+              isEnabled
+                ? 'text-green-500 hover:bg-green-500/10'
+                : 'text-muted-foreground hover:bg-muted'
+            }`}
+            title={isEnabled ? 'Disable node' : 'Enable node'}
+          >
+            <Power className="w-4 h-4" />
+          </button>
           {isGenerating && <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />}
           {status === 'completed' && <CheckCircle2 className="w-4 h-4 text-green-500" />}
           {status === 'error' && <AlertCircle className="w-4 h-4 text-red-500" />}

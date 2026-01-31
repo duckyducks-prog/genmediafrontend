@@ -9,7 +9,10 @@ export enum NodeType {
   // INPUT nodes (no input connectors, only outputs)
   ImageInput = "imageInput",
   VideoInput = "videoInput",
-  Prompt = "prompt",
+  Prompt = "prompt", // Also known as "Text Input"
+
+  // OUTPUT nodes for text
+  TextOutput = "textOutput", // Display text output (e.g., from LLM)
 
   // MODIFIER nodes (both input and output connectors)
   PromptConcatenator = "promptConcatenator",
@@ -100,6 +103,7 @@ export interface BaseNodeData {
   outputs?: Record<string, any>; // Store output values from execution
   readOnly?: boolean; // Indicates if node is in read-only mode (for templates)
   locked?: boolean; // Indicates if node position is locked (prevents accidental dragging)
+  enabled?: boolean; // Indicates if node is enabled (default: true). Disabled nodes are skipped during execution.
 }
 
 // IMAGE INPUT node
@@ -337,6 +341,11 @@ export interface OutputNodeData extends BaseNodeData {
   assetRefExists?: boolean;
 }
 
+// TEXT OUTPUT node - displays text from LLM or other text sources
+export interface TextOutputNodeData extends BaseNodeData {
+  textContent?: string; // The text to display
+}
+
 export interface DownloadNodeData extends BaseNodeData {
   inputData?: string | null; // Legacy: single input
   inputs?: Array<{ type: "image" | "video"; url: string }>; // Multiple inputs
@@ -406,6 +415,7 @@ export type WorkflowNodeData =
   | LLMNodeData
   | PreviewNodeData
   | OutputNodeData
+  | TextOutputNodeData
   | DownloadNodeData
   | StickyNoteNodeData
   | CompoundNodeData;
@@ -464,7 +474,7 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
 
   [NodeType.Prompt]: {
     type: NodeType.Prompt,
-    label: "Prompt",
+    label: "Text Input",
     category: "input",
     description: "Text input for AI generation",
     inputConnectors: [],
@@ -1224,6 +1234,23 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "video-input",
         label: "Video",
         type: ConnectorType.Video,
+        required: false,
+        acceptsMultiple: false,
+      },
+    ],
+    outputConnectors: [],
+  },
+
+  [NodeType.TextOutput]: {
+    type: NodeType.TextOutput,
+    label: "Text Output",
+    category: "output",
+    description: "Display text output from LLM or other sources",
+    inputConnectors: [
+      {
+        id: "text",
+        label: "Text",
+        type: ConnectorType.Text,
         required: false,
         acceptsMultiple: false,
       },

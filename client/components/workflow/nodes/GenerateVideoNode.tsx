@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   Play,
   ChevronDown,
+  Power,
 } from "lucide-react";
 
 function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
@@ -21,6 +22,7 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
   const isCompleted = status === "completed";
   const isError = status === "error";
   const videoUrl = (data as any).videoUrl;
+  const isEnabled = data.enabled !== false; // Default to enabled
   // Note: Mutual exclusion (first_frame/last_frame vs reference_images) is validated
   // at execution time, not in the UI. All inputs are always enabled.
 
@@ -40,7 +42,13 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
     window.dispatchEvent(event);
   };
 
+  const handleToggleEnabled = () => {
+    if (data.readOnly) return;
+    handleUpdate("enabled", !isEnabled);
+  };
+
   const getBorderColor = () => {
+    if (!isEnabled) return "border-muted";
     if (isError) return "border-red-500";
     return "border-border";
   };
@@ -93,7 +101,7 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
 
   return (
     <div
-      className={`bg-card border-2 rounded-lg p-4 min-w-[320px] shadow-lg transition-colors ${getBorderColor()}`}
+      className={`bg-card border-2 rounded-lg p-4 min-w-[320px] shadow-lg transition-colors ${getBorderColor()} ${!isEnabled ? "opacity-50" : ""}`}
     >
       {/* Node Header */}
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
@@ -104,6 +112,19 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
           </div>
         </div>
         <div className="flex items-center gap-1">
+          {/* Enable/Disable Toggle */}
+          <button
+            onClick={handleToggleEnabled}
+            disabled={data.readOnly}
+            className={`p-1 rounded transition-colors ${
+              isEnabled
+                ? "text-green-500 hover:bg-green-500/10"
+                : "text-muted-foreground hover:bg-muted"
+            }`}
+            title={isEnabled ? "Disable node" : "Enable node"}
+          >
+            <Power className="w-4 h-4" />
+          </button>
           {isGenerating && (
             <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />
           )}
@@ -154,7 +175,7 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
               value={data.aspectRatio}
               onChange={(e) => handleUpdate("aspectRatio", e.target.value)}
               className="w-full px-3 py-2 text-sm bg-background border border-border rounded-md appearance-none pr-8"
-              disabled={isGenerating || data.readOnly}
+              disabled={isGenerating || data.readOnly || !isEnabled}
             >
               <option value="16:9">16:9 (Landscape)</option>
               <option value="9:16">9:16 (Portrait)</option>
@@ -175,7 +196,7 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
                 handleUpdate("durationSeconds", parseInt(e.target.value))
               }
               className="w-full px-3 py-2 text-sm bg-background border border-border rounded-md appearance-none pr-8"
-              disabled={isGenerating || data.readOnly}
+              disabled={isGenerating || data.readOnly || !isEnabled}
             >
               <option value="4">4 seconds</option>
               <option value="6">6 seconds</option>
@@ -192,7 +213,7 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
               type="checkbox"
               checked={data.generateAudio}
               onChange={(e) => handleUpdate("generateAudio", e.target.checked)}
-              disabled={isGenerating || data.readOnly}
+              disabled={isGenerating || data.readOnly || !isEnabled}
               className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
             />
             <span className="text-xs font-medium text-muted-foreground">
@@ -200,44 +221,6 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
             </span>
           </label>
         </div>
-
-        {/* Use Consistent Voice Checkbox */}
-        <div>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={data.useConsistentVoice}
-              onChange={(e) =>
-                handleUpdate("useConsistentVoice", e.target.checked)
-              }
-              disabled={isGenerating || data.readOnly}
-              className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
-            />
-            <span className="text-xs font-medium text-muted-foreground">
-              Use consistent voice (seed)
-            </span>
-          </label>
-        </div>
-
-        {/* Seed Input (shown when useConsistentVoice is checked) */}
-        {data.useConsistentVoice && (
-          <div>
-            <label className="text-xs font-medium text-muted-foreground block mb-1">
-              Seed Value
-            </label>
-            <input
-              type="number"
-              value={data.seed ?? 42}
-              onChange={(e) =>
-                handleUpdate("seed", parseInt(e.target.value) || 42)
-              }
-              disabled={isGenerating || data.readOnly}
-              className="w-full px-3 py-2 text-sm bg-background border border-border rounded-md"
-              placeholder="42"
-              min="0"
-            />
-          </div>
-        )}
 
         {/* Status */}
         <div className="text-xs text-muted-foreground">
@@ -285,7 +268,7 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
                 });
                 window.dispatchEvent(event);
               }}
-              disabled={isGenerating || data.readOnly}
+              disabled={isGenerating || data.readOnly || !isEnabled}
               variant="ghost"
               size="sm"
               className="w-full text-xs"
@@ -326,7 +309,7 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
                 });
                 window.dispatchEvent(event);
               }}
-              disabled={isGenerating || data.readOnly}
+              disabled={isGenerating || data.readOnly || !isEnabled}
               variant="ghost"
               size="sm"
               className="w-full text-xs"

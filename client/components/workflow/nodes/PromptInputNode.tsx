@@ -2,10 +2,11 @@ import { memo, useEffect } from "react";
 import { Handle, Position, NodeProps, useReactFlow } from "reactflow";
 import { Textarea } from "@/components/ui/textarea";
 import { PromptNodeData } from "../types";
-import { Type, CheckCircle2, Loader2 } from "lucide-react";
+import { Type, CheckCircle2, Loader2, Power } from "lucide-react";
 
 function PromptInputNode({ data, id }: NodeProps<PromptNodeData>) {
   const { setNodes } = useReactFlow();
+  const isEnabled = data.enabled !== false; // Default to enabled
 
   // ✅ Initialize outputs when component mounts or prompt changes externally
   // This ensures downstream nodes can read the prompt even before user edits
@@ -48,30 +49,60 @@ function PromptInputNode({ data, id }: NodeProps<PromptNodeData>) {
     );
   };
 
+  const handleToggleEnabled = () => {
+    if (data.readOnly) return;
+    const event = new CustomEvent("node-update", {
+      detail: {
+        id,
+        data: {
+          ...data,
+          enabled: !isEnabled,
+        },
+      },
+    });
+    window.dispatchEvent(event);
+  };
+
   const status = (data as any).status || "ready";
   const isExecuting = status === "executing";
   const isCompleted = status === "completed";
 
   const getBorderColor = () => {
+    if (!isEnabled) return "border-muted";
     return "border-border";
   };
 
   return (
     <div
-      className={`bg-card border-2 rounded-lg p-4 min-w-[280px] shadow-lg transition-colors ${getBorderColor()}`}
+      className={`bg-card border-2 rounded-lg p-4 min-w-[280px] shadow-lg transition-colors ${getBorderColor()} ${!isEnabled ? "opacity-50" : ""}`}
     >
       {/* Node Header */}
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-border">
         <div className="flex items-center gap-2">
           <Type className="w-4 h-4 text-primary" />
           <div className="font-semibold text-sm">
-            {data.label || "Prompt Input"}
+            {data.label || "Text Input"}
           </div>
         </div>
-        {isExecuting && (
-          <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />
-        )}
-        {isCompleted && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+        <div className="flex items-center gap-1">
+          {/* Enable/Disable Toggle */}
+          <button
+            onClick={handleToggleEnabled}
+            disabled={data.readOnly}
+            className={`p-1 rounded transition-colors ${
+              isEnabled
+                ? "text-green-500 hover:bg-green-500/10"
+                : "text-muted-foreground hover:bg-muted"
+            }`}
+            title={isEnabled ? "Disable node" : "Enable node"}
+          >
+            <Power className="w-4 h-4" />
+          </button>
+          {isExecuting && (
+            <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />
+          )}
+          {isCompleted && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+        </div>
       </div>
 
       {/* Node Content */}
@@ -81,7 +112,7 @@ function PromptInputNode({ data, id }: NodeProps<PromptNodeData>) {
           onChange={handleChange}
           placeholder="Enter your prompt..."
           className="min-h-[100px] nodrag"
-          disabled={data.readOnly}
+          disabled={data.readOnly || !isEnabled}
         />
       </div>
 
