@@ -45,6 +45,7 @@ import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
 import { NodeContextMenu } from "./NodeContextMenu";
 import { FloatingLabels } from "./FloatingLabels";
+import { NodeSearchDialog } from "./NodeSearchDialog";
 import {
   useWorkflowNodes,
   useWorkflowEdges,
@@ -156,6 +157,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
     const [copiedNodes, setCopiedNodes] = useState<WorkflowNode[]>([]);
     const [copiedEdges, setCopiedEdges] = useState<WorkflowEdge[]>([]);
     const [isReadOnly, setIsReadOnly] = useState(false);
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
 
     // Context menu state
     const [contextMenu, setContextMenu] = useState<{
@@ -332,6 +334,33 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
       document.addEventListener("keydown", handleKeyDown, true);
       return () => document.removeEventListener("keydown", handleKeyDown, true);
     }, [reactFlowInstance]);
+
+    // Node search shortcut (/ or Cmd+K)
+    useEffect(() => {
+      const handleSearchShortcut = (event: KeyboardEvent) => {
+        // Don't trigger if typing in an input/textarea
+        const target = event.target as HTMLElement;
+        if (
+          target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable
+        ) {
+          return;
+        }
+
+        // "/" key or Cmd/Ctrl + K
+        const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+        const cmdOrCtrl = isMac ? event.metaKey : event.ctrlKey;
+
+        if (event.key === "/" || (cmdOrCtrl && event.key === "k")) {
+          event.preventDefault();
+          setIsSearchOpen(true);
+        }
+      };
+
+      document.addEventListener("keydown", handleSearchShortcut);
+      return () => document.removeEventListener("keydown", handleSearchShortcut);
+    }, []);
 
     // Handle new connections between nodes
     const onConnect = useCallback(
@@ -626,9 +655,10 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
             data = {
               isMixing: false,
               musicVolume: 50,
+              track2Volume: 100,
               originalVolume: 100,
               status: "ready",
-              label: "Add Music",
+              label: "Merge Audio",
               outputs: {},
             };
             break;
@@ -1724,6 +1754,12 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               description: "Wizard has been created and is available on the home page",
             });
           }}
+        />
+
+        {/* Node Search Dialog */}
+        <NodeSearchDialog
+          isOpen={isSearchOpen}
+          onClose={() => setIsSearchOpen(false)}
         />
       </div>
     );

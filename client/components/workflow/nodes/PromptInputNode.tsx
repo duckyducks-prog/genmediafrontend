@@ -1,12 +1,14 @@
-import { memo, useEffect } from "react";
+import { memo, useEffect, useState } from "react";
 import { Handle, Position, NodeProps, useReactFlow } from "reactflow";
 import { Textarea } from "@/components/ui/textarea";
 import { PromptNodeData } from "../types";
-import { Type, CheckCircle2, Loader2, Power } from "lucide-react";
+import { Type, CheckCircle2, Loader2, Power, Maximize2 } from "lucide-react";
+import { TextExpandModal } from "../TextExpandModal";
 
 function PromptInputNode({ data, id }: NodeProps<PromptNodeData>) {
   const { setNodes } = useReactFlow();
   const isEnabled = data.enabled !== false; // Default to enabled
+  const [isExpandModalOpen, setIsExpandModalOpen] = useState(false);
 
   // ✅ Initialize outputs when component mounts or prompt changes externally
   // This ensures downstream nodes can read the prompt even before user edits
@@ -42,6 +44,24 @@ function PromptInputNode({ data, id }: NodeProps<PromptNodeData>) {
                 ...node.data,
                 prompt: newPrompt,
                 outputs: { text: newPrompt }, // Store output for downstream nodes
+              },
+            }
+          : node,
+      ),
+    );
+  };
+
+  const handleExpandChange = (newValue: string) => {
+    if (data.readOnly) return;
+    setNodes((nodes) =>
+      nodes.map((node) =>
+        node.id === id
+          ? {
+              ...node,
+              data: {
+                ...node.data,
+                prompt: newValue,
+                outputs: { text: newValue },
               },
             }
           : node,
@@ -85,6 +105,15 @@ function PromptInputNode({ data, id }: NodeProps<PromptNodeData>) {
           </div>
         </div>
         <div className="flex items-center gap-1">
+          {/* Expand Button */}
+          <button
+            onClick={() => setIsExpandModalOpen(true)}
+            disabled={data.readOnly}
+            className="p-1 rounded transition-colors text-muted-foreground hover:text-primary hover:bg-primary/10"
+            title="Expand editor"
+          >
+            <Maximize2 className="w-4 h-4" />
+          </button>
           {/* Enable/Disable Toggle */}
           <button
             onClick={handleToggleEnabled}
@@ -124,6 +153,17 @@ function PromptInputNode({ data, id }: NodeProps<PromptNodeData>) {
         data-connector-type="text"
         className="!w-3 !h-3 !border-2 !border-background"
         style={{ top: "50%", transform: 'translateY(-50%)' }}
+      />
+
+      {/* Expand Modal */}
+      <TextExpandModal
+        isOpen={isExpandModalOpen}
+        onClose={() => setIsExpandModalOpen(false)}
+        title="Text Input"
+        value={data.prompt || ""}
+        onChange={handleExpandChange}
+        placeholder="Enter your prompt..."
+        readOnly={data.readOnly || !isEnabled}
       />
     </div>
   );

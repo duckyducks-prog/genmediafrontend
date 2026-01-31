@@ -1225,20 +1225,6 @@ export function useWorkflowExecution(
                 }),
               });
 
-              if (response.status === 403) {
-                return {
-                  success: false,
-                  error: "Access denied. Your email may not be whitelisted.",
-                };
-              }
-
-              if (response.status === 401) {
-                return {
-                  success: false,
-                  error: "Unauthorized. Please sign out and sign in again.",
-                };
-              }
-
               if (!response.ok) {
                 const errorText = await response.text();
                 console.error("[GenerateMusic] API Error:", {
@@ -1246,7 +1232,32 @@ export function useWorkflowExecution(
                   statusText: response.statusText,
                   body: errorText,
                 });
-                throw new Error(`API error: ${response.status} - ${errorText}`);
+
+                // Parse error detail if JSON
+                let errorDetail = errorText;
+                try {
+                  const errorJson = JSON.parse(errorText);
+                  errorDetail = errorJson.detail || errorJson.message || errorText;
+                } catch {
+                  // Keep original text
+                }
+
+                if (response.status === 403) {
+                  // Could be auth issue or ElevenLabs API access issue
+                  return {
+                    success: false,
+                    error: `Access denied: ${errorDetail}`,
+                  };
+                }
+
+                if (response.status === 401) {
+                  return {
+                    success: false,
+                    error: "Unauthorized. Please sign out and sign in again.",
+                  };
+                }
+
+                throw new Error(`API error: ${response.status} - ${errorDetail}`);
               }
 
               const apiData = await response.json();
@@ -1332,20 +1343,6 @@ export function useWorkflowExecution(
                 }),
               });
 
-              if (response.status === 403) {
-                return {
-                  success: false,
-                  error: "Access denied. Your email may not be whitelisted.",
-                };
-              }
-
-              if (response.status === 401) {
-                return {
-                  success: false,
-                  error: "Unauthorized. Please sign out and sign in again.",
-                };
-              }
-
               if (!response.ok) {
                 const errorText = await response.text();
                 console.error("[VoiceChanger] API Error:", {
@@ -1353,7 +1350,31 @@ export function useWorkflowExecution(
                   statusText: response.statusText,
                   body: errorText,
                 });
-                throw new Error(`API error: ${response.status} - ${errorText}`);
+
+                // Parse error detail if JSON
+                let errorDetail = errorText;
+                try {
+                  const errorJson = JSON.parse(errorText);
+                  errorDetail = errorJson.detail || errorJson.message || errorText;
+                } catch {
+                  // Keep original text
+                }
+
+                if (response.status === 403) {
+                  return {
+                    success: false,
+                    error: `Access denied: ${errorDetail}`,
+                  };
+                }
+
+                if (response.status === 401) {
+                  return {
+                    success: false,
+                    error: "Unauthorized. Please sign out and sign in again.",
+                  };
+                }
+
+                throw new Error(`API error: ${response.status} - ${errorDetail}`);
               }
 
               const apiData = await response.json();
