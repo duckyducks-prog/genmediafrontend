@@ -11,7 +11,50 @@
    * tailwind.config.ts expects the following color variables to be expressed as HSL values.
    * A different format will require also updating the theme in tailwind.config.ts.
   */
+  /* Light mode: Lavender theme - bg:#D6C2D9, buttons:#46062B, text:#F8F5EE/#1F1F1F */
   :root {
+    --background: 288 24% 81%;
+    --foreground: 0 0% 12%;
+
+    --card: 288 20% 90%;
+    --card-foreground: 0 0% 12%;
+
+    --popover: 288 20% 90%;
+    --popover-foreground: 0 0% 12%;
+
+    --primary: 325 84% 15%;
+    --primary-foreground: 42 45% 95%;
+
+    --secondary: 288 18% 75%;
+    --secondary-foreground: 0 0% 12%;
+
+    --muted: 288 15% 85%;
+    --muted-foreground: 0 0% 35%;
+
+    --accent: 325 84% 15%;
+    --accent-foreground: 42 45% 95%;
+
+    --destructive: 0 84% 40%;
+    --destructive-foreground: 42 45% 95%;
+
+    --border: 288 15% 70%;
+    --input: 288 15% 70%;
+    --ring: 325 84% 15%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 288 24% 81%;
+    --sidebar-foreground: 0 0% 12%;
+    --sidebar-primary: 325 84% 15%;
+    --sidebar-primary-foreground: 42 45% 95%;
+    --sidebar-accent: 288 18% 75%;
+    --sidebar-accent-foreground: 325 84% 15%;
+    --sidebar-border: 288 15% 70%;
+    --sidebar-ring: 325 84% 15%;
+  }
+
+  /* Dark mode: Previous purple theme */
+  .dark {
     --background: 283 88% 14%;
     --foreground: 210 40% 98%;
 
@@ -40,8 +83,6 @@
     --input: 283 40% 28%;
     --ring: 262 83% 58%;
 
-    --radius: 0.75rem;
-
     --sidebar-background: 283 88% 14%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 262 83% 58%;
@@ -50,45 +91,6 @@
     --sidebar-accent-foreground: 262 83% 58%;
     --sidebar-border: 283 40% 28%;
     --sidebar-ring: 262 83% 58%;
-  }
-
-  .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
-
-    --card: 224 42% 14%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 224 42% 14%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 263 70% 65%;
-    --primary-foreground: 222 47% 11%;
-
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-
-    --accent: 217 91% 60%;
-    --accent-foreground: 222 47% 11%;
-
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 263 70% 65%;
-
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 263 70% 65%;
-    --sidebar-primary-foreground: 222 47% 11%;
-    --sidebar-accent: 217 33% 17%;
-    --sidebar-accent-foreground: 263 70% 65%;
-    --sidebar-border: 217 33% 17%;
-    --sidebar-ring: 263 70% 65%;
   }
 }
 
