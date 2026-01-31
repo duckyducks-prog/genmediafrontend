@@ -81,12 +81,12 @@ export function TextExpandModal({
       />
 
       {/* Modal */}
-      <div className="relative bg-card border border-border rounded-lg shadow-2xl w-full max-w-5xl max-h-[85vh] flex flex-col">
+      <div className="relative bg-card border border-border rounded-lg shadow-2xl w-full max-w-4xl max-h-[70vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/50">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <div className="flex items-center gap-2">
-            <Maximize2 className="w-5 h-5 text-primary" />
-            <h2 className="text-base font-semibold">{title}</h2>
+            <Maximize2 className="w-4 h-4 text-primary" />
+            <h2 className="text-sm font-semibold">{title}</h2>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -111,7 +111,7 @@ export function TextExpandModal({
         </div>
 
         {/* Content */}
-        <div className="flex-1 p-6 overflow-hidden">
+        <div className="flex-1 p-4 overflow-hidden">
           <Textarea
             ref={textareaRef}
             value={localValue}
@@ -119,29 +119,21 @@ export function TextExpandModal({
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             readOnly={readOnly}
-            className="w-full h-full min-h-[500px] resize-none font-mono text-sm leading-relaxed"
+            className="w-full h-full resize-none text-sm"
           />
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-3 border-t border-border bg-muted/50">
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <span className="font-medium">{charCount}</span>
-              <span>characters</span>
+        <div className="px-4 py-3 border-t border-border">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-xs text-muted-foreground">
+              {charCount} characters · {wordCount} words
             </div>
-            <div className="w-px h-4 bg-border" />
-            <div className="flex items-center gap-2">
-              <span className="font-medium">{wordCount}</span>
-              <span>words</span>
-            </div>
-            <div className="w-px h-4 bg-border" />
-            <div>
-              <kbd className="px-1.5 py-0.5 bg-background border border-border rounded text-xs">⌘/Ctrl + Enter</kbd>
-              <span className="ml-1">to save</span>
+            <div className="text-xs text-muted-foreground">
+              <kbd className="px-1 bg-muted rounded">⌘/Ctrl+Enter</kbd> to save
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-end gap-2">
             <Button variant="ghost" size="sm" onClick={onClose}>
               Cancel
             </Button>
