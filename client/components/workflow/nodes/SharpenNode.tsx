@@ -6,8 +6,9 @@ import { Focus } from "lucide-react";
 import { FilterConfig, FILTER_DEFINITIONS } from "@/lib/pixi-filter-configs";
 
 function SharpenNode({ data, id }: NodeProps<SharpenNodeData>) {
-  // Get incoming data
+  // Get incoming data - support both image and video
   const imageInput = (data as any).image || (data as any).imageInput;
+  const videoInput = (data as any).video || (data as any).videoInput;
   const upstreamFiltersRaw = (data as any).filters || [];
 
   const upstreamFiltersKey = JSON.stringify(
@@ -32,16 +33,20 @@ function SharpenNode({ data, id }: NodeProps<SharpenNodeData>) {
       const thisConfig = createConfig(gamma);
       const updatedFilters = [...upstreamFiltersRaw, thisConfig];
 
+      // Pass through both image and video (whichever is connected)
+      const outputs: Record<string, any> = {
+        filters: updatedFilters,
+      };
+      if (imageInput) outputs.image = imageInput;
+      if (videoInput) outputs.video = videoInput;
+
       const updateEvent = new CustomEvent("node-update", {
         detail: {
           id,
           data: {
             ...data,
             gamma,
-            outputs: {
-              image: imageInput,
-              filters: updatedFilters,
-            },
+            outputs,
           },
         },
       });
@@ -51,7 +56,7 @@ function SharpenNode({ data, id }: NodeProps<SharpenNodeData>) {
 
   useEffect(() => {
     updateOutputsRef.current(data.gamma);
-  }, [data.gamma, imageInput, upstreamFiltersKey]);
+  }, [data.gamma, imageInput, videoInput, upstreamFiltersKey]);
 
   const def = FILTER_DEFINITIONS.sharpen;
 
@@ -70,7 +75,15 @@ function SharpenNode({ data, id }: NodeProps<SharpenNodeData>) {
         id="image"
         data-connector-type="image"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: "30%" }}
+        style={{ top: "20%" }}
+      />
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="video"
+        data-connector-type="video"
+        className="!w-3 !h-3 !border-2 !border-background"
+        style={{ top: "40%" }}
       />
       <Handle
         type="target"
@@ -78,7 +91,7 @@ function SharpenNode({ data, id }: NodeProps<SharpenNodeData>) {
         id="filters"
         data-connector-type="any"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: "70%" }}
+        style={{ top: "80%" }}
       />
 
       <div className="space-y-4">
@@ -104,7 +117,15 @@ function SharpenNode({ data, id }: NodeProps<SharpenNodeData>) {
         id="image"
         data-connector-type="image"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: "30%" }}
+        style={{ top: "20%" }}
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="video"
+        data-connector-type="video"
+        className="!w-3 !h-3 !border-2 !border-background"
+        style={{ top: "40%" }}
       />
       <Handle
         type="source"
@@ -112,7 +133,7 @@ function SharpenNode({ data, id }: NodeProps<SharpenNodeData>) {
         id="filters"
         data-connector-type="any"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: "70%" }}
+        style={{ top: "80%" }}
       />
     </div>
   );

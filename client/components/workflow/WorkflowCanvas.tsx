@@ -80,6 +80,7 @@ import VignetteNode from "./nodes/VignetteNode";
 import CropNode from "./nodes/CropNode";
 import ImageCompositeNode from "./nodes/ImageCompositeNode";
 import ExtractLastFrameNode from "./nodes/ExtractLastFrameNode";
+import VideoWatermarkNode from "./nodes/VideoWatermarkNode";
 import StickyNoteNode from "./nodes/StickyNoteNode";
 import TextOutputNode from "./nodes/TextOutputNode";
 
@@ -102,6 +103,7 @@ const nodeTypes: NodeTypes = {
   [NodeType.Crop]: CropNode,
   [NodeType.ImageComposite]: ImageCompositeNode,
   [NodeType.ExtractLastFrame]: ExtractLastFrameNode,
+  [NodeType.VideoWatermark]: VideoWatermarkNode,
 
   // Action nodes
   [NodeType.GenerateImage]: GenerateImageNode,
@@ -596,6 +598,16 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               blendMode: "normal",
               opacity: 1.0,
               label: "Image Composite",
+              outputs: {},
+            };
+            break;
+          case NodeType.VideoWatermark:
+            data = {
+              position: "bottom-right",
+              opacity: 1.0,
+              scale: 0.15,
+              margin: 20,
+              label: "Video Compositing",
               outputs: {},
             };
             break;

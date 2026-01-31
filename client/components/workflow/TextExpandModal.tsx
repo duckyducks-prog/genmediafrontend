@@ -69,15 +69,15 @@ export function TextExpandModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[1100] flex items-center justify-center p-8">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60"
+        className="absolute inset-0 bg-black/80"
         onClick={onClose}
       />
 
-      {/* Modal */}
-      <div className="relative bg-card border border-border rounded-lg shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col">
+      {/* Modal - large centered */}
+      <div className="relative bg-card border border-border rounded-lg shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <div className="flex items-center gap-2">
@@ -107,7 +107,7 @@ export function TextExpandModal({
         </div>
 
         {/* Content */}
-        <div className="flex-1 p-4 overflow-hidden">
+        <div className="flex-1 p-4 overflow-hidden min-h-0">
           <Textarea
             ref={textareaRef}
             value={localValue}
@@ -115,14 +115,18 @@ export function TextExpandModal({
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             readOnly={readOnly}
-            className="w-full h-full min-h-[300px] resize-none font-mono text-sm"
+            className="w-full h-full resize-none font-mono text-sm leading-relaxed"
           />
         </div>
 
         {/* Footer */}
         <div className="flex items-center justify-between px-4 py-3 border-t border-border">
-          <div className="text-xs text-muted-foreground">
-            <kbd className="px-1 bg-muted rounded">⌘/Ctrl + Enter</kbd> to save
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <span>{localValue.length} characters</span>
+            <span>{localValue.trim() ? localValue.trim().split(/\s+/).length : 0} words</span>
+            <span className="hidden sm:inline">
+              <kbd className="px-1 bg-muted rounded">⌘/Ctrl + Enter</kbd> to save
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={onClose}>

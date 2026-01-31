@@ -31,6 +31,7 @@ export enum NodeType {
 
   // VIDEO MODIFIER nodes
   ExtractLastFrame = "extractLastFrame",
+  VideoWatermark = "videoWatermark",
 
   // ACTION nodes (inputs and outputs)
   GenerateVideo = "generateVideo",
@@ -304,6 +305,14 @@ export interface ImageCompositeNodeData extends BaseNodeData {
   compositePreview?: string; // Preview of the composited result
 }
 
+// VIDEO WATERMARK / COMPOSITING node
+export interface VideoWatermarkNodeData extends BaseNodeData {
+  position: "top-left" | "top-right" | "bottom-left" | "bottom-right" | "center";
+  opacity: number;
+  scale: number;
+  margin: number;
+}
+
 // EXTRACT LAST FRAME node
 export interface ExtractLastFrameNodeData extends BaseNodeData {
   // Input video reference
@@ -410,6 +419,7 @@ export type WorkflowNodeData =
   | VignetteNodeData
   | CropNodeData
   | ImageCompositeNodeData
+  | VideoWatermarkNodeData
   | ExtractLastFrameNodeData
   | GenerateVideoNodeData
   | GenerateImageNodeData
@@ -867,6 +877,36 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "image",
         label: "Composite Image",
         type: ConnectorType.Image,
+      },
+    ],
+  },
+
+  [NodeType.VideoWatermark]: {
+    type: NodeType.VideoWatermark,
+    label: "Video Compositing",
+    category: "modifier",
+    description: "Add watermark or overlay image to video",
+    inputConnectors: [
+      {
+        id: "video",
+        label: "Video",
+        type: ConnectorType.Video,
+        required: true,
+        acceptsMultiple: false,
+      },
+      {
+        id: "watermark",
+        label: "Overlay Image",
+        type: ConnectorType.Image,
+        required: true,
+        acceptsMultiple: false,
+      },
+    ],
+    outputConnectors: [
+      {
+        id: "video",
+        label: "Video Output",
+        type: ConnectorType.Video,
       },
     ],
   },

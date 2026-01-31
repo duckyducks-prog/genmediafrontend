@@ -58,6 +58,17 @@ class MergeVideosResponse(BaseModel):
     mime_type: str = "video/mp4"
 
 
+class ApplyFiltersRequest(BaseModel):
+    video_base64: Optional[str] = Field(default=None, description="Base64 encoded video")
+    video_url: Optional[str] = Field(default=None, description="GCS/HTTP URL to video (preferred for large files)")
+    filters: List[Dict[str, Any]] = Field(..., description="List of filter configurations")
+
+
+class ApplyFiltersResponse(BaseModel):
+    video_base64: str
+    mime_type: str = "video/mp4"
+
+
 class AddMusicRequest(BaseModel):
     video_base64: str = Field(..., description="Base64 encoded video")
     audio_base64: str = Field(..., description="Base64 encoded audio")
@@ -260,6 +271,159 @@ async def merge_videos(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+def build_ffmpeg_filter_string(filters: List[Dict[str, Any]]) -> str:
+    """
+    Convert filter configurations to FFmpeg video filter string.
+    Supports: hueSaturation, brightnessContrast, blur, sharpen, vignette, filmGrain, noise
+    """
+    filter_parts = []
+
+    for f in filters:
+        filter_type = f.get("type", "")
+        params = f.get("params", {})
+
+        if filter_type == "hueSaturation":
+            # FFmpeg eq filter for hue/saturation
+            # hue is in degrees (-180 to 180), saturation is multiplier (0 to 2)
+            hue = params.get("hue", 0)
+            saturation = params.get("saturation", 1)
+            # Convert hue from degrees to FFmpeg hue (in radians or use hue filter)
+            if hue != 0:
+                filter_parts.append(f"hue=h={hue}")
+            if saturation != 1:
+                filter_parts.append(f"eq=saturation={saturation}")
+
+        elif filter_type == "brightnessContrast":
+            brightness = params.get("brightness", 0)
+            contrast = params.get("contrast", 1)
+            # FFmpeg eq filter: brightness is -1 to 1, contrast is 0 to 2
+            if brightness != 0 or contrast != 1:
+                filter_parts.append(f"eq=brightness={brightness}:contrast={contrast}")
+
+        elif filter_type == "blur":
+            # Use boxblur for simplicity
+            strength = params.get("strength", 0)
+            if strength > 0:
+                # Map strength (0-10) to blur radius
+                radius = int(strength * 2) + 1
+                filter_parts.append(f"boxblur={radius}:{radius}")
+
+        elif filter_type == "sharpen":
+            amount = params.get("amount", 0)
+            if amount > 0:
+                # Use unsharp mask
+                filter_parts.append(f"unsharp=5:5:{amount}:5:5:{amount/2}")
+
+        elif filter_type == "vignette":
+            intensity = params.get("intensity", 0)
+            if intensity > 0:
+                # FFmpeg vignette filter
+                filter_parts.append(f"vignette=PI/{4-intensity*2}:1")
+
+        elif filter_type == "filmGrain":
+            amount = params.get("amount", 0)
+            if amount > 0:
+                # Use noise filter with film grain characteristics
+                filter_parts.append(f"noise=alls={int(amount*10)}:allf=t")
+
+        elif filter_type == "noise":
+            amount = params.get("amount", 0)
+            if amount > 0:
+                filter_parts.append(f"noise=alls={int(amount*20)}:allf=u")
+
+    return ",".join(filter_parts) if filter_parts else ""
+
+
+@router.post("/apply-filters", response_model=ApplyFiltersResponse)
+async def apply_filters_to_video(
+    request: ApplyFiltersRequest,
+    user: dict = Depends(get_current_user)
+):
+    """
+    Apply visual filters to a video using FFmpeg.
+    Supports filters: hueSaturation, brightnessContrast, blur, sharpen, vignette, filmGrain, noise
+    """
+    try:
+        logger.info(f"Apply filters request from user {user['email']}, filter_count={len(request.filters)}")
+
+        if not request.filters:
+            raise HTTPException(status_code=400, detail="No filters provided")
+
+        # Get video input
+        if not request.video_base64 and not request.video_url:
+            raise HTTPException(status_code=400, detail="Either video_base64 or video_url must be provided")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Get video bytes
+            if request.video_url:
+                logger.info(f"Downloading video from URL: {request.video_url[:80]}...")
+                try:
+                    video_bytes = await download_video_from_url(request.video_url)
+                except httpx.HTTPError as e:
+                    logger.error(f"Failed to download video: {e}")
+                    raise HTTPException(status_code=400, detail=f"Failed to download video: {str(e)}")
+            else:
+                video_bytes = clean_base64(request.video_base64)
+
+            # Save input video
+            video_path = os.path.join(tmpdir, "input.mp4")
+            with open(video_path, "wb") as f:
+                f.write(video_bytes)
+            logger.info(f"Saved video: {len(video_bytes)} bytes")
+
+            # Build filter string
+            filter_string = build_ffmpeg_filter_string(request.filters)
+
+            if not filter_string:
+                logger.info("No applicable filters, returning original video")
+                return ApplyFiltersResponse(
+                    video_base64=base64.b64encode(video_bytes).decode("utf-8"),
+                    mime_type="video/mp4"
+                )
+
+            logger.info(f"Applying FFmpeg filters: {filter_string}")
+
+            output_path = os.path.join(tmpdir, "output.mp4")
+
+            # Build FFmpeg command
+            filter_cmd = [
+                "ffmpeg", "-y",
+                "-i", video_path,
+                "-vf", filter_string,
+                "-c:v", "libx264",
+                "-preset", "fast",
+                "-crf", "23",
+                "-c:a", "copy",  # Preserve audio
+                "-movflags", "+faststart",
+                output_path
+            ]
+
+            result = subprocess.run(filter_cmd, capture_output=True, text=True)
+
+            if result.returncode != 0:
+                error_msg = get_ffmpeg_error(result.stderr)
+                logger.error(f"FFmpeg filter failed: {result.stderr}")
+                raise HTTPException(status_code=500, detail=f"Failed to apply filters: {error_msg}")
+
+            # Read output
+            with open(output_path, "rb") as f:
+                output_bytes = f.read()
+
+            output_base64 = base64.b64encode(output_bytes).decode("utf-8")
+            logger.info(f"Filter application complete: {len(output_bytes)} bytes")
+
+            return ApplyFiltersResponse(
+                video_base64=output_base64,
+                mime_type="video/mp4"
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Apply filters failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/add-music", response_model=AddMusicResponse)
 async def add_music_to_video(
     request: AddMusicRequest,
@@ -457,4 +621,134 @@ async def add_music_to_video(
         raise
     except Exception as e:
         logger.error(f"Add music failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class AddWatermarkRequest(BaseModel):
+    video_base64: Optional[str] = Field(default=None, description="Base64 encoded video")
+    video_url: Optional[str] = Field(default=None, description="GCS/HTTP URL to video")
+    watermark_base64: str = Field(..., description="Base64 encoded watermark image (PNG with transparency)")
+    position: str = Field(default="bottom-right", description="Position: top-left, top-right, bottom-left, bottom-right, center")
+    opacity: float = Field(default=1.0, description="Watermark opacity (0.0 to 1.0)")
+    scale: float = Field(default=0.15, description="Scale relative to video width (0.0 to 1.0)")
+    margin: int = Field(default=20, description="Margin from edges in pixels")
+
+
+class AddWatermarkResponse(BaseModel):
+    video_base64: str
+    mime_type: str = "video/mp4"
+
+
+@router.post("/add-watermark", response_model=AddWatermarkResponse)
+async def add_watermark_to_video(
+    request: AddWatermarkRequest,
+    user: dict = Depends(get_current_user)
+):
+    """
+    Add a watermark/logo overlay to a video using FFmpeg.
+    Supports PNG with transparency for logo overlays.
+    """
+    try:
+        logger.info(f"Add watermark request from user {user['email']}, position={request.position}, opacity={request.opacity}")
+
+        if not request.video_base64 and not request.video_url:
+            raise HTTPException(status_code=400, detail="Either video_base64 or video_url must be provided")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Get video bytes
+            if request.video_url:
+                logger.info(f"Downloading video from URL: {request.video_url[:80]}...")
+                try:
+                    video_bytes = await download_video_from_url(request.video_url)
+                except httpx.HTTPError as e:
+                    logger.error(f"Failed to download video: {e}")
+                    raise HTTPException(status_code=400, detail=f"Failed to download video: {str(e)}")
+            else:
+                video_bytes = clean_base64(request.video_base64)
+
+            # Save input video
+            video_path = os.path.join(tmpdir, "input.mp4")
+            with open(video_path, "wb") as f:
+                f.write(video_bytes)
+            logger.info(f"Saved video: {len(video_bytes)} bytes")
+
+            # Save watermark image
+            watermark_bytes = clean_base64(request.watermark_base64)
+            watermark_path = os.path.join(tmpdir, "watermark.png")
+            with open(watermark_path, "wb") as f:
+                f.write(watermark_bytes)
+            logger.info(f"Saved watermark: {len(watermark_bytes)} bytes")
+
+            # Probe video for dimensions
+            video_info = probe_video(video_path)
+            video_width = 1280
+            video_height = 720
+            for stream in video_info.get("streams", []):
+                if stream.get("codec_type") == "video":
+                    video_width = stream.get("width", 1280)
+                    video_height = stream.get("height", 720)
+                    break
+
+            # Calculate watermark size based on scale
+            watermark_width = int(video_width * request.scale)
+
+            # Position mapping
+            margin = request.margin
+            position_map = {
+                "top-left": f"{margin}:{margin}",
+                "top-right": f"W-w-{margin}:{margin}",
+                "bottom-left": f"{margin}:H-h-{margin}",
+                "bottom-right": f"W-w-{margin}:H-h-{margin}",
+                "center": "(W-w)/2:(H-h)/2",
+            }
+            overlay_position = position_map.get(request.position, position_map["bottom-right"])
+
+            # Build filter for overlay
+            # Scale watermark, apply opacity, then overlay
+            filter_complex = (
+                f"[1:v]scale={watermark_width}:-1,format=rgba,"
+                f"colorchannelmixer=aa={request.opacity}[watermark];"
+                f"[0:v][watermark]overlay={overlay_position}"
+            )
+
+            output_path = os.path.join(tmpdir, "output.mp4")
+
+            # Build FFmpeg command
+            overlay_cmd = [
+                "ffmpeg", "-y",
+                "-i", video_path,
+                "-i", watermark_path,
+                "-filter_complex", filter_complex,
+                "-c:v", "libx264",
+                "-preset", "fast",
+                "-crf", "23",
+                "-c:a", "copy",
+                "-movflags", "+faststart",
+                output_path
+            ]
+
+            logger.info(f"Running ffmpeg watermark overlay")
+            result = subprocess.run(overlay_cmd, capture_output=True, text=True)
+
+            if result.returncode != 0:
+                error_msg = get_ffmpeg_error(result.stderr)
+                logger.error(f"FFmpeg watermark failed: {result.stderr}")
+                raise HTTPException(status_code=500, detail=f"Failed to add watermark: {error_msg}")
+
+            # Read output
+            with open(output_path, "rb") as f:
+                output_bytes = f.read()
+
+            output_base64 = base64.b64encode(output_bytes).decode("utf-8")
+            logger.info(f"Add watermark complete: {len(output_bytes)} bytes")
+
+            return AddWatermarkResponse(
+                video_base64=output_base64,
+                mime_type="video/mp4"
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Add watermark failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
