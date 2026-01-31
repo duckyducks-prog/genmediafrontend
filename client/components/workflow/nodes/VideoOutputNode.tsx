@@ -4,16 +4,13 @@ import { Button } from "@/components/ui/button";
 import { OutputNodeData, FilterConfig } from "../types";
 import { API_ENDPOINTS } from "@/lib/api-config";
 import { auth } from "@/lib/firebase";
+import { logger } from "@/lib/logger";
 import {
   Video as VideoIcon,
   CheckCircle2,
   Loader2,
   Download,
 } from "lucide-react";
-import { FilterConfig } from "@/lib/pixi-filter-configs";
-import { API_ENDPOINTS } from "@/lib/api-config";
-import { auth } from "@/lib/firebase";
-import { logger } from "@/lib/logger";
 
 function VideoOutputNode({ data, id }: NodeProps<OutputNodeData>) {
   const videoInput = (data as any).video || (data as any).videoUrl || data.result;
@@ -105,20 +102,18 @@ function VideoOutputNode({ data, id }: NodeProps<OutputNodeData>) {
     }
   }, [videoInput, JSON.stringify(filters), id, data]);
 
-  const videoUrl = displayVideoUrl;
-
   const getBorderColor = () => {
     return "border-border";
   };
 
   const handleDownload = async () => {
-    if (!displayVideo) return;
+    if (!displayVideoUrl) return;
 
     try {
       // For base64 data URIs, download directly
-      if (displayVideo.startsWith("data:")) {
+      if (displayVideoUrl.startsWith("data:")) {
         const link = document.createElement("a");
-        link.href = displayVideo;
+        link.href = displayVideoUrl;
         link.download = `generated-video-${Date.now()}.mp4`;
         document.body.appendChild(link);
         link.click();
@@ -128,7 +123,7 @@ function VideoOutputNode({ data, id }: NodeProps<OutputNodeData>) {
 
       // For external URLs, try to fetch with CORS mode
       try {
-        const response = await fetch(displayVideo, { mode: "cors" });
+        const response = await fetch(displayVideoUrl, { mode: "cors" });
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -140,12 +135,12 @@ function VideoOutputNode({ data, id }: NodeProps<OutputNodeData>) {
         window.URL.revokeObjectURL(url);
       } catch (fetchError) {
         // Fallback: open in new tab if CORS fails
-        window.open(displayVideo, "_blank");
+        window.open(displayVideoUrl, "_blank");
       }
     } catch (error) {
       console.error("Download failed:", error);
       // Last resort: try opening in new tab
-      window.open(displayVideo, "_blank");
+      window.open(displayVideoUrl, "_blank");
     }
   };
 
@@ -187,17 +182,17 @@ function VideoOutputNode({ data, id }: NodeProps<OutputNodeData>) {
 
       {/* Node Content */}
       <div className="space-y-2">
-        {isRendering && (
+        {isProcessing && (
           <div className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
             <Loader2 className="w-3 h-3 animate-spin" />
             Applying filters...
           </div>
         )}
-        {displayVideo ? (
+        {displayVideoUrl ? (
           <>
             <div className="relative rounded-lg overflow-hidden bg-muted border border-border">
               <video
-                src={displayVideo}
+                src={displayVideoUrl}
                 controls
                 className="w-full h-auto max-h-[200px]"
               />
@@ -207,7 +202,7 @@ function VideoOutputNode({ data, id }: NodeProps<OutputNodeData>) {
               variant="outline"
               size="sm"
               className="w-full"
-              disabled={isRendering}
+              disabled={isProcessing}
             >
               <Download className="w-3 h-3 mr-1" />
               Download Video

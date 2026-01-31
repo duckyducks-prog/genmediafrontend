@@ -46,6 +46,7 @@ import { Copy } from "lucide-react";
 import { NodeContextMenu } from "./NodeContextMenu";
 import { FloatingLabels } from "./FloatingLabels";
 import { NodeSearchDialog } from "./NodeSearchDialog";
+import { TextEditSidePanel } from "./TextEditSidePanel";
 import {
   useWorkflowNodes,
   useWorkflowEdges,
@@ -163,6 +164,15 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
     } | null>(null);
     const [isReadOnly, setIsReadOnly] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+    // Text edit side panel state
+    const [textEditPanel, setTextEditPanel] = useState<{
+      isOpen: boolean;
+      nodeId: string;
+      title: string;
+      value: string;
+      readOnly: boolean;
+    }>({ isOpen: false, nodeId: "", title: "", value: "", readOnly: false });
 
     // Context menu state
     const [contextMenu, setContextMenu] = useState<{
@@ -282,6 +292,50 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
       window.addEventListener("node-update", handleNodeUpdate);
       return () => window.removeEventListener("node-update", handleNodeUpdate);
     }, [setNodes, edges]);
+
+    // Listen for text edit panel open requests
+    useEffect(() => {
+      const handleOpenTextEditPanel = (event: Event) => {
+        const customEvent = event as CustomEvent<{
+          nodeId: string;
+          title: string;
+          value: string;
+          readOnly: boolean;
+        }>;
+        setTextEditPanel({
+          isOpen: true,
+          nodeId: customEvent.detail.nodeId,
+          title: customEvent.detail.title,
+          value: customEvent.detail.value,
+          readOnly: customEvent.detail.readOnly,
+        });
+      };
+
+      window.addEventListener("open-text-edit-panel", handleOpenTextEditPanel);
+      return () => window.removeEventListener("open-text-edit-panel", handleOpenTextEditPanel);
+    }, []);
+
+    // Handle text edit panel save
+    const handleTextEditPanelSave = useCallback(
+      (newValue: string) => {
+        if (!textEditPanel.nodeId) return;
+        setNodes((nodes) =>
+          nodes.map((node) =>
+            node.id === textEditPanel.nodeId
+              ? {
+                  ...node,
+                  data: {
+                    ...node.data,
+                    prompt: newValue,
+                    outputs: { text: newValue },
+                  },
+                }
+              : node
+          )
+        );
+      },
+      [textEditPanel.nodeId, setNodes]
+    );
 
     // Listen for asset updates to specific nodes (from inline library)
     useEffect(() => {
@@ -1934,6 +1988,16 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
         <NodeSearchDialog
           isOpen={isSearchOpen}
           onClose={() => setIsSearchOpen(false)}
+        />
+
+        {/* Text Edit Side Panel */}
+        <TextEditSidePanel
+          isOpen={textEditPanel.isOpen}
+          onClose={() => setTextEditPanel((prev) => ({ ...prev, isOpen: false }))}
+          title={textEditPanel.title}
+          value={textEditPanel.value}
+          onChange={handleTextEditPanelSave}
+          readOnly={textEditPanel.readOnly}
         />
       </div>
     );
