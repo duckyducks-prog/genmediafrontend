@@ -1461,7 +1461,7 @@ export function useWorkflowExecution(
                 // Data URL - extract base64
                 videosBase64.push(
                   v.replace(/^data:video\/[^;]+;base64,/, "")
-                   .replace(/^data:application\/[^;]+;base64,/, "")
+                    .replace(/^data:application\/[^;]+;base64,/, "")
                 );
               } else {
                 logger.error(`[MergeVideos] Video ${i + 1} has invalid format:`, v.substring(0, 50));
@@ -2364,14 +2364,14 @@ export function useWorkflowExecution(
               nodes = nodes.map((n) =>
                 n.id === node.id
                   ? {
-                      ...n,
-                      data: {
-                        ...n.data,
-                        outputs: updatedOutputs,
-                        // Also set top-level fields for backward compatibility
-                        ...updatedOutputs,
-                      },
-                    }
+                    ...n,
+                    data: {
+                      ...n.data,
+                      outputs: updatedOutputs,
+                      // Also set top-level fields for backward compatibility
+                      ...updatedOutputs,
+                    },
+                  }
                   : n,
               );
 
@@ -2408,16 +2408,16 @@ export function useWorkflowExecution(
             inputKeys: Object.keys(inputs),
             first_frame: inputs.first_frame
               ? {
-                  type: typeof inputs.first_frame,
-                  length: inputs.first_frame?.length || 0,
-                  preview:
-                    typeof inputs.first_frame === "string"
-                      ? inputs.first_frame.substring(0, 50) + "..."
-                      : inputs.first_frame,
-                  isDataUrl:
-                    typeof inputs.first_frame === "string" &&
-                    inputs.first_frame.startsWith("data:"),
-                }
+                type: typeof inputs.first_frame,
+                length: inputs.first_frame?.length || 0,
+                preview:
+                  typeof inputs.first_frame === "string"
+                    ? inputs.first_frame.substring(0, 50) + "..."
+                    : inputs.first_frame,
+                isDataUrl:
+                  typeof inputs.first_frame === "string" &&
+                  inputs.first_frame.startsWith("data:"),
+              }
               : "MISSING",
             last_frame: inputs.last_frame ? "present" : "missing",
             reference_images: inputs.reference_images
@@ -2427,12 +2427,12 @@ export function useWorkflowExecution(
               : "missing",
             video: inputs.video
               ? {
-                  type: typeof inputs.video,
-                  length: inputs.video?.length || 0,
-                  isDataUrl:
-                    typeof inputs.video === "string" &&
-                    inputs.video.startsWith("data:"),
-                }
+                type: typeof inputs.video,
+                length: inputs.video?.length || 0,
+                isDataUrl:
+                  typeof inputs.video === "string" &&
+                  inputs.video.startsWith("data:"),
+              }
               : "missing",
           });
 
@@ -2461,14 +2461,14 @@ export function useWorkflowExecution(
                 nodes = nodes.map((n) =>
                   n.id === node.id
                     ? {
-                        ...n,
-                        data: {
-                          ...n.data,
-                          outputs: updatedOutputs,
-                          // Also set top-level fields for backward compatibility
-                          ...updatedOutputs,
-                        },
-                      }
+                      ...n,
+                      data: {
+                        ...n.data,
+                        outputs: updatedOutputs,
+                        // Also set top-level fields for backward compatibility
+                        ...updatedOutputs,
+                      },
+                    }
                     : n,
                 );
 
@@ -2787,14 +2787,14 @@ export function useWorkflowExecution(
           currentNodes = currentNodes.map((n) =>
             n.id === depNodeId
               ? {
-                  ...n,
-                  data: {
-                    ...n.data,
-                    ...updateData,
-                    outputs: updateData.outputs,
-                    status: "completed",
-                  },
-                }
+                ...n,
+                data: {
+                  ...n.data,
+                  ...updateData,
+                  outputs: updateData.outputs,
+                  status: "completed",
+                },
+              }
               : n,
           );
 
