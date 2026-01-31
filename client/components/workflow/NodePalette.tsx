@@ -139,6 +139,13 @@ const paletteNodes: PaletteNode[] = [
     description: "Blend multiple images together",
   },
   {
+    type: NodeType.VideoWatermark,
+    label: "Video Compositing",
+    icon: <Layers className="w-4 h-4" />,
+    category: "modifier",
+    description: "Add watermark or overlay to video",
+  },
+  {
     type: NodeType.ExtractLastFrame,
     label: "Extract Last Frame",
     icon: <Film className="w-4 h-4" />,
@@ -209,6 +216,20 @@ const paletteNodes: PaletteNode[] = [
     icon: <Download className="w-4 h-4" />,
     category: "output",
     description: "Download media result",
+  },
+  {
+    type: NodeType.ImageOutput,
+    label: "Image Output",
+    icon: <Image className="w-4 h-4" />,
+    category: "output",
+    description: "Save image to library",
+  },
+  {
+    type: NodeType.VideoOutput,
+    label: "Video Output",
+    icon: <Video className="w-4 h-4" />,
+    category: "output",
+    description: "Save video to library",
   },
   {
     type: NodeType.TextOutput,
