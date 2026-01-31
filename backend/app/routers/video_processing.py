@@ -70,6 +70,22 @@ class AddMusicResponse(BaseModel):
     mime_type: str = "video/mp4"
 
 
+class FilterConfig(BaseModel):
+    type: str = Field(..., description="Filter type (brightness, blur, hueSaturation, filmGrain, etc.)")
+    params: Dict[str, Any] = Field(..., description="Filter parameters")
+
+
+class ApplyFiltersRequest(BaseModel):
+    video_base64: Optional[str] = Field(default=None, description="Base64 encoded video")
+    video_url: Optional[str] = Field(default=None, description="GCS/HTTP URL (preferred for large files)")
+    filters: List[FilterConfig] = Field(..., description="List of filters to apply in order")
+
+
+class ApplyFiltersResponse(BaseModel):
+    video_base64: str
+    mime_type: str = "video/mp4"
+
+
 def clean_base64(b64_string: str) -> bytes:
     """Clean base64 string and decode to bytes."""
     # Remove data URL prefix if present
@@ -95,6 +111,81 @@ async def download_video_from_url(url: str, timeout: float = 120.0) -> bytes:
         response = await client.get(url)
         response.raise_for_status()
         return response.content
+
+
+def filter_config_to_ffmpeg(filter_config: FilterConfig) -> str:
+    """
+    Convert a FilterConfig object to an FFmpeg filter string.
+
+    Maps frontend filter types and parameters to FFmpeg video filter syntax.
+    """
+    filter_type = filter_config.type
+    params = filter_config.params
+
+    if filter_type == "brightness":
+        # FFmpeg eq filter: brightness range -1.0 to 1.0
+        brightness = params.get("brightness", 0)
+        contrast = params.get("contrast", 0)
+        # eq filter: brightness=-1 to 1, contrast=0 to 4 (default 1)
+        # Convert contrast from -1..1 to 0..2 (1 is neutral)
+        contrast_ffmpeg = 1.0 + contrast
+        return f"eq=brightness={brightness}:contrast={contrast_ffmpeg}"
+
+    elif filter_type == "blur":
+        # FFmpeg boxblur or gblur
+        strength = params.get("strength", 0)
+        # Map strength 0-50 to blur radius
+        # Use gblur (Gaussian blur) which is similar to PixiJS BlurFilter
+        if strength <= 0:
+            return None  # No filter needed
+        # gblur sigma parameter (0.01 to 1024)
+        sigma = min(max(strength / 2.0, 0.01), 1024)
+        return f"gblur=sigma={sigma}"
+
+    elif filter_type == "hueSaturation":
+        # FFmpeg hue filter
+        hue = params.get("hue", 0)  # 0-360 degrees
+        saturation = params.get("saturation", 0)  # -1 to 1
+        # hue filter: h=angle (degrees), s=saturation (-10 to 10, default 1)
+        # Convert saturation -1..1 to 0..2 (1 is neutral)
+        saturation_ffmpeg = 1.0 + saturation
+        return f"hue=h={hue}:s={saturation_ffmpeg}"
+
+    elif filter_type == "filmGrain":
+        # FFmpeg noise filter for film grain simulation
+        intensity = params.get("intensity", 0)
+        # noise filter: alls=strength (0-100)
+        if intensity <= 0:
+            return None
+        # Map intensity 0-100 to noise strength
+        strength = min(max(intensity, 0), 100)
+        return f"noise=alls={strength}:allf=t"
+
+    elif filter_type == "sharpen":
+        # FFmpeg unsharp filter
+        gamma = params.get("gamma", 1.0)
+        # unsharp filter for sharpening
+        # unsharp=luma_amount (default 1.0, 0-5)
+        amount = min(max(gamma, 0), 5)
+        if amount == 1.0:
+            return None
+        return f"unsharp=5:5:{amount}:5:5:{amount}"
+
+    elif filter_type == "vignette":
+        # FFmpeg vignette filter
+        intensity = params.get("intensity", 0.5)
+        # vignette filter: angle=PI/5 (default), mode=forward
+        # For intensity, we can use the vignette filter directly
+        return f"vignette=angle=PI/{5.0/intensity}"
+
+    elif filter_type == "crop":
+        # Crop filter handled separately - skip for now
+        # FFmpeg crop filter: crop=w:h:x:y
+        return None
+
+    else:
+        logger.warning(f"Unknown filter type: {filter_type}")
+        return None
 
 
 @router.post("/merge", response_model=MergeVideosResponse)
@@ -457,4 +548,109 @@ async def add_music_to_video(
         raise
     except Exception as e:
         logger.error(f"Add music failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/apply-filters", response_model=ApplyFiltersResponse)
+async def apply_filters_to_video(
+    request: ApplyFiltersRequest,
+    user: dict = Depends(get_current_user)
+):
+    """
+    Apply a chain of filters to a video using ffmpeg filter_complex.
+
+    Accepts either:
+    - video_base64: Base64 encoded video (for small files)
+    - video_url: GCS/HTTP URL (preferred for large files)
+
+    Filters are applied in the order specified.
+    """
+    try:
+        logger.info(f"Apply filters request from user {user['email']}, filter_count={len(request.filters)}")
+
+        # Validate input
+        if not request.video_base64 and not request.video_url:
+            raise HTTPException(status_code=400, detail="Either video_base64 or video_url must be provided")
+
+        if not request.filters or len(request.filters) == 0:
+            raise HTTPException(status_code=400, detail="At least one filter must be provided")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Get video bytes
+            if request.video_url:
+                logger.info(f"Downloading video from URL: {request.video_url[:80]}...")
+                try:
+                    video_bytes = await download_video_from_url(request.video_url)
+                except httpx.HTTPError as e:
+                    logger.error(f"Failed to download video: {e}")
+                    raise HTTPException(status_code=400, detail=f"Failed to download video: {str(e)}")
+            else:
+                video_bytes = clean_base64(request.video_base64)
+
+            # Save input video
+            video_path = os.path.join(tmpdir, "input.mp4")
+            with open(video_path, "wb") as f:
+                f.write(video_bytes)
+            logger.info(f"Saved input video: {len(video_bytes)} bytes")
+
+            # Build filter chain
+            filter_strings = []
+            for i, filter_config in enumerate(request.filters):
+                filter_str = filter_config_to_ffmpeg(filter_config)
+                if filter_str:
+                    filter_strings.append(filter_str)
+                    logger.info(f"Filter {i}: {filter_config.type} -> {filter_str}")
+
+            if not filter_strings:
+                # No valid filters, return original video
+                logger.warning("No valid filters to apply, returning original video")
+                output_base64 = base64.b64encode(video_bytes).decode("utf-8")
+                return ApplyFiltersResponse(
+                    video_base64=output_base64,
+                    mime_type="video/mp4"
+                )
+
+            # Chain all filters
+            filter_chain = ",".join(filter_strings)
+            logger.info(f"Filter chain: {filter_chain}")
+
+            output_path = os.path.join(tmpdir, "output.mp4")
+
+            # Build ffmpeg command
+            filter_cmd = [
+                "ffmpeg", "-y",
+                "-i", video_path,
+                "-vf", filter_chain,
+                "-c:v", "libx264",
+                "-preset", "fast",
+                "-crf", "23",
+                "-c:a", "copy",  # Copy audio without re-encoding
+                "-movflags", "+faststart",
+                output_path
+            ]
+
+            logger.info(f"Running ffmpeg with {len(filter_strings)} filters")
+            result = subprocess.run(filter_cmd, capture_output=True, text=True)
+
+            if result.returncode != 0:
+                error_msg = get_ffmpeg_error(result.stderr)
+                logger.error(f"ffmpeg filter failed: {result.stderr}")
+                raise HTTPException(status_code=500, detail=f"Failed to apply filters: {error_msg}")
+
+            # Read output and return
+            with open(output_path, "rb") as f:
+                output_bytes = f.read()
+
+            output_base64 = base64.b64encode(output_bytes).decode("utf-8")
+            logger.info(f"Filter application complete: {len(output_bytes)} bytes")
+
+            return ApplyFiltersResponse(
+                video_base64=output_base64,
+                mime_type="video/mp4"
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Apply filters failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))

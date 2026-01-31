@@ -24,6 +24,60 @@ import { renderWithPixi, renderCompositeWithPixi } from "@/lib/pixi-renderer";
 import { FilterConfig } from "@/lib/pixi-filter-configs";
 import { executeCompoundNode } from "@/lib/compound-nodes/executeCompound";
 
+/**
+ * Apply filters to a video using the backend FFmpeg endpoint.
+ */
+async function applyFiltersToVideo(
+  videoDataUrl: string,
+  filters: FilterConfig[],
+): Promise<string> {
+  try {
+    // Get auth token
+    const user = auth.currentUser;
+    if (!user) {
+      throw new Error("User not authenticated");
+    }
+    const token = await user.getIdToken();
+
+    // Extract base64 from data URL
+    let videoBase64 = videoDataUrl;
+    if (videoDataUrl.startsWith("data:")) {
+      const commaIndex = videoDataUrl.indexOf(",");
+      if (commaIndex !== -1) {
+        videoBase64 = videoDataUrl.substring(commaIndex + 1);
+      }
+    }
+
+    logger.debug("[applyFiltersToVideo] Sending request:", {
+      filterCount: filters.length,
+      videoSize: videoBase64.length,
+    });
+
+    const response = await fetch(API_ENDPOINTS.video.applyFilters, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        video_base64: videoBase64,
+        filters: filters,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || `HTTP ${response.status}`);
+    }
+
+    const result = await response.json();
+    return `data:video/mp4;base64,${result.video_base64}`;
+  } catch (error) {
+    logger.error("[applyFiltersToVideo] Failed:", error);
+    throw error;
+  }
+}
+
 interface ExecutionResult {
   success: boolean;
   data?: any;
@@ -576,6 +630,7 @@ export function useWorkflowExecution(
 
           case NodeType.BrightnessContrast: {
             const imageInput = inputs.image || null;
+            const videoInput = inputs.video || null;
             const upstreamFilters: FilterConfig[] = inputs.filters || [];
 
             const brightness = (node.data as any).brightness ?? 1.0;
@@ -583,13 +638,14 @@ export function useWorkflowExecution(
 
             logger.debug("[BrightnessContrast] Execution:", {
               hasImage: !!imageInput,
+              hasVideo: !!videoInput,
               upstreamFilterCount: upstreamFilters.length,
               brightness,
               contrast,
             });
 
-            if (!imageInput) {
-              return { success: false, error: "No image connected" };
+            if (!imageInput && !videoInput) {
+              return { success: false, error: "No image or video connected" };
             }
 
             const thisFilter: FilterConfig = {
@@ -603,9 +659,11 @@ export function useWorkflowExecution(
               success: true,
               data: {
                 image: imageInput,
+                video: videoInput,
                 filters: outputFilters,
                 outputs: {
                   image: imageInput,
+                  video: videoInput,
                   filters: outputFilters,
                 },
               },
@@ -614,6 +672,7 @@ export function useWorkflowExecution(
 
           case NodeType.Blur: {
             const imageInput = inputs.image || null;
+            const videoInput = inputs.video || null;
             const upstreamFilters: FilterConfig[] = inputs.filters || [];
 
             const strength = (node.data as any).strength ?? 8;
@@ -621,13 +680,14 @@ export function useWorkflowExecution(
 
             logger.debug("[Blur] Execution:", {
               hasImage: !!imageInput,
+              hasVideo: !!videoInput,
               upstreamFilterCount: upstreamFilters.length,
               strength,
               quality,
             });
 
-            if (!imageInput) {
-              return { success: false, error: "No image connected" };
+            if (!imageInput && !videoInput) {
+              return { success: false, error: "No image or video connected" };
             }
 
             const thisFilter: FilterConfig = {
@@ -641,9 +701,11 @@ export function useWorkflowExecution(
               success: true,
               data: {
                 image: imageInput,
+                video: videoInput,
                 filters: outputFilters,
                 outputs: {
                   image: imageInput,
+                  video: videoInput,
                   filters: outputFilters,
                 },
               },
@@ -652,18 +714,20 @@ export function useWorkflowExecution(
 
           case NodeType.Sharpen: {
             const imageInput = inputs.image || null;
+            const videoInput = inputs.video || null;
             const upstreamFilters: FilterConfig[] = inputs.filters || [];
 
             const gamma = (node.data as any).gamma ?? 0;
 
             logger.debug("[Sharpen] Execution:", {
               hasImage: !!imageInput,
+              hasVideo: !!videoInput,
               upstreamFilterCount: upstreamFilters.length,
               gamma,
             });
 
-            if (!imageInput) {
-              return { success: false, error: "No image connected" };
+            if (!imageInput && !videoInput) {
+              return { success: false, error: "No image or video connected" };
             }
 
             const thisFilter: FilterConfig = {
@@ -677,9 +741,11 @@ export function useWorkflowExecution(
               success: true,
               data: {
                 image: imageInput,
+                video: videoInput,
                 filters: outputFilters,
                 outputs: {
                   image: imageInput,
+                  video: videoInput,
                   filters: outputFilters,
                 },
               },
@@ -688,6 +754,7 @@ export function useWorkflowExecution(
 
           case NodeType.HueSaturation: {
             const imageInput = inputs.image || null;
+            const videoInput = inputs.video || null;
             const upstreamFilters: FilterConfig[] = inputs.filters || [];
 
             const hue = (node.data as any).hue ?? 0;
@@ -695,13 +762,14 @@ export function useWorkflowExecution(
 
             logger.debug("[HueSaturation] Execution:", {
               hasImage: !!imageInput,
+              hasVideo: !!videoInput,
               upstreamFilterCount: upstreamFilters.length,
               hue,
               saturation,
             });
 
-            if (!imageInput) {
-              return { success: false, error: "No image connected" };
+            if (!imageInput && !videoInput) {
+              return { success: false, error: "No image or video connected" };
             }
 
             const thisFilter: FilterConfig = {
@@ -715,9 +783,11 @@ export function useWorkflowExecution(
               success: true,
               data: {
                 image: imageInput,
+                video: videoInput,
                 filters: outputFilters,
                 outputs: {
                   image: imageInput,
+                  video: videoInput,
                   filters: outputFilters,
                 },
               },
@@ -726,18 +796,20 @@ export function useWorkflowExecution(
 
           case NodeType.Noise: {
             const imageInput = inputs.image || null;
+            const videoInput = inputs.video || null;
             const upstreamFilters: FilterConfig[] = inputs.filters || [];
 
             const noise = (node.data as any).noise ?? 0.5;
 
             logger.debug("[Noise] Execution:", {
               hasImage: !!imageInput,
+              hasVideo: !!videoInput,
               upstreamFilterCount: upstreamFilters.length,
               noise,
             });
 
-            if (!imageInput) {
-              return { success: false, error: "No image connected" };
+            if (!imageInput && !videoInput) {
+              return { success: false, error: "No image or video connected" };
             }
 
             const thisFilter: FilterConfig = {
@@ -751,9 +823,11 @@ export function useWorkflowExecution(
               success: true,
               data: {
                 image: imageInput,
+                video: videoInput,
                 filters: outputFilters,
                 outputs: {
                   image: imageInput,
+                  video: videoInput,
                   filters: outputFilters,
                 },
               },
@@ -762,6 +836,7 @@ export function useWorkflowExecution(
 
           case NodeType.FilmGrain: {
             const imageInput = inputs.image || null;
+            const videoInput = inputs.video || null;
             const upstreamFilters: FilterConfig[] = inputs.filters || [];
 
             const intensity = (node.data as any).intensity ?? 50;
@@ -772,6 +847,7 @@ export function useWorkflowExecution(
 
             logger.debug("[FilmGrain] Execution:", {
               hasImage: !!imageInput,
+              hasVideo: !!videoInput,
               upstreamFilterCount: upstreamFilters.length,
               intensity,
               size,
@@ -780,8 +856,8 @@ export function useWorkflowExecution(
               midtonesBias,
             });
 
-            if (!imageInput) {
-              return { success: false, error: "No image connected" };
+            if (!imageInput && !videoInput) {
+              return { success: false, error: "No image or video connected" };
             }
 
             const thisFilter: FilterConfig = {
@@ -795,9 +871,11 @@ export function useWorkflowExecution(
               success: true,
               data: {
                 image: imageInput,
+                video: videoInput,
                 filters: outputFilters,
                 outputs: {
                   image: imageInput,
+                  video: videoInput,
                   filters: outputFilters,
                 },
               },
@@ -806,6 +884,7 @@ export function useWorkflowExecution(
 
           case NodeType.Vignette: {
             const imageInput = inputs.image || null;
+            const videoInput = inputs.video || null;
             const upstreamFilters: FilterConfig[] = inputs.filters || [];
 
             const size = (node.data as any).size ?? 0.5;
@@ -813,13 +892,14 @@ export function useWorkflowExecution(
 
             logger.debug("[Vignette] Execution:", {
               hasImage: !!imageInput,
+              hasVideo: !!videoInput,
               upstreamFilterCount: upstreamFilters.length,
               size,
               amount,
             });
 
-            if (!imageInput) {
-              return { success: false, error: "No image connected" };
+            if (!imageInput && !videoInput) {
+              return { success: false, error: "No image or video connected" };
             }
 
             const thisFilter: FilterConfig = {
@@ -833,9 +913,11 @@ export function useWorkflowExecution(
               success: true,
               data: {
                 image: imageInput,
+                video: videoInput,
                 filters: outputFilters,
                 outputs: {
                   image: imageInput,
+                  video: videoInput,
                   filters: outputFilters,
                 },
               },
@@ -844,6 +926,7 @@ export function useWorkflowExecution(
 
           case NodeType.Crop: {
             const imageInput = inputs.image || null;
+            const videoInput = inputs.video || null;
             const upstreamFilters: FilterConfig[] = inputs.filters || [];
 
             const x = (node.data as any).x ?? 0;
@@ -853,6 +936,7 @@ export function useWorkflowExecution(
 
             logger.debug("[Crop] Execution:", {
               hasImage: !!imageInput,
+              hasVideo: !!videoInput,
               upstreamFilterCount: upstreamFilters.length,
               x,
               y,
@@ -860,8 +944,8 @@ export function useWorkflowExecution(
               height,
             });
 
-            if (!imageInput) {
-              return { success: false, error: "No image connected" };
+            if (!imageInput && !videoInput) {
+              return { success: false, error: "No image or video connected" };
             }
 
             const thisFilter: FilterConfig = {
@@ -875,9 +959,11 @@ export function useWorkflowExecution(
               success: true,
               data: {
                 image: imageInput,
+                video: videoInput,
                 filters: outputFilters,
                 outputs: {
                   image: imageInput,
+                  video: videoInput,
                   filters: outputFilters,
                 },
               },
@@ -2143,23 +2229,44 @@ export function useWorkflowExecution(
             const filters: FilterConfig[] =
               inputs.filters || mediaData.filters || [];
 
-            // Apply filters to images before downloading (Layer 3 integration)
-            if (mediaUrl && !isVideo && filters.length > 0) {
-              logger.debug(
-                "[Download] Applying",
-                filters.length,
-                "filters before download",
-              );
-              try {
-                mediaUrl = await renderWithPixi(mediaUrl, filters);
-              } catch (error) {
-                console.error("[Download] Filter rendering failed:", error);
-                toast({
-                  title: "Filter Error",
-                  description:
-                    "Failed to apply filters. Downloading original image.",
-                  variant: "destructive",
-                });
+            // Apply filters before downloading
+            if (mediaUrl && filters.length > 0) {
+              if (!isVideo) {
+                // Apply filters to images using PixiJS (client-side)
+                logger.debug(
+                  "[Download] Applying",
+                  filters.length,
+                  "filters to image before download",
+                );
+                try {
+                  mediaUrl = await renderWithPixi(mediaUrl, filters);
+                } catch (error) {
+                  console.error("[Download] Image filter rendering failed:", error);
+                  toast({
+                    title: "Filter Error",
+                    description:
+                      "Failed to apply filters. Downloading original image.",
+                    variant: "destructive",
+                  });
+                }
+              } else {
+                // Apply filters to videos using backend FFmpeg
+                logger.debug(
+                  "[Download] Applying",
+                  filters.length,
+                  "filters to video before download",
+                );
+                try {
+                  mediaUrl = await applyFiltersToVideo(mediaUrl, filters);
+                } catch (error) {
+                  console.error("[Download] Video filter rendering failed:", error);
+                  toast({
+                    title: "Filter Error",
+                    description:
+                      "Failed to apply filters. Downloading original video.",
+                    variant: "destructive",
+                  });
+                }
               }
             }
 
