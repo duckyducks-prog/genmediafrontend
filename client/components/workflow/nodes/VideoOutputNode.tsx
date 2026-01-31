@@ -1,7 +1,9 @@
 import { memo, useState, useEffect, useRef } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { Button } from "@/components/ui/button";
-import { OutputNodeData } from "../types";
+import { OutputNodeData, FilterConfig } from "../types";
+import { API_ENDPOINTS } from "@/lib/api-config";
+import { auth } from "@/lib/firebase";
 import {
   Video as VideoIcon,
   CheckCircle2,
@@ -110,13 +112,13 @@ function VideoOutputNode({ data, id }: NodeProps<OutputNodeData>) {
   };
 
   const handleDownload = async () => {
-    if (!videoUrl) return;
+    if (!displayVideo) return;
 
     try {
       // For base64 data URIs, download directly
-      if (videoUrl.startsWith("data:")) {
+      if (displayVideo.startsWith("data:")) {
         const link = document.createElement("a");
-        link.href = videoUrl;
+        link.href = displayVideo;
         link.download = `generated-video-${Date.now()}.mp4`;
         document.body.appendChild(link);
         link.click();
@@ -126,7 +128,7 @@ function VideoOutputNode({ data, id }: NodeProps<OutputNodeData>) {
 
       // For external URLs, try to fetch with CORS mode
       try {
-        const response = await fetch(videoUrl, { mode: "cors" });
+        const response = await fetch(displayVideo, { mode: "cors" });
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -138,12 +140,12 @@ function VideoOutputNode({ data, id }: NodeProps<OutputNodeData>) {
         window.URL.revokeObjectURL(url);
       } catch (fetchError) {
         // Fallback: open in new tab if CORS fails
-        window.open(videoUrl, "_blank");
+        window.open(displayVideo, "_blank");
       }
     } catch (error) {
       console.error("Download failed:", error);
       // Last resort: try opening in new tab
-      window.open(videoUrl, "_blank");
+      window.open(displayVideo, "_blank");
     }
   };
 
@@ -185,11 +187,17 @@ function VideoOutputNode({ data, id }: NodeProps<OutputNodeData>) {
 
       {/* Node Content */}
       <div className="space-y-2">
-        {videoUrl ? (
+        {isRendering && (
+          <div className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            Applying filters...
+          </div>
+        )}
+        {displayVideo ? (
           <>
             <div className="relative rounded-lg overflow-hidden bg-muted border border-border">
               <video
-                src={videoUrl}
+                src={displayVideo}
                 controls
                 className="w-full h-auto max-h-[200px]"
               />
@@ -199,6 +207,7 @@ function VideoOutputNode({ data, id }: NodeProps<OutputNodeData>) {
               variant="outline"
               size="sm"
               className="w-full"
+              disabled={isRendering}
             >
               <Download className="w-3 h-3 mr-1" />
               Download Video

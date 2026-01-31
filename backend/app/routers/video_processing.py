@@ -81,6 +81,22 @@ class AddMusicResponse(BaseModel):
     mime_type: str = "video/mp4"
 
 
+class FilterConfig(BaseModel):
+    type: str = Field(..., description="Filter type (brightness, blur, hueSaturation, filmGrain, etc.)")
+    params: Dict[str, Any] = Field(..., description="Filter parameters")
+
+
+class ApplyFiltersRequest(BaseModel):
+    video_base64: Optional[str] = Field(default=None, description="Base64 encoded video")
+    video_url: Optional[str] = Field(default=None, description="GCS/HTTP URL (preferred for large files)")
+    filters: List[FilterConfig] = Field(..., description="List of filters to apply in order")
+
+
+class ApplyFiltersResponse(BaseModel):
+    video_base64: str
+    mime_type: str = "video/mp4"
+
+
 def clean_base64(b64_string: str) -> bytes:
     """Clean base64 string and decode to bytes."""
     # Remove data URL prefix if present
@@ -106,6 +122,81 @@ async def download_video_from_url(url: str, timeout: float = 120.0) -> bytes:
         response = await client.get(url)
         response.raise_for_status()
         return response.content
+
+
+def filter_config_to_ffmpeg(filter_config: FilterConfig) -> str:
+    """
+    Convert a FilterConfig object to an FFmpeg filter string.
+
+    Maps frontend filter types and parameters to FFmpeg video filter syntax.
+    """
+    filter_type = filter_config.type
+    params = filter_config.params
+
+    if filter_type == "brightness":
+        # FFmpeg eq filter: brightness range -1.0 to 1.0
+        brightness = params.get("brightness", 0)
+        contrast = params.get("contrast", 0)
+        # eq filter: brightness=-1 to 1, contrast=0 to 4 (default 1)
+        # Convert contrast from -1..1 to 0..2 (1 is neutral)
+        contrast_ffmpeg = 1.0 + contrast
+        return f"eq=brightness={brightness}:contrast={contrast_ffmpeg}"
+
+    elif filter_type == "blur":
+        # FFmpeg boxblur or gblur
+        strength = params.get("strength", 0)
+        # Map strength 0-50 to blur radius
+        # Use gblur (Gaussian blur) which is similar to PixiJS BlurFilter
+        if strength <= 0:
+            return None  # No filter needed
+        # gblur sigma parameter (0.01 to 1024)
+        sigma = min(max(strength / 2.0, 0.01), 1024)
+        return f"gblur=sigma={sigma}"
+
+    elif filter_type == "hueSaturation":
+        # FFmpeg hue filter
+        hue = params.get("hue", 0)  # 0-360 degrees
+        saturation = params.get("saturation", 0)  # -1 to 1
+        # hue filter: h=angle (degrees), s=saturation (-10 to 10, default 1)
+        # Convert saturation -1..1 to 0..2 (1 is neutral)
+        saturation_ffmpeg = 1.0 + saturation
+        return f"hue=h={hue}:s={saturation_ffmpeg}"
+
+    elif filter_type == "filmGrain":
+        # FFmpeg noise filter for film grain simulation
+        intensity = params.get("intensity", 0)
+        # noise filter: alls=strength (0-100)
+        if intensity <= 0:
+            return None
+        # Map intensity 0-100 to noise strength
+        strength = min(max(intensity, 0), 100)
+        return f"noise=alls={strength}:allf=t"
+
+    elif filter_type == "sharpen":
+        # FFmpeg unsharp filter
+        gamma = params.get("gamma", 1.0)
+        # unsharp filter for sharpening
+        # unsharp=luma_amount (default 1.0, 0-5)
+        amount = min(max(gamma, 0), 5)
+        if amount == 1.0:
+            return None
+        return f"unsharp=5:5:{amount}:5:5:{amount}"
+
+    elif filter_type == "vignette":
+        # FFmpeg vignette filter
+        intensity = params.get("intensity", 0.5)
+        # vignette filter: angle=PI/5 (default), mode=forward
+        # For intensity, we can use the vignette filter directly
+        return f"vignette=angle=PI/{5.0/intensity}"
+
+    elif filter_type == "crop":
+        # Crop filter handled separately - skip for now
+        # FFmpeg crop filter: crop=w:h:x:y
+        return None
+
+    else:
+        logger.warning(f"Unknown filter type: {filter_type}")
+        return None
 
 
 @router.post("/merge", response_model=MergeVideosResponse)

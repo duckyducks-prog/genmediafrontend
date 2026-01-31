@@ -152,12 +152,15 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
     const reactFlowWrapper = useRef<HTMLDivElement>(null);
     const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
     const [isLoadDialogOpen, setIsLoadDialogOpen] = useState(false);
-    const [isWizardModalOpen, setIsWizardModalOpen] = useState(false);
     const [currentWorkflowId, setCurrentWorkflowId] = useState<string | null>(
       null,
     );
     const [copiedNodes, setCopiedNodes] = useState<WorkflowNode[]>([]);
     const [copiedEdges, setCopiedEdges] = useState<WorkflowEdge[]>([]);
+    const [copiedConfig, setCopiedConfig] = useState<{
+      nodeType: NodeType;
+      config: any;
+    } | null>(null);
     const [isReadOnly, setIsReadOnly] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
 
@@ -279,6 +282,65 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
       window.addEventListener("node-update", handleNodeUpdate);
       return () => window.removeEventListener("node-update", handleNodeUpdate);
     }, [setNodes, edges]);
+
+    // Listen for asset updates to specific nodes (from inline library)
+    useEffect(() => {
+      const handleUpdateNodeAsset = (event: Event) => {
+        const customEvent = event as CustomEvent<{
+          nodeId: string;
+          assetType: "image" | "video";
+          assetId: string;
+          url: string;
+          mimeType: string;
+        }>;
+        const { nodeId, assetType, url, assetId } = customEvent.detail;
+
+        logger.debug("[WorkflowCanvas] Updating node with asset:", {
+          nodeId,
+          assetType,
+          url,
+        });
+
+        // Update the target node with the asset
+        setNodes((nds) =>
+          nds.map((node) => {
+            if (node.id === nodeId) {
+              const newData =
+                assetType === "video"
+                  ? {
+                      ...node.data,
+                      videoUrl: url,
+                      videoRef: assetId,
+                      thumbnailUrl: url,
+                      outputs: { video: url },
+                    }
+                  : {
+                      ...node.data,
+                      imageUrl: url,
+                      imageRef: assetId,
+                      outputs: { image: url },
+                    };
+
+              // Dispatch node update event
+              setTimeout(() => {
+                window.dispatchEvent(
+                  new CustomEvent("node-update", {
+                    detail: { id: nodeId, data: newData },
+                  })
+                );
+              }, 0);
+
+              return { ...node, data: newData };
+            }
+            return node;
+          })
+        );
+      };
+
+      window.addEventListener("update-node-asset", handleUpdateNodeAsset);
+      return () =>
+        window.removeEventListener("update-node-asset", handleUpdateNodeAsset);
+    }, [setNodes]);
 
     // Keyboard zoom controls (Cmd+/Cmd- or Ctrl+/Ctrl-)
     useEffect(() => {
@@ -1223,7 +1285,106 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
         title: "Pasted",
         description: `${newNodes.length} node${newNodes.length > 1 ? "s" : ""} pasted`,
       });
-    }, [copiedNodes, copiedEdges, setNodes, setEdges, toast]);
+    }, [copiedNodes, copiedEdges, setNodes, setEdges, toast, isReadOnly]);
+
+    // Copy configuration from selected node
+    const copyNodeConfig = useCallback(() => {
+      const selectedNodes = nodes.filter((node) => (node as any).selected);
+
+      if (selectedNodes.length === 0) {
+        toast({
+          title: "No node selected",
+          description: "Select a node to copy its configuration",
+        });
+        return;
+      }
+
+      if (selectedNodes.length > 1) {
+        toast({
+          title: "Multiple nodes selected",
+          description: "Select only one node to copy configuration",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const node = selectedNodes[0];
+
+      // Extract configuration (exclude runtime state)
+      const { outputs, status, error, isGenerating, ...config } = node.data;
+
+      setCopiedConfig({
+        nodeType: node.type as NodeType,
+        config,
+      });
+
+      toast({
+        title: "Configuration copied",
+        description: `Copied settings from ${node.data.label || node.type}`,
+      });
+    }, [nodes, toast]);
+
+    // Paste configuration to selected nodes
+    const pasteNodeConfig = useCallback(() => {
+      if (!copiedConfig) {
+        toast({
+          title: "Nothing to paste",
+          description: "Copy a node configuration first",
+        });
+        return;
+      }
+
+      const selectedNodes = nodes.filter((node) => (node as any).selected);
+
+      if (selectedNodes.length === 0) {
+        toast({
+          title: "No nodes selected",
+          description: "Select one or more nodes to paste configuration",
+        });
+        return;
+      }
+
+      // Filter nodes that match the copied type
+      const compatibleNodes = selectedNodes.filter(
+        (node) => node.type === copiedConfig.nodeType
+      );
+
+      if (compatibleNodes.length === 0) {
+        toast({
+          title: "Incompatible nodes",
+          description: `Selected nodes must be of type "${copiedConfig.nodeType}"`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Apply configuration to compatible nodes
+      setNodes((nds) =>
+        nds.map((node) => {
+          if (compatibleNodes.some((cn) => cn.id === node.id)) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                ...copiedConfig.config,
+                // Preserve node-specific properties
+                label: node.data.label,
+                customLabel: node.data.customLabel,
+                outputs: node.data.outputs,
+                status: node.data.status,
+                error: node.data.error,
+              },
+            };
+          }
+          return node;
+        })
+      );
+
+      toast({
+        title: "Configuration pasted",
+        description: `Applied to ${compatibleNodes.length} node${compatibleNodes.length > 1 ? "s" : ""}`,
+      });
+    }, [copiedConfig, nodes, setNodes, toast]);
 
     // Keyboard shortcuts for copy/paste
     useEffect(() => {
@@ -1240,7 +1401,13 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
         const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
         const modifier = isMac ? event.metaKey : event.ctrlKey;
 
-        if (modifier && event.key === "c") {
+        if (modifier && event.shiftKey && event.key === "C") {
+          event.preventDefault();
+          copyNodeConfig();
+        } else if (modifier && event.shiftKey && event.key === "V") {
+          event.preventDefault();
+          pasteNodeConfig();
+        } else if (modifier && event.key === "c") {
           event.preventDefault();
           copySelectedNodes();
         } else if (modifier && event.key === "v") {
@@ -1281,7 +1448,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
 
       window.addEventListener("keydown", handleKeyDown);
       return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [copySelectedNodes, pasteNodes, nodes, setNodes, setEdges, toast]);
+    }, [copySelectedNodes, pasteNodes, copyNodeConfig, pasteNodeConfig, nodes, setNodes, setEdges, toast, isReadOnly]);
 
     // Context menu handlers
     const handleNodeContextMenu = useCallback(
@@ -1645,7 +1812,6 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               onResetWorkflow={resetWorkflow}
               onSaveWorkflow={handleSaveWorkflow}
               onLoadWorkflow={handleLoadWorkflow}
-              onSaveAsWizard={() => setIsWizardModalOpen(true)}
               isExecuting={isExecuting}
               executionProgress={executionProgress}
               totalNodes={totalNodes}
@@ -1667,6 +1833,16 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               onDelete={handleDeleteNode}
               onDuplicate={handleDuplicateNode}
               onSetLabel={handleSetNodeLabel}
+              onCopyConfig={(nodeId) => {
+                // Select the node first, then copy config
+                setNodes((nds) => nds.map((n) => ({ ...n, selected: n.id === nodeId })));
+                setTimeout(() => copyNodeConfig(), 0);
+              }}
+              onPasteConfig={(nodeId) => {
+                // Select the node first, then paste config
+                setNodes((nds) => nds.map((n) => ({ ...n, selected: n.id === nodeId })));
+                setTimeout(() => pasteNodeConfig(), 0);
+              }}
             />
           )}
 
@@ -1753,20 +1929,6 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           onLoadWorkflow={loadWorkflow}
         />
 
-        {/* Create Wizard Modal */}
-        <CreateWizardModal
-          nodes={nodes}
-          edges={edges}
-          open={isWizardModalOpen}
-          onOpenChange={setIsWizardModalOpen}
-          onSave={() => {
-            // Wizard saved successfully - it will appear on home page
-            toast({
-              title: "Success",
-              description: "Wizard has been created and is available on the home page",
-            });
-          }}
-        />
 
         {/* Node Search Dialog */}
         <NodeSearchDialog

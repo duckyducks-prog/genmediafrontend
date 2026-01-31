@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Trash2, Copy, Tag, X } from "lucide-react";
+import { Trash2, Copy, Tag, X, Settings, ClipboardPaste } from "lucide-react";
 
 interface NodeContextMenuProps {
   x: number;
@@ -10,6 +10,8 @@ interface NodeContextMenuProps {
   onDelete: (nodeId: string) => void;
   onDuplicate: (nodeId: string) => void;
   onSetLabel: (nodeId: string, label: string | undefined) => void;
+  onCopyConfig?: (nodeId: string) => void;
+  onPasteConfig?: (nodeId: string) => void;
 }
 
 export function NodeContextMenu({
@@ -21,6 +23,8 @@ export function NodeContextMenu({
   onDelete,
   onDuplicate,
   onSetLabel,
+  onCopyConfig,
+  onPasteConfig,
 }: NodeContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const [isEditingLabel, setIsEditingLabel] = useState(false);
@@ -79,6 +83,22 @@ export function NodeContextMenu({
       icon: Tag,
       onClick: () => setIsEditingLabel(true),
     },
+    ...(onCopyConfig ? [{
+      label: "Copy Configuration",
+      icon: Settings,
+      onClick: () => {
+        onCopyConfig(nodeId);
+        onClose();
+      },
+    }] : []),
+    ...(onPasteConfig ? [{
+      label: "Paste Configuration",
+      icon: ClipboardPaste,
+      onClick: () => {
+        onPasteConfig(nodeId);
+        onClose();
+      },
+    }] : []),
     {
       label: "Duplicate",
       icon: Copy,
