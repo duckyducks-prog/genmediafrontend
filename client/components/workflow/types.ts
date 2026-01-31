@@ -1279,14 +1279,27 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
     description: "Display generated video",
     inputConnectors: [
       {
-        id: "video-input",
+        id: "video",
         label: "Video",
         type: ConnectorType.Video,
         required: false,
         acceptsMultiple: false,
       },
+      {
+        id: "filters",
+        label: "Filters",
+        type: ConnectorType.Any,
+        required: false,
+        acceptsMultiple: false,
+      },
     ],
-    outputConnectors: [],
+    outputConnectors: [
+      {
+        id: "media-output",
+        label: "Video",
+        type: ConnectorType.Video,
+      },
+    ],
   },
 
   [NodeType.TextOutput]: {
