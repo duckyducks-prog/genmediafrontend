@@ -41,32 +41,37 @@ substitutions:
   _VITE_ALLOWED_EMAILS: ''
 
 steps:
+  # Step 0: Prepare allowed emails (unescape ;; back to commas)
+  - name: 'bash'
+    id: 'prepare-env'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        EMAILS=$$(echo "${_VITE_ALLOWED_EMAILS}" | sed 's/;;/,/g')
+        echo "$$EMAILS" > /workspace/allowed_emails.txt
+        echo "Allowed emails: $$EMAILS"
+
   # Step 1: Build the Docker image
   - name: 'gcr.io/cloud-builders/docker'
     id: 'build'
+    entrypoint: 'bash'
     args:
-      - 'build'
-      - '-t'
-      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${_IMAGE_TAG}'
-      - '-t'
-      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest'
-      - '--build-arg'
-      - 'VITE_FIREBASE_API_KEY=${_VITE_FIREBASE_API_KEY}'
-      - '--build-arg'
-      - 'VITE_FIREBASE_AUTH_DOMAIN=${_VITE_FIREBASE_AUTH_DOMAIN}'
-      - '--build-arg'
-      - 'VITE_FIREBASE_PROJECT_ID=${_VITE_FIREBASE_PROJECT_ID}'
-      - '--build-arg'
-      - 'VITE_FIREBASE_STORAGE_BUCKET=${_VITE_FIREBASE_STORAGE_BUCKET}'
-      - '--build-arg'
-      - 'VITE_FIREBASE_MESSAGING_SENDER_ID=${_VITE_FIREBASE_MESSAGING_SENDER_ID}'
-      - '--build-arg'
-      - 'VITE_FIREBASE_APP_ID=${_VITE_FIREBASE_APP_ID}'
-      - '--build-arg'
-      - 'VITE_FIREBASE_MEASUREMENT_ID=${_VITE_FIREBASE_MEASUREMENT_ID}'
-      - '--build-arg'
-      - 'VITE_ALLOWED_EMAILS=${_VITE_ALLOWED_EMAILS}'
-      - '.'
+      - '-c'
+      - |
+        EMAILS=$$(cat /workspace/allowed_emails.txt)
+        docker build \
+          -t ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${_IMAGE_TAG} \
+          -t ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest \
+          --build-arg VITE_FIREBASE_API_KEY=${_VITE_FIREBASE_API_KEY} \
+          --build-arg VITE_FIREBASE_AUTH_DOMAIN=${_VITE_FIREBASE_AUTH_DOMAIN} \
+          --build-arg VITE_FIREBASE_PROJECT_ID=${_VITE_FIREBASE_PROJECT_ID} \
+          --build-arg VITE_FIREBASE_STORAGE_BUCKET=${_VITE_FIREBASE_STORAGE_BUCKET} \
+          --build-arg VITE_FIREBASE_MESSAGING_SENDER_ID=${_VITE_FIREBASE_MESSAGING_SENDER_ID} \
+          --build-arg VITE_FIREBASE_APP_ID=${_VITE_FIREBASE_APP_ID} \
+          --build-arg VITE_FIREBASE_MEASUREMENT_ID=${_VITE_FIREBASE_MEASUREMENT_ID} \
+          --build-arg "VITE_ALLOWED_EMAILS=$$EMAILS" \
+          .
 
   # Step 2: Push to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
