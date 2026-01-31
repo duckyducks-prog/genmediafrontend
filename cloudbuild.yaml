@@ -39,9 +39,10 @@ substitutions:
   _VITE_FIREBASE_APP_ID: ''
   _VITE_FIREBASE_MEASUREMENT_ID: ''
   _VITE_ALLOWED_EMAILS: ''
+  _ALLOWED_ORIGINS: ''
 
 steps:
-  # Step 0: Prepare allowed emails (unescape ;; back to commas)
+  # Step 0: Prepare env vars (unescape ;; back to commas)
   - name: 'bash'
     id: 'prepare-env'
     entrypoint: 'bash'
@@ -51,6 +52,9 @@ steps:
         EMAILS=$$(echo "${_VITE_ALLOWED_EMAILS}" | sed 's/;;/,/g')
         echo "$$EMAILS" > /workspace/allowed_emails.txt
         echo "Allowed emails: $$EMAILS"
+        ORIGINS=$$(echo "${_ALLOWED_ORIGINS}" | sed 's/;;/,/g')
+        echo "$$ORIGINS" > /workspace/allowed_origins.txt
+        echo "Allowed origins: $$ORIGINS"
 
   # Step 1: Build the Docker image
   - name: 'gcr.io/cloud-builders/docker'
@@ -84,28 +88,21 @@ steps:
   # Step 3: Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'deploy'
-    entrypoint: 'gcloud'
+    entrypoint: 'bash'
     args:
-      - 'run'
-      - 'deploy'
-      - '${_SERVICE_NAME}'
-      - '--image'
-      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${_IMAGE_TAG}'
-      - '--region'
-      - '${_REGION}'
-      - '--platform'
-      - 'managed'
-      - '--allow-unauthenticated'
-      - '--memory'
-      - '512Mi'
-      - '--cpu'
-      - '1'
-      - '--min-instances'
-      - '0'
-      - '--max-instances'
-      - '10'
-      - '--set-env-vars'
-      - 'NODE_ENV=production,REQUIRE_AUTH=${_REQUIRE_AUTH},GCP_PROJECT_ID=${PROJECT_ID}'
+      - '-c'
+      - |
+        ORIGINS=$$(cat /workspace/allowed_origins.txt)
+        gcloud run deploy ${_SERVICE_NAME} \
+          --image ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${_IMAGE_TAG} \
+          --region ${_REGION} \
+          --platform managed \
+          --allow-unauthenticated \
+          --memory 512Mi \
+          --cpu 1 \
+          --min-instances 0 \
+          --max-instances 10 \
+          --set-env-vars "NODE_ENV=production,REQUIRE_AUTH=${_REQUIRE_AUTH},GCP_PROJECT_ID=${PROJECT_ID},ALLOWED_ORIGINS=$$ORIGINS"
 
 # Store images in Artifact Registry
 images:
