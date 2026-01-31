@@ -787,6 +787,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           case NodeType.MergeVideos:
             data = {
               isMerging: false,
+              aspectRatio: "16:9",
               status: "ready",
               label: "Merge Videos",
               outputs: {},

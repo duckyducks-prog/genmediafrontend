@@ -4,6 +4,13 @@ import { memo } from "react";
 import { NodeProps, Handle, Position } from "reactflow";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Loader2, Combine, CheckCircle, AlertCircle, Info, Play } from "lucide-react";
 import { MergeVideosNodeData, NODE_CONFIGURATIONS, NodeType } from "../types";
 
@@ -38,6 +45,17 @@ function MergeVideosNode({ data, id }: NodeProps<MergeVideosNodeData>) {
       default:
         return "Ready";
     }
+  };
+
+  const handleUpdate = (field: string, value: any) => {
+    if (data.readOnly) return;
+    const event = new CustomEvent("node-update", {
+      detail: {
+        id,
+        data: { ...data, [field]: value },
+      },
+    });
+    window.dispatchEvent(event);
   };
 
   return (
@@ -100,6 +118,29 @@ function MergeVideosNode({ data, id }: NodeProps<MergeVideosNodeData>) {
               Click Run to concatenate
             </p>
           </div>
+        </div>
+
+        {/* Aspect Ratio Selector */}
+        <div className="mb-3">
+          <label className="text-xs font-medium text-muted-foreground block mb-1">
+            Output Aspect Ratio
+          </label>
+          <Select
+            value={data.aspectRatio || "16:9"}
+            onValueChange={(value) => handleUpdate("aspectRatio", value)}
+            disabled={data.readOnly || data.isMerging}
+          >
+            <SelectTrigger className="w-full h-8 text-xs">
+              <SelectValue placeholder="Select aspect ratio" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="16:9">16:9 (Landscape)</SelectItem>
+              <SelectItem value="9:16">9:16 (Portrait/Vertical)</SelectItem>
+              <SelectItem value="1:1">1:1 (Square)</SelectItem>
+              <SelectItem value="4:3">4:3 (Standard)</SelectItem>
+              <SelectItem value="4:5">4:5 (Instagram Portrait)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Error display */}

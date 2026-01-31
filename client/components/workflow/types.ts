@@ -157,6 +157,7 @@ export interface VoiceChangerNodeData extends BaseNodeData {
 // MERGE VIDEOS node - concatenates multiple videos
 export interface MergeVideosNodeData extends BaseNodeData {
   isMerging: boolean; // Is merge in progress
+  aspectRatio: "16:9" | "9:16" | "1:1" | "4:3" | "4:5"; // Output aspect ratio
   outputVideoUrl?: string; // Output merged video
 }
 
