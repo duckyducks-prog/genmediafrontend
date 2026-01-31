@@ -73,20 +73,20 @@ export function TextExpandModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[1100] flex items-center justify-center p-8">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60"
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* Modal */}
-      <div className="relative bg-card border border-border rounded-lg shadow-2xl w-full max-w-4xl max-h-[70vh] flex flex-col">
+      {/* Modal - Large centered */}
+      <div className="relative bg-card border border-border rounded-xl shadow-2xl w-full max-w-6xl h-[85vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <div className="flex items-center gap-2">
-            <Maximize2 className="w-4 h-4 text-primary" />
-            <h2 className="text-sm font-semibold">{title}</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30">
+          <div className="flex items-center gap-3">
+            <Maximize2 className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-semibold">{title}</h2>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -111,7 +111,7 @@ export function TextExpandModal({
         </div>
 
         {/* Content */}
-        <div className="flex-1 p-4 overflow-hidden">
+        <div className="flex-1 p-8 overflow-hidden">
           <Textarea
             ref={textareaRef}
             value={localValue}
@@ -119,29 +119,32 @@ export function TextExpandModal({
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             readOnly={readOnly}
-            className="w-full h-full resize-none text-sm"
+            className="w-full h-full resize-none text-base leading-relaxed focus:outline-none focus:ring-0 border-0 bg-transparent"
           />
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-3 border-t border-border">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs text-muted-foreground">
+        <div className="px-6 py-4 border-t border-border bg-muted/30">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
               {charCount} characters · {wordCount} words
             </div>
-            <div className="text-xs text-muted-foreground">
-              <kbd className="px-1 bg-muted rounded">⌘/Ctrl+Enter</kbd> to save
+            <div className="flex items-center gap-3">
+              <div className="text-sm text-muted-foreground">
+                <kbd className="px-2 py-1 bg-background border border-border rounded text-xs font-mono">⌘+Enter</kbd>
+                <span className="ml-2">to save</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" onClick={onClose}>
+                  Cancel
+                </Button>
+                {!readOnly && (
+                  <Button onClick={handleSave}>
+                    Save
+                  </Button>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="flex items-center justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              Cancel
-            </Button>
-            {!readOnly && (
-              <Button size="sm" onClick={handleSave}>
-                Save
-              </Button>
-            )}
           </div>
         </div>
       </div>
