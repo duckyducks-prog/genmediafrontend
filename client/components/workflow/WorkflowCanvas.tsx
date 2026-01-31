@@ -85,12 +85,14 @@ import VideoWatermarkNode from "./nodes/VideoWatermarkNode";
 import VideoSegmentReplaceNode from "./nodes/VideoSegmentReplaceNode";
 import StickyNoteNode from "./nodes/StickyNoteNode";
 import TextOutputNode from "./nodes/TextOutputNode";
+import ScriptQueueNode from "./nodes/ScriptQueueNode";
 
 const nodeTypes: NodeTypes = {
   // Input nodes
   [NodeType.Prompt]: PromptInputNode,
   [NodeType.ImageInput]: ImageUploadNode,
   [NodeType.VideoInput]: VideoUploadNode,
+  [NodeType.ScriptQueue]: ScriptQueueNode,
 
   // Modifier nodes
   [NodeType.PromptConcatenator]: PromptConcatenatorNode,
@@ -603,6 +605,17 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           // Input nodes
           case NodeType.Prompt:
             data = { prompt: "", label: "Text Input", outputs: {} };
+            break;
+          case NodeType.ScriptQueue:
+            data = {
+              scripts: [],
+              batchInput: "",
+              separator: "---",
+              currentIndex: 0,
+              isProcessing: false,
+              label: "Script Queue",
+              outputs: {},
+            };
             break;
           case NodeType.ImageInput:
             data = {
@@ -1244,6 +1257,8 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
       isExecuting,
       executionProgress,
       totalNodes,
+      isBatchMode,
+      batchProgress,
     } = useWorkflowExecution(
       nodes,
       edges,
@@ -1884,6 +1899,8 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               executionProgress={executionProgress}
               totalNodes={totalNodes}
               isReadOnly={isReadOnly}
+              isBatchMode={isBatchMode}
+              batchProgress={batchProgress}
             />
             <FloatingLabels nodes={nodes} />
           </ReactFlow>

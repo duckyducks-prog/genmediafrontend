@@ -10,6 +10,7 @@ export enum NodeType {
   ImageInput = "imageInput",
   VideoInput = "videoInput",
   Prompt = "prompt", // Also known as "Text Input"
+  ScriptQueue = "scriptQueue", // Batch input for multiple scripts
 
   // OUTPUT nodes for text
   TextOutput = "textOutput", // Display text output (e.g., from LLM)
@@ -131,6 +132,16 @@ export interface VideoInputNodeData extends BaseNodeData {
 // PROMPT node
 export interface PromptNodeData extends BaseNodeData {
   prompt: string;
+}
+
+// SCRIPT QUEUE node - batch input for multiple scripts
+export interface ScriptQueueNodeData extends BaseNodeData {
+  scripts: string[]; // Array of scripts to process
+  batchInput: string; // Raw text input (user pastes multiple scripts here)
+  separator: "---" | "newline" | "custom"; // How to split scripts
+  customSeparator?: string; // Custom separator string
+  currentIndex: number; // Current script being processed (0-indexed)
+  isProcessing: boolean; // Is batch processing in progress
 }
 
 // Music duration options
@@ -415,6 +426,7 @@ export type WorkflowNodeData =
   | ImageInputNodeData
   | VideoInputNodeData
   | PromptNodeData
+  | ScriptQueueNodeData
   | GenerateMusicNodeData
   | VoiceChangerNodeData
   | MergeVideosNodeData
@@ -505,6 +517,21 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
       {
         id: "text",
         label: "Text",
+        type: ConnectorType.Text,
+      },
+    ],
+  },
+
+  [NodeType.ScriptQueue]: {
+    type: NodeType.ScriptQueue,
+    label: "Script Queue",
+    category: "input",
+    description: "Batch input for multiple scripts - runs workflow for each",
+    inputConnectors: [],
+    outputConnectors: [
+      {
+        id: "text",
+        label: "Script",
         type: ConnectorType.Text,
       },
     ],

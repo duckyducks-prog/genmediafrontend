@@ -26,6 +26,8 @@ interface WorkflowToolbarProps {
   executionProgress?: Map<string, string>;
   totalNodes?: number;
   isReadOnly?: boolean;
+  isBatchMode?: boolean;
+  batchProgress?: { current: number; total: number };
 }
 
 export default function WorkflowToolbar({
@@ -39,6 +41,8 @@ export default function WorkflowToolbar({
   executionProgress: _executionProgress,
   totalNodes: _totalNodes,
   isReadOnly = false,
+  isBatchMode = false,
+  batchProgress,
 }: WorkflowToolbarProps) {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
   const { state } = useWorkflow();
@@ -119,7 +123,11 @@ export default function WorkflowToolbar({
         ) : (
           <Play className="w-3.5 h-3.5 mr-1" />
         )}
-        {isExecuting ? "Running" : "Run All"}
+        {isExecuting
+          ? isBatchMode && batchProgress
+            ? `Batch ${batchProgress.current}/${batchProgress.total}`
+            : "Running"
+          : "Run All"}
       </Button>
 
       {isExecuting && (
