@@ -184,10 +184,10 @@ const paletteNodes: PaletteNode[] = [
   },
   {
     type: NodeType.AddMusicToVideo,
-    label: "Add Music",
+    label: "Merge Audio",
     icon: <Music className="w-4 h-4" />,
     category: "action",
-    description: "Mix music/audio into a video",
+    description: "Mix multiple audio tracks into a video",
   },
   {
     type: NodeType.LLM,

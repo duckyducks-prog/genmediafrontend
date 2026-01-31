@@ -14,6 +14,8 @@ import {
   Info,
   Volume2,
   Play,
+  Power,
+  Mic,
 } from "lucide-react";
 import {
   AddMusicToVideoNodeData,
@@ -23,6 +25,7 @@ import {
 
 function AddMusicToVideoNode({ data, id }: NodeProps<AddMusicToVideoNodeData>) {
   const config = NODE_CONFIGURATIONS[NodeType.AddMusicToVideo];
+  const isEnabled = data.enabled !== false;
 
   const handleRunNode = () => {
     const event = new CustomEvent("node-execute", {
@@ -44,6 +47,11 @@ function AddMusicToVideoNode({ data, id }: NodeProps<AddMusicToVideoNodeData>) {
       },
     });
     window.dispatchEvent(event);
+  };
+
+  const handleToggleEnabled = () => {
+    if (data.readOnly) return;
+    handleUpdate("enabled", !isEnabled);
   };
 
   const getStatusIcon = () => {
@@ -70,7 +78,7 @@ function AddMusicToVideoNode({ data, id }: NodeProps<AddMusicToVideoNodeData>) {
   };
 
   return (
-    <Card className="w-[280px] bg-card border-border shadow-lg">
+    <Card className={`w-[300px] bg-card border-border shadow-lg ${!isEnabled ? "opacity-50" : ""}`}>
       {/* Input Handles */}
       <Handle
         type="target"
@@ -86,6 +94,13 @@ function AddMusicToVideoNode({ data, id }: NodeProps<AddMusicToVideoNodeData>) {
         className="!w-3 !h-3 !bg-purple-500 !border-2 !border-background"
         style={{ top: 100 }}
       />
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="audio2"
+        className="!w-3 !h-3 !bg-orange-500 !border-2 !border-background"
+        style={{ top: 140 }}
+      />
 
       <CardContent className="p-4">
         {/* Header */}
@@ -94,7 +109,22 @@ function AddMusicToVideoNode({ data, id }: NodeProps<AddMusicToVideoNodeData>) {
             <Music className="w-4 h-4 text-primary" />
             <span className="font-medium text-sm">{config.label}</span>
           </div>
-          {getStatusIcon()}
+          <div className="flex items-center gap-1">
+            {/* Enable/Disable Toggle */}
+            <button
+              onClick={handleToggleEnabled}
+              disabled={data.readOnly}
+              className={`p-1 rounded transition-colors ${
+                isEnabled
+                  ? "text-green-500 hover:bg-green-500/10"
+                  : "text-muted-foreground hover:bg-muted"
+              }`}
+              title={isEnabled ? "Disable node" : "Enable node"}
+            >
+              <Power className="w-4 h-4" />
+            </button>
+            {getStatusIcon()}
+          </div>
         </div>
 
         {/* Input Labels */}
@@ -103,33 +133,18 @@ function AddMusicToVideoNode({ data, id }: NodeProps<AddMusicToVideoNodeData>) {
             <span className="text-red-400">Video *</span>
           </div>
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-red-400">Audio *</span>
+            <Music className="w-3 h-3 text-purple-400" />
+            <span className="text-muted-foreground">Audio Track 1 (e.g., Music)</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs">
+            <Mic className="w-3 h-3 text-orange-400" />
+            <span className="text-muted-foreground">Audio Track 2 (e.g., Voice-over)</span>
           </div>
         </div>
 
         {/* Volume Controls */}
         <div className="space-y-4 mb-4">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs flex items-center gap-1">
-                <Volume2 className="w-3 h-3" />
-                Music Volume
-              </Label>
-              <span className="text-xs text-muted-foreground">
-                {data.musicVolume ?? 50}%
-              </span>
-            </div>
-            <Slider
-              value={[data.musicVolume ?? 50]}
-              onValueChange={([value]) => handleUpdate("musicVolume", value)}
-              min={0}
-              max={100}
-              step={5}
-              disabled={data.readOnly}
-              className="w-full"
-            />
-          </div>
-
+          {/* Original Video Audio */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-xs flex items-center gap-1">
@@ -146,7 +161,51 @@ function AddMusicToVideoNode({ data, id }: NodeProps<AddMusicToVideoNodeData>) {
               min={0}
               max={100}
               step={5}
-              disabled={data.readOnly}
+              disabled={data.readOnly || !isEnabled}
+              className="w-full"
+            />
+          </div>
+
+          {/* Track 1 Volume */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs flex items-center gap-1 text-purple-400">
+                <Music className="w-3 h-3" />
+                Track 1 Volume
+              </Label>
+              <span className="text-xs text-muted-foreground">
+                {data.musicVolume ?? 50}%
+              </span>
+            </div>
+            <Slider
+              value={[data.musicVolume ?? 50]}
+              onValueChange={([value]) => handleUpdate("musicVolume", value)}
+              min={0}
+              max={100}
+              step={5}
+              disabled={data.readOnly || !isEnabled}
+              className="w-full"
+            />
+          </div>
+
+          {/* Track 2 Volume */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs flex items-center gap-1 text-orange-400">
+                <Mic className="w-3 h-3" />
+                Track 2 Volume
+              </Label>
+              <span className="text-xs text-muted-foreground">
+                {(data as any).track2Volume ?? 100}%
+              </span>
+            </div>
+            <Slider
+              value={[(data as any).track2Volume ?? 100]}
+              onValueChange={([value]) => handleUpdate("track2Volume" as any, value)}
+              min={0}
+              max={100}
+              step={5}
+              disabled={data.readOnly || !isEnabled}
               className="w-full"
             />
           </div>
@@ -169,7 +228,7 @@ function AddMusicToVideoNode({ data, id }: NodeProps<AddMusicToVideoNodeData>) {
           onClick={handleRunNode}
           variant="outline"
           className="w-full"
-          disabled={data.isMixing || data.readOnly}
+          disabled={data.isMixing || data.readOnly || !isEnabled}
         >
           {data.isMixing ? (
             <>
