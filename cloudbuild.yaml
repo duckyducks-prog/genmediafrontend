@@ -38,6 +38,7 @@ substitutions:
   _VITE_FIREBASE_MESSAGING_SENDER_ID: ''
   _VITE_FIREBASE_APP_ID: ''
   _VITE_FIREBASE_MEASUREMENT_ID: ''
+  _VITE_ALLOWED_EMAILS: ''
 
 steps:
   # Step 1: Build the Docker image
@@ -63,6 +64,8 @@ steps:
       - 'VITE_FIREBASE_APP_ID=${_VITE_FIREBASE_APP_ID}'
       - '--build-arg'
       - 'VITE_FIREBASE_MEASUREMENT_ID=${_VITE_FIREBASE_MEASUREMENT_ID}'
+      - '--build-arg'
+      - 'VITE_ALLOWED_EMAILS=${_VITE_ALLOWED_EMAILS}'
       - '.'
 
   # Step 2: Push to Artifact Registry
