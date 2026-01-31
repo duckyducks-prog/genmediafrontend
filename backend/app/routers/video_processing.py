@@ -51,6 +51,7 @@ def get_ffmpeg_error(stderr: str) -> str:
 class MergeVideosRequest(BaseModel):
     videos_base64: Optional[List[str]] = Field(default=None, description="List of base64 encoded videos to merge")
     video_urls: Optional[List[str]] = Field(default=None, description="List of GCS/HTTP URLs to merge (preferred for large files)")
+    aspect_ratio: str = Field(default="16:9", description="Output aspect ratio: 16:9, 9:16, 1:1, 4:3, or 4:5")
 
 
 class MergeVideosResponse(BaseModel):
@@ -293,6 +294,18 @@ async def merge_videos(
             any_has_audio = any(has_audio_list)
             logger.info(f"Audio status: {has_audio_list}, all_have_audio={all_have_audio}")
 
+            # Determine output resolution based on aspect ratio
+            aspect_ratio = request.aspect_ratio or "16:9"
+            aspect_resolutions = {
+                "16:9": (1920, 1080),
+                "9:16": (1080, 1920),
+                "1:1": (1080, 1080),
+                "4:3": (1440, 1080),
+                "4:5": (1080, 1350),
+            }
+            output_width, output_height = aspect_resolutions.get(aspect_ratio, (1920, 1080))
+            logger.info(f"Output aspect ratio: {aspect_ratio}, resolution: {output_width}x{output_height}")
+
             # Build filter_complex using concat filter
             # This normalizes all inputs to same format before concatenating
             filter_parts = []
@@ -301,8 +314,8 @@ async def merge_videos(
             for i in range(n):
                 # Scale and pad video to consistent size, set framerate
                 filter_parts.append(
-                    f"[{i}:v]scale=1280:720:force_original_aspect_ratio=decrease,"
-                    f"pad=1280:720:(ow-iw)/2:(oh-ih)/2:black,"
+                    f"[{i}:v]scale={output_width}:{output_height}:force_original_aspect_ratio=decrease,"
+                    f"pad={output_width}:{output_height}:(ow-iw)/2:(oh-ih)/2:black,"
                     f"setsar=1,fps=30[v{i}]"
                 )
                 concat_inputs += f"[v{i}]"

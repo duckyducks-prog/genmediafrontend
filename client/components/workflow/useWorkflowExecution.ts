@@ -1596,14 +1596,19 @@ export function useWorkflowExecution(
               const user = auth.currentUser;
               const token = await user?.getIdToken();
 
+              // Get aspect ratio from node data
+              const aspectRatio = (node.data as any).aspectRatio || "16:9";
+
               // Build request body - prefer URLs (no size limit)
-              const requestBody: { video_urls?: string[]; videos_base64?: string[] } = {};
+              const requestBody: { video_urls?: string[]; videos_base64?: string[]; aspect_ratio?: string } = {
+                aspect_ratio: aspectRatio,
+              };
               if (useUrls) {
                 requestBody.video_urls = videoUrls;
-                logger.info(`[MergeVideos] Sending ${videoUrls.length} video URLs to backend`);
+                logger.info(`[MergeVideos] Sending ${videoUrls.length} video URLs to backend, aspect ratio: ${aspectRatio}`);
               } else {
                 requestBody.videos_base64 = videosBase64;
-                logger.info(`[MergeVideos] Sending ${videosBase64.length} videos as base64`);
+                logger.info(`[MergeVideos] Sending ${videosBase64.length} videos as base64, aspect ratio: ${aspectRatio}`);
               }
 
               const response = await fetch(API_ENDPOINTS.video.merge, {
