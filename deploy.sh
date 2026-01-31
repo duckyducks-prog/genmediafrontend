@@ -111,6 +111,11 @@ if [ -n "$VITE_ALLOWED_EMAILS" ]; then
     ESCAPED_EMAILS=$(echo "$VITE_ALLOWED_EMAILS" | sed 's/,/;;/g')
     SUBSTITUTIONS="${SUBSTITUTIONS},_VITE_ALLOWED_EMAILS=${ESCAPED_EMAILS}"
 fi
+# Escape commas in ALLOWED_ORIGINS (replace , with ;;) - will be unescaped in cloudbuild.yaml
+if [ -n "$ALLOWED_ORIGINS" ]; then
+    ESCAPED_ORIGINS=$(echo "$ALLOWED_ORIGINS" | sed 's/,/;;/g')
+    SUBSTITUTIONS="${SUBSTITUTIONS},_ALLOWED_ORIGINS=${ESCAPED_ORIGINS}"
+fi
 
 # -----------------------------------------------------------------------------
 # Deploy
