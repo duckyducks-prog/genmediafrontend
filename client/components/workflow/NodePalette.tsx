@@ -20,6 +20,7 @@ import {
   X,
   Film,
   List,
+  ListOrdered,
   MessageSquare,
   Music,
   Mic,
@@ -59,6 +60,13 @@ const paletteNodes: PaletteNode[] = [
     icon: <Type className="w-4 h-4" />,
     category: "input",
     description: "Text input for AI generation",
+  },
+  {
+    type: NodeType.ScriptQueue,
+    label: "Script Queue",
+    icon: <ListOrdered className="w-4 h-4" />,
+    category: "input",
+    description: "Batch input - run workflow for each script",
   },
 
   // MODIFIER NODES

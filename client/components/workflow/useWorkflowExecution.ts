@@ -103,6 +103,11 @@ export function useWorkflowExecution(
   const [totalNodes, setTotalNodes] = useState(0);
   const [abortRequested, setAbortRequested] = useState(false);
 
+  // Batch execution state (for ScriptQueue)
+  const [isBatchMode, setIsBatchMode] = useState(false);
+  const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
+  const [batchResults, setBatchResults] = useState<Array<{ index: number; success: boolean; outputs?: any }>>([]);
+
   // Helper to animate edges connected to a node
   const setEdgeAnimated = useCallback(
     (nodeId: string, animated: boolean, isCompleted: boolean = false) => {
@@ -305,6 +310,22 @@ export function useWorkflowExecution(
           case NodeType.Prompt: {
             const prompt = (node.data as any).prompt || "";
             return { success: true, data: { text: prompt } };
+          }
+
+          case NodeType.ScriptQueue: {
+            const scripts = (node.data as any).scripts || [];
+            const currentIndex = (node.data as any).currentIndex || 0;
+            const currentScript = scripts[currentIndex] || "";
+
+            if (scripts.length === 0) {
+              return {
+                success: false,
+                error: "No scripts loaded. Paste scripts separated by --- into the Script Queue.",
+              };
+            }
+
+            logger.debug("[ScriptQueue] Returning script", currentIndex + 1, "of", scripts.length);
+            return { success: true, data: { text: currentScript } };
           }
 
           case NodeType.ImageInput: {
@@ -2565,16 +2586,63 @@ export function useWorkflowExecution(
       return;
     }
 
+    // Check for ScriptQueue node (batch mode)
+    const scriptQueueNode = nodes.find((n) => n.type === NodeType.ScriptQueue);
+    const scripts = scriptQueueNode ? (scriptQueueNode.data as any).scripts || [] : [];
+    const batchMode = scriptQueueNode && scripts.length > 1;
+
+    if (batchMode) {
+      setIsBatchMode(true);
+      setBatchProgress({ current: 0, total: scripts.length });
+      setBatchResults([]);
+      logger.info(`[Batch] Starting batch execution with ${scripts.length} scripts`);
+    }
+
     // Track total nodes for progress calculation
     setTotalNodes(executionOrder.length);
 
-    // Store executed node data
-    const progress = new Map<string, string>();
+    // Helper function to run a single workflow iteration
+    const runSingleIteration = async (iterationIndex: number = 0): Promise<{ completed: number; failed: number }> => {
+      // Update ScriptQueue node's currentIndex for this iteration
+      if (scriptQueueNode && batchMode) {
+        setNodes((prevNodes) =>
+          prevNodes.map((n) =>
+            n.id === scriptQueueNode.id
+              ? {
+                  ...n,
+                  data: {
+                    ...n.data,
+                    currentIndex: iterationIndex,
+                    isProcessing: true,
+                  },
+                }
+              : {
+                  ...n,
+                  data: {
+                    ...n.data,
+                    status: "ready", // Reset status for re-execution
+                    outputs: n.type === NodeType.ScriptQueue ? n.data.outputs : {}, // Clear outputs except ScriptQueue
+                  },
+                }
+          )
+        );
+        // Small delay to let state update
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
 
-    // Group nodes by execution level for parallel execution
-    const levels = groupNodesByLevel(executionOrder, nodes, edges);
+      // Store executed node data
+      const progress = new Map<string, string>();
 
-    try {
+      // Group nodes by execution level for parallel execution
+      // Re-get nodes to have latest state
+      const currentNodes = batchMode ? nodes.map((n) => {
+        if (n.id === scriptQueueNode?.id) {
+          return { ...n, data: { ...n.data, currentIndex: iterationIndex, isProcessing: true } };
+        }
+        return n;
+      }) : nodes;
+      const levels = groupNodesByLevel(executionOrder, currentNodes, edges);
+
       let totalCompleted = 0;
       let totalFailed = 0;
 
@@ -2884,18 +2952,90 @@ export function useWorkflowExecution(
         setExecutionProgress(new Map(progress));
       }
 
-      // Show completion summary
-      if (totalFailed === 0) {
+      return { completed: totalCompleted, failed: totalFailed };
+    }; // End of runSingleIteration
+
+    try {
+      // Execute workflow (with batch mode if ScriptQueue exists)
+      if (batchMode && scripts.length > 0) {
+        // Batch execution mode
+        let batchCompleted = 0;
+        let batchFailed = 0;
+        const results: Array<{ index: number; success: boolean }> = [];
+
+        for (let i = 0; i < scripts.length; i++) {
+          // Check if abort was requested
+          if (abortRequested) {
+            toast({
+              title: "Batch Aborted",
+              description: `Stopped after ${i} of ${scripts.length} scripts`,
+              variant: "destructive",
+            });
+            break;
+          }
+
+          setBatchProgress({ current: i + 1, total: scripts.length });
+          logger.info(`[Batch] Running script ${i + 1} of ${scripts.length}`);
+
+          toast({
+            title: `Batch Progress`,
+            description: `Processing script ${i + 1} of ${scripts.length}...`,
+          });
+
+          const result = await runSingleIteration(i);
+
+          if (result.failed === 0) {
+            batchCompleted++;
+            results.push({ index: i, success: true });
+          } else {
+            batchFailed++;
+            results.push({ index: i, success: false });
+          }
+
+          setBatchResults([...results]);
+
+          // Small delay between iterations to avoid overwhelming APIs
+          if (i < scripts.length - 1) {
+            await new Promise((resolve) => setTimeout(resolve, 500));
+          }
+        }
+
+        // Mark ScriptQueue as done
+        if (scriptQueueNode) {
+          setNodes((prevNodes) =>
+            prevNodes.map((n) =>
+              n.id === scriptQueueNode.id
+                ? { ...n, data: { ...n.data, isProcessing: false } }
+                : n
+            )
+          );
+        }
+
+        // Show batch completion summary
         toast({
-          title: "Workflow Completed",
-          description: `All ${totalCompleted} nodes executed successfully!`,
+          title: "Batch Completed",
+          description: `${batchCompleted} of ${scripts.length} scripts succeeded${batchFailed > 0 ? `, ${batchFailed} failed` : ""}`,
+          variant: batchFailed > 0 ? "destructive" : "default",
         });
+
+        setIsBatchMode(false);
       } else {
-        toast({
-          title: "Workflow Completed with Errors",
-          description: `${totalCompleted} succeeded, ${totalFailed} failed`,
-          variant: "destructive",
-        });
+        // Normal single execution mode
+        const result = await runSingleIteration(0);
+
+        // Show completion summary
+        if (result.failed === 0) {
+          toast({
+            title: "Workflow Completed",
+            description: `All ${result.completed} nodes executed successfully!`,
+          });
+        } else {
+          toast({
+            title: "Workflow Completed with Errors",
+            description: `${result.completed} succeeded, ${result.failed} failed`,
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       toast({
@@ -2907,15 +3047,18 @@ export function useWorkflowExecution(
     } finally {
       setIsExecuting(false);
       setAbortRequested(false);
+      setIsBatchMode(false);
     }
   }, [
     isExecuting,
     nodes,
+    edges,
     getExecutionOrder,
     getNodeInputs,
     executeNode,
     updateNodeState,
     abortRequested,
+    setNodes,
   ]);
 
   // Reset workflow state
@@ -3153,5 +3296,9 @@ export function useWorkflowExecution(
     isExecuting,
     executionProgress,
     totalNodes,
+    // Batch execution state
+    isBatchMode,
+    batchProgress,
+    batchResults,
   };
 }
