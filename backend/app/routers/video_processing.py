@@ -99,21 +99,31 @@ class ApplyFiltersResponse(BaseModel):
 
 def clean_base64(b64_string: str) -> bytes:
     """Clean base64 string and decode to bytes."""
+    if not b64_string:
+        raise ValueError("Empty base64 string provided")
+
     # Remove data URL prefix if present
     if b64_string.startswith("data:"):
         comma_idx = b64_string.find(",")
         if comma_idx != -1:
             b64_string = b64_string[comma_idx + 1:]
 
-    # Remove whitespace
+    # Remove whitespace and URL-safe characters that might have been introduced
     b64_string = b64_string.strip().replace("\n", "").replace("\r", "").replace(" ", "")
+
+    # Replace URL-safe characters with standard base64 characters
+    b64_string = b64_string.replace("-", "+").replace("_", "/")
 
     # Fix padding
     padding_needed = len(b64_string) % 4
     if padding_needed:
         b64_string += "=" * (4 - padding_needed)
 
-    return base64.b64decode(b64_string)
+    try:
+        return base64.b64decode(b64_string)
+    except Exception as e:
+        logger.error(f"Base64 decode failed: {e}, string length: {len(b64_string)}, first 50 chars: {b64_string[:50]}")
+        raise ValueError(f"Invalid base64 data: {str(e)}")
 
 
 async def download_video_from_url(url: str, timeout: float = 120.0) -> bytes:
