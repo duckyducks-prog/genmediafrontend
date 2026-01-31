@@ -28,7 +28,7 @@ function PromptInputNode({ data, id }: NodeProps<PromptNodeData>) {
         ),
       );
     }
-  }, [id, data.prompt, data.outputs, setNodes]);
+  }, [id, data.prompt, data.outputs?.text, setNodes]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     // Block changes in read-only mode
