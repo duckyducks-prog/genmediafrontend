@@ -29,6 +29,7 @@ import { API_ENDPOINTS } from "@/lib/api-config";
 import Login from "./Login";
 import { useToast } from "@/hooks/use-toast";
 import { WorkflowProvider } from "@/contexts/WorkflowContext";
+import { ThemeProvider } from "@/components/ui/theme-provider";
 
 export default function Index() {
   const { user, loading } = useAuth();
@@ -47,6 +48,10 @@ export default function Index() {
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [aspectRatio, setAspectRatio] = useState("1:1");
+  const [inlineLibraryTarget, setInlineLibraryTarget] = useState<{
+    nodeId: string;
+    assetType: "image" | "video";
+  } | null>(null);
 
   const handleReferenceImageUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -258,24 +263,83 @@ export default function Index() {
       window.removeEventListener("browse-library", handleBrowseLibrary);
   }, []);
 
+  // Listen for inline asset library requests from nodes
+  useEffect(() => {
+    const handleOpenInlineLibrary = (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        nodeId: string;
+        assetType: "image" | "video";
+      }>;
+      const { nodeId, assetType } = customEvent.detail;
+
+      logger.debug("[Index] Opening inline asset library:", {
+        nodeId,
+        assetType,
+      });
+
+      setInlineLibraryTarget({ nodeId, assetType });
+      setIsLibraryOpen(true);
+    };
+
+    window.addEventListener(
+      "open-asset-library-inline",
+      handleOpenInlineLibrary
+    );
+    return () =>
+      window.removeEventListener(
+        "open-asset-library-inline",
+        handleOpenInlineLibrary
+      );
+  }, []);
+
   // Handle adding asset from library to workflow
   const handleAddAssetNode = (asset: any) => {
     logger.debug("[Index] Adding asset to workflow:", asset);
 
-    // Dispatch event to WorkflowCanvas with asset data
-    window.dispatchEvent(
-      new CustomEvent("add-asset-node", {
-        detail: {
-          assetId: asset.id,
-          assetType: asset.asset_type,
-          url: asset.url,
-          mimeType: asset.mime_type,
-        },
-      }),
-    );
+    // Check if this is for an inline library request (specific node)
+    if (inlineLibraryTarget) {
+      logger.debug("[Index] Updating node with inline asset:", {
+        nodeId: inlineLibraryTarget.nodeId,
+        asset,
+      });
 
-    // Switch to workflow tab
-    setCurrentTab("workflow");
+      // Dispatch event to update specific node
+      window.dispatchEvent(
+        new CustomEvent("update-node-asset", {
+          detail: {
+            nodeId: inlineLibraryTarget.nodeId,
+            assetType: inlineLibraryTarget.assetType,
+            assetId: asset.id,
+            url: asset.url,
+            mimeType: asset.mime_type,
+          },
+        }),
+      );
+
+      // Clear inline library target
+      setInlineLibraryTarget(null);
+      setIsLibraryOpen(false);
+
+      toast({
+        title: "Asset loaded",
+        description: `${inlineLibraryTarget.assetType === "video" ? "Video" : "Image"} loaded into node`,
+      });
+    } else {
+      // Regular flow: Add new node to canvas
+      window.dispatchEvent(
+        new CustomEvent("add-asset-node", {
+          detail: {
+            assetId: asset.id,
+            assetType: asset.asset_type,
+            url: asset.url,
+            mimeType: asset.mime_type,
+          },
+        }),
+      );
+
+      // Switch to workflow tab
+      setCurrentTab("workflow");
+    }
   };
 
   // Show loading state
@@ -294,8 +358,9 @@ export default function Index() {
 
   // Show main app if authenticated
   return (
-    <WorkflowProvider>
-      <div className="min-h-screen bg-[#360F46] flex flex-col">
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+      <WorkflowProvider>
+        <div className="min-h-screen bg-background flex flex-col">
         <header className="border-b border-border">
           <div className="py-8 border-b border-border">
             <div className="px-4 flex items-center justify-between">
@@ -802,6 +867,7 @@ export default function Index() {
           onAddAssetNode={handleAddAssetNode}
         />
       </div>
-    </WorkflowProvider>
+      </WorkflowProvider>
+    </ThemeProvider>
   );
 }

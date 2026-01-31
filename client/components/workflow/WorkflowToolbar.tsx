@@ -10,10 +10,10 @@ import {
   Save,
   List,
   StopCircle,
-  Wand2,
 } from "lucide-react";
 import { useReactFlow } from "reactflow";
 import { useWorkflow } from "@/contexts/WorkflowContext";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 interface WorkflowToolbarProps {
   onClearCanvas: () => void;
@@ -22,7 +22,6 @@ interface WorkflowToolbarProps {
   onResetWorkflow: () => void;
   onSaveWorkflow: () => void;
   onLoadWorkflow: () => void;
-  onSaveAsWizard?: () => void;
   isExecuting: boolean;
   executionProgress?: Map<string, string>;
   totalNodes?: number;
@@ -36,7 +35,6 @@ export default function WorkflowToolbar({
   onResetWorkflow,
   onSaveWorkflow,
   onLoadWorkflow,
-  onSaveAsWizard,
   isExecuting,
   executionProgress: _executionProgress,
   totalNodes: _totalNodes,
@@ -102,19 +100,9 @@ export default function WorkflowToolbar({
         <List className="w-3.5 h-3.5" />
       </Button>
 
-      {onSaveAsWizard && (
-        <Button
-          onClick={onSaveAsWizard}
-          variant="outline"
-          size="icon"
-          className="h-8 w-8"
-          title="Save as Wizard"
-          aria-label="Save as Wizard"
-          disabled={isReadOnly}
-        >
-          <Wand2 className="w-3.5 h-3.5" />
-        </Button>
-      )}
+      <div className="w-px h-6 bg-border mx-0.5" />
+
+      <ThemeToggle />
 
       <div className="w-px h-6 bg-border mx-0.5" />
 
@@ -123,7 +111,7 @@ export default function WorkflowToolbar({
         disabled={isExecuting}
         variant="default"
         size="sm"
-        className="h-8 bg-[#F3C5DB] hover:bg-[#D6C2D9] text-[#46062B] px-3"
+        className="h-8 bg-primary hover:bg-primary/90 text-primary-foreground px-3"
         title="Run All Nodes"
       >
         {isExecuting ? (
