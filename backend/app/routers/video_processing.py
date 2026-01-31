@@ -853,3 +853,199 @@ async def add_watermark_to_video(
     except Exception as e:
         logger.error(f"Add watermark failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# =============================================================================
+# VIDEO SEGMENT REPLACE ENDPOINT
+# =============================================================================
+
+class SegmentReplaceRequest(BaseModel):
+    base_video_base64: Optional[str] = Field(default=None, description="Base64 encoded base video")
+    base_video_url: Optional[str] = Field(default=None, description="URL to base video")
+    replacement_video_base64: Optional[str] = Field(default=None, description="Base64 encoded replacement video")
+    replacement_video_url: Optional[str] = Field(default=None, description="URL to replacement video")
+    start_time: float = Field(..., description="Start time in seconds for replacement")
+    end_time: float = Field(..., description="End time in seconds for replacement")
+    audio_mode: str = Field(default="keep_base", description="Audio mode: keep_base, keep_replacement, mix")
+    fit_mode: str = Field(default="trim", description="Fit mode: stretch, trim, loop")
+
+
+class SegmentReplaceResponse(BaseModel):
+    video_base64: str
+    mime_type: str = "video/mp4"
+    duration: float = 0.0
+
+
+@router.post("/segment-replace", response_model=SegmentReplaceResponse)
+async def replace_video_segment(
+    request: SegmentReplaceRequest,
+    user: dict = Depends(get_current_user)
+):
+    """
+    Replace a segment of the base video with a replacement video.
+
+    This allows you to swap out a portion of a video while preserving
+    the rest (including audio if desired).
+    """
+    try:
+        logger.info(f"Segment replace request from user {user['email']}, start={request.start_time}, end={request.end_time}, audio_mode={request.audio_mode}")
+
+        # Validate inputs
+        if not request.base_video_base64 and not request.base_video_url:
+            raise HTTPException(status_code=400, detail="Either base_video_base64 or base_video_url must be provided")
+        if not request.replacement_video_base64 and not request.replacement_video_url:
+            raise HTTPException(status_code=400, detail="Either replacement_video_base64 or replacement_video_url must be provided")
+        if request.start_time < 0:
+            raise HTTPException(status_code=400, detail="start_time must be >= 0")
+        if request.end_time <= request.start_time:
+            raise HTTPException(status_code=400, detail="end_time must be greater than start_time")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Get base video bytes
+            if request.base_video_url:
+                logger.info(f"Downloading base video from URL")
+                base_bytes = await download_video_from_url(request.base_video_url)
+            else:
+                base_bytes = clean_base64(request.base_video_base64)
+
+            # Get replacement video bytes
+            if request.replacement_video_url:
+                logger.info(f"Downloading replacement video from URL")
+                replacement_bytes = await download_video_from_url(request.replacement_video_url)
+            else:
+                replacement_bytes = clean_base64(request.replacement_video_base64)
+
+            # Save videos
+            base_path = os.path.join(tmpdir, "base.mp4")
+            replacement_path = os.path.join(tmpdir, "replacement.mp4")
+
+            with open(base_path, "wb") as f:
+                f.write(base_bytes)
+            with open(replacement_path, "wb") as f:
+                f.write(replacement_bytes)
+
+            logger.info(f"Saved base video: {len(base_bytes)} bytes, replacement: {len(replacement_bytes)} bytes")
+
+            # Probe videos for duration
+            base_info = probe_video(base_path)
+            replacement_info = probe_video(replacement_path)
+
+            base_duration = float(base_info.get("format", {}).get("duration", 0))
+            replacement_duration = float(replacement_info.get("format", {}).get("duration", 0))
+
+            logger.info(f"Base duration: {base_duration}s, Replacement duration: {replacement_duration}s")
+
+            # Validate times against base duration
+            if request.end_time > base_duration:
+                request.end_time = base_duration
+                logger.warning(f"end_time adjusted to base duration: {base_duration}")
+
+            segment_duration = request.end_time - request.start_time
+
+            # Calculate how to fit the replacement
+            if request.fit_mode == "stretch":
+                # Stretch/compress replacement to fit segment duration
+                speed_factor = replacement_duration / segment_duration if segment_duration > 0 else 1.0
+                replacement_filter = f"setpts={1/speed_factor}*PTS"
+            elif request.fit_mode == "loop":
+                # Loop replacement if shorter, trim if longer
+                if replacement_duration < segment_duration:
+                    loop_count = int(segment_duration / replacement_duration) + 1
+                    replacement_filter = f"loop=loop={loop_count}:size=999999,trim=duration={segment_duration},setpts=PTS-STARTPTS"
+                else:
+                    replacement_filter = f"trim=duration={segment_duration},setpts=PTS-STARTPTS"
+            else:  # trim (default)
+                # Use replacement as-is, trim if longer than segment
+                if replacement_duration > segment_duration:
+                    replacement_filter = f"trim=duration={segment_duration},setpts=PTS-STARTPTS"
+                else:
+                    replacement_filter = "setpts=PTS-STARTPTS"
+
+            output_path = os.path.join(tmpdir, "output.mp4")
+
+            # Build FFmpeg filter based on audio mode
+            # Split base video into: before (0 to start), after (end to duration)
+            # Insert replacement in the middle
+
+            has_before = request.start_time > 0
+            has_after = request.end_time < base_duration
+
+            # Video filter chain
+            filter_parts = []
+            concat_inputs = []
+
+            if has_before:
+                filter_parts.append(f"[0:v]trim=0:{request.start_time},setpts=PTS-STARTPTS[v_before]")
+                concat_inputs.append("[v_before]")
+
+            filter_parts.append(f"[1:v]{replacement_filter}[v_replace]")
+            concat_inputs.append("[v_replace]")
+
+            if has_after:
+                filter_parts.append(f"[0:v]trim={request.end_time}:{base_duration},setpts=PTS-STARTPTS[v_after]")
+                concat_inputs.append("[v_after]")
+
+            n_segments = len(concat_inputs)
+            filter_parts.append(f"{''.join(concat_inputs)}concat=n={n_segments}:v=1:a=0[outv]")
+
+            # Audio filter chain based on mode
+            if request.audio_mode == "keep_replacement":
+                # Use replacement audio, pad/trim to match
+                filter_parts.append(f"[1:a]asetpts=PTS-STARTPTS[outa]")
+            elif request.audio_mode == "mix":
+                # Mix both audio tracks
+                filter_parts.append(f"[0:a][1:a]amix=inputs=2:duration=first[outa]")
+            else:  # keep_base (default)
+                # Keep original audio from base
+                filter_parts.append(f"[0:a]acopy[outa]")
+
+            filter_complex = ";".join(filter_parts)
+
+            # Build FFmpeg command
+            cmd = [
+                "ffmpeg", "-y",
+                "-i", base_path,
+                "-i", replacement_path,
+                "-filter_complex", filter_complex,
+                "-map", "[outv]",
+                "-map", "[outa]",
+                "-c:v", "libx264",
+                "-preset", "fast",
+                "-crf", "23",
+                "-c:a", "aac",
+                "-b:a", "128k",
+                "-movflags", "+faststart",
+                output_path
+            ]
+
+            logger.info(f"Running ffmpeg segment replace")
+            logger.debug(f"Filter complex: {filter_complex}")
+
+            result = subprocess.run(cmd, capture_output=True, text=True)
+
+            if result.returncode != 0:
+                error_msg = get_ffmpeg_error(result.stderr)
+                logger.error(f"FFmpeg segment replace failed: {result.stderr}")
+                raise HTTPException(status_code=500, detail=f"Failed to replace segment: {error_msg}")
+
+            # Read output and get duration
+            with open(output_path, "rb") as f:
+                output_bytes = f.read()
+
+            output_info = probe_video(output_path)
+            output_duration = float(output_info.get("format", {}).get("duration", 0))
+
+            output_base64 = base64.b64encode(output_bytes).decode("utf-8")
+            logger.info(f"Segment replace complete: {len(output_bytes)} bytes, duration: {output_duration}s")
+
+            return SegmentReplaceResponse(
+                video_base64=output_base64,
+                mime_type="video/mp4",
+                duration=output_duration
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Segment replace failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

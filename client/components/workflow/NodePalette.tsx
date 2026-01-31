@@ -23,6 +23,7 @@ import {
   MessageSquare,
   Music,
   Mic,
+  Scissors,
 } from "lucide-react";
 import { NodeType } from "./types";
 import { Input } from "@/components/ui/input";
@@ -144,6 +145,13 @@ const paletteNodes: PaletteNode[] = [
     icon: <Layers className="w-4 h-4" />,
     category: "modifier",
     description: "Add watermark or overlay to video",
+  },
+  {
+    type: NodeType.VideoSegmentReplace,
+    label: "Video Segment Replace",
+    icon: <Scissors className="w-4 h-4" />,
+    category: "modifier",
+    description: "Replace a segment of video while keeping audio",
   },
   {
     type: NodeType.ExtractLastFrame,

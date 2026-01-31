@@ -82,6 +82,7 @@ import CropNode from "./nodes/CropNode";
 import ImageCompositeNode from "./nodes/ImageCompositeNode";
 import ExtractLastFrameNode from "./nodes/ExtractLastFrameNode";
 import VideoWatermarkNode from "./nodes/VideoWatermarkNode";
+import VideoSegmentReplaceNode from "./nodes/VideoSegmentReplaceNode";
 import StickyNoteNode from "./nodes/StickyNoteNode";
 import TextOutputNode from "./nodes/TextOutputNode";
 
@@ -105,6 +106,7 @@ const nodeTypes: NodeTypes = {
   [NodeType.ImageComposite]: ImageCompositeNode,
   [NodeType.ExtractLastFrame]: ExtractLastFrameNode,
   [NodeType.VideoWatermark]: VideoWatermarkNode,
+  [NodeType.VideoSegmentReplace]: VideoSegmentReplaceNode,
 
   // Action nodes
   [NodeType.GenerateImage]: GenerateImageNode,
@@ -724,6 +726,17 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               scale: 0.15,
               margin: 20,
               label: "Video Compositing",
+              outputs: {},
+            };
+            break;
+          case NodeType.VideoSegmentReplace:
+            data = {
+              startTime: 5,
+              endTime: 15,
+              audioMode: "keep_base",
+              fitMode: "trim",
+              baseDuration: 30,
+              label: "Video Segment Replace",
               outputs: {},
             };
             break;
