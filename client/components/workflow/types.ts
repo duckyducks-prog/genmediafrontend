@@ -161,9 +161,10 @@ export interface MergeVideosNodeData extends BaseNodeData {
 // ADD MUSIC TO VIDEO node - mixes audio into video
 export interface AddMusicToVideoNodeData extends BaseNodeData {
   isMixing: boolean; // Is mixing in progress
-  musicVolume: number; // 0-100 volume percentage for music
-  originalVolume: number; // 0-100 volume percentage for original audio
-  outputVideoUrl?: string; // Output video with music
+  musicVolume: number; // 0-100 volume percentage for audio track 1 (e.g., music)
+  track2Volume: number; // 0-100 volume percentage for audio track 2 (e.g., voice-over)
+  originalVolume: number; // 0-100 volume percentage for original video audio
+  outputVideoUrl?: string; // Output video with mixed audio
 }
 
 // PROMPT CONCATENATOR node
@@ -1080,9 +1081,9 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
 
   [NodeType.AddMusicToVideo]: {
     type: NodeType.AddMusicToVideo,
-    label: "Add Music",
+    label: "Merge Audio",
     category: "action",
-    description: "Mix music/audio into a video",
+    description: "Mix multiple audio tracks into a video (music, voice-over, etc.)",
     inputConnectors: [
       {
         id: "video",
@@ -1093,9 +1094,16 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
       },
       {
         id: "audio",
-        label: "Audio",
+        label: "Audio Track 1",
         type: ConnectorType.Audio,
-        required: true,
+        required: false,
+        acceptsMultiple: false,
+      },
+      {
+        id: "audio2",
+        label: "Audio Track 2",
+        type: ConnectorType.Audio,
+        required: false,
         acceptsMultiple: false,
       },
     ],
