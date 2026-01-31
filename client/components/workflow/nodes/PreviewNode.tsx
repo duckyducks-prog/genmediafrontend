@@ -6,6 +6,62 @@ import { Button } from "@/components/ui/button";
 import { renderWithPixi } from "@/lib/pixi-renderer";
 import { FilterConfig } from "@/lib/pixi-filter-configs";
 import { NodeLockToggle } from "../NodeLockToggle";
+import { API_ENDPOINTS } from "@/lib/api-config";
+import { auth } from "@/lib/firebase";
+
+/**
+ * Apply filters to a video using the backend FFmpeg endpoint.
+ */
+async function applyFiltersToVideo(
+  videoDataUrl: string,
+  filters: FilterConfig[],
+): Promise<string> {
+  try {
+    // Get auth token
+    const user = auth.currentUser;
+    if (!user) {
+      throw new Error("User not authenticated");
+    }
+    const token = await user.getIdToken();
+
+    // Extract base64 from data URL
+    let videoBase64 = videoDataUrl;
+    if (videoDataUrl.startsWith("data:")) {
+      const commaIndex = videoDataUrl.indexOf(",");
+      if (commaIndex !== -1) {
+        videoBase64 = videoDataUrl.substring(commaIndex + 1);
+      }
+    }
+
+    logger.debug("[applyFiltersToVideo] Sending request:", {
+      filterCount: filters.length,
+      videoSize: videoBase64.length,
+    });
+
+    const response = await fetch(API_ENDPOINTS.video.applyFilters, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        video_base64: videoBase64,
+        filters: filters,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || `HTTP ${response.status}`);
+    }
+
+    const result = await response.json();
+    return `data:video/mp4;base64,${result.video_base64}`;
+  } catch (error) {
+    logger.error("[applyFiltersToVideo] Failed:", error);
+    throw error;
+  }
+}
 
 export interface PreviewNodeData {
   label: string;
@@ -142,7 +198,88 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
         window.dispatchEvent(updateEvent);
       }
     } else if (videoInput) {
-      setDisplayContent({ type: "video", content: videoInput });
+      // Handle video with possible filters
+      if (filters.length > 0) {
+        // Apply filters to video using backend API
+        const currentRequestId = ++renderRequestId.current;
+
+        logger.debug(
+          "[PreviewNode] Starting video filter render with",
+          filters.length,
+          "filters (request #" + currentRequestId + ")",
+        );
+        setIsRendering(true);
+
+        applyFiltersToVideo(videoInput, filters)
+          .then((rendered) => {
+            // Only update if this is still the latest request
+            if (currentRequestId === renderRequestId.current) {
+              logger.debug(
+                "[PreviewNode] Video filter render completed (request #" +
+                  currentRequestId +
+                  ")",
+              );
+              setDisplayContent({ type: "video", content: rendered });
+
+              // Dispatch the rendered video as output
+              const updateEvent = new CustomEvent("node-update", {
+                detail: {
+                  id,
+                  data: {
+                    ...data,
+                    outputs: {
+                      video: rendered, // The processed video with all filters applied
+                    },
+                  },
+                },
+              });
+              window.dispatchEvent(updateEvent);
+            } else {
+              logger.debug(
+                "[PreviewNode] Discarding stale video render (request #" +
+                  currentRequestId +
+                  ")",
+              );
+            }
+          })
+          .catch((error) => {
+            // Only handle error if this is still the latest request
+            if (currentRequestId === renderRequestId.current) {
+              console.error(
+                "[PreviewNode] Video filter render failed (request #" +
+                  currentRequestId +
+                  "):",
+                error,
+              );
+              // Fallback to original video
+              setDisplayContent({ type: "video", content: videoInput });
+            }
+          })
+          .finally(() => {
+            // Only clear rendering flag if this is still the latest request
+            if (currentRequestId === renderRequestId.current) {
+              setIsRendering(false);
+            }
+          });
+      } else {
+        // No filters, show original video
+        logger.debug("[PreviewNode] Showing original video (no filters)");
+        setDisplayContent({ type: "video", content: videoInput });
+
+        // Dispatch the original video as output
+        const updateEvent = new CustomEvent("node-update", {
+          detail: {
+            id,
+            data: {
+              ...data,
+              outputs: {
+                video: videoInput,
+              },
+            },
+          },
+        });
+        window.dispatchEvent(updateEvent);
+      }
     } else if (textInput) {
       setDisplayContent({ type: "text", content: textInput });
     } else {
