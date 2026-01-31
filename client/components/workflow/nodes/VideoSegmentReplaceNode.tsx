@@ -277,21 +277,27 @@ function VideoSegmentReplaceNode({ data, id }: NodeProps<VideoSegmentReplaceNode
         </div>
       </div>
 
-      {/* Input Handles */}
+      {/* Input Handles with Labels */}
+      <div className="absolute left-0 flex items-center" style={{ top: "25%", transform: "translate(-100%, -50%)" }}>
+        <span className="text-[9px] text-blue-400 mr-1 whitespace-nowrap">Base Video →</span>
+      </div>
       <Handle
         type="target"
         position={Position.Left}
         id="base"
         data-connector-type="video"
-        className="!w-3 !h-3 !border-2 !border-background"
+        className="!w-3 !h-3 !bg-blue-500 !border-2 !border-background"
         style={{ top: "25%", transform: "translateY(-50%)" }}
       />
+      <div className="absolute left-0 flex items-center" style={{ top: "45%", transform: "translate(-100%, -50%)" }}>
+        <span className="text-[9px] text-purple-400 mr-1 whitespace-nowrap">Replacement →</span>
+      </div>
       <Handle
         type="target"
         position={Position.Left}
         id="replacement"
         data-connector-type="video"
-        className="!w-3 !h-3 !border-2 !border-background"
+        className="!w-3 !h-3 !bg-purple-500 !border-2 !border-background"
         style={{ top: "45%", transform: "translateY(-50%)" }}
       />
 
@@ -378,15 +384,16 @@ function VideoSegmentReplaceNode({ data, id }: NodeProps<VideoSegmentReplaceNode
         </div>
       )}
 
-      {/* Input Labels */}
-      <div className="text-[10px] text-muted-foreground space-y-1">
+      {/* Input Legend */}
+      <div className="text-[9px] text-muted-foreground mt-3 pt-2 border-t border-border">
+        <div className="font-medium mb-1">Inputs:</div>
         <div className="flex items-center gap-1">
           <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-          <span>Base Video (with audio to keep)</span>
+          <span>Base = video with audio to preserve</span>
         </div>
         <div className="flex items-center gap-1">
           <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-          <span>Replacement Video</span>
+          <span>Replacement = video to insert at segment</span>
         </div>
       </div>
 

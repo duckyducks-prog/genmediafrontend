@@ -803,8 +803,13 @@ async def add_watermark_to_video(
                     video_height = stream.get("height", 720)
                     break
 
-            # Calculate watermark size based on scale
+            # Calculate watermark size based on scale (ensure even width for h264)
             watermark_width = int(video_width * request.scale)
+            # Make sure width is even for h264 compatibility
+            watermark_width = watermark_width + (watermark_width % 2)
+            # Minimum size check
+            if watermark_width < 10:
+                watermark_width = 10
 
             # Position mapping
             margin = request.margin
@@ -818,11 +823,13 @@ async def add_watermark_to_video(
             overlay_position = position_map.get(request.position, position_map["bottom-right"])
 
             # Build filter for overlay
-            # Scale watermark, apply opacity, then overlay
+            # Scale watermark with even height (-2 ensures even dimensions), apply opacity, then overlay
+            # Use scale2ref to ensure watermark scales relative to video
             filter_complex = (
-                f"[1:v]scale={watermark_width}:-1,format=rgba,"
+                f"[1:v]scale={watermark_width}:-2,format=rgba,"
                 f"colorchannelmixer=aa={request.opacity}[watermark];"
-                f"[0:v][watermark]overlay={overlay_position}"
+                f"[0:v]format=yuv420p[base];"
+                f"[base][watermark]overlay={overlay_position}:format=auto"
             )
 
             output_path = os.path.join(tmpdir, "output.mp4")
