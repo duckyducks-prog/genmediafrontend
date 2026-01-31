@@ -436,8 +436,8 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
   const handleBrowseLibrary = useCallback(() => {
     // Dispatch event to open Asset Library with video filter
     window.dispatchEvent(
-      new CustomEvent("open-asset-library", {
-        detail: { assetType: "video", targetNodeId: id },
+      new CustomEvent("open-asset-library-inline", {
+        detail: { nodeId: id, assetType: "video" },
       }),
     );
   }, [id]);

@@ -3,7 +3,7 @@ import { memo, useState, useEffect } from "react";
 import { Handle, Position, NodeProps, useReactFlow } from "reactflow";
 import { Button } from "@/components/ui/button";
 import { ImageInputNodeData } from "../types";
-import { Upload, X, Image as ImageIcon, Loader2 } from "lucide-react";
+import { Upload, X, Image as ImageIcon, Loader2, FolderOpen } from "lucide-react";
 import { saveToLibrary } from "@/lib/api-helpers";
 
 function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
@@ -238,6 +238,25 @@ function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
               disabled={isUploading}
             />
           </label>
+        )}
+        {!imageUrl && (
+          <Button
+            onClick={() => {
+              // Dispatch event to open asset library with this node as target
+              window.dispatchEvent(
+                new CustomEvent("open-asset-library-inline", {
+                  detail: { nodeId: id, assetType: "image" },
+                })
+              );
+            }}
+            variant="outline"
+            size="sm"
+            className="w-full"
+            disabled={isUploading}
+          >
+            <FolderOpen className="w-4 h-4 mr-2" />
+            Browse Library
+          </Button>
         )}
         {uploadError && (
           <p className="text-xs text-destructive">{uploadError}</p>

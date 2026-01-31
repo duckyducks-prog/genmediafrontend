@@ -26,6 +26,10 @@ export function TextExpandModal({
   const [copied, setCopied] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Calculate character and word count
+  const charCount = localValue.length;
+  const wordCount = localValue.trim().split(/\s+/).filter(Boolean).length;
+
   // Sync local value when prop changes
   useEffect(() => {
     setLocalValue(value);
@@ -79,10 +83,10 @@ export function TextExpandModal({
       {/* Modal - large centered */}
       <div className="relative bg-card border border-border rounded-lg shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <div className="flex items-center gap-2">
-            <Maximize2 className="w-4 h-4 text-primary" />
-            <h2 className="text-sm font-semibold">{title}</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30">
+          <div className="flex items-center gap-3">
+            <Maximize2 className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-semibold">{title}</h2>
           </div>
           <div className="flex items-center gap-2">
             <Button
