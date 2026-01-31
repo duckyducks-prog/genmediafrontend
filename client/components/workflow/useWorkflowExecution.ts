@@ -2155,6 +2155,161 @@ export function useWorkflowExecution(
             }
           }
 
+          case NodeType.VideoWatermark: {
+            const videoInput = inputs.video;
+            const watermarkInput = inputs.watermark;
+
+            if (!videoInput) {
+              return {
+                success: false,
+                error: "No video connected to Video Compositing node",
+              };
+            }
+
+            if (!watermarkInput) {
+              return {
+                success: false,
+                error: "No watermark image connected to Video Compositing node",
+              };
+            }
+
+            try {
+              logger.debug("[VideoWatermark] Adding watermark to video");
+
+              const user = auth.currentUser;
+              const token = await user?.getIdToken();
+
+              const requestBody: any = {
+                watermark_base64: watermarkInput,
+                position: node.data.position || "bottom-right",
+                opacity: node.data.opacity ?? 1.0,
+                scale: node.data.scale ?? 0.15,
+                margin: node.data.margin ?? 20,
+              };
+
+              if (videoInput.startsWith("data:")) {
+                requestBody.video_base64 = videoInput;
+              } else {
+                requestBody.video_url = videoInput;
+              }
+
+              const response = await fetch(API_ENDPOINTS.video.addWatermark, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(requestBody),
+              });
+
+              if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.detail || `Failed to add watermark: ${response.status}`);
+              }
+
+              const result = await response.json();
+              const outputVideoUrl = `data:video/mp4;base64,${result.video_base64}`;
+
+              logger.debug("[VideoWatermark] ✓ Watermark added successfully");
+
+              return {
+                success: true,
+                data: {
+                  videoUrl: outputVideoUrl,
+                  outputs: {
+                    video: outputVideoUrl,
+                  },
+                },
+              };
+            } catch (error) {
+              console.error("[VideoWatermark] ❌ Failed:", error);
+              return {
+                success: false,
+                error: error instanceof Error ? error.message : "Failed to add watermark",
+              };
+            }
+          }
+
+          case NodeType.VideoSegmentReplace: {
+            const baseVideo = inputs.base;
+            const replacementVideo = inputs.replacement;
+
+            if (!baseVideo) {
+              return {
+                success: false,
+                error: "No base video connected to Video Segment Replace node",
+              };
+            }
+
+            if (!replacementVideo) {
+              return {
+                success: false,
+                error: "No replacement video connected to Video Segment Replace node",
+              };
+            }
+
+            try {
+              logger.debug("[VideoSegmentReplace] Replacing video segment");
+
+              const user = auth.currentUser;
+              const token = await user?.getIdToken();
+
+              const requestBody: any = {
+                start_time: node.data.startTime ?? 0,
+                end_time: node.data.endTime ?? 10,
+                audio_mode: node.data.audioMode || "keep_base",
+                fit_mode: node.data.fitMode || "trim",
+              };
+
+              if (baseVideo.startsWith("data:")) {
+                requestBody.base_video_base64 = baseVideo;
+              } else {
+                requestBody.base_video_url = baseVideo;
+              }
+
+              if (replacementVideo.startsWith("data:")) {
+                requestBody.replacement_video_base64 = replacementVideo;
+              } else {
+                requestBody.replacement_video_url = replacementVideo;
+              }
+
+              const response = await fetch(API_ENDPOINTS.video.segmentReplace, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(requestBody),
+              });
+
+              if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.detail || `Failed to replace segment: ${response.status}`);
+              }
+
+              const result = await response.json();
+              const outputVideoUrl = `data:video/mp4;base64,${result.video_base64}`;
+
+              logger.debug("[VideoSegmentReplace] ✓ Segment replaced successfully");
+
+              return {
+                success: true,
+                data: {
+                  videoUrl: outputVideoUrl,
+                  outputs: {
+                    video: outputVideoUrl,
+                  },
+                },
+              };
+            } catch (error) {
+              console.error("[VideoSegmentReplace] ❌ Failed:", error);
+              return {
+                success: false,
+                error: error instanceof Error ? error.message : "Failed to replace segment",
+              };
+            }
+          }
+
           case NodeType.ExtractLastFrame: {
             const videoInput = inputs.video;
 
