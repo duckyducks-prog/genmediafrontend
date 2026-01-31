@@ -734,6 +734,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
             break;
           case NodeType.VideoWatermark:
             data = {
+              mode: "watermark",
               position: "bottom-right",
               opacity: 1.0,
               scale: 0.15,

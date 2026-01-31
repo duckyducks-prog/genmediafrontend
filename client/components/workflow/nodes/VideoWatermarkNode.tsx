@@ -13,6 +13,7 @@ import { NodeLockToggle } from "../NodeLockToggle";
 
 export interface VideoWatermarkNodeData {
   label: string;
+  mode: "watermark" | "overlay";
   position: "top-left" | "top-right" | "bottom-left" | "bottom-right" | "center";
   opacity: number;
   scale: number;
@@ -124,7 +125,33 @@ function VideoWatermarkNode({ data, id }: NodeProps<VideoWatermarkNodeData>) {
 
       {/* Controls */}
       <div className="space-y-3 mb-3">
-        {/* Position */}
+        {/* Mode */}
+        <div>
+          <label className="text-xs font-medium text-muted-foreground block mb-1">
+            Mode
+          </label>
+          <Select
+            value={data.mode || "watermark"}
+            onValueChange={(value) => handleUpdate("mode", value)}
+            disabled={data.readOnly}
+          >
+            <SelectTrigger className="w-full h-9">
+              <SelectValue placeholder="Select mode" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="watermark">Watermark (Logo/Corner)</SelectItem>
+              <SelectItem value="overlay">Overlay (Full Frame)</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-[10px] text-muted-foreground mt-1">
+            {(data.mode || "watermark") === "watermark"
+              ? "Small logo placed in corner"
+              : "Full-frame transparent PNG overlay"}
+          </p>
+        </div>
+
+        {/* Position - only for watermark mode */}
+        {(data.mode || "watermark") === "watermark" && (
         <div>
           <label className="text-xs font-medium text-muted-foreground block mb-1">
             Position
@@ -146,6 +173,7 @@ function VideoWatermarkNode({ data, id }: NodeProps<VideoWatermarkNodeData>) {
             </SelectContent>
           </Select>
         </div>
+        )}
 
         {/* Opacity */}
         <div>
@@ -164,7 +192,8 @@ function VideoWatermarkNode({ data, id }: NodeProps<VideoWatermarkNodeData>) {
           />
         </div>
 
-        {/* Scale */}
+        {/* Scale - only for watermark mode */}
+        {(data.mode || "watermark") === "watermark" && (
         <div>
           <label className="text-xs font-medium text-muted-foreground block mb-1">
             Size: {Math.round(data.scale * 100)}%
@@ -180,8 +209,10 @@ function VideoWatermarkNode({ data, id }: NodeProps<VideoWatermarkNodeData>) {
             className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer nodrag"
           />
         </div>
+        )}
 
-        {/* Margin */}
+        {/* Margin - only for watermark mode */}
+        {(data.mode || "watermark") === "watermark" && (
         <div>
           <label className="text-xs font-medium text-muted-foreground block mb-1">
             Margin: {data.margin}px
@@ -197,6 +228,7 @@ function VideoWatermarkNode({ data, id }: NodeProps<VideoWatermarkNodeData>) {
             className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer nodrag"
           />
         </div>
+        )}
       </div>
 
       {/* Preview */}
@@ -230,7 +262,11 @@ function VideoWatermarkNode({ data, id }: NodeProps<VideoWatermarkNodeData>) {
         </div>
         <div className="flex items-center gap-1">
           <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-          <span>Watermark Image (PNG)</span>
+          <span>
+            {(data.mode || "watermark") === "watermark"
+              ? "Watermark Image (PNG)"
+              : "Overlay Image (Full-frame PNG)"}
+          </span>
         </div>
       </div>
 

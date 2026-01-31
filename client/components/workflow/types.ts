@@ -320,6 +320,7 @@ export interface ImageCompositeNodeData extends BaseNodeData {
 
 // VIDEO WATERMARK / COMPOSITING node
 export interface VideoWatermarkNodeData extends BaseNodeData {
+  mode: "watermark" | "overlay";
   position: "top-left" | "top-right" | "bottom-left" | "bottom-right" | "center";
   opacity: number;
   scale: number;

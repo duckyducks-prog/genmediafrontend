@@ -2211,6 +2211,7 @@ export function useWorkflowExecution(
                 opacity: node.data.opacity ?? 1.0,
                 scale: node.data.scale ?? 0.15,
                 margin: node.data.margin ?? 20,
+                mode: node.data.mode || "watermark",
               };
 
               if (videoInput.startsWith("data:")) {

@@ -746,6 +746,7 @@ class AddWatermarkRequest(BaseModel):
     opacity: float = Field(default=1.0, description="Watermark opacity (0.0 to 1.0)")
     scale: float = Field(default=0.15, description="Scale relative to video width (0.0 to 1.0)")
     margin: int = Field(default=20, description="Margin from edges in pixels")
+    mode: str = Field(default="watermark", description="Mode: watermark (scaled corner logo) or overlay (full-frame)")
 
 
 class AddWatermarkResponse(BaseModel):
@@ -803,34 +804,45 @@ async def add_watermark_to_video(
                     video_height = stream.get("height", 720)
                     break
 
-            # Calculate watermark size based on scale (ensure even width for h264)
-            watermark_width = int(video_width * request.scale)
-            # Make sure width is even for h264 compatibility
-            watermark_width = watermark_width + (watermark_width % 2)
-            # Minimum size check
-            if watermark_width < 10:
-                watermark_width = 10
+            logger.info(f"Video dimensions: {video_width}x{video_height}, mode={request.mode}")
 
-            # Position mapping
-            margin = request.margin
-            position_map = {
-                "top-left": f"{margin}:{margin}",
-                "top-right": f"W-w-{margin}:{margin}",
-                "bottom-left": f"{margin}:H-h-{margin}",
-                "bottom-right": f"W-w-{margin}:H-h-{margin}",
-                "center": "(W-w)/2:(H-h)/2",
-            }
-            overlay_position = position_map.get(request.position, position_map["bottom-right"])
+            if request.mode == "overlay":
+                # Full-frame overlay mode - scale image to fit video, overlay at 0:0
+                # This is for transparent PNGs that should cover the entire frame
+                filter_complex = (
+                    f"[1:v]scale={video_width}:{video_height}:force_original_aspect_ratio=decrease,"
+                    f"pad={video_width}:{video_height}:(ow-iw)/2:(oh-ih)/2:color=black@0.0,"
+                    f"format=rgba,colorchannelmixer=aa={request.opacity}[overlay];"
+                    f"[0:v][overlay]overlay=0:0:format=auto"
+                )
+            else:
+                # Watermark mode - small logo in corner
+                # Calculate watermark size based on scale (ensure even width for h264)
+                watermark_width = int(video_width * request.scale)
+                # Make sure width is even for h264 compatibility
+                watermark_width = watermark_width + (watermark_width % 2)
+                # Minimum size check
+                if watermark_width < 10:
+                    watermark_width = 10
 
-            # Build filter for overlay
-            # Scale watermark with even height (-2 ensures even dimensions), apply opacity, then overlay
-            # Use scale2ref to ensure watermark scales relative to video
-            filter_complex = (
-                f"[1:v]scale={watermark_width}:-2,format=rgba,"
-                f"colorchannelmixer=aa={request.opacity}[watermark];"
-                f"[0:v]format=yuv420p[base];"
-                f"[base][watermark]overlay={overlay_position}:format=auto"
-            )
+                # Position mapping
+                margin = request.margin
+                position_map = {
+                    "top-left": f"{margin}:{margin}",
+                    "top-right": f"W-w-{margin}:{margin}",
+                    "bottom-left": f"{margin}:H-h-{margin}",
+                    "bottom-right": f"W-w-{margin}:H-h-{margin}",
+                    "center": "(W-w)/2:(H-h)/2",
+                }
+                overlay_position = position_map.get(request.position, position_map["bottom-right"])
+
+                # Build filter for watermark
+                # Scale watermark with even height (-2 ensures even dimensions), apply opacity, then overlay
+                filter_complex = (
+                    f"[1:v]scale={watermark_width}:-2,format=rgba,"
+                    f"colorchannelmixer=aa={request.opacity}[watermark];"
+                    f"[0:v][watermark]overlay={overlay_position}:format=auto"
+                )
 
             output_path = os.path.join(tmpdir, "output.mp4")
 
