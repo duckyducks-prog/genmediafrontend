@@ -10,111 +10,102 @@ import {
   Loader2,
   Download,
 } from "lucide-react";
+import { FilterConfig } from "@/lib/pixi-filter-configs";
+import { API_ENDPOINTS } from "@/lib/api-config";
+import { auth } from "@/lib/firebase";
+import { logger } from "@/lib/logger";
 
-const logger = {
-  info: (...args: any[]) => console.log("[VideoOutputNode]", ...args),
-  error: (...args: any[]) => console.error("[VideoOutputNode]", ...args),
-  warn: (...args: any[]) => console.warn("[VideoOutputNode]", ...args),
-};
-
-async function applyFiltersToVideo(
-  videoDataUrl: string,
-  filters: FilterConfig[],
-): Promise<string> {
-  try {
-    const user = auth.currentUser;
-    if (!user) {
-      throw new Error("User not authenticated");
-    }
-    const token = await user.getIdToken();
-
-    // Extract base64 from data URL if present
-    let videoBase64 = videoDataUrl;
-    if (videoDataUrl.startsWith("data:")) {
-      const commaIndex = videoDataUrl.indexOf(",");
-      if (commaIndex !== -1) {
-        videoBase64 = videoDataUrl.substring(commaIndex + 1);
-      }
-    }
-
-    logger.info("Applying filters to video:", filters);
-
-    const response = await fetch(API_ENDPOINTS.video.applyFilters, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        video_base64: videoBase64,
-        filters: filters,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.detail || `HTTP ${response.status}`);
-    }
-
-    const result = await response.json();
-    logger.info("Video filters applied successfully");
-    return `data:video/mp4;base64,${result.video_base64}`;
-  } catch (error) {
-    logger.error("[applyFiltersToVideo] Failed:", error);
-    throw error;
-  }
-}
-
-function VideoOutputNode({ data, id: _id }: NodeProps<OutputNodeData>) {
-  const videoInput = (data as any).videoInput;
-  const filterInputs = (data as any).filterInputs || [];
+function VideoOutputNode({ data, id }: NodeProps<OutputNodeData>) {
+  const videoInput = (data as any).video || (data as any).videoUrl || data.result;
+  const filters: FilterConfig[] = (data as any).filters || [];
   const status = (data as any).status || "ready";
-  const isExecuting = status === "executing";
-  const isCompleted = status === "completed";
 
-  const [displayVideo, setDisplayVideo] = useState<string | null>(null);
-  const [isRendering, setIsRendering] = useState(false);
+  const [displayVideoUrl, setDisplayVideoUrl] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const renderRequestId = useRef(0);
 
-  // Collect all filter configurations from connected filter nodes
-  const filters: FilterConfig[] = filterInputs.flatMap(
-    (input: any) => input?.filters || [],
-  );
+  const isExecuting = status === "executing" || isProcessing;
+  const isCompleted = status === "completed";
 
   // Process video with filters when inputs change
   useEffect(() => {
     if (!videoInput) {
-      setDisplayVideo(null);
+      setDisplayVideoUrl(null);
       return;
     }
 
-    // If we have filters, apply them to the video
     if (filters.length > 0) {
+      // Apply filters via backend
       const currentRequestId = ++renderRequestId.current;
-      setIsRendering(true);
+      setIsProcessing(true);
 
-      applyFiltersToVideo(videoInput, filters)
-        .then((rendered) => {
-          if (currentRequestId === renderRequestId.current) {
-            setDisplayVideo(rendered);
+      logger.debug("[VideoOutputNode] Applying", filters.length, "filters to video");
+
+      (async () => {
+        try {
+          const user = auth.currentUser;
+          const token = await user?.getIdToken();
+
+          const requestBody: any = {
+            filters: filters.map(f => ({ type: f.type, params: f.params })),
+          };
+
+          if (videoInput.startsWith("data:")) {
+            requestBody.video_base64 = videoInput;
+          } else {
+            requestBody.video_url = videoInput;
           }
-        })
-        .catch((error) => {
-          if (currentRequestId === renderRequestId.current) {
-            logger.error("Video filter render failed:", error);
-            setDisplayVideo(videoInput); // Fallback to unfiltered
+
+          const response = await fetch(API_ENDPOINTS.video.applyFilters, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(requestBody),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || `Failed to apply filters: ${response.status}`);
           }
-        })
-        .finally(() => {
+
+          const result = await response.json();
+          const filteredVideoUrl = `data:video/mp4;base64,${result.video_base64}`;
+
           if (currentRequestId === renderRequestId.current) {
-            setIsRendering(false);
+            setDisplayVideoUrl(filteredVideoUrl);
+
+            // Update outputs
+            const updateEvent = new CustomEvent("node-update", {
+              detail: {
+                id,
+                data: {
+                  ...data,
+                  outputs: { video: filteredVideoUrl },
+                },
+              },
+            });
+            window.dispatchEvent(updateEvent);
           }
-        });
+        } catch (error) {
+          console.error("[VideoOutputNode] Filter processing failed:", error);
+          if (currentRequestId === renderRequestId.current) {
+            setDisplayVideoUrl(videoInput); // Fallback to original
+          }
+        } finally {
+          if (currentRequestId === renderRequestId.current) {
+            setIsProcessing(false);
+          }
+        }
+      })();
     } else {
-      // No filters, show video directly
-      setDisplayVideo(videoInput);
+      // No filters, use original
+      setDisplayVideoUrl(videoInput);
     }
-  }, [videoInput, JSON.stringify(filters)]);
+  }, [videoInput, JSON.stringify(filters), id, data]);
+
+  const videoUrl = displayVideoUrl;
 
   const getBorderColor = () => {
     return "border-border";
@@ -180,7 +171,7 @@ function VideoOutputNode({ data, id: _id }: NodeProps<OutputNodeData>) {
       <Handle
         type="target"
         position={Position.Left}
-        id="video-input"
+        id="video"
         data-connector-type="video"
         className="!w-3 !h-3 !border-2 !border-background"
         style={{ top: "40%", transform: "translateY(-50%)" }}
@@ -188,8 +179,8 @@ function VideoOutputNode({ data, id: _id }: NodeProps<OutputNodeData>) {
       <Handle
         type="target"
         position={Position.Left}
-        id="filter-input"
-        data-connector-type="filter"
+        id="filters"
+        data-connector-type="any"
         className="!w-3 !h-3 !border-2 !border-background"
         style={{ top: "60%", transform: "translateY(-50%)" }}
       />

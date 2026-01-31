@@ -33,9 +33,10 @@ function BrightnessContrastNode({
     });
     window.dispatchEvent(updateEvent);
   };
-  // Get incoming data
+  // Get incoming data - support both image and video
   // Extract primitive/comparable values to use as dependencies
   const imageInput = (data as any).image || (data as any).imageInput;
+  const videoInput = (data as any).video || (data as any).videoInput;
   const upstreamFiltersRaw = (data as any).filters || [];
 
   // Convert filters to a stable string for comparison
@@ -69,9 +70,17 @@ function BrightnessContrastNode({
         brightness,
         contrast,
         hasImage: !!imageInput,
+        hasVideo: !!videoInput,
         upstreamFilterCount: upstreamFiltersRaw.length,
         totalFilterCount: updatedFilters.length,
       });
+
+      // Pass through both image and video (whichever is connected)
+      const outputs: Record<string, any> = {
+        filters: updatedFilters,
+      };
+      if (imageInput) outputs.image = imageInput;
+      if (videoInput) outputs.video = videoInput;
 
       const updateEvent = new CustomEvent("node-update", {
         detail: {
@@ -80,10 +89,7 @@ function BrightnessContrastNode({
             ...data,
             brightness,
             contrast,
-            outputs: {
-              image: imageInput, // Pass through original
-              filters: updatedFilters, // Append our config
-            },
+            outputs,
           },
         },
       });
@@ -94,7 +100,7 @@ function BrightnessContrastNode({
   // Update outputs whenever brightness, contrast, or inputs change
   useEffect(() => {
     updateOutputsRef.current(data.brightness, data.contrast);
-  }, [data.brightness, data.contrast, imageInput, upstreamFiltersKey]);
+  }, [data.brightness, data.contrast, imageInput, videoInput, upstreamFiltersKey]);
 
   const handleBrightnessChange = (value: number) => {
     updateOutputsRef.current(value, data.contrast);
@@ -143,7 +149,15 @@ function BrightnessContrastNode({
         id="image"
         data-connector-type="image"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: "30%" }}
+        style={{ top: "20%" }}
+      />
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="video"
+        data-connector-type="video"
+        className="!w-3 !h-3 !border-2 !border-background"
+        style={{ top: "40%" }}
       />
       <Handle
         type="target"
@@ -151,7 +165,7 @@ function BrightnessContrastNode({
         id="filters"
         data-connector-type="any"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: "70%" }}
+        style={{ top: "80%" }}
       />
 
       {/* Controls */}
@@ -204,7 +218,15 @@ function BrightnessContrastNode({
         id="image"
         data-connector-type="image"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: "30%" }}
+        style={{ top: "20%" }}
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="video"
+        data-connector-type="video"
+        className="!w-3 !h-3 !border-2 !border-background"
+        style={{ top: "40%" }}
       />
       <Handle
         type="source"
@@ -212,7 +234,7 @@ function BrightnessContrastNode({
         id="filters"
         data-connector-type="any"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: "70%" }}
+        style={{ top: "80%" }}
       />
     </div>
   );

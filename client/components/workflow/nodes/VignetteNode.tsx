@@ -6,8 +6,9 @@ import { Circle } from "lucide-react";
 import { FilterConfig, FILTER_DEFINITIONS } from "@/lib/pixi-filter-configs";
 
 function VignetteNode({ data, id }: NodeProps<VignetteNodeData>) {
-  // Get incoming data
+  // Get incoming data - support both image and video
   const imageInput = (data as any).image || (data as any).imageInput;
+  const videoInput = (data as any).video || (data as any).videoInput;
   const upstreamFiltersRaw = (data as any).filters || [];
 
   const upstreamFiltersKey = JSON.stringify(
@@ -32,6 +33,13 @@ function VignetteNode({ data, id }: NodeProps<VignetteNodeData>) {
       const thisConfig = createConfig(size, amount);
       const updatedFilters = [...upstreamFiltersRaw, thisConfig];
 
+      // Pass through both image and video (whichever is connected)
+      const outputs: Record<string, any> = {
+        filters: updatedFilters,
+      };
+      if (imageInput) outputs.image = imageInput;
+      if (videoInput) outputs.video = videoInput;
+
       const updateEvent = new CustomEvent("node-update", {
         detail: {
           id,
@@ -39,10 +47,7 @@ function VignetteNode({ data, id }: NodeProps<VignetteNodeData>) {
             ...data,
             size,
             amount,
-            outputs: {
-              image: imageInput,
-              filters: updatedFilters,
-            },
+            outputs,
           },
         },
       });
@@ -52,7 +57,7 @@ function VignetteNode({ data, id }: NodeProps<VignetteNodeData>) {
 
   useEffect(() => {
     updateOutputsRef.current(data.size, data.amount);
-  }, [data.size, data.amount, imageInput, upstreamFiltersKey]);
+  }, [data.size, data.amount, imageInput, videoInput, upstreamFiltersKey]);
 
   const def = FILTER_DEFINITIONS.vignette;
 
@@ -71,7 +76,15 @@ function VignetteNode({ data, id }: NodeProps<VignetteNodeData>) {
         id="image"
         data-connector-type="image"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: "30%" }}
+        style={{ top: "20%" }}
+      />
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="video"
+        data-connector-type="video"
+        className="!w-3 !h-3 !border-2 !border-background"
+        style={{ top: "40%" }}
       />
       <Handle
         type="target"
@@ -79,7 +92,7 @@ function VignetteNode({ data, id }: NodeProps<VignetteNodeData>) {
         id="filters"
         data-connector-type="any"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: "70%" }}
+        style={{ top: "80%" }}
       />
 
       <div className="space-y-4">
@@ -130,7 +143,15 @@ function VignetteNode({ data, id }: NodeProps<VignetteNodeData>) {
         id="image"
         data-connector-type="image"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: "30%" }}
+        style={{ top: "20%" }}
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="video"
+        data-connector-type="video"
+        className="!w-3 !h-3 !border-2 !border-background"
+        style={{ top: "40%" }}
       />
       <Handle
         type="source"
@@ -138,7 +159,7 @@ function VignetteNode({ data, id }: NodeProps<VignetteNodeData>) {
         id="filters"
         data-connector-type="any"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: "70%" }}
+        style={{ top: "80%" }}
       />
     </div>
   );

@@ -9,60 +9,6 @@ import { NodeLockToggle } from "../NodeLockToggle";
 import { API_ENDPOINTS } from "@/lib/api-config";
 import { auth } from "@/lib/firebase";
 
-/**
- * Apply filters to a video using the backend FFmpeg endpoint.
- */
-async function applyFiltersToVideo(
-  videoDataUrl: string,
-  filters: FilterConfig[],
-): Promise<string> {
-  try {
-    // Get auth token
-    const user = auth.currentUser;
-    if (!user) {
-      throw new Error("User not authenticated");
-    }
-    const token = await user.getIdToken();
-
-    // Extract base64 from data URL
-    let videoBase64 = videoDataUrl;
-    if (videoDataUrl.startsWith("data:")) {
-      const commaIndex = videoDataUrl.indexOf(",");
-      if (commaIndex !== -1) {
-        videoBase64 = videoDataUrl.substring(commaIndex + 1);
-      }
-    }
-
-    logger.debug("[applyFiltersToVideo] Sending request:", {
-      filterCount: filters.length,
-      videoSize: videoBase64.length,
-    });
-
-    const response = await fetch(API_ENDPOINTS.video.applyFilters, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        video_base64: videoBase64,
-        filters: filters,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.detail || `HTTP ${response.status}`);
-    }
-
-    const result = await response.json();
-    return `data:video/mp4;base64,${result.video_base64}`;
-  } catch (error) {
-    logger.error("[applyFiltersToVideo] Failed:", error);
-    throw error;
-  }
-}
-
 export interface PreviewNodeData {
   label: string;
   status?: "ready" | "executing" | "completed" | "error";
@@ -200,70 +146,82 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
     } else if (videoInput) {
       // Handle video with possible filters
       if (filters.length > 0) {
-        // Apply filters to video using backend API
         const currentRequestId = ++renderRequestId.current;
-
         logger.debug(
-          "[PreviewNode] Starting video filter render with",
+          "[PreviewNode] Starting video filter processing with",
           filters.length,
-          "filters (request #" + currentRequestId + ")",
+          "filters (request #" + currentRequestId + ")"
         );
         setIsRendering(true);
 
-        applyFiltersToVideo(videoInput, filters)
-          .then((rendered) => {
-            // Only update if this is still the latest request
-            if (currentRequestId === renderRequestId.current) {
-              logger.debug(
-                "[PreviewNode] Video filter render completed (request #" +
-                  currentRequestId +
-                  ")",
-              );
-              setDisplayContent({ type: "video", content: rendered });
+        // Call backend API to apply filters to video
+        (async () => {
+          try {
+            const user = auth.currentUser;
+            const token = await user?.getIdToken();
 
-              // Dispatch the rendered video as output
+            // Prepare video data - either URL or base64
+            const requestBody: any = {
+              filters: filters.map(f => ({ type: f.type, params: f.params })),
+            };
+
+            if (videoInput.startsWith("data:")) {
+              // Base64 video
+              requestBody.video_base64 = videoInput;
+            } else {
+              // URL
+              requestBody.video_url = videoInput;
+            }
+
+            const response = await fetch(API_ENDPOINTS.video.applyFilters, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify(requestBody),
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({}));
+              throw new Error(errorData.detail || `Failed to apply filters: ${response.status}`);
+            }
+
+            const result = await response.json();
+            const filteredVideoUrl = `data:video/mp4;base64,${result.video_base64}`;
+
+            if (currentRequestId === renderRequestId.current) {
+              logger.debug("[PreviewNode] Video filter processing complete (request #" + currentRequestId + ")");
+              setDisplayContent({ type: "video", content: filteredVideoUrl });
+
+              // Dispatch the filtered video as output
               const updateEvent = new CustomEvent("node-update", {
                 detail: {
                   id,
                   data: {
                     ...data,
                     outputs: {
-                      video: rendered, // The processed video with all filters applied
+                      video: filteredVideoUrl,
                     },
                   },
                 },
               });
               window.dispatchEvent(updateEvent);
-            } else {
-              logger.debug(
-                "[PreviewNode] Discarding stale video render (request #" +
-                  currentRequestId +
-                  ")",
-              );
             }
-          })
-          .catch((error) => {
-            // Only handle error if this is still the latest request
+          } catch (error) {
             if (currentRequestId === renderRequestId.current) {
-              console.error(
-                "[PreviewNode] Video filter render failed (request #" +
-                  currentRequestId +
-                  "):",
-                error,
-              );
+              console.error("[PreviewNode] Video filter processing failed:", error);
               // Fallback to original video
               setDisplayContent({ type: "video", content: videoInput });
             }
-          })
-          .finally(() => {
-            // Only clear rendering flag if this is still the latest request
+          } finally {
             if (currentRequestId === renderRequestId.current) {
               setIsRendering(false);
             }
-          });
+          }
+        })();
       } else {
         // No filters, show original video
-        logger.debug("[PreviewNode] Showing original video (no filters)");
         setDisplayContent({ type: "video", content: videoInput });
 
         // Dispatch the original video as output
@@ -292,10 +250,14 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
   };
 
   const handleDownload = () => {
-    if (displayContent.type === "image" && displayContent.content) {
+    if (displayContent.content) {
       const link = document.createElement("a");
       link.href = displayContent.content;
-      link.download = "modified-image.png";
+      if (displayContent.type === "image") {
+        link.download = "modified-image.png";
+      } else if (displayContent.type === "video") {
+        link.download = "modified-video.mp4";
+      }
       link.click();
     }
   };
@@ -353,14 +315,22 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
         style={{ top: "75%", transform: "translateY(-50%)" }}
       />
 
-      {/* Output Handle */}
+      {/* Output Handles */}
       <Handle
         type="source"
         position={Position.Right}
         id="image"
         data-connector-type="image"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: "50%", transform: "translateY(-50%)" }}
+        style={{ top: "40%", transform: "translateY(-50%)" }}
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="video"
+        data-connector-type="video"
+        className="!w-3 !h-3 !border-2 !border-background"
+        style={{ top: "60%", transform: "translateY(-50%)" }}
       />
 
       {/* Node Content */}
@@ -393,16 +363,27 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
             </Button>
           </>
         ) : displayContent.type === "video" && displayContent.content ? (
-          <div className="relative rounded-lg overflow-hidden bg-muted border border-border">
-            <video
-              src={displayContent.content}
-              controls
-              className="w-full h-auto max-h-[250px] object-contain bg-black"
-              onError={() => {
-                console.error("[PreviewNode] Video failed to load");
-              }}
-            />
-          </div>
+          <>
+            <div className="relative rounded-lg overflow-hidden bg-muted border border-border">
+              <video
+                src={displayContent.content}
+                controls
+                className="w-full h-auto max-h-[250px] object-contain bg-black"
+                onError={() => {
+                  console.error("[PreviewNode] Video failed to load");
+                }}
+              />
+            </div>
+            <Button
+              onClick={handleDownload}
+              variant="outline"
+              size="sm"
+              className="w-full"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download
+            </Button>
+          </>
         ) : displayContent.type === "text" && displayContent.content ? (
           <div className="bg-muted border border-border rounded-lg p-3 max-h-[250px] overflow-y-auto">
             <p className="text-sm text-foreground whitespace-pre-wrap break-words">

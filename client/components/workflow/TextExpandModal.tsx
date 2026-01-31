@@ -76,12 +76,12 @@ export function TextExpandModal({
     <div className="fixed inset-0 z-[1100] flex items-center justify-center p-8">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/80"
         onClick={onClose}
       />
 
-      {/* Modal - Large centered */}
-      <div className="relative bg-card border border-border rounded-xl shadow-2xl w-full max-w-6xl h-[85vh] flex flex-col">
+      {/* Modal - large centered */}
+      <div className="relative bg-card border border-border rounded-lg shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted/30">
           <div className="flex items-center gap-3">
@@ -111,7 +111,7 @@ export function TextExpandModal({
         </div>
 
         {/* Content */}
-        <div className="flex-1 p-8 overflow-hidden">
+        <div className="flex-1 p-4 overflow-hidden min-h-0">
           <Textarea
             ref={textareaRef}
             value={localValue}
@@ -119,32 +119,28 @@ export function TextExpandModal({
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             readOnly={readOnly}
-            className="w-full h-full resize-none text-base leading-relaxed focus:outline-none focus:ring-0 border-0 bg-transparent"
+            className="w-full h-full resize-none font-mono text-sm leading-relaxed"
           />
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-border bg-muted/30">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
-              {charCount} characters · {wordCount} words
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="text-sm text-muted-foreground">
-                <kbd className="px-2 py-1 bg-background border border-border rounded text-xs font-mono">⌘+Enter</kbd>
-                <span className="ml-2">to save</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" onClick={onClose}>
-                  Cancel
-                </Button>
-                {!readOnly && (
-                  <Button onClick={handleSave}>
-                    Save
-                  </Button>
-                )}
-              </div>
-            </div>
+        <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <span>{localValue.length} characters</span>
+            <span>{localValue.trim() ? localValue.trim().split(/\s+/).length : 0} words</span>
+            <span className="hidden sm:inline">
+              <kbd className="px-1 bg-muted rounded">⌘/Ctrl + Enter</kbd> to save
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              Cancel
+            </Button>
+            {!readOnly && (
+              <Button size="sm" onClick={handleSave}>
+                Save
+              </Button>
+            )}
           </div>
         </div>
       </div>

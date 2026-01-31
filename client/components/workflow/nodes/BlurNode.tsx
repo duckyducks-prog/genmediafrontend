@@ -13,9 +13,10 @@ function BlurNode({ data, id }: NodeProps<BlurNodeData>) {
     });
     window.dispatchEvent(updateEvent);
   };
-  // Get incoming data
+  // Get incoming data - support both image and video
   // Extract primitive/comparable values to use as dependencies
   const imageInput = (data as any).image || (data as any).imageInput;
+  const videoInput = (data as any).video || (data as any).videoInput;
   const upstreamFiltersRaw = (data as any).filters || [];
 
   // Convert filters to a stable string for comparison
@@ -42,6 +43,13 @@ function BlurNode({ data, id }: NodeProps<BlurNodeData>) {
       const thisConfig = createConfig(strength, quality);
       const updatedFilters = [...upstreamFiltersRaw, thisConfig];
 
+      // Pass through both image and video (whichever is connected)
+      const outputs: Record<string, any> = {
+        filters: updatedFilters,
+      };
+      if (imageInput) outputs.image = imageInput;
+      if (videoInput) outputs.video = videoInput;
+
       const updateEvent = new CustomEvent("node-update", {
         detail: {
           id,
@@ -49,10 +57,7 @@ function BlurNode({ data, id }: NodeProps<BlurNodeData>) {
             ...data,
             strength,
             quality,
-            outputs: {
-              image: imageInput,
-              filters: updatedFilters,
-            },
+            outputs,
           },
         },
       });
@@ -62,7 +67,7 @@ function BlurNode({ data, id }: NodeProps<BlurNodeData>) {
 
   useEffect(() => {
     updateOutputsRef.current(data.strength, data.quality);
-  }, [data.strength, data.quality, imageInput, upstreamFiltersKey]);
+  }, [data.strength, data.quality, imageInput, videoInput, upstreamFiltersKey]);
 
   const def = FILTER_DEFINITIONS.blur;
 
@@ -82,7 +87,15 @@ function BlurNode({ data, id }: NodeProps<BlurNodeData>) {
         id="image"
         data-connector-type="image"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: "30%" }}
+        style={{ top: "20%" }}
+      />
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="video"
+        data-connector-type="video"
+        className="!w-3 !h-3 !border-2 !border-background"
+        style={{ top: "40%" }}
       />
       <Handle
         type="target"
@@ -90,7 +103,7 @@ function BlurNode({ data, id }: NodeProps<BlurNodeData>) {
         id="filters"
         data-connector-type="any"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: "70%" }}
+        style={{ top: "80%" }}
       />
 
       <div className="space-y-4">
@@ -131,7 +144,15 @@ function BlurNode({ data, id }: NodeProps<BlurNodeData>) {
         id="image"
         data-connector-type="image"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: "30%" }}
+        style={{ top: "20%" }}
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="video"
+        data-connector-type="video"
+        className="!w-3 !h-3 !border-2 !border-background"
+        style={{ top: "40%" }}
       />
       <Handle
         type="source"
@@ -139,7 +160,7 @@ function BlurNode({ data, id }: NodeProps<BlurNodeData>) {
         id="filters"
         data-connector-type="any"
         className="!w-3 !h-3 !border-2 !border-background"
-        style={{ top: "70%" }}
+        style={{ top: "80%" }}
       />
     </div>
   );
