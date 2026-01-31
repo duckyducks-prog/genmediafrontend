@@ -10,6 +10,6 @@ class TestHealthE2E:
         
         assert response.status_code == 200
         data = response.json()
-        assert data["status"] == "ok"
+        assert data["status"] == "healthy"
         assert "project" in data
         assert "models" in data

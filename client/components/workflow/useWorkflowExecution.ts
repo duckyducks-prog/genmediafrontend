@@ -1226,10 +1226,30 @@ export function useWorkflowExecution(
               });
 
               if (response.status === 403) {
-                return {
-                  success: false,
-                  error: "Access denied. Your email may not be whitelisted.",
-                };
+                // Parse the error to differentiate between auth and ElevenLabs API issues
+                const errorText = await response.text();
+                let errorDetail: string;
+
+                try {
+                  const errorJson = JSON.parse(errorText);
+                  errorDetail = errorJson.detail || errorText;
+                } catch {
+                  errorDetail = errorText;
+                }
+
+                // Check if it's an auth error (from our backend) or ElevenLabs API error
+                if (errorDetail.includes("not authorized") || errorDetail.includes("Access denied. User")) {
+                  return {
+                    success: false,
+                    error: "Access denied. Your email may not be whitelisted.",
+                  };
+                } else {
+                  // ElevenLabs API error - show the actual error message
+                  return {
+                    success: false,
+                    error: `ElevenLabs API Error: ${errorDetail}`,
+                  };
+                }
               }
 
               if (response.status === 401) {
