@@ -1,5 +1,4 @@
-import { logger } from "@/lib/logger";
-import { memo, useState, useEffect, useRef } from "react";
+import { memo, useState, useEffect } from "react";
 import { Handle, Position, NodeProps, useReactFlow } from "reactflow";
 import { Stamp, Loader2, CheckCircle2 } from "lucide-react";
 import {
@@ -9,8 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { API_ENDPOINTS } from "@/lib/api-config";
-import { auth } from "@/lib/firebase";
+import { Slider } from "@/components/ui/slider";
 import { NodeLockToggle } from "../NodeLockToggle";
 
 export interface VideoWatermarkNodeData {
@@ -27,13 +25,11 @@ export interface VideoWatermarkNodeData {
 }
 
 function VideoWatermarkNode({ data, id }: NodeProps<VideoWatermarkNodeData>) {
-  const { setNodes } = useReactFlow();
-  const [isProcessing, setIsProcessing] = useState(false);
+  const { setNodes: _setNodes } = useReactFlow();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const renderRequestId = useRef(0);
 
   const status = data.status || "ready";
-  const isExecuting = status === "executing" || isProcessing;
+  const isExecuting = status === "executing";
   const isCompleted = status === "completed";
 
   const handleUpdate = (field: string, value: any) => {
@@ -51,112 +47,29 @@ function VideoWatermarkNode({ data, id }: NodeProps<VideoWatermarkNodeData>) {
     handleUpdate("locked", !data.locked);
   };
 
-  // Process video with watermark when inputs change
+  // Don't auto-process - wait for workflow execution
+  // This prevents "Failed to fetch" errors from large payloads
+  // and ensures proper execution order
   useEffect(() => {
     const videoInput = (data as any).video || (data as any).videoInput;
     const watermarkInput = (data as any).watermark || (data as any).image;
 
-    if (!videoInput || !watermarkInput) {
-      setPreviewUrl(null);
-      return;
+    // Just update preview URL from outputs if execution completed
+    if (data.outputs?.video && !previewUrl) {
+      setPreviewUrl(data.outputs.video);
     }
 
-    const currentRequestId = ++renderRequestId.current;
-    setIsProcessing(true);
-
-    logger.debug("[VideoWatermarkNode] Processing watermark overlay", {
-      position: data.position,
-      opacity: data.opacity,
-      scale: data.scale,
-    });
-
-    (async () => {
-      try {
-        const user = auth.currentUser;
-        const token = await user?.getIdToken();
-
-        const requestBody: any = {
-          watermark_base64: watermarkInput.startsWith("data:")
-            ? watermarkInput
-            : watermarkInput,
-          position: data.position,
-          opacity: data.opacity,
-          scale: data.scale,
-          margin: data.margin,
-        };
-
-        if (videoInput.startsWith("data:")) {
-          requestBody.video_base64 = videoInput;
-        } else {
-          requestBody.video_url = videoInput;
-        }
-
-        const response = await fetch(API_ENDPOINTS.video.addWatermark, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(requestBody),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.detail || `Failed to add watermark: ${response.status}`);
-        }
-
-        const result = await response.json();
-        const outputVideoUrl = `data:video/mp4;base64,${result.video_base64}`;
-
-        if (currentRequestId === renderRequestId.current) {
-          logger.debug("[VideoWatermarkNode] Watermark complete");
-          setPreviewUrl(outputVideoUrl);
-
-          // Update outputs
-          const event = new CustomEvent("node-update", {
-            detail: {
-              id,
-              data: {
-                ...data,
-                status: "completed",
-                outputs: { video: outputVideoUrl },
-                error: undefined,
-              },
-            },
-          });
-          window.dispatchEvent(event);
-        }
-      } catch (error) {
-        console.error("[VideoWatermarkNode] Processing failed:", error);
-        if (currentRequestId === renderRequestId.current) {
-          const event = new CustomEvent("node-update", {
-            detail: {
-              id,
-              data: {
-                ...data,
-                status: "error",
-                error: error instanceof Error ? error.message : "Failed to add watermark",
-              },
-            },
-          });
-          window.dispatchEvent(event);
-        }
-      } finally {
-        if (currentRequestId === renderRequestId.current) {
-          setIsProcessing(false);
-        }
-      }
-    })();
+    // Clear preview if inputs are removed
+    if (!videoInput || !watermarkInput) {
+      setPreviewUrl(null);
+    }
   }, [
     (data as any).video,
     (data as any).videoInput,
     (data as any).watermark,
     (data as any).image,
-    data.position,
-    data.opacity,
-    data.scale,
-    data.margin,
-    id,
+    data.outputs?.video,
+    previewUrl,
   ]);
 
   const getBorderColor = () => {
