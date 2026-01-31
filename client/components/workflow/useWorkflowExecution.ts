@@ -28,6 +28,7 @@ interface ExecutionResult {
   success: boolean;
   data?: any;
   error?: string;
+  skipped?: boolean; // True if node was skipped (disabled)
 }
 
 export function useWorkflowExecution(
@@ -238,6 +239,12 @@ export function useWorkflowExecution(
   // Execute a single node
   const executeNode = useCallback(
     async (node: WorkflowNode, inputs: any): Promise<ExecutionResult> => {
+      // Skip disabled nodes - they pass through inputs unchanged
+      if (node.data.enabled === false) {
+        logger.debug(`[executeNode] Skipping disabled node: ${node.id} (${node.type})`);
+        return { success: true, data: inputs, skipped: true };
+      }
+
       try {
         switch (node.type) {
           // INPUT NODES

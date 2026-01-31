@@ -80,6 +80,7 @@ import CropNode from "./nodes/CropNode";
 import ImageCompositeNode from "./nodes/ImageCompositeNode";
 import ExtractLastFrameNode from "./nodes/ExtractLastFrameNode";
 import StickyNoteNode from "./nodes/StickyNoteNode";
+import TextOutputNode from "./nodes/TextOutputNode";
 
 const nodeTypes: NodeTypes = {
   // Input nodes
@@ -115,6 +116,7 @@ const nodeTypes: NodeTypes = {
   // Output nodes
   [NodeType.ImageOutput]: ImageOutputNode,
   [NodeType.VideoOutput]: VideoOutputNode,
+  [NodeType.TextOutput]: TextOutputNode,
 
   // Documentation/Utility nodes
   [NodeType.StickyNote]: StickyNoteNode,
@@ -451,7 +453,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
         switch (type) {
           // Input nodes
           case NodeType.Prompt:
-            data = { prompt: "", label: "Prompt", outputs: {} };
+            data = { prompt: "", label: "Text Input", outputs: {} };
             break;
           case NodeType.ImageInput:
             data = {
@@ -647,6 +649,9 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
             break;
           case NodeType.VideoOutput:
             data = { result: null, type: "video", label: "Video Output" };
+            break;
+          case NodeType.TextOutput:
+            data = { textContent: "", label: "Text Output" };
             break;
           case NodeType.Download:
             data = { inputData: null, type: "image", label: "Download" };
