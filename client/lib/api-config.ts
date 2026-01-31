@@ -45,6 +45,7 @@ export const API_ENDPOINTS = {
     addMusic: `${VEO_API_BASE_URL}/v1/video/add-music`,
     applyFilters: `${VEO_API_BASE_URL}/v1/video/apply-filters`,
     addWatermark: `${VEO_API_BASE_URL}/v1/video/add-watermark`,
+    segmentReplace: `${VEO_API_BASE_URL}/v1/video/segment-replace`,
   },
 
   // Assets endpoints - routed through local proxy to avoid CORS

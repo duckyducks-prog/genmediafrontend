@@ -32,6 +32,7 @@ export enum NodeType {
   // VIDEO MODIFIER nodes
   ExtractLastFrame = "extractLastFrame",
   VideoWatermark = "videoWatermark",
+  VideoSegmentReplace = "videoSegmentReplace",
 
   // ACTION nodes (inputs and outputs)
   GenerateVideo = "generateVideo",
@@ -313,6 +314,15 @@ export interface VideoWatermarkNodeData extends BaseNodeData {
   margin: number;
 }
 
+// VIDEO SEGMENT REPLACE node
+export interface VideoSegmentReplaceNodeData extends BaseNodeData {
+  startTime: number;
+  endTime: number;
+  audioMode: "keep_base" | "keep_replacement" | "mix";
+  fitMode: "stretch" | "trim" | "loop";
+  baseDuration?: number; // Auto-detected from input video
+}
+
 // EXTRACT LAST FRAME node
 export interface ExtractLastFrameNodeData extends BaseNodeData {
   // Input video reference
@@ -420,6 +430,7 @@ export type WorkflowNodeData =
   | CropNodeData
   | ImageCompositeNodeData
   | VideoWatermarkNodeData
+  | VideoSegmentReplaceNodeData
   | ExtractLastFrameNodeData
   | GenerateVideoNodeData
   | GenerateImageNodeData
@@ -898,6 +909,36 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "watermark",
         label: "Overlay Image",
         type: ConnectorType.Image,
+        required: true,
+        acceptsMultiple: false,
+      },
+    ],
+    outputConnectors: [
+      {
+        id: "video",
+        label: "Video Output",
+        type: ConnectorType.Video,
+      },
+    ],
+  },
+
+  [NodeType.VideoSegmentReplace]: {
+    type: NodeType.VideoSegmentReplace,
+    label: "Video Segment Replace",
+    category: "modifier",
+    description: "Replace a segment of video while keeping audio",
+    inputConnectors: [
+      {
+        id: "base",
+        label: "Base Video",
+        type: ConnectorType.Video,
+        required: true,
+        acceptsMultiple: false,
+      },
+      {
+        id: "replacement",
+        label: "Replacement Video",
+        type: ConnectorType.Video,
         required: true,
         acceptsMultiple: false,
       },
