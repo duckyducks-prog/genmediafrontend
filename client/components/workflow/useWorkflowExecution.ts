@@ -2667,56 +2667,56 @@ export function useWorkflowExecution(
     // The batch iteration chain: ScriptQueue → ... → GenerateVideo/GenerateImage
     // These nodes need ALL iteration outputs, not just the current iteration's output
     const postBatchNodeIds = new Set<string>();
-    
+
     // Track the actual batch iteration node (the one connected to ScriptQueue's output chain)
     let batchIterationVideoNodeId: string | undefined;
-    
+
     if (batchMode && scriptQueueNode) {
       // Find the node that receives ScriptQueue's text output (usually Prompt or GenerateVideo via chain)
       // Then trace to find the video-producing node in the batch chain
       const scriptQueueOutEdges = edges.filter(e => e.source === scriptQueueNode.id);
-      
+
       // Trace the chain from ScriptQueue to find GenerateVideo/GenerateImage
       const findBatchVideoNode = (startNodeId: string, visited = new Set<string>()): string | undefined => {
         if (visited.has(startNodeId)) return undefined;
         visited.add(startNodeId);
-        
+
         const node = nodes.find(n => n.id === startNodeId);
         if (!node) return undefined;
-        
+
         // Found a video-producing node
         if (node.type === NodeType.GenerateVideo || node.type === NodeType.GenerateImage) {
           return node.id;
         }
-        
+
         // Continue tracing downstream
         const outEdges = edges.filter(e => e.source === startNodeId);
         for (const edge of outEdges) {
           const result = findBatchVideoNode(edge.target, visited);
           if (result) return result;
         }
-        
+
         return undefined;
       };
-      
+
       // Find the batch iteration video node starting from ScriptQueue
       for (const edge of scriptQueueOutEdges) {
         batchIterationVideoNodeId = findBatchVideoNode(edge.target);
         if (batchIterationVideoNodeId) break;
       }
-      
+
       logger.info(`[Batch] Batch iteration video node:`, {
         nodeId: batchIterationVideoNodeId,
         nodeType: batchIterationVideoNodeId ? nodes.find(n => n.id === batchIterationVideoNodeId)?.type : 'not found'
       });
-      
+
       // Aggregator types that should run after batch completes
       const aggregatorTypes = new Set([
         NodeType.MergeVideos,
         NodeType.AddMusicToVideo,
         NodeType.VoiceChanger,
       ]);
-      
+
       // Now identify post-batch nodes: aggregators that receive from the batch iteration video node
       // OR any aggregator node that's downstream of the batch video node
       if (batchIterationVideoNodeId) {
@@ -2724,9 +2724,9 @@ export function useWorkflowExecution(
         const isDownstreamOfBatchVideo = (nodeId: string, visited = new Set<string>()): boolean => {
           if (visited.has(nodeId)) return false;
           visited.add(nodeId);
-          
+
           if (nodeId === batchIterationVideoNodeId) return true;
-          
+
           // Check incoming edges
           const inEdges = edges.filter(e => e.target === nodeId);
           for (const edge of inEdges) {
@@ -2734,21 +2734,21 @@ export function useWorkflowExecution(
           }
           return false;
         };
-        
+
         for (const node of nodes) {
           if (!aggregatorTypes.has(node.type as NodeType)) continue;
-          
+
           // Check if this aggregator is downstream of the batch video node
           const isDownstream = isDownstreamOfBatchVideo(node.id);
-          
+
           logger.debug(`[Batch] Checking aggregator ${node.type} (${node.id}):`, {
             isDownstreamOfBatchVideo: isDownstream,
           });
-          
+
           if (isDownstream) {
             postBatchNodeIds.add(node.id);
             logger.info(`[Batch] Marked ${node.type} (${node.id}) as post-batch node`);
-            
+
             // Also add any nodes downstream of this post-batch node
             const findDownstream = (nodeId: string) => {
               const outEdges = edges.filter(e => e.source === nodeId);
@@ -2765,7 +2765,7 @@ export function useWorkflowExecution(
           }
         }
       }
-      
+
       if (postBatchNodeIds.size > 0) {
         logger.info(`[Batch] Total ${postBatchNodeIds.size} post-batch nodes identified`);
       } else {
@@ -3385,15 +3385,15 @@ export function useWorkflowExecution(
                     }
                   }
                 }
-                
+
                 // Fallback: If no batch video node or no output, check terminal nodes
                 if (!collectedVideoUrl) {
                   const priorityOrder = [NodeType.GenerateVideo, NodeType.AddMusicToVideo, NodeType.MergeVideos];
-                  
+
                   for (const nodeType of priorityOrder) {
                     // Look in all nodes, not just terminalNodes (which might exclude post-batch nodes)
-                    const videoNode = currentNodes.find(n => 
-                      n.type === nodeType && 
+                    const videoNode = currentNodes.find(n =>
+                      n.type === nodeType &&
                       !postBatchNodeIds.has(n.id) // Skip post-batch nodes
                     );
                     if (videoNode?.data) {
@@ -3464,7 +3464,7 @@ export function useWorkflowExecution(
         // ========== POST-BATCH NODE EXECUTION ==========
         // Execute aggregator nodes (MergeVideos, AddMusicToVideo, VoiceChanger) that were skipped
         // during batch iterations. These nodes need outputs from ALL iterations.
-        
+
         // Debug: Log the state before post-batch execution
         logger.info(`[Batch] 🔍 Post-batch check:`, {
           postBatchNodeIds: Array.from(postBatchNodeIds),
@@ -3477,7 +3477,7 @@ export function useWorkflowExecution(
             hasVideo: !!r.videoUrl,
           })),
         });
-        
+
         // FALLBACK: If no post-batch nodes were detected but we have aggregator nodes
         // and collected videos, try to find and add them now
         if (postBatchNodeIds.size === 0 && collectedResults.length > 0) {
@@ -3486,16 +3486,16 @@ export function useWorkflowExecution(
             NodeType.AddMusicToVideo,
             NodeType.VoiceChanger,
           ]);
-          
+
           const aggregatorNodes = nodes.filter(n => aggregatorTypes.has(n.type as NodeType));
-          
+
           if (aggregatorNodes.length > 0) {
             logger.warn(`[Batch] ⚠️ No post-batch nodes detected but found ${aggregatorNodes.length} aggregator node(s). Adding them as post-batch.`);
-            
+
             // Add all aggregators and their downstream nodes
             for (const aggNode of aggregatorNodes) {
               postBatchNodeIds.add(aggNode.id);
-              
+
               const findDownstream = (nodeId: string) => {
                 const outEdges = edges.filter(e => e.source === nodeId);
                 for (const edge of outEdges) {
@@ -3507,11 +3507,11 @@ export function useWorkflowExecution(
               };
               findDownstream(aggNode.id);
             }
-            
+
             logger.info(`[Batch] Added ${postBatchNodeIds.size} nodes as post-batch (fallback)`);
           }
         }
-        
+
         if (postBatchNodeIds.size > 0 && collectedResults.length > 0) {
           logger.info(`[Batch] Starting post-batch execution for ${postBatchNodeIds.size} nodes`);
 
@@ -3522,7 +3522,7 @@ export function useWorkflowExecution(
             .sort((a, b) => a.index - b.index)  // Ensure script order is preserved
             .map(r => r.videoUrl as string);
 
-          logger.info(`[Batch] Collected ${batchVideoUrls.length} video URLs in script order:`, 
+          logger.info(`[Batch] Collected ${batchVideoUrls.length} video URLs in script order:`,
             collectedResults
               .filter(r => r.success && r.videoUrl)
               .sort((a, b) => a.index - b.index)
@@ -3540,8 +3540,26 @@ export function useWorkflowExecution(
               return (aHasPostBatchInput ? 1 : 0) - (bHasPostBatchInput ? 1 : 0);
             });
 
-            // Track outputs from post-batch execution
-            let postBatchTrackedNodes = [...nodes];
+            // Get the CURRENT state of all nodes (including outputs from iteration nodes like GenerateMusic)
+            // This is critical for post-batch nodes that need non-video inputs (e.g., audio for AddMusicToVideo)
+            let postBatchTrackedNodes: WorkflowNode[] = [];
+            await new Promise<void>((resolve) => {
+              setNodes((currentNodes) => {
+                postBatchTrackedNodes = [...currentNodes];
+                resolve();
+                return currentNodes;
+              });
+            });
+
+            logger.info(`[Batch] Post-batch tracked nodes state:`,
+              postBatchTrackedNodes
+                .filter(n => n.data.outputs && Object.keys(n.data.outputs as object).length > 0)
+                .map(n => ({
+                  id: n.id,
+                  type: n.type,
+                  outputKeys: Object.keys(n.data.outputs as object),
+                }))
+            );
 
             for (const postBatchNode of sortedPostBatchNodes) {
               logger.info(`[Batch] Executing post-batch node: ${postBatchNode.type} (${postBatchNode.id})`);
@@ -3569,6 +3587,13 @@ export function useWorkflowExecution(
                 // Other post-batch nodes (AddMusicToVideo, VoiceChanger) get inputs from
                 // their connected upstream nodes (which might be other post-batch nodes)
                 postBatchInputs = gatherNodeInputs(postBatchNode, postBatchTrackedNodes, edges);
+
+                logger.info(`[Batch] ${postBatchNode.type} gathered inputs:`, {
+                  inputKeys: Object.keys(postBatchInputs),
+                  hasVideo: !!postBatchInputs.video,
+                  hasAudio: !!postBatchInputs.audio,
+                  hasAudioTrack1: !!postBatchInputs.audioTrack1,
+                });
               }
 
               try {
@@ -3606,13 +3631,13 @@ export function useWorkflowExecution(
             // Find the final output from the last post-batch node
             const lastPostBatchNode = sortedPostBatchNodes[sortedPostBatchNodes.length - 1];
             const finalNode = postBatchTrackedNodes.find(n => n.id === lastPostBatchNode?.id);
-            const finalVideoUrl = (finalNode?.data as any)?.outputVideoUrl || 
-                                  (finalNode?.data as any)?.outputs?.video ||
-                                  (finalNode?.data as any)?.videoUrl;
-            
+            const finalVideoUrl = (finalNode?.data as any)?.outputVideoUrl ||
+              (finalNode?.data as any)?.outputs?.video ||
+              (finalNode?.data as any)?.videoUrl;
+
             if (finalVideoUrl) {
               logger.info(`[Batch] 🎬 Final output from ${lastPostBatchNode?.type}:`, finalVideoUrl.substring(0, 100));
-              
+
               // Store the final merged video in ScriptQueue for easy access
               if (scriptQueueNode) {
                 setNodes((prevNodes) =>
@@ -3633,7 +3658,7 @@ export function useWorkflowExecution(
             // Not enough videos collected - provide helpful error message
             const failedIterations = collectedResults.filter(r => !r.success).length;
             const iterationsWithVideo = collectedResults.filter(r => r.videoUrl).length;
-            
+
             logger.warn(`[Batch] Skipping post-batch nodes:`, {
               totalIterations: collectedResults.length,
               failedIterations,
@@ -3653,7 +3678,7 @@ export function useWorkflowExecution(
               : batchVideoUrls.length === 1
                 ? `Only 1 video collected (need at least 2 to merge). ${failedIterations} iteration(s) failed.`
                 : `Only ${batchVideoUrls.length} video(s) collected from batch.`;
-            
+
             postBatchNodeIds.forEach(nodeId => {
               updateNodeState(nodeId, "error", { error: errorMessage });
             });
