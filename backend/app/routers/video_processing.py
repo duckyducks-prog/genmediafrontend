@@ -760,7 +760,8 @@ async def add_music_to_video(
 class AddWatermarkRequest(BaseModel):
     video_base64: Optional[str] = Field(default=None, description="Base64 encoded video")
     video_url: Optional[str] = Field(default=None, description="GCS/HTTP URL to video")
-    watermark_base64: str = Field(..., description="Base64 encoded watermark image (PNG with transparency)")
+    watermark_base64: Optional[str] = Field(default=None, description="Base64 encoded watermark image (PNG with transparency)")
+    watermark_url: Optional[str] = Field(default=None, description="GCS/HTTP URL to watermark image")
     position: str = Field(default="bottom-right", description="Position: top-left, top-right, bottom-left, bottom-right, center")
     opacity: float = Field(default=1.0, description="Watermark opacity (0.0 to 1.0)")
     scale: float = Field(default=0.15, description="Scale relative to video width (0.0 to 1.0)")
@@ -806,8 +807,21 @@ async def add_watermark_to_video(
                 f.write(video_bytes)
             logger.info(f"Saved video: {len(video_bytes)} bytes")
 
-            # Save watermark image
-            watermark_bytes = clean_base64(request.watermark_base64)
+            # Validate and get watermark bytes
+            if not request.watermark_base64 and not request.watermark_url:
+                raise HTTPException(status_code=400, detail="Either watermark_base64 or watermark_url must be provided")
+
+            # Get watermark bytes from URL or base64
+            if request.watermark_url:
+                logger.info(f"Downloading watermark from URL: {request.watermark_url[:80]}...")
+                async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as client:
+                    response = await client.get(request.watermark_url)
+                    if response.status_code != 200:
+                        raise HTTPException(status_code=400, detail=f"Failed to download watermark: {response.status_code}")
+                    watermark_bytes = response.content
+            else:
+                watermark_bytes = clean_base64(request.watermark_base64)
+
             watermark_path = os.path.join(tmpdir, "watermark.png")
             with open(watermark_path, "wb") as f:
                 f.write(watermark_bytes)
@@ -882,8 +896,12 @@ async def add_watermark_to_video(
                 output_path
             ]
 
-            logger.info(f"Running ffmpeg watermark overlay")
-            result = subprocess.run(overlay_cmd, capture_output=True, text=True)
+            logger.info(f"Running ffmpeg watermark overlay: {' '.join(overlay_cmd)}")
+            try:
+                result = subprocess.run(overlay_cmd, capture_output=True, text=True, timeout=120)
+            except subprocess.TimeoutExpired:
+                logger.error("FFmpeg watermark timed out after 120 seconds")
+                raise HTTPException(status_code=500, detail="Video processing timed out")
 
             if result.returncode != 0:
                 error_msg = get_ffmpeg_error(result.stderr)

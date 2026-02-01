@@ -2240,7 +2240,6 @@ export function useWorkflowExecution(
               const token = await user?.getIdToken();
 
               const requestBody: any = {
-                watermark_base64: watermarkInput,
                 position: node.data.position || "bottom-right",
                 opacity: node.data.opacity ?? 1.0,
                 scale: node.data.scale ?? 0.15,
@@ -2248,10 +2247,18 @@ export function useWorkflowExecution(
                 mode: node.data.mode || "watermark",
               };
 
+              // Handle video input - URL or base64
               if (videoInput.startsWith("data:")) {
                 requestBody.video_base64 = videoInput;
               } else {
                 requestBody.video_url = videoInput;
+              }
+
+              // Handle watermark input - URL or base64
+              if (watermarkInput.startsWith("data:")) {
+                requestBody.watermark_base64 = watermarkInput;
+              } else {
+                requestBody.watermark_url = watermarkInput;
               }
 
               const response = await fetch(API_ENDPOINTS.video.addWatermark, {
