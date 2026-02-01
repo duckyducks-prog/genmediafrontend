@@ -102,7 +102,10 @@ steps:
           --cpu 1 \
           --min-instances 0 \
           --max-instances 10 \
-          --set-env-vars "NODE_ENV=production,REQUIRE_AUTH=${_REQUIRE_AUTH},GCP_PROJECT_ID=${PROJECT_ID},ALLOWED_ORIGINS=$$ORIGINS"
+          --set-env-vars "NODE_ENV=production" \
+          --set-env-vars "REQUIRE_AUTH=${_REQUIRE_AUTH}" \
+          --set-env-vars "GCP_PROJECT_ID=${PROJECT_ID}" \
+          --set-env-vars "^@^ALLOWED_ORIGINS=$$ORIGINS"
 
 # Store images in Artifact Registry
 images:
