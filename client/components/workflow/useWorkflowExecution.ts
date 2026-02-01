@@ -2636,6 +2636,7 @@ export function useWorkflowExecution(
       let currentNodes: WorkflowNode[] = [];
 
       if (scriptQueueNode && batchMode) {
+        logger.info(`[Batch] Starting iteration ${iterationIndex + 1} - clearing stale outputs from previous iteration`);
         await new Promise<void>((resolve) => {
           setNodes((prevNodes) => {
             currentNodes = prevNodes.map((n) =>
@@ -2655,6 +2656,19 @@ export function useWorkflowExecution(
                       status: "ready", // Reset status for re-execution
                       outputs: n.type === NodeType.ScriptQueue ? n.data.outputs : {}, // Clear outputs except ScriptQueue
                       error: undefined, // Clear any previous errors
+                      // CRITICAL: Clear stale execution results from previous iteration
+                      // These top-level fields can cause "Mixed URL and base64 formats" errors
+                      // when downstream nodes read old data via fallback instead of fresh outputs
+                      video: undefined,
+                      videoUrl: undefined,
+                      gcsUrl: undefined,
+                      image: undefined,
+                      imageUrl: undefined,
+                      images: undefined,
+                      text: undefined,
+                      response: undefined,
+                      audio: undefined,
+                      audioUrl: undefined,
                     },
                   }
             );
