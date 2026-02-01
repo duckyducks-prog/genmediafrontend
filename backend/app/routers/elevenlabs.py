@@ -120,12 +120,19 @@ async def change_voice(
             # Remove any whitespace/newlines
             video_b64 = video_b64.strip().replace("\n", "").replace("\r", "").replace(" ", "")
 
+            # Convert URL-safe base64 characters to standard base64
+            video_b64 = video_b64.replace("-", "+").replace("_", "/")
+
             # Fix base64 padding if needed
             padding_needed = len(video_b64) % 4
             if padding_needed:
                 video_b64 += "=" * (4 - padding_needed)
 
-            video_bytes = base64.b64decode(video_b64)
+            try:
+                video_bytes = base64.b64decode(video_b64)
+            except Exception as e:
+                logger.error(f"Base64 decode failed: {e}, string length: {len(video_b64)}, first 50 chars: {video_b64[:50]}")
+                raise HTTPException(status_code=400, detail=f"Invalid video data: {str(e)}")
 
             # Log first bytes to verify it's a valid video
             header_hex = video_bytes[:12].hex() if len(video_bytes) > 12 else video_bytes.hex()
