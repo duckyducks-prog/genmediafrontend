@@ -64,7 +64,8 @@ gcloud run deploy veo-api \
   --ingress=all \
   --env-vars-file="$ENV_VARS_FILE" \
   --timeout=300 \
-  --memory=1Gi
+  --memory=2Gi \
+  --cpu=2
 
 # Get the service URL dynamically
 SERVICE_URL=$(gcloud run services describe veo-api --region="$CLOUD_RUN_REGION" --project="$PROJECT_ID" --format='value(status.url)')
