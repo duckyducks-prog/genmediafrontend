@@ -832,7 +832,7 @@ async def add_watermark_to_video(
                     f"[1:v]scale={video_width}:{video_height}:force_original_aspect_ratio=decrease,"
                     f"pad={video_width}:{video_height}:(ow-iw)/2:(oh-ih)/2:color=black@0.0,"
                     f"format=rgba,colorchannelmixer=aa={request.opacity}[overlay];"
-                    f"[0:v][overlay]overlay=0:0:format=auto"
+                    f"[0:v][overlay]overlay=0:0:format=auto,format=yuv420p[vout]"
                 )
             else:
                 # Watermark mode - small logo in corner
@@ -856,27 +856,26 @@ async def add_watermark_to_video(
                 overlay_position = position_map.get(request.position, position_map["bottom-right"])
 
                 # Build filter for watermark
-                # Scale watermark with even height (-2 ensures even dimensions), apply opacity, then overlay
+                # Scale watermark, apply opacity, overlay, then convert to yuv420p for h264
                 filter_complex = (
                     f"[1:v]scale={watermark_width}:-2,format=rgba,"
                     f"colorchannelmixer=aa={request.opacity}[watermark];"
-                    f"[0:v][watermark]overlay={overlay_position}:format=auto"
+                    f"[0:v][watermark]overlay={overlay_position}:format=auto,format=yuv420p[vout]"
                 )
 
             output_path = os.path.join(tmpdir, "output.mp4")
 
             # Build FFmpeg command
-            # -loop 1 makes the image repeat for the duration of the video
-            # -shortest ends output when the shortest input (video) ends
+            # overlay filter applies static image to each video frame automatically
             overlay_cmd = [
                 "ffmpeg", "-y",
                 "-i", video_path,
-                "-loop", "1",  # Loop the watermark image
                 "-i", watermark_path,
                 "-filter_complex", filter_complex,
-                "-shortest",  # End when video ends
+                "-map", "[vout]",  # Use filtered video output
+                "-map", "0:a?",  # Copy audio if present
                 "-c:v", "libx264",
-                "-preset", "fast",
+                "-preset", "ultrafast",  # Faster encoding
                 "-crf", "23",
                 "-c:a", "copy",
                 "-movflags", "+faststart",
