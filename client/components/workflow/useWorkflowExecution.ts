@@ -3464,6 +3464,54 @@ export function useWorkflowExecution(
         // ========== POST-BATCH NODE EXECUTION ==========
         // Execute aggregator nodes (MergeVideos, AddMusicToVideo, VoiceChanger) that were skipped
         // during batch iterations. These nodes need outputs from ALL iterations.
+        
+        // Debug: Log the state before post-batch execution
+        logger.info(`[Batch] 🔍 Post-batch check:`, {
+          postBatchNodeIds: Array.from(postBatchNodeIds),
+          postBatchNodeCount: postBatchNodeIds.size,
+          collectedResultsCount: collectedResults.length,
+          batchIterationVideoNodeId,
+          collectedVideos: collectedResults.map(r => ({
+            index: r.index,
+            success: r.success,
+            hasVideo: !!r.videoUrl,
+          })),
+        });
+        
+        // FALLBACK: If no post-batch nodes were detected but we have aggregator nodes
+        // and collected videos, try to find and add them now
+        if (postBatchNodeIds.size === 0 && collectedResults.length > 0) {
+          const aggregatorTypes = new Set([
+            NodeType.MergeVideos,
+            NodeType.AddMusicToVideo,
+            NodeType.VoiceChanger,
+          ]);
+          
+          const aggregatorNodes = nodes.filter(n => aggregatorTypes.has(n.type as NodeType));
+          
+          if (aggregatorNodes.length > 0) {
+            logger.warn(`[Batch] ⚠️ No post-batch nodes detected but found ${aggregatorNodes.length} aggregator node(s). Adding them as post-batch.`);
+            
+            // Add all aggregators and their downstream nodes
+            for (const aggNode of aggregatorNodes) {
+              postBatchNodeIds.add(aggNode.id);
+              
+              const findDownstream = (nodeId: string) => {
+                const outEdges = edges.filter(e => e.source === nodeId);
+                for (const edge of outEdges) {
+                  if (!postBatchNodeIds.has(edge.target)) {
+                    postBatchNodeIds.add(edge.target);
+                    findDownstream(edge.target);
+                  }
+                }
+              };
+              findDownstream(aggNode.id);
+            }
+            
+            logger.info(`[Batch] Added ${postBatchNodeIds.size} nodes as post-batch (fallback)`);
+          }
+        }
+        
         if (postBatchNodeIds.size > 0 && collectedResults.length > 0) {
           logger.info(`[Batch] Starting post-batch execution for ${postBatchNodeIds.size} nodes`);
 
