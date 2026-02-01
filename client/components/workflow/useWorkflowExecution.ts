@@ -2660,6 +2660,67 @@ export function useWorkflowExecution(
     const scripts = scriptQueueNode ? (scriptQueueNode.data as any).scripts || [] : [];
     const batchMode = scriptQueueNode && scripts.length > 1;
 
+    // Identify post-batch aggregator nodes - these should run AFTER all batch iterations complete
+    // A post-batch node is one that:
+    // 1. Is an aggregator type (MergeVideos, AddMusicToVideo, VoiceChanger)
+    // 2. Has inputs that come from nodes executed during batch iterations
+    // These nodes need ALL iteration outputs, not just the current iteration's output
+    const postBatchNodeIds = new Set<string>();
+    if (batchMode) {
+      // Find nodes that receive video outputs from batch iteration nodes
+      const batchIterationNodeTypes = new Set([
+        NodeType.GenerateVideo,
+        NodeType.GenerateImage,
+      ]);
+
+      // Find all nodes that are downstream of batch iteration nodes
+      const batchIterationNodes = nodes.filter(n =>
+        batchIterationNodeTypes.has(n.type as NodeType) &&
+        n.id !== scriptQueueNode?.id
+      );
+
+      // Check if MergeVideos, AddMusicToVideo, or VoiceChanger receive inputs from batch iteration nodes
+      const aggregatorTypes = new Set([
+        NodeType.MergeVideos,
+        NodeType.AddMusicToVideo,
+        NodeType.VoiceChanger,
+      ]);
+
+      for (const node of nodes) {
+        if (!aggregatorTypes.has(node.type as NodeType)) continue;
+
+        // Check if any of this node's inputs come from batch iteration nodes
+        const incomingEdges = edges.filter(e => e.target === node.id);
+        const hasInputFromBatchNode = incomingEdges.some(edge =>
+          batchIterationNodes.some(bn => bn.id === edge.source)
+        );
+
+        if (hasInputFromBatchNode) {
+          postBatchNodeIds.add(node.id);
+          // Also add any nodes downstream of this post-batch node
+          const findDownstream = (nodeId: string) => {
+            const outEdges = edges.filter(e => e.source === nodeId);
+            for (const edge of outEdges) {
+              if (!postBatchNodeIds.has(edge.target)) {
+                postBatchNodeIds.add(edge.target);
+                findDownstream(edge.target);
+              }
+            }
+          };
+          findDownstream(node.id);
+        }
+      }
+
+      if (postBatchNodeIds.size > 0) {
+        logger.info(`[Batch] Identified ${postBatchNodeIds.size} post-batch nodes:`,
+          Array.from(postBatchNodeIds).map(id => {
+            const n = nodes.find(node => node.id === id);
+            return { id, type: n?.type };
+          })
+        );
+      }
+    }
+
     if (batchMode) {
       setIsBatchMode(true);
       setBatchProgress({ current: 0, total: scripts.length });
@@ -2683,42 +2744,42 @@ export function useWorkflowExecution(
             currentNodes = prevNodes.map((n) =>
               n.id === scriptQueueNode.id
                 ? {
-                    ...n,
-                    data: {
-                      ...n.data,
-                      currentIndex: iterationIndex,
-                      isProcessing: true,
-                    },
-                  }
+                  ...n,
+                  data: {
+                    ...n.data,
+                    currentIndex: iterationIndex,
+                    isProcessing: true,
+                  },
+                }
                 : {
-                    ...n,
-                    data: {
-                      ...n.data,
-                      status: "ready", // Reset status for re-execution
-                      // Preserve outputs for static input nodes that don't change between iterations
-                      // These nodes provide constant data (like reference images) used by all iterations
-                      outputs: [NodeType.ScriptQueue, NodeType.ImageInput, NodeType.VideoInput, NodeType.Prompt].includes(n.type as NodeType)
-                        ? n.data.outputs
-                        : {}, // Clear outputs for nodes that need re-execution
-                      error: undefined, // Clear any previous errors
-                      // CRITICAL: Clear stale execution results from previous iteration
-                      // These top-level fields can cause "Mixed URL and base64 formats" errors
-                      // when downstream nodes read old data via fallback instead of fresh outputs
-                      // BUT: Preserve them for static input nodes (ImageInput, VideoInput, Prompt)
-                      ...([NodeType.ImageInput, NodeType.VideoInput, NodeType.Prompt].includes(n.type as NodeType) ? {} : {
-                        video: undefined,
-                        videoUrl: undefined,
-                        gcsUrl: undefined,
-                        image: undefined,
-                        imageUrl: undefined,
-                        images: undefined,
-                        text: undefined,
-                        response: undefined,
-                        audio: undefined,
-                        audioUrl: undefined,
-                      }),
-                    },
-                  }
+                  ...n,
+                  data: {
+                    ...n.data,
+                    status: "ready", // Reset status for re-execution
+                    // Preserve outputs for static input nodes that don't change between iterations
+                    // These nodes provide constant data (like reference images) used by all iterations
+                    outputs: [NodeType.ScriptQueue, NodeType.ImageInput, NodeType.VideoInput, NodeType.Prompt].includes(n.type as NodeType)
+                      ? n.data.outputs
+                      : {}, // Clear outputs for nodes that need re-execution
+                    error: undefined, // Clear any previous errors
+                    // CRITICAL: Clear stale execution results from previous iteration
+                    // These top-level fields can cause "Mixed URL and base64 formats" errors
+                    // when downstream nodes read old data via fallback instead of fresh outputs
+                    // BUT: Preserve them for static input nodes (ImageInput, VideoInput, Prompt)
+                    ...([NodeType.ImageInput, NodeType.VideoInput, NodeType.Prompt].includes(n.type as NodeType) ? {} : {
+                      video: undefined,
+                      videoUrl: undefined,
+                      gcsUrl: undefined,
+                      image: undefined,
+                      imageUrl: undefined,
+                      images: undefined,
+                      text: undefined,
+                      response: undefined,
+                      audio: undefined,
+                      audioUrl: undefined,
+                    }),
+                  },
+                }
             );
             // Schedule resolve after state update is processed
             setTimeout(resolve, 100);
@@ -2816,11 +2877,19 @@ export function useWorkflowExecution(
           break;
         }
 
-        const levelNodes = levels[levelIndex];
+        // Filter out post-batch nodes during batch iterations - they run after all iterations
+        const levelNodes = levels[levelIndex].filter(n => !postBatchNodeIds.has(n.id));
+
+        // Skip this level if all nodes were filtered out
+        if (levelNodes.length === 0) {
+          logger.debug(`[Execution] Skipping level ${levelIndex} - all nodes are post-batch`);
+          continue;
+        }
 
         // Log tracked nodes state at the start of each level
         logger.debug(`[Execution] 📊 Starting Level ${levelIndex}/${levels.length - 1}:`, {
           nodesInLevel: levelNodes.map((n) => ({ id: n.id, type: n.type })),
+          skippedPostBatchNodes: levels[levelIndex].filter(n => postBatchNodeIds.has(n.id)).map(n => ({ id: n.id, type: n.type })),
           trackedNodesWithOutputs: trackedNodes
             .filter((n) => n.data.outputs && Object.keys(n.data.outputs as object).length > 0)
             .map((n) => ({
@@ -3325,6 +3394,109 @@ export function useWorkflowExecution(
                 : n
             )
           );
+        }
+
+        // ========== POST-BATCH NODE EXECUTION ==========
+        // Execute aggregator nodes (MergeVideos, AddMusicToVideo, VoiceChanger) that were skipped
+        // during batch iterations. These nodes need outputs from ALL iterations.
+        if (postBatchNodeIds.size > 0 && collectedResults.length > 0) {
+          logger.info(`[Batch] Starting post-batch execution for ${postBatchNodeIds.size} nodes`);
+
+          // Collect video URLs from successful iterations
+          const batchVideoUrls = collectedResults
+            .filter(r => r.success && r.videoUrl)
+            .map(r => r.videoUrl as string);
+
+          logger.info(`[Batch] Collected ${batchVideoUrls.length} video URLs from batch iterations`);
+
+          if (batchVideoUrls.length >= 2) {
+            // Find and execute post-batch nodes in dependency order
+            const postBatchNodes = nodes.filter(n => postBatchNodeIds.has(n.id));
+
+            // Sort by dependency order (nodes with no post-batch dependencies first)
+            const sortedPostBatchNodes = [...postBatchNodes].sort((a, b) => {
+              const aHasPostBatchInput = edges.some(e => e.target === a.id && postBatchNodeIds.has(e.source));
+              const bHasPostBatchInput = edges.some(e => e.target === b.id && postBatchNodeIds.has(e.source));
+              return (aHasPostBatchInput ? 1 : 0) - (bHasPostBatchInput ? 1 : 0);
+            });
+
+            // Track outputs from post-batch execution
+            let postBatchTrackedNodes = [...nodes];
+
+            for (const postBatchNode of sortedPostBatchNodes) {
+              logger.info(`[Batch] Executing post-batch node: ${postBatchNode.type} (${postBatchNode.id})`);
+
+              // Update node state to executing
+              updateNodeState(postBatchNode.id, "executing");
+              setEdgeAnimated(postBatchNode.id, true, false);
+
+              // Build inputs for this post-batch node
+              let postBatchInputs: Record<string, any> = {};
+
+              if (postBatchNode.type === NodeType.MergeVideos) {
+                // MergeVideos gets video URLs from batch iterations
+                // Map video1, video2, video3... to the collected URLs
+                batchVideoUrls.forEach((url, idx) => {
+                  if (idx < 6) {
+                    postBatchInputs[`video${idx + 1}`] = url;
+                  }
+                });
+                logger.info(`[Batch] MergeVideos inputs:`, {
+                  videoCount: Object.keys(postBatchInputs).length,
+                  firstVideoPreview: batchVideoUrls[0]?.substring(0, 80),
+                });
+              } else {
+                // Other post-batch nodes (AddMusicToVideo, VoiceChanger) get inputs from
+                // their connected upstream nodes (which might be other post-batch nodes)
+                postBatchInputs = gatherNodeInputs(postBatchNode, postBatchTrackedNodes, edges);
+              }
+
+              try {
+                const result = await executeNode(postBatchNode, postBatchInputs);
+
+                if (result.success && result.data) {
+                  const updatedOutputs = result.data.outputs || result.data;
+
+                  // Update tracked nodes with this output
+                  postBatchTrackedNodes = postBatchTrackedNodes.map(n =>
+                    n.id === postBatchNode.id
+                      ? { ...n, data: { ...n.data, outputs: updatedOutputs, ...updatedOutputs } }
+                      : n
+                  );
+
+                  // Update React state
+                  updateNodeState(postBatchNode.id, "completed", { ...result.data, outputs: updatedOutputs });
+                  setEdgeAnimated(postBatchNode.id, false, true);
+                  setTimeout(() => setEdgeAnimated(postBatchNode.id, false, false), 500);
+
+                  logger.info(`[Batch] ✓ Post-batch node ${postBatchNode.type} completed successfully`);
+                } else {
+                  updateNodeState(postBatchNode.id, "error", { error: result.error });
+                  setEdgeAnimated(postBatchNode.id, false, false);
+                  logger.error(`[Batch] ✗ Post-batch node ${postBatchNode.type} failed:`, result.error);
+                }
+              } catch (error) {
+                const errorMsg = error instanceof Error ? error.message : "Unknown error";
+                updateNodeState(postBatchNode.id, "error", { error: errorMsg });
+                setEdgeAnimated(postBatchNode.id, false, false);
+                logger.error(`[Batch] ✗ Post-batch node ${postBatchNode.type} threw error:`, errorMsg);
+              }
+            }
+
+            toast({
+              title: "Post-Batch Processing Complete",
+              description: `Processed ${postBatchNodes.length} aggregator node(s) with ${batchVideoUrls.length} videos`,
+            });
+          } else {
+            logger.warn(`[Batch] Skipping post-batch nodes - only ${batchVideoUrls.length} videos collected (need at least 2)`);
+
+            // Mark post-batch nodes as skipped/error
+            postBatchNodeIds.forEach(nodeId => {
+              updateNodeState(nodeId, "error", {
+                error: `Skipped: Only ${batchVideoUrls.length} video(s) from batch (need at least 2 to merge)`
+              });
+            });
+          }
         }
 
         // Show batch completion summary
