@@ -180,6 +180,7 @@ export interface VoiceChangerNodeData extends BaseNodeData {
 export interface MergeVideosNodeData extends BaseNodeData {
   isMerging: boolean; // Is merge in progress
   aspectRatio: "16:9" | "9:16" | "1:1" | "4:3" | "4:5"; // Output aspect ratio
+  trimSilence?: boolean; // Auto-trim trailing silence from clips before merging
   outputVideoUrl?: string; // Output merged video
 }
 
