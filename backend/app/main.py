@@ -18,7 +18,12 @@ DEFAULT_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:8080",
 ]
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", ",".join(DEFAULT_ORIGINS)).split(",")
+# Parse ALLOWED_ORIGINS, falling back to defaults if env var is empty or unset
+_origins_env = os.getenv("ALLOWED_ORIGINS", "").strip()
+ALLOWED_ORIGINS = [o.strip() for o in _origins_env.split(",") if o.strip()] if _origins_env else DEFAULT_ORIGINS
+
+# Log CORS configuration at startup for debugging
+logger.info(f"CORS allowed origins: {ALLOWED_ORIGINS}")
 
 
 def _get_cors_headers(request: Request, allowed_origins: list[str]) -> dict:
@@ -34,6 +39,9 @@ def _get_cors_headers(request: Request, allowed_origins: list[str]) -> dict:
             "Access-Control-Allow-Origin": origin,
             "Access-Control-Allow-Credentials": "true",
         }
+    # Log when CORS headers are not added (helps debug CORS issues)
+    if origin:
+        logger.warning(f"CORS: Origin '{origin}' not in allowed list. Allowed: {allowed_origins}")
     return {}
 
 app = FastAPI(title="GenMedia API")

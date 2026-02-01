@@ -2695,21 +2695,28 @@ export function useWorkflowExecution(
                     data: {
                       ...n.data,
                       status: "ready", // Reset status for re-execution
-                      outputs: n.type === NodeType.ScriptQueue ? n.data.outputs : {}, // Clear outputs except ScriptQueue
+                      // Preserve outputs for static input nodes that don't change between iterations
+                      // These nodes provide constant data (like reference images) used by all iterations
+                      outputs: [NodeType.ScriptQueue, NodeType.ImageInput, NodeType.VideoInput, NodeType.Prompt].includes(n.type as NodeType)
+                        ? n.data.outputs
+                        : {}, // Clear outputs for nodes that need re-execution
                       error: undefined, // Clear any previous errors
                       // CRITICAL: Clear stale execution results from previous iteration
                       // These top-level fields can cause "Mixed URL and base64 formats" errors
                       // when downstream nodes read old data via fallback instead of fresh outputs
-                      video: undefined,
-                      videoUrl: undefined,
-                      gcsUrl: undefined,
-                      image: undefined,
-                      imageUrl: undefined,
-                      images: undefined,
-                      text: undefined,
-                      response: undefined,
-                      audio: undefined,
-                      audioUrl: undefined,
+                      // BUT: Preserve them for static input nodes (ImageInput, VideoInput, Prompt)
+                      ...([NodeType.ImageInput, NodeType.VideoInput, NodeType.Prompt].includes(n.type as NodeType) ? {} : {
+                        video: undefined,
+                        videoUrl: undefined,
+                        gcsUrl: undefined,
+                        image: undefined,
+                        imageUrl: undefined,
+                        images: undefined,
+                        text: undefined,
+                        response: undefined,
+                        audio: undefined,
+                        audioUrl: undefined,
+                      }),
                     },
                   }
             );
