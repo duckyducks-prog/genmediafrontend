@@ -2607,44 +2607,47 @@ export function useWorkflowExecution(
 
     // Helper function to run a single workflow iteration
     const runSingleIteration = async (iterationIndex: number = 0): Promise<{ completed: number; failed: number }> => {
-      // Update ScriptQueue node's currentIndex for this iteration
+      // Update ScriptQueue node's currentIndex for this iteration and reset other nodes
+      // Use a Promise to get the latest state after update
+      let currentNodes: WorkflowNode[] = [];
+
       if (scriptQueueNode && batchMode) {
-        setNodes((prevNodes) =>
-          prevNodes.map((n) =>
-            n.id === scriptQueueNode.id
-              ? {
-                  ...n,
-                  data: {
-                    ...n.data,
-                    currentIndex: iterationIndex,
-                    isProcessing: true,
-                  },
-                }
-              : {
-                  ...n,
-                  data: {
-                    ...n.data,
-                    status: "ready", // Reset status for re-execution
-                    outputs: n.type === NodeType.ScriptQueue ? n.data.outputs : {}, // Clear outputs except ScriptQueue
-                  },
-                }
-          )
-        );
-        // Small delay to let state update
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        await new Promise<void>((resolve) => {
+          setNodes((prevNodes) => {
+            currentNodes = prevNodes.map((n) =>
+              n.id === scriptQueueNode.id
+                ? {
+                    ...n,
+                    data: {
+                      ...n.data,
+                      currentIndex: iterationIndex,
+                      isProcessing: true,
+                    },
+                  }
+                : {
+                    ...n,
+                    data: {
+                      ...n.data,
+                      status: "ready", // Reset status for re-execution
+                      outputs: n.type === NodeType.ScriptQueue ? n.data.outputs : {}, // Clear outputs except ScriptQueue
+                      error: undefined, // Clear any previous errors
+                    },
+                  }
+            );
+            // Schedule resolve after state update is processed
+            setTimeout(resolve, 100);
+            return currentNodes;
+          });
+        });
+      } else {
+        // Non-batch mode: use nodes directly
+        currentNodes = nodes;
       }
 
       // Store executed node data
       const progress = new Map<string, string>();
 
       // Group nodes by execution level for parallel execution
-      // Re-get nodes to have latest state
-      const currentNodes = batchMode ? nodes.map((n) => {
-        if (n.id === scriptQueueNode?.id) {
-          return { ...n, data: { ...n.data, currentIndex: iterationIndex, isProcessing: true } };
-        }
-        return n;
-      }) : nodes;
       const levels = groupNodesByLevel(executionOrder, currentNodes, edges);
 
       let totalCompleted = 0;
@@ -3013,6 +3016,12 @@ export function useWorkflowExecution(
             title: `Batch Progress`,
             description: `Processing script ${i + 1} of ${scripts.length}...`,
           });
+
+          // Add delay between iterations to avoid rate limiting (except for first iteration)
+          if (i > 0) {
+            logger.debug(`[Batch] Waiting 2s before next iteration to avoid rate limits`);
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+          }
 
           const result = await runSingleIteration(i);
 
