@@ -2665,11 +2665,18 @@ export function useWorkflowExecution(
         const levelNodes = levels[levelIndex];
 
         // Separate API-calling nodes from others
+        // These nodes make backend HTTP calls and need sequential execution
         const apiNodes = levelNodes.filter((node) =>
           [
             NodeType.GenerateImage as string,
             NodeType.GenerateVideo as string,
             NodeType.LLM as string,
+            NodeType.MergeVideos as string,
+            NodeType.AddMusicToVideo as string,
+            NodeType.VoiceChanger as string,
+            NodeType.VideoWatermark as string,
+            NodeType.VideoSegmentReplace as string,
+            NodeType.GenerateMusic as string,
           ].includes(node.type as string),
         );
         const otherNodes = levelNodes.filter(
