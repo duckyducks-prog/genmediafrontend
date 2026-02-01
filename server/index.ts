@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
+import rateLimit from "express-rate-limit";
 import { handleDemo } from "./routes/demo";
 import { setupAssetRoutes } from "./routes/assets";
 
@@ -11,6 +12,21 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()
   'http://localhost:3000',
   'http://localhost:5173',
 ];
+
+// Rate limiting configuration - comfortable limits for workflow tool
+// Set RATE_LIMIT_MAX env var to override (requests per minute)
+// Set RATE_LIMIT_DISABLED=true to disable rate limiting
+const rateLimitMax = parseInt(process.env.RATE_LIMIT_MAX || '200', 10);
+const rateLimitDisabled = process.env.RATE_LIMIT_DISABLED === 'true';
+
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute window
+  max: rateLimitMax, // 200 requests per minute by default
+  message: { error: 'Too many requests, please slow down', retryAfter: '60 seconds' },
+  standardHeaders: true, // Return rate limit info in headers
+  legacyHeaders: false,
+  skip: () => rateLimitDisabled, // Allow disabling via env var
+});
 
 // Security headers middleware
 const securityHeaders = (_req: Request, res: Response, next: NextFunction) => {
@@ -50,6 +66,9 @@ export function createServer() {
   }));
   app.use(express.json({ limit: "50mb" })); // Increase limit for workflow data with images
   app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+
+  // Apply rate limiting to API routes
+  app.use("/api", apiLimiter);
 
   // Example API routes
   app.get("/api/ping", (_req, res) => {
