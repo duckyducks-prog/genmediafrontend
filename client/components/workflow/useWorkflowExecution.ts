@@ -1438,16 +1438,26 @@ export function useWorkflowExecution(
               const user = auth.currentUser;
               const token = await user?.getIdToken();
 
+              // Build request body - handle both URL and base64 video inputs
+              const requestBody: any = {
+                voice_id: selectedVoiceId,
+              };
+
+              if (videoInput.startsWith("data:")) {
+                // Base64 data URL - strip the prefix and send as video_base64
+                requestBody.video_base64 = videoInput.replace(/^data:video\/[^;]+;base64,/, "");
+              } else {
+                // Regular URL (GCS, HTTP, etc.) - send as video_url
+                requestBody.video_url = videoInput;
+              }
+
               const response = await fetch(API_ENDPOINTS.elevenlabs.voiceChange, {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
                   Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({
-                  video_base64: videoInput.replace(/^data:video\/[^;]+;base64,/, ""),
-                  voice_id: selectedVoiceId,
-                }),
+                body: JSON.stringify(requestBody),
               });
 
               if (!response.ok) {

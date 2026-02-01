@@ -31,7 +31,8 @@ class VoicesResponse(BaseModel):
 
 
 class VoiceChangeRequest(BaseModel):
-    video_base64: str = Field(..., description="Base64 encoded video file")
+    video_base64: Optional[str] = Field(default=None, description="Base64 encoded video file")
+    video_url: Optional[str] = Field(default=None, description="URL to video file")
     voice_id: str = Field(..., description="ElevenLabs voice ID to use")
 
 
@@ -95,7 +96,7 @@ async def change_voice(
     Change the voice in a video using ElevenLabs Speech-to-Speech.
 
     Process:
-    1. Decode video from base64
+    1. Get video from base64 or download from URL
     2. Send video directly to ElevenLabs STS API (it extracts audio)
     3. Merge new audio back into video using ffmpeg
     4. Return new video as base64
@@ -103,29 +104,44 @@ async def change_voice(
     try:
         logger.info(f"Voice change request from user {user['email']}, voice_id={request.voice_id}")
 
+        # Validate input - need either video_base64 or video_url
+        if not request.video_base64 and not request.video_url:
+            raise HTTPException(status_code=400, detail="Either video_base64 or video_url must be provided")
+
         # Create temp directory for processing
         with tempfile.TemporaryDirectory() as tmpdir:
-            # 1. Decode and save input video
+            # 1. Get video bytes from base64 or URL
             input_video_path = os.path.join(tmpdir, "input.mp4")
 
-            # Clean up base64 string
-            video_b64 = request.video_base64
+            if request.video_url:
+                # Download video from URL
+                import httpx
+                logger.info(f"Downloading video from URL: {request.video_url[:100]}...")
+                async with httpx.AsyncClient(timeout=120.0) as client:
+                    response = await client.get(request.video_url)
+                    if response.status_code != 200:
+                        raise HTTPException(status_code=400, detail=f"Failed to download video: {response.status_code}")
+                    video_bytes = response.content
+                logger.info(f"Downloaded video: {len(video_bytes)} bytes")
+            else:
+                # Decode from base64
+                video_b64 = request.video_base64
 
-            # Remove data URL prefix if present
-            if video_b64.startswith("data:"):
-                comma_idx = video_b64.find(",")
-                if comma_idx != -1:
-                    video_b64 = video_b64[comma_idx + 1:]
+                # Remove data URL prefix if present
+                if video_b64.startswith("data:"):
+                    comma_idx = video_b64.find(",")
+                    if comma_idx != -1:
+                        video_b64 = video_b64[comma_idx + 1:]
 
-            # Remove any whitespace/newlines
-            video_b64 = video_b64.strip().replace("\n", "").replace("\r", "").replace(" ", "")
+                # Remove any whitespace/newlines
+                video_b64 = video_b64.strip().replace("\n", "").replace("\r", "").replace(" ", "")
 
-            # Fix base64 padding if needed
-            padding_needed = len(video_b64) % 4
-            if padding_needed:
-                video_b64 += "=" * (4 - padding_needed)
+                # Fix base64 padding if needed
+                padding_needed = len(video_b64) % 4
+                if padding_needed:
+                    video_b64 += "=" * (4 - padding_needed)
 
-            video_bytes = base64.b64decode(video_b64)
+                video_bytes = base64.b64decode(video_b64)
 
             # Log first bytes to verify it's a valid video
             header_hex = video_bytes[:12].hex() if len(video_bytes) > 12 else video_bytes.hex()
