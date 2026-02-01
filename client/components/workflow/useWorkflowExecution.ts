@@ -2710,24 +2710,42 @@ export function useWorkflowExecution(
         nodeType: batchIterationVideoNodeId ? nodes.find(n => n.id === batchIterationVideoNodeId)?.type : 'not found'
       });
       
+      // Aggregator types that should run after batch completes
+      const aggregatorTypes = new Set([
+        NodeType.MergeVideos,
+        NodeType.AddMusicToVideo,
+        NodeType.VoiceChanger,
+      ]);
+      
       // Now identify post-batch nodes: aggregators that receive from the batch iteration video node
+      // OR any aggregator node that's downstream of the batch video node
       if (batchIterationVideoNodeId) {
-        const aggregatorTypes = new Set([
-          NodeType.MergeVideos,
-          NodeType.AddMusicToVideo,
-          NodeType.VoiceChanger,
-        ]);
+        // Helper to check if a node is reachable from the batch video node
+        const isDownstreamOfBatchVideo = (nodeId: string, visited = new Set<string>()): boolean => {
+          if (visited.has(nodeId)) return false;
+          visited.add(nodeId);
+          
+          if (nodeId === batchIterationVideoNodeId) return true;
+          
+          // Check incoming edges
+          const inEdges = edges.filter(e => e.target === nodeId);
+          for (const edge of inEdges) {
+            if (isDownstreamOfBatchVideo(edge.source, visited)) return true;
+          }
+          return false;
+        };
         
         for (const node of nodes) {
           if (!aggregatorTypes.has(node.type as NodeType)) continue;
           
-          // Check if this aggregator receives input from the batch iteration video node
-          const incomingEdges = edges.filter(e => e.target === node.id);
-          const hasInputFromBatchVideoNode = incomingEdges.some(edge => 
-            edge.source === batchIterationVideoNodeId
-          );
+          // Check if this aggregator is downstream of the batch video node
+          const isDownstream = isDownstreamOfBatchVideo(node.id);
           
-          if (hasInputFromBatchVideoNode) {
+          logger.debug(`[Batch] Checking aggregator ${node.type} (${node.id}):`, {
+            isDownstreamOfBatchVideo: isDownstream,
+          });
+          
+          if (isDownstream) {
             postBatchNodeIds.add(node.id);
             logger.info(`[Batch] Marked ${node.type} (${node.id}) as post-batch node`);
             
@@ -2750,6 +2768,8 @@ export function useWorkflowExecution(
       
       if (postBatchNodeIds.size > 0) {
         logger.info(`[Batch] Total ${postBatchNodeIds.size} post-batch nodes identified`);
+      } else {
+        logger.warn(`[Batch] No post-batch nodes identified. Aggregator nodes will run during each iteration.`);
       }
     }
 
@@ -3528,9 +3548,31 @@ export function useWorkflowExecution(
               }
             }
 
+            // Find the final output from the last post-batch node
+            const lastPostBatchNode = sortedPostBatchNodes[sortedPostBatchNodes.length - 1];
+            const finalNode = postBatchTrackedNodes.find(n => n.id === lastPostBatchNode?.id);
+            const finalVideoUrl = (finalNode?.data as any)?.outputVideoUrl || 
+                                  (finalNode?.data as any)?.outputs?.video ||
+                                  (finalNode?.data as any)?.videoUrl;
+            
+            if (finalVideoUrl) {
+              logger.info(`[Batch] 🎬 Final output from ${lastPostBatchNode?.type}:`, finalVideoUrl.substring(0, 100));
+              
+              // Store the final merged video in ScriptQueue for easy access
+              if (scriptQueueNode) {
+                setNodes((prevNodes) =>
+                  prevNodes.map((n) =>
+                    n.id === scriptQueueNode.id
+                      ? { ...n, data: { ...n.data, finalVideoUrl, finalVideoNodeType: lastPostBatchNode?.type } }
+                      : n
+                  )
+                );
+              }
+            }
+
             toast({
               title: "Post-Batch Processing Complete",
-              description: `Processed ${postBatchNodes.length} aggregator node(s) with ${batchVideoUrls.length} videos`,
+              description: `Merged ${batchVideoUrls.length} videos → ${sortedPostBatchNodes.map(n => n.type).join(' → ')}`,
             });
           } else {
             // Not enough videos collected - provide helpful error message
