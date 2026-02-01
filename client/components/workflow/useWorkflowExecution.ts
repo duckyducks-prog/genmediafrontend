@@ -2654,8 +2654,42 @@ export function useWorkflowExecution(
       // Helper to get inputs using tracked nodes (not stale React state)
       const getTrackedInputs = (nodeId: string) => {
         const node = trackedNodes.find((n) => n.id === nodeId);
-        if (!node) return {};
-        return gatherNodeInputs(node, trackedNodes, edges);
+        if (!node) {
+          logger.warn(`[getTrackedInputs] Node ${nodeId} not found in trackedNodes`);
+          return {};
+        }
+
+        // Log the state of upstream nodes for debugging
+        const incomingEdges = edges.filter((e) => e.target === nodeId);
+        logger.debug(`[getTrackedInputs] Getting inputs for ${node.type} (${nodeId}):`, {
+          incomingEdgeCount: incomingEdges.length,
+          edges: incomingEdges.map((e) => ({
+            sourceId: e.source,
+            sourceHandle: e.sourceHandle,
+            targetHandle: e.targetHandle,
+          })),
+        });
+
+        // Check upstream node outputs
+        incomingEdges.forEach((edge) => {
+          const sourceNode = trackedNodes.find((n) => n.id === edge.source);
+          if (sourceNode) {
+            logger.debug(`[getTrackedInputs] Upstream node ${sourceNode.type} (${edge.source}):`, {
+              hasOutputs: !!sourceNode.data.outputs,
+              outputKeys: sourceNode.data.outputs ? Object.keys(sourceNode.data.outputs) : [],
+              sourceHandle: edge.sourceHandle,
+              outputValue: sourceNode.data.outputs?.[edge.sourceHandle || 'default']
+                ? 'present'
+                : 'MISSING',
+            });
+          }
+        });
+
+        const inputs = gatherNodeInputs(node, trackedNodes, edges);
+        logger.debug(`[getTrackedInputs] Final inputs for ${node.type}:`, {
+          inputKeys: Object.keys(inputs),
+        });
+        return inputs;
       };
 
       // Group nodes by execution level for parallel execution
