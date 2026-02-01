@@ -430,27 +430,48 @@ class GenerationService:
     ) -> VideoStatusResponse:
         """Check video generation status using fetchPredictOperation"""
         endpoint = f"https://{settings.veo_location}-aiplatform.googleapis.com/v1/projects/{settings.project_id}/locations/{settings.veo_location}/publishers/google/models/{settings.veo_model}:fetchPredictOperation"
-        
+
         payload = {
             "operationName": operation_name
         }
-        
+
+        logger.info(f"Checking video status: operation={operation_name[:50]}...")
+
         async def _do_status_check():
             http_client = _get_http_client()
-            response = await http_client.post(
-                endpoint,
-                json=payload,
-                headers=self._get_auth_headers()
-            )
-            
+
+            try:
+                response = await http_client.post(
+                    endpoint,
+                    json=payload,
+                    headers=self._get_auth_headers()
+                )
+            except httpx.TimeoutException as e:
+                logger.error(f"Vertex AI status check timed out: {e}")
+                raise RequestTimeoutError("video status check")
+
+            # Handle specific error codes with clear messages
+            if response.status_code == 404:
+                # Operation not found - likely expired (Veo operations have limited lifetime)
+                logger.warning(f"Video operation not found (404): {operation_name[:50]}...")
+                raise ValueError(
+                    f"Video operation not found. It may have expired or been deleted. "
+                    f"Veo operations typically expire after 24 hours."
+                )
+
             if response.status_code == 429:
                 raise RateLimitError(f"Status API rate limited: {response.text[:200]}")
 
+            if response.status_code == 401 or response.status_code == 403:
+                logger.error(f"Auth error checking video status: {response.status_code} - {response.text[:300]}")
+                raise ValueError(f"Authentication failed with Vertex AI (status {response.status_code})")
+
             if response.status_code != 200:
+                logger.error(f"Vertex AI status error: {response.status_code} - {response.text[:500]}")
                 raise UpstreamAPIError(response.status_code, response.text[:500])
-            
+
             return response.json()
-        
+
         result = await self._retry_with_backoff(_do_status_check, "Video status check")
 
         # Log the full response structure for debugging

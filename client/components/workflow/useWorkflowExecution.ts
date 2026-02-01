@@ -3177,12 +3177,27 @@ export function useWorkflowExecution(
           );
         }
 
+        // Circuit breaker: stop batch if too many consecutive failures
+        const MAX_CONSECUTIVE_FAILURES = 3;
+        let consecutiveFailures = 0;
+
         for (let i = 0; i < scripts.length; i++) {
           // Check if abort was requested
           if (abortRequested) {
             toast({
               title: "Batch Aborted",
               description: `Stopped after ${i} of ${scripts.length} scripts`,
+              variant: "destructive",
+            });
+            break;
+          }
+
+          // Circuit breaker check
+          if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+            logger.error(`[Batch] Circuit breaker triggered: ${consecutiveFailures} consecutive failures`);
+            toast({
+              title: "Batch Stopped",
+              description: `Stopped after ${consecutiveFailures} consecutive failures. There may be a persistent issue. Completed ${batchCompleted} of ${scripts.length} scripts.`,
               variant: "destructive",
             });
             break;
@@ -3210,6 +3225,7 @@ export function useWorkflowExecution(
 
           if (result.failed === 0) {
             batchCompleted++;
+            consecutiveFailures = 0; // Reset circuit breaker on success
             results.push({ index: i, success: true });
 
             // Get current nodes state to find terminal node outputs
@@ -3257,8 +3273,10 @@ export function useWorkflowExecution(
             });
           } else {
             batchFailed++;
+            consecutiveFailures++; // Increment circuit breaker counter
             results.push({ index: i, success: false });
             iterationError = `${result.failed} node(s) failed`;
+            logger.warn(`[Batch] Iteration ${i + 1} failed (consecutive failures: ${consecutiveFailures}/${MAX_CONSECUTIVE_FAILURES})`);
           }
 
           // Add to collected results

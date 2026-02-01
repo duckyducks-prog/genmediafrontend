@@ -310,17 +310,34 @@ async def check_video_status(
         # URL-decode the operation_id in case it was encoded
         from urllib.parse import unquote
         decoded_operation_id = unquote(operation_id)
-        logger.debug(f"Video status check from user {user['email']}: {decoded_operation_id}")
-        return await service.check_video_status(
+
+        # Log request details for debugging
+        logger.info(f"Video status check: user={user['email']}, operation_id={decoded_operation_id[:80]}...")
+
+        result = await service.check_video_status(
             operation_name=decoded_operation_id,
             user_id=user["uid"],
             prompt=prompt
         )
+
+        # Log result for debugging
+        logger.info(f"Video status result: status={result.status}, has_video={bool(result.video_base64)}, has_url={bool(result.video_url)}")
+        return result
+
     except AppError:
         raise
     except Exception as e:
-        logger.error(f"Video status check failed for user {user['email']}: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # Log full exception details including stack trace
+        logger.error(
+            f"Video status check failed: user={user['email']}, "
+            f"operation_id={operation_id[:50]}..., "
+            f"error={type(e).__name__}: {str(e)}",
+            exc_info=True
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=f"Video status check failed: {type(e).__name__}: {str(e)}"
+        )
 
 @router.post("/upscale", response_model=UpscaleResponse)
 async def upscale_image(

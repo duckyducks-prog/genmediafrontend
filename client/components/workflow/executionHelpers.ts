@@ -649,6 +649,13 @@ export async function pollVideoStatus(
 ): Promise<{ success: boolean; videoUrl?: string; error?: string }> {
   const maxAttempts = 30; // 5 minutes (30 * 10 seconds)
 
+  // Fatal errors that should stop polling immediately (don't retry)
+  const FATAL_STATUS_CODES = [401, 403, 404];
+
+  // Track consecutive 500 errors to detect persistent backend issues
+  let consecutive500Errors = 0;
+  const MAX_CONSECUTIVE_500 = 5;
+
   // Import auth dynamically to avoid circular dependencies
   const { auth } = await import("@/lib/firebase");
 
@@ -676,12 +683,67 @@ export async function pollVideoStatus(
       });
 
       if (!statusResponse.ok) {
-        console.warn(
-          `Status check failed (attempt ${attempts}/${maxAttempts}):`,
-          statusResponse.status,
-        );
+        // Try to extract error details from response body
+        let errorDetail = "";
+        try {
+          const errorBody = await statusResponse.json();
+          errorDetail = errorBody.detail || errorBody.error || JSON.stringify(errorBody);
+        } catch {
+          errorDetail = await statusResponse.text().catch(() => "");
+        }
+
+        // Check for fatal errors that won't resolve with retries
+        if (FATAL_STATUS_CODES.includes(statusResponse.status)) {
+          const errorMsg = statusResponse.status === 401
+            ? "Authentication failed. Please sign in again."
+            : statusResponse.status === 403
+            ? "Access denied. You may not have permission to check this video."
+            : statusResponse.status === 404
+            ? "Video operation not found. It may have expired or been deleted."
+            : `Request failed with status ${statusResponse.status}`;
+
+          console.error(
+            `[pollVideoStatus] Fatal error (${statusResponse.status}): ${errorMsg}`,
+            errorDetail
+          );
+          return {
+            success: false,
+            error: `${errorMsg}${errorDetail ? ` Details: ${errorDetail}` : ""}`,
+          };
+        }
+
+        // Track consecutive 500 errors
+        if (statusResponse.status >= 500) {
+          consecutive500Errors++;
+          console.warn(
+            `[pollVideoStatus] Server error ${statusResponse.status} (attempt ${attempts}/${maxAttempts}, consecutive: ${consecutive500Errors}/${MAX_CONSECUTIVE_500}):`,
+            errorDetail
+          );
+
+          // If we get too many consecutive 500s, the backend is likely broken
+          if (consecutive500Errors >= MAX_CONSECUTIVE_500) {
+            console.error(
+              `[pollVideoStatus] Aborting after ${MAX_CONSECUTIVE_500} consecutive server errors`
+            );
+            return {
+              success: false,
+              error: `Video status check failed repeatedly (${consecutive500Errors} server errors). Backend may be experiencing issues. Last error: ${errorDetail || statusResponse.statusText}`,
+            };
+          }
+        } else {
+          // Non-5xx error, reset counter
+          consecutive500Errors = 0;
+          console.warn(
+            `Status check failed (attempt ${attempts}/${maxAttempts}): ${statusResponse.status}`,
+            errorDetail
+          );
+        }
+
         continue;
       }
+
+      // Success - reset error counter
+      consecutive500Errors = 0;
 
       const statusData = await statusResponse.json();
 
