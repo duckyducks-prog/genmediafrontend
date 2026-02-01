@@ -32,7 +32,9 @@ export async function resolveAssetToDataUrl(assetRef: string): Promise<string> {
       throw new Error(`Failed to fetch assets: ${response.status}`);
     }
 
-    const assets = await response.json();
+    const data = await response.json();
+    // Backend returns { assets: [...], count: N }
+    const assets = data.assets || data;
     const asset = assets.find((a: any) => a.id === assetRef);
 
     if (!asset?.url) {
