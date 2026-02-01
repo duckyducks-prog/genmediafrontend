@@ -5,6 +5,7 @@ import {
   WorkflowEdge,
   NodeType,
   validateMutualExclusion,
+  BatchIterationResult,
 } from "./types";
 import { toast } from "@/hooks/use-toast";
 import { API_ENDPOINTS } from "@/lib/api-config";
@@ -1548,6 +1549,18 @@ export function useWorkflowExecution(
           }
 
           case NodeType.MergeVideos: {
+            // Enhanced logging to debug input gathering
+            logger.debug("[MergeVideos] 🎬 Input analysis:", {
+              inputKeys: Object.keys(inputs),
+              video1: inputs.video1 ? { type: typeof inputs.video1, length: inputs.video1.length, prefix: inputs.video1.substring(0, 50) } : "MISSING",
+              video2: inputs.video2 ? { type: typeof inputs.video2, length: inputs.video2.length, prefix: inputs.video2.substring(0, 50) } : "MISSING",
+              video3: inputs.video3 ? { type: typeof inputs.video3, length: inputs.video3.length, prefix: inputs.video3.substring(0, 50) } : "MISSING",
+              video4: inputs.video4 ? { type: typeof inputs.video4, length: inputs.video4.length, prefix: inputs.video4.substring(0, 50) } : "MISSING",
+              video5: inputs.video5 ? { type: typeof inputs.video5, length: inputs.video5.length, prefix: inputs.video5.substring(0, 50) } : "MISSING",
+              video6: inputs.video6 ? { type: typeof inputs.video6, length: inputs.video6.length, prefix: inputs.video6.substring(0, 50) } : "MISSING",
+              fullInputsObject: inputs,
+            });
+
             // Get videos from input connectors (support up to 6)
             const video1 = inputs.video1;
             const video2 = inputs.video2;
@@ -1565,7 +1578,19 @@ export function useWorkflowExecution(
             if (video5) videos.push(video5);
             if (video6) videos.push(video6);
 
+            logger.debug("[MergeVideos] Collected videos array:", {
+              count: videos.length,
+              videoPreviews: videos.map((v, i) => ({
+                index: i,
+                type: typeof v,
+                isUrl: v.startsWith("http"),
+                isDataUrl: v.startsWith("data:"),
+                prefix: v.substring(0, 60),
+              })),
+            });
+
             if (videos.length < 2) {
+              logger.error("[MergeVideos] ❌ Insufficient videos - only", videos.length, "found");
               return { success: false, error: "At least 2 videos required to merge" };
             }
 
@@ -1632,19 +1657,21 @@ export function useWorkflowExecution(
               const user = auth.currentUser;
               const token = await user?.getIdToken();
 
-              // Get aspect ratio from node data
+              // Get options from node data
               const aspectRatio = (node.data as any).aspectRatio || "16:9";
+              const trimSilence = (node.data as any).trimSilence || false;
 
               // Build request body - prefer URLs (no size limit)
-              const requestBody: { video_urls?: string[]; videos_base64?: string[]; aspect_ratio?: string } = {
+              const requestBody: { video_urls?: string[]; videos_base64?: string[]; aspect_ratio?: string; trim_silence?: boolean } = {
                 aspect_ratio: aspectRatio,
+                trim_silence: trimSilence,
               };
               if (useUrls) {
                 requestBody.video_urls = videoUrls;
-                logger.info(`[MergeVideos] Sending ${videoUrls.length} video URLs to backend, aspect ratio: ${aspectRatio}`);
+                logger.info(`[MergeVideos] Sending ${videoUrls.length} video URLs to backend, aspect ratio: ${aspectRatio}, trim silence: ${trimSilence}`);
               } else {
                 requestBody.videos_base64 = videosBase64;
-                logger.info(`[MergeVideos] Sending ${videosBase64.length} videos as base64, aspect ratio: ${aspectRatio}`);
+                logger.info(`[MergeVideos] Sending ${videosBase64.length} videos as base64, aspect ratio: ${aspectRatio}, trim silence: ${trimSilence}`);
               }
 
               const response = await fetch(API_ENDPOINTS.video.merge, {
@@ -2638,45 +2665,127 @@ export function useWorkflowExecution(
 
     // Helper function to run a single workflow iteration
     const runSingleIteration = async (iterationIndex: number = 0): Promise<{ completed: number; failed: number }> => {
-      // Update ScriptQueue node's currentIndex for this iteration
+      // Update ScriptQueue node's currentIndex for this iteration and reset other nodes
+      // Use a Promise to get the latest state after update
+      let currentNodes: WorkflowNode[] = [];
+
       if (scriptQueueNode && batchMode) {
-        setNodes((prevNodes) =>
-          prevNodes.map((n) =>
-            n.id === scriptQueueNode.id
-              ? {
-                  ...n,
-                  data: {
-                    ...n.data,
-                    currentIndex: iterationIndex,
-                    isProcessing: true,
-                  },
-                }
-              : {
-                  ...n,
-                  data: {
-                    ...n.data,
-                    status: "ready", // Reset status for re-execution
-                    outputs: n.type === NodeType.ScriptQueue ? n.data.outputs : {}, // Clear outputs except ScriptQueue
-                  },
-                }
-          )
-        );
-        // Small delay to let state update
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        logger.info(`[Batch] Starting iteration ${iterationIndex + 1} - clearing stale outputs from previous iteration`);
+        await new Promise<void>((resolve) => {
+          setNodes((prevNodes) => {
+            currentNodes = prevNodes.map((n) =>
+              n.id === scriptQueueNode.id
+                ? {
+                    ...n,
+                    data: {
+                      ...n.data,
+                      currentIndex: iterationIndex,
+                      isProcessing: true,
+                    },
+                  }
+                : {
+                    ...n,
+                    data: {
+                      ...n.data,
+                      status: "ready", // Reset status for re-execution
+                      outputs: n.type === NodeType.ScriptQueue ? n.data.outputs : {}, // Clear outputs except ScriptQueue
+                      error: undefined, // Clear any previous errors
+                      // CRITICAL: Clear stale execution results from previous iteration
+                      // These top-level fields can cause "Mixed URL and base64 formats" errors
+                      // when downstream nodes read old data via fallback instead of fresh outputs
+                      video: undefined,
+                      videoUrl: undefined,
+                      gcsUrl: undefined,
+                      image: undefined,
+                      imageUrl: undefined,
+                      images: undefined,
+                      text: undefined,
+                      response: undefined,
+                      audio: undefined,
+                      audioUrl: undefined,
+                    },
+                  }
+            );
+            // Schedule resolve after state update is processed
+            setTimeout(resolve, 100);
+            return currentNodes;
+          });
+        });
+      } else {
+        // Non-batch mode: use nodes directly
+        currentNodes = nodes;
       }
 
       // Store executed node data
       const progress = new Map<string, string>();
 
-      // Group nodes by execution level for parallel execution
-      // Re-get nodes to have latest state
-      const currentNodes = batchMode ? nodes.map((n) => {
-        if (n.id === scriptQueueNode?.id) {
-          return { ...n, data: { ...n.data, currentIndex: iterationIndex, isProcessing: true } };
+      // Track nodes with their outputs during this iteration
+      // This is crucial - we need to update this as nodes complete so downstream nodes can read outputs
+      let trackedNodes = [...currentNodes];
+
+      // Helper to get inputs using tracked nodes (not stale React state)
+      const getTrackedInputs = (nodeId: string) => {
+        const node = trackedNodes.find((n) => n.id === nodeId);
+        if (!node) {
+          logger.warn(`[getTrackedInputs] Node ${nodeId} not found in trackedNodes`);
+          return {};
         }
-        return n;
-      }) : nodes;
-      const levels = groupNodesByLevel(executionOrder, currentNodes, edges);
+
+        // Log the state of upstream nodes for debugging
+        const incomingEdges = edges.filter((e) => e.target === nodeId);
+        logger.debug(`[getTrackedInputs] Getting inputs for ${node.type} (${nodeId}):`, {
+          incomingEdgeCount: incomingEdges.length,
+          edges: incomingEdges.map((e) => ({
+            sourceId: e.source,
+            sourceHandle: e.sourceHandle,
+            targetHandle: e.targetHandle,
+          })),
+        });
+
+        // Check upstream node outputs - enhanced debugging
+        incomingEdges.forEach((edge) => {
+          const sourceNode = trackedNodes.find((n) => n.id === edge.source);
+          if (sourceNode) {
+            const sourceHandle = edge.sourceHandle || 'default';
+            const outputsObj = sourceNode.data.outputs as Record<string, unknown> | undefined;
+            const outputValue = outputsObj?.[sourceHandle];
+            const topLevelValue = (sourceNode.data as unknown as Record<string, unknown>)[sourceHandle];
+
+            logger.debug(`[getTrackedInputs] 🔍 Upstream node ${sourceNode.type} (${edge.source}):`, {
+              sourceHandle,
+              outputsState: {
+                exists: outputsObj !== undefined,
+                isEmpty: outputsObj ? Object.keys(outputsObj).length === 0 : true,
+                keys: outputsObj ? Object.keys(outputsObj) : [],
+                hasRequestedKey: outputValue !== undefined,
+              },
+              topLevelState: {
+                hasRequestedKey: topLevelValue !== undefined,
+                valueType: topLevelValue !== undefined ? typeof topLevelValue : 'undefined',
+              },
+              resolution: outputValue !== undefined
+                ? `✓ Found in outputs.${sourceHandle}`
+                : topLevelValue !== undefined
+                  ? `⚠️ Fallback to data.${sourceHandle}`
+                  : `❌ Not found anywhere`,
+              valuePreview: (outputValue || topLevelValue)
+                ? String(outputValue || topLevelValue).substring(0, 60) + "..."
+                : "NONE",
+            });
+          } else {
+            logger.warn(`[getTrackedInputs] ❌ Source node ${edge.source} not found in trackedNodes!`);
+          }
+        });
+
+        const inputs = gatherNodeInputs(node, trackedNodes, edges);
+        logger.debug(`[getTrackedInputs] Final inputs for ${node.type}:`, {
+          inputKeys: Object.keys(inputs),
+        });
+        return inputs;
+      };
+
+      // Group nodes by execution level for parallel execution
+      const levels = groupNodesByLevel(executionOrder, trackedNodes, edges);
 
       let totalCompleted = 0;
       let totalFailed = 0;
@@ -2695,12 +2804,32 @@ export function useWorkflowExecution(
 
         const levelNodes = levels[levelIndex];
 
+        // Log tracked nodes state at the start of each level
+        logger.debug(`[Execution] 📊 Starting Level ${levelIndex}/${levels.length - 1}:`, {
+          nodesInLevel: levelNodes.map((n) => ({ id: n.id, type: n.type })),
+          trackedNodesWithOutputs: trackedNodes
+            .filter((n) => n.data.outputs && Object.keys(n.data.outputs as object).length > 0)
+            .map((n) => ({
+              id: n.id,
+              type: n.type,
+              outputKeys: Object.keys(n.data.outputs as object),
+              hasVideo: !!(n.data.outputs as any)?.video,
+            })),
+        });
+
         // Separate API-calling nodes from others
+        // These nodes make backend HTTP calls and need sequential execution
         const apiNodes = levelNodes.filter((node) =>
           [
             NodeType.GenerateImage as string,
             NodeType.GenerateVideo as string,
             NodeType.LLM as string,
+            NodeType.MergeVideos as string,
+            NodeType.AddMusicToVideo as string,
+            NodeType.VoiceChanger as string,
+            NodeType.VideoWatermark as string,
+            NodeType.VideoSegmentReplace as string,
+            NodeType.GenerateMusic as string,
           ].includes(node.type as string),
         );
         const otherNodes = levelNodes.filter(
@@ -2714,7 +2843,7 @@ export function useWorkflowExecution(
             setEdgeAnimated(node.id, true, false);
             updateNodeState(node.id, "executing");
 
-            const inputs = getNodeInputs(node.id);
+            const inputs = getTrackedInputs(node.id);
             const validation = validateNodeInputs(node, inputs);
             if (!validation.valid) {
               return {
@@ -2726,12 +2855,12 @@ export function useWorkflowExecution(
 
             const result = await executeNode(node, inputs);
 
-            // ✅ CRITICAL FIX: Update nodes array synchronously
+            // ✅ CRITICAL FIX: Update trackedNodes array synchronously
             // This ensures downstream nodes see the latest outputs immediately
             if (result.success && result.data) {
               const updatedOutputs = result.data.outputs || result.data;
 
-              nodes = nodes.map((n) =>
+              trackedNodes = trackedNodes.map((n) =>
                 n.id === node.id
                   ? {
                     ...n,
@@ -2770,7 +2899,7 @@ export function useWorkflowExecution(
           updateNodeState(node.id, "executing");
           setExecutionProgress(new Map(progress));
 
-          const inputs = getNodeInputs(node.id);
+          const inputs = getTrackedInputs(node.id);
 
           // Diagnostic log for input gathering verification
           logger.debug(`[Execution] Gathered inputs for ${node.type}:`, {
@@ -2822,13 +2951,30 @@ export function useWorkflowExecution(
             try {
               const execResult = await executeNode(node, inputs);
 
-              // ✅ CRITICAL FIX: Update nodes array synchronously for API nodes
+              // ✅ CRITICAL FIX: Update trackedNodes array synchronously for API nodes
               // This ensures downstream nodes see the latest outputs immediately
               if (execResult.success && execResult.data) {
                 const updatedOutputs =
                   execResult.data.outputs || execResult.data;
 
-                nodes = nodes.map((n) =>
+                // Enhanced logging to trace output structure
+                logger.debug(
+                  "[Execution] 📦 execResult.data structure:",
+                  {
+                    nodeId: node.id,
+                    nodeType: node.type,
+                    hasNestedOutputs: !!execResult.data.outputs,
+                    nestedOutputsKeys: execResult.data.outputs ? Object.keys(execResult.data.outputs) : [],
+                    topLevelDataKeys: Object.keys(execResult.data),
+                    videoInOutputs: !!execResult.data.outputs?.video,
+                    videoInTopLevel: !!execResult.data.video,
+                    videoValuePreview: (execResult.data.outputs?.video || execResult.data.video)
+                      ? String(execResult.data.outputs?.video || execResult.data.video).substring(0, 80) + "..."
+                      : "NONE",
+                  },
+                );
+
+                trackedNodes = trackedNodes.map((n) =>
                   n.id === node.id
                     ? {
                       ...n,
@@ -2842,12 +2988,17 @@ export function useWorkflowExecution(
                     : n,
                 );
 
+                // Verify the update was applied correctly
+                const updatedNode = trackedNodes.find((n) => n.id === node.id);
                 logger.debug(
-                  "[Execution] ✓ Synchronously updated API node outputs:",
+                  "[Execution] ✓ Verified trackedNodes update:",
                   {
                     nodeId: node.id,
                     nodeType: node.type,
-                    outputKeys: Object.keys(updatedOutputs),
+                    updatedOutputKeys: updatedNode?.data.outputs ? Object.keys(updatedNode.data.outputs) : [],
+                    hasVideoInOutputs: !!updatedNode?.data.outputs?.video,
+                    hasVideoTopLevel: !!(updatedNode?.data as any)?.video,
+                    trackedNodesCount: trackedNodes.length,
                   },
                 );
               }
@@ -2997,6 +3148,27 @@ export function useWorkflowExecution(
         let batchCompleted = 0;
         let batchFailed = 0;
         const results: Array<{ index: number; success: boolean }> = [];
+        const collectedResults: BatchIterationResult[] = [];
+
+        // Find terminal nodes (nodes with no outgoing edges) for collecting outputs
+        const nodesWithOutgoingEdges = new Set(edges.map(e => e.source));
+        const terminalNodes = nodes.filter(n =>
+          !nodesWithOutgoingEdges.has(n.id) &&
+          n.id !== scriptQueueNode?.id &&
+          n.data.enabled !== false
+        );
+        logger.info(`[Batch] Terminal nodes for output collection:`, terminalNodes.map(n => ({ id: n.id, type: n.type })));
+
+        // Clear any previous collected results
+        if (scriptQueueNode) {
+          setNodes((prevNodes) =>
+            prevNodes.map((n) =>
+              n.id === scriptQueueNode.id
+                ? { ...n, data: { ...n.data, collectedResults: [] } }
+                : n
+            )
+          );
+        }
 
         for (let i = 0; i < scripts.length; i++) {
           // Check if abort was requested
@@ -3017,14 +3189,91 @@ export function useWorkflowExecution(
             description: `Processing script ${i + 1} of ${scripts.length}...`,
           });
 
+          // Add delay between iterations to avoid rate limiting (except for first iteration)
+          if (i > 0) {
+            logger.debug(`[Batch] Waiting 2s before next iteration to avoid rate limits`);
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+          }
+
           const result = await runSingleIteration(i);
+
+          // Collect output from terminal nodes after iteration completes
+          let collectedVideoUrl: string | undefined;
+          let iterationError: string | undefined;
 
           if (result.failed === 0) {
             batchCompleted++;
             results.push({ index: i, success: true });
+
+            // Get current nodes state to find terminal node outputs
+            // Use a promise to get the latest nodes state
+            await new Promise<void>((resolve) => {
+              setNodes((currentNodes) => {
+                // Find video output from terminal nodes (prefer AddMusicToVideo, then MergeVideos, then GenerateVideo)
+                const priorityOrder = [NodeType.AddMusicToVideo, NodeType.MergeVideos, NodeType.GenerateVideo];
+
+                for (const nodeType of priorityOrder) {
+                  const terminalNode = currentNodes.find(n =>
+                    terminalNodes.some(t => t.id === n.id) && n.type === nodeType
+                  );
+                  if (terminalNode?.data) {
+                    const nodeData = terminalNode.data as any;
+                    // Check various output properties
+                    const videoUrl = nodeData.outputVideoUrl || nodeData.videoUrl || nodeData.outputs?.video;
+                    if (videoUrl) {
+                      collectedVideoUrl = videoUrl;
+                      logger.info(`[Batch] Collected video from ${nodeType}:`, videoUrl.substring(0, 100));
+                      break;
+                    }
+                  }
+                }
+
+                // If no priority match, check any terminal node for video output
+                if (!collectedVideoUrl) {
+                  for (const terminalNodeRef of terminalNodes) {
+                    const terminalNode = currentNodes.find(n => n.id === terminalNodeRef.id);
+                    if (terminalNode?.data) {
+                      const nodeData = terminalNode.data as any;
+                      const videoUrl = nodeData.outputVideoUrl || nodeData.videoUrl || nodeData.outputs?.video;
+                      if (videoUrl) {
+                        collectedVideoUrl = videoUrl;
+                        logger.info(`[Batch] Collected video from terminal node ${terminalNode.type}:`, videoUrl.substring(0, 100));
+                        break;
+                      }
+                    }
+                  }
+                }
+
+                resolve();
+                return currentNodes; // Return unchanged
+              });
+            });
           } else {
             batchFailed++;
             results.push({ index: i, success: false });
+            iterationError = `${result.failed} node(s) failed`;
+          }
+
+          // Add to collected results
+          const iterationResult: BatchIterationResult = {
+            index: i,
+            scriptPreview: scripts[i].substring(0, 50) + (scripts[i].length > 50 ? "..." : ""),
+            success: result.failed === 0,
+            videoUrl: collectedVideoUrl,
+            error: iterationError,
+            timestamp: Date.now(),
+          };
+          collectedResults.push(iterationResult);
+
+          // Update ScriptQueue with collected results (incrementally)
+          if (scriptQueueNode) {
+            setNodes((prevNodes) =>
+              prevNodes.map((n) =>
+                n.id === scriptQueueNode.id
+                  ? { ...n, data: { ...n.data, collectedResults: [...collectedResults] } }
+                  : n
+              )
+            );
           }
 
           setBatchResults([...results]);
@@ -3035,12 +3284,12 @@ export function useWorkflowExecution(
           }
         }
 
-        // Mark ScriptQueue as done
+        // Mark ScriptQueue as done (keep collectedResults)
         if (scriptQueueNode) {
           setNodes((prevNodes) =>
             prevNodes.map((n) =>
               n.id === scriptQueueNode.id
-                ? { ...n, data: { ...n.data, isProcessing: false } }
+                ? { ...n, data: { ...n.data, isProcessing: false, collectedResults } }
                 : n
             )
           );

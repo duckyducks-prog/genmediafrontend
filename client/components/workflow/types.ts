@@ -134,6 +134,16 @@ export interface PromptNodeData extends BaseNodeData {
   prompt: string;
 }
 
+// Result from a single batch iteration
+export interface BatchIterationResult {
+  index: number;
+  scriptPreview: string; // First 50 chars of the script
+  success: boolean;
+  videoUrl?: string; // Final video URL from terminal node
+  error?: string;
+  timestamp: number;
+}
+
 // SCRIPT QUEUE node - batch input for multiple scripts
 export interface ScriptQueueNodeData extends BaseNodeData {
   scripts: string[]; // Array of scripts to process
@@ -142,6 +152,7 @@ export interface ScriptQueueNodeData extends BaseNodeData {
   customSeparator?: string; // Custom separator string
   currentIndex: number; // Current script being processed (0-indexed)
   isProcessing: boolean; // Is batch processing in progress
+  collectedResults?: BatchIterationResult[]; // Collected outputs from each iteration
 }
 
 // Music duration options
@@ -169,6 +180,7 @@ export interface VoiceChangerNodeData extends BaseNodeData {
 export interface MergeVideosNodeData extends BaseNodeData {
   isMerging: boolean; // Is merge in progress
   aspectRatio: "16:9" | "9:16" | "1:1" | "4:3" | "4:5"; // Output aspect ratio
+  trimSilence?: boolean; // Auto-trim trailing silence from clips before merging
   outputVideoUrl?: string; // Output merged video
 }
 

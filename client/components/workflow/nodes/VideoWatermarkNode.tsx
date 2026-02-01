@@ -48,30 +48,16 @@ function VideoWatermarkNode({ data, id }: NodeProps<VideoWatermarkNodeData>) {
     handleUpdate("locked", !data.locked);
   };
 
-  // Don't auto-process - wait for workflow execution
-  // This prevents "Failed to fetch" errors from large payloads
-  // and ensures proper execution order
+  // Update preview when execution completes
   useEffect(() => {
-    const videoInput = (data as any).video || (data as any).videoInput;
-    const watermarkInput = (data as any).watermark || (data as any).image;
-
-    // Just update preview URL from outputs if execution completed
-    if (data.outputs?.video && !previewUrl) {
+    // Update preview URL from outputs if execution completed
+    if (data.outputs?.video) {
       setPreviewUrl(data.outputs.video);
-    }
-
-    // Clear preview if inputs are removed
-    if (!videoInput || !watermarkInput) {
+    } else if (data.status === "ready" && !data.outputs?.video) {
+      // Only clear preview when status is reset to ready and there's no output
       setPreviewUrl(null);
     }
-  }, [
-    (data as any).video,
-    (data as any).videoInput,
-    (data as any).watermark,
-    (data as any).image,
-    data.outputs?.video,
-    previewUrl,
-  ]);
+  }, [data.outputs?.video, data.status]);
 
   const getBorderColor = () => {
     if (status === "error") return "border-red-500";
@@ -237,11 +223,12 @@ function VideoWatermarkNode({ data, id }: NodeProps<VideoWatermarkNodeData>) {
           <div className="text-xs font-medium text-muted-foreground mb-1">
             Preview:
           </div>
-          <div className="relative rounded-lg overflow-hidden bg-muted border border-border">
+          <div className="relative rounded-lg overflow-hidden bg-black border border-border flex items-center justify-center">
             <video
               src={previewUrl}
               controls
-              className="w-full h-auto max-h-[120px] object-contain bg-black"
+              className="max-w-full max-h-[150px] object-contain"
+              style={{ aspectRatio: 'auto' }}
             />
           </div>
         </div>

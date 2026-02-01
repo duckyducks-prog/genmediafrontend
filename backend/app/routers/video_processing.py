@@ -52,6 +52,7 @@ class MergeVideosRequest(BaseModel):
     videos_base64: Optional[List[str]] = Field(default=None, description="List of base64 encoded videos to merge")
     video_urls: Optional[List[str]] = Field(default=None, description="List of GCS/HTTP URLs to merge (preferred for large files)")
     aspect_ratio: str = Field(default="16:9", description="Output aspect ratio: 16:9, 9:16, 1:1, 4:3, or 4:5")
+    trim_silence: bool = Field(default=False, description="Auto-trim trailing silence from video clips before merging")
 
 
 class MergeVideosResponse(BaseModel):
@@ -135,6 +136,119 @@ async def download_video_from_url(url: str, timeout: float = 120.0) -> bytes:
         response = await client.get(url)
         response.raise_for_status()
         return response.content
+
+
+def detect_trailing_silence(video_path: str, noise_db: float = -30, min_duration: float = 0.3) -> Optional[float]:
+    """
+    Detect trailing silence in a video and return the trim point (end of last non-silent audio).
+
+    Args:
+        video_path: Path to video file
+        noise_db: Silence threshold in dB (default -30dB)
+        min_duration: Minimum silence duration to detect in seconds (default 0.3s)
+
+    Returns:
+        Trim point in seconds (time to trim video to), or None if no trailing silence found
+    """
+    import re
+
+    # First check if video has an audio track
+    probe_info = probe_video(video_path)
+    has_audio = False
+    for stream in probe_info.get("streams", []):
+        if stream.get("codec_type") == "audio":
+            has_audio = True
+            break
+
+    if not has_audio:
+        logger.debug(f"No audio track in {video_path}, skipping silence detection")
+        return None
+
+    # Get video duration
+    duration = float(probe_info.get("format", {}).get("duration", 0))
+    if duration <= 0:
+        logger.warning(f"Could not get duration for {video_path}")
+        return None
+
+    # Use silencedetect filter to find silence periods
+    detect_cmd = [
+        "ffmpeg", "-i", video_path,
+        "-af", f"silencedetect=noise={noise_db}dB:d={min_duration}",
+        "-f", "null", "-"
+    ]
+
+    logger.debug(f"Running silence detection: {' '.join(detect_cmd)}")
+    result = subprocess.run(detect_cmd, capture_output=True, text=True)
+    stderr = result.stderr
+
+    # Log the output for debugging
+    logger.debug(f"Silence detection output: {stderr[-500:] if len(stderr) > 500 else stderr}")
+
+    # Parse silence_start and silence_end from output
+    # Format: [silencedetect @ 0x...] silence_start: 5.123
+    # Format: [silencedetect @ 0x...] silence_end: 7.456 | silence_duration: 2.333
+    silence_starts = re.findall(r'silence_start:\s*([\d.]+)', stderr)
+    silence_ends = re.findall(r'silence_end:\s*([\d.]+)', stderr)
+
+    logger.info(f"Silence detection for {video_path}: found {len(silence_starts)} silence periods, duration={duration:.2f}s")
+
+    if not silence_starts:
+        logger.debug(f"No silence detected in {video_path}")
+        return None
+
+    # Check if the last silence extends to the end of the video
+    last_silence_start = float(silence_starts[-1])
+
+    logger.debug(f"Last silence starts at {last_silence_start}s, video duration {duration}s")
+
+    # Case 1: Last silence has no end marker - means it extends to end of video
+    if len(silence_ends) < len(silence_starts):
+        trim_point = last_silence_start
+        logger.info(f"Trailing silence detected (no end marker): starts at {trim_point:.2f}s, video duration {duration:.2f}s")
+        return trim_point
+
+    # Case 2: Last silence_end is close to video duration (within 0.5s tolerance)
+    last_silence_end = float(silence_ends[-1])
+    if abs(last_silence_end - duration) < 0.5:
+        trim_point = last_silence_start
+        logger.info(f"Trailing silence detected: {last_silence_start:.2f}s to {last_silence_end:.2f}s (duration: {duration:.2f}s)")
+        return trim_point
+
+    logger.debug(f"No trailing silence found in {video_path} (last silence ends at {last_silence_end:.2f}s, video ends at {duration:.2f}s)")
+    return None
+
+
+def trim_video_to_point(video_path: str, trim_point: float, output_path: str) -> bool:
+    """
+    Trim video to specified point using FFmpeg.
+
+    Args:
+        video_path: Input video path
+        trim_point: Time in seconds to trim to
+        output_path: Output video path
+
+    Returns:
+        True if successful, False otherwise
+    """
+    if trim_point <= 0:
+        return False
+
+    trim_cmd = [
+        "ffmpeg", "-y",
+        "-i", video_path,
+        "-t", str(trim_point),
+        "-c:v", "copy",
+        "-c:a", "copy",
+        output_path
+    ]
+
+    result = subprocess.run(trim_cmd, capture_output=True, text=True)
+
+    if result.returncode != 0:
+        logger.warning(f"Trim failed for {video_path}: {get_ffmpeg_error(result.stderr)}")
+        return False
+
+    return True
 
 
 def filter_config_to_ffmpeg(filter_config: FilterConfig) -> str:
@@ -233,19 +347,19 @@ async def merge_videos(
         if request.video_urls and len(request.video_urls) > 0:
             videos_data = request.video_urls
             use_urls = True
-            logger.info(f"Merge videos request from user {user['email']}, count={len(videos_data)} (using URLs)")
+            logger.info(f"Merge videos request from user {user['email']}, count={len(videos_data)} (using URLs), trim_silence={request.trim_silence}")
         elif request.videos_base64 and len(request.videos_base64) > 0:
             videos_data = request.videos_base64
             use_urls = False
-            logger.info(f"Merge videos request from user {user['email']}, count={len(videos_data)} (using base64)")
+            logger.info(f"Merge videos request from user {user['email']}, count={len(videos_data)} (using base64), trim_silence={request.trim_silence}")
         else:
             raise HTTPException(status_code=400, detail="Either videos_base64 or video_urls must be provided")
 
         if len(videos_data) < 2:
             raise HTTPException(status_code=400, detail="At least 2 videos required")
 
-        if len(videos_data) > 10:
-            raise HTTPException(status_code=400, detail="Maximum 10 videos allowed")
+        if len(videos_data) > 25:
+            raise HTTPException(status_code=400, detail="Maximum 25 videos allowed")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # Save all input videos and probe them
@@ -273,6 +387,40 @@ async def merge_videos(
                 info = probe_video(video_path)
                 video_infos.append(info)
                 logger.info(f"Saved video {i}: {len(video_bytes)} bytes")
+
+            # Apply silence trimming if enabled
+            if request.trim_silence:
+                logger.info(f"Trim silence enabled - detecting and trimming trailing silence for {len(video_paths)} videos")
+                trimmed_paths = []
+                for i, video_path in enumerate(video_paths):
+                    # Try progressively more sensitive thresholds
+                    # -30dB: strict (only very quiet silence)
+                    # -40dB: medium (quiet ambient)
+                    # -50dB: lenient (catches most trailing silence)
+                    trim_point = detect_trailing_silence(video_path, noise_db=-30, min_duration=0.1)
+                    if trim_point is None:
+                        logger.debug(f"Video {i}: no silence at -30dB, trying -40dB")
+                        trim_point = detect_trailing_silence(video_path, noise_db=-40, min_duration=0.1)
+                    if trim_point is None:
+                        logger.debug(f"Video {i}: no silence at -40dB, trying -50dB")
+                        trim_point = detect_trailing_silence(video_path, noise_db=-50, min_duration=0.1)
+
+                    if trim_point is not None and trim_point > 0.5:
+                        # Create trimmed version
+                        trimmed_path = os.path.join(tmpdir, f"trimmed_{i}.mp4")
+                        if trim_video_to_point(video_path, trim_point, trimmed_path):
+                            logger.info(f"Video {i} trimmed from {trim_point:.2f}s to end")
+                            trimmed_paths.append(trimmed_path)
+                            # Re-probe the trimmed video
+                            video_infos[i] = probe_video(trimmed_path)
+                        else:
+                            logger.warning(f"Video {i} trim failed, using original")
+                            trimmed_paths.append(video_path)
+                    else:
+                        logger.info(f"Video {i}: no trailing silence detected, using original")
+                        trimmed_paths.append(video_path)
+                video_paths = trimmed_paths
+                logger.info(f"Silence trimming complete, proceeding with merge")
 
             output_path = os.path.join(tmpdir, "output.mp4")
             n = len(video_paths)
@@ -813,6 +961,21 @@ async def add_watermark_to_video(
                 f.write(watermark_bytes)
             logger.info(f"Saved watermark: {len(watermark_bytes)} bytes")
 
+            # Probe watermark image for format info
+            watermark_probe_cmd = ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", watermark_path]
+            watermark_probe_result = subprocess.run(watermark_probe_cmd, capture_output=True, text=True)
+            if watermark_probe_result.returncode == 0:
+                try:
+                    watermark_info = json.loads(watermark_probe_result.stdout)
+                    for stream in watermark_info.get("streams", []):
+                        if stream.get("codec_type") == "video":
+                            logger.info(f"Watermark info: {stream.get('width')}x{stream.get('height')}, "
+                                       f"codec={stream.get('codec_name')}, pix_fmt={stream.get('pix_fmt')}")
+                except json.JSONDecodeError:
+                    logger.warning("Could not parse watermark probe output")
+            else:
+                logger.warning(f"Watermark probe failed: {watermark_probe_result.stderr}")
+
             # Probe video for dimensions
             video_info = probe_video(video_path)
             video_width = 1280
@@ -883,12 +1046,14 @@ async def add_watermark_to_video(
                 output_path
             ]
 
-            logger.info(f"Running ffmpeg watermark overlay")
+            logger.info(f"Running ffmpeg watermark overlay: {' '.join(overlay_cmd)}")
+            logger.debug(f"Filter complex: {filter_complex}")
             result = subprocess.run(overlay_cmd, capture_output=True, text=True)
 
             if result.returncode != 0:
                 error_msg = get_ffmpeg_error(result.stderr)
-                logger.error(f"FFmpeg watermark failed: {result.stderr}")
+                logger.error(f"FFmpeg watermark failed. Command: {' '.join(overlay_cmd)}")
+                logger.error(f"FFmpeg stderr: {result.stderr[-1000:] if len(result.stderr) > 1000 else result.stderr}")
                 raise HTTPException(status_code=500, detail=f"Failed to add watermark: {error_msg}")
 
             # Read output

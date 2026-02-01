@@ -11,7 +11,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Combine, CheckCircle, AlertCircle, Info, Play } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Loader2, Combine, CheckCircle, AlertCircle, Info, Play, Volume2 } from "lucide-react";
 import { MergeVideosNodeData, NODE_CONFIGURATIONS, NodeType } from "../types";
 
 function MergeVideosNode({ data, id }: NodeProps<MergeVideosNodeData>) {
@@ -141,6 +143,19 @@ function MergeVideosNode({ data, id }: NodeProps<MergeVideosNodeData>) {
               <SelectItem value="4:5">4:5 (Instagram Portrait)</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        {/* Trim Silence Toggle */}
+        <div className="mb-3 flex items-center justify-between">
+          <Label className="text-xs flex items-center gap-1.5 text-muted-foreground cursor-pointer">
+            <Volume2 className="w-3 h-3" />
+            Trim trailing silence
+          </Label>
+          <Switch
+            checked={data.trimSilence || false}
+            onCheckedChange={(checked) => handleUpdate("trimSilence", checked)}
+            disabled={data.readOnly || data.isMerging}
+          />
         </div>
 
         {/* Error display */}
