@@ -48,26 +48,26 @@ export const API_ENDPOINTS = {
     segmentReplace: `${VEO_API_BASE_URL}/v1/video/segment-replace`,
   },
 
-  // Assets endpoints - routed through local proxy to avoid CORS
+  // Assets endpoints
   assets: {
-    save: `/api/assets`,
+    save: `${VEO_API_BASE_URL}/v1/assets`,
     list: (assetType?: string) =>
       assetType
-        ? `/api/assets?asset_type=${assetType}`
-        : `/api/assets`,
-    get: (id: string) => `/api/assets/${id}`,
-    delete: (id: string) => `/api/assets/${id}`,
+        ? `${VEO_API_BASE_URL}/v1/assets?asset_type=${assetType}`
+        : `${VEO_API_BASE_URL}/v1/assets`,
+    get: (id: string) => `${VEO_API_BASE_URL}/v1/assets/${id}`,
+    delete: (id: string) => `${VEO_API_BASE_URL}/v1/assets/${id}`,
   },
 
   // Legacy library alias for backward compatibility during migration
   library: {
-    save: `/api/assets`,
+    save: `${VEO_API_BASE_URL}/v1/assets`,
     list: (assetType?: string) =>
       assetType
-        ? `/api/assets?asset_type=${assetType}`
-        : `/api/assets`,
-    get: (id: string) => `/api/assets/${id}`,
-    delete: (id: string) => `/api/assets/${id}`,
+        ? `${VEO_API_BASE_URL}/v1/assets?asset_type=${assetType}`
+        : `${VEO_API_BASE_URL}/v1/assets`,
+    get: (id: string) => `${VEO_API_BASE_URL}/v1/assets/${id}`,
+    delete: (id: string) => `${VEO_API_BASE_URL}/v1/assets/${id}`,
   },
 } as const;
 
