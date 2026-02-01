@@ -3467,12 +3467,19 @@ export function useWorkflowExecution(
         if (postBatchNodeIds.size > 0 && collectedResults.length > 0) {
           logger.info(`[Batch] Starting post-batch execution for ${postBatchNodeIds.size} nodes`);
 
-          // Collect video URLs from successful iterations
+          // Collect video URLs from successful iterations, PRESERVING SCRIPT ORDER
+          // Sort by index to ensure videos are merged in the same order as scripts
           const batchVideoUrls = collectedResults
             .filter(r => r.success && r.videoUrl)
+            .sort((a, b) => a.index - b.index)  // Ensure script order is preserved
             .map(r => r.videoUrl as string);
 
-          logger.info(`[Batch] Collected ${batchVideoUrls.length} video URLs from batch iterations`);
+          logger.info(`[Batch] Collected ${batchVideoUrls.length} video URLs in script order:`, 
+            collectedResults
+              .filter(r => r.success && r.videoUrl)
+              .sort((a, b) => a.index - b.index)
+              .map(r => ({ index: r.index, scriptPreview: r.scriptPreview }))
+          );
 
           if (batchVideoUrls.length >= 2) {
             // Find and execute post-batch nodes in dependency order
