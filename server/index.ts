@@ -1,5 +1,5 @@
 import "dotenv/config";
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
 import { setupAssetRoutes } from "./routes/assets";
@@ -12,10 +12,28 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()
   'http://localhost:5173',
 ];
 
+// Security headers middleware
+const securityHeaders = (_req: Request, res: Response, next: NextFunction) => {
+  // HSTS: Force HTTPS connections (1 year)
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  // Prevent clickjacking
+  res.setHeader('X-Frame-Options', 'DENY');
+  // Prevent MIME type sniffing
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  // XSS protection (legacy but still useful)
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  // Referrer policy
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  // Permissions policy (restrict browser features)
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  next();
+};
+
 export function createServer() {
   const app = express();
 
   // Middleware
+  app.use(securityHeaders);
   app.use(cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps or curl)
