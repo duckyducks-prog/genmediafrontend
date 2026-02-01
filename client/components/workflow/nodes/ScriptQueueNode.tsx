@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useMemo } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { Handle, Position, NodeProps, useReactFlow } from "reactflow";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -11,12 +11,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { ScriptQueueNodeData } from "../types";
-import { ListOrdered, CheckCircle2, Loader2, Power } from "lucide-react";
+import { ScriptQueueNodeData, BatchIterationResult } from "../types";
+import { ListOrdered, CheckCircle2, Loader2, Power, Download, Trash2, Play, XCircle, ChevronDown, ChevronUp } from "lucide-react";
 
 function ScriptQueueNode({ data, id }: NodeProps<ScriptQueueNodeData>) {
   const { setNodes } = useReactFlow();
   const isEnabled = data.enabled !== false;
+  const [resultsExpanded, setResultsExpanded] = useState(true);
+  const [playingIndex, setPlayingIndex] = useState<number | null>(null);
+
+  const collectedResults = data.collectedResults || [];
+  const successCount = collectedResults.filter(r => r.success && r.videoUrl).length;
+  const failCount = collectedResults.filter(r => !r.success).length;
 
   // Parse scripts from batchInput based on separator
   const scripts = useMemo(() => {
@@ -118,6 +124,42 @@ function ScriptQueueNode({ data, id }: NodeProps<ScriptQueueNodeData>) {
       },
     });
     window.dispatchEvent(event);
+  };
+
+  const handleClearResults = () => {
+    if (data.readOnly) return;
+    setNodes((nodes) =>
+      nodes.map((node) =>
+        node.id === id
+          ? {
+              ...node,
+              data: {
+                ...node.data,
+                collectedResults: [],
+              },
+            }
+          : node
+      )
+    );
+  };
+
+  const handleDownloadVideo = async (result: BatchIterationResult, index: number) => {
+    if (!result.videoUrl) return;
+
+    try {
+      const response = await fetch(result.videoUrl);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `script_${index + 1}_video.mp4`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to download video:", error);
+    }
   };
 
   const status = data.status || "ready";
@@ -246,6 +288,123 @@ function ScriptQueueNode({ data, id }: NodeProps<ScriptQueueNodeData>) {
               +{scripts.length - 5} more...
             </div>
           )}
+        </div>
+      )}
+
+      {/* Collected Results Section */}
+      {collectedResults.length > 0 && (
+        <div className="mt-3 border-t border-border pt-3">
+          {/* Results Header */}
+          <div className="flex items-center justify-between mb-2">
+            <button
+              onClick={() => setResultsExpanded(!resultsExpanded)}
+              className="flex items-center gap-1 text-xs font-medium text-foreground hover:text-primary transition-colors"
+            >
+              {resultsExpanded ? (
+                <ChevronUp className="w-3 h-3" />
+              ) : (
+                <ChevronDown className="w-3 h-3" />
+              )}
+              Results ({successCount}/{collectedResults.length})
+            </button>
+            <button
+              onClick={handleClearResults}
+              disabled={data.readOnly}
+              className="p-1 rounded text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
+              title="Clear results"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          </div>
+
+          {/* Results List */}
+          {resultsExpanded && (
+            <div className="space-y-2 max-h-[300px] overflow-y-auto">
+              {collectedResults.map((result, i) => (
+                <div
+                  key={i}
+                  className={`bg-muted/30 rounded p-2 border ${
+                    result.success && result.videoUrl
+                      ? "border-green-500/30"
+                      : result.success
+                      ? "border-yellow-500/30"
+                      : "border-red-500/30"
+                  }`}
+                >
+                  {/* Result Header */}
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-1">
+                      {result.success && result.videoUrl ? (
+                        <CheckCircle2 className="w-3 h-3 text-green-500" />
+                      ) : result.success ? (
+                        <CheckCircle2 className="w-3 h-3 text-yellow-500" />
+                      ) : (
+                        <XCircle className="w-3 h-3 text-red-500" />
+                      )}
+                      <span className="text-xs font-medium">
+                        Script {result.index + 1}
+                      </span>
+                    </div>
+                    {result.videoUrl && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setPlayingIndex(playingIndex === i ? null : i)}
+                          className="p-1 rounded text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                          title="Preview video"
+                        >
+                          <Play className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => handleDownloadVideo(result, result.index)}
+                          className="p-1 rounded text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                          title="Download video"
+                        >
+                          <Download className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Script Preview */}
+                  <div className="text-xs text-muted-foreground truncate">
+                    {result.scriptPreview}
+                  </div>
+
+                  {/* Error Message */}
+                  {result.error && (
+                    <div className="text-xs text-red-400 mt-1">
+                      {result.error}
+                    </div>
+                  )}
+
+                  {/* Video Preview */}
+                  {playingIndex === i && result.videoUrl && (
+                    <div className="mt-2">
+                      <video
+                        src={result.videoUrl}
+                        controls
+                        autoPlay
+                        className="w-full rounded max-h-[120px]"
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Summary Stats */}
+          <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+            <span>
+              {successCount} completed
+              {failCount > 0 && `, ${failCount} failed`}
+            </span>
+            {successCount > 0 && (
+              <span className="text-green-500">
+                {successCount} video{successCount !== 1 ? "s" : ""} ready
+              </span>
+            )}
+          </div>
         </div>
       )}
 

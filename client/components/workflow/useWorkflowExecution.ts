@@ -5,6 +5,7 @@ import {
   WorkflowEdge,
   NodeType,
   validateMutualExclusion,
+  BatchIterationResult,
 } from "./types";
 import { toast } from "@/hooks/use-toast";
 import { API_ENDPOINTS } from "@/lib/api-config";
@@ -2963,6 +2964,27 @@ export function useWorkflowExecution(
         let batchCompleted = 0;
         let batchFailed = 0;
         const results: Array<{ index: number; success: boolean }> = [];
+        const collectedResults: BatchIterationResult[] = [];
+
+        // Find terminal nodes (nodes with no outgoing edges) for collecting outputs
+        const nodesWithOutgoingEdges = new Set(edges.map(e => e.source));
+        const terminalNodes = nodes.filter(n =>
+          !nodesWithOutgoingEdges.has(n.id) &&
+          n.id !== scriptQueueNode?.id &&
+          n.data.enabled !== false
+        );
+        logger.info(`[Batch] Terminal nodes for output collection:`, terminalNodes.map(n => ({ id: n.id, type: n.type })));
+
+        // Clear any previous collected results
+        if (scriptQueueNode) {
+          setNodes((prevNodes) =>
+            prevNodes.map((n) =>
+              n.id === scriptQueueNode.id
+                ? { ...n, data: { ...n.data, collectedResults: [] } }
+                : n
+            )
+          );
+        }
 
         for (let i = 0; i < scripts.length; i++) {
           // Check if abort was requested
@@ -2985,12 +3007,83 @@ export function useWorkflowExecution(
 
           const result = await runSingleIteration(i);
 
+          // Collect output from terminal nodes after iteration completes
+          let collectedVideoUrl: string | undefined;
+          let iterationError: string | undefined;
+
           if (result.failed === 0) {
             batchCompleted++;
             results.push({ index: i, success: true });
+
+            // Get current nodes state to find terminal node outputs
+            // Use a promise to get the latest nodes state
+            await new Promise<void>((resolve) => {
+              setNodes((currentNodes) => {
+                // Find video output from terminal nodes (prefer AddMusicToVideo, then MergeVideos, then GenerateVideo)
+                const priorityOrder = [NodeType.AddMusicToVideo, NodeType.MergeVideos, NodeType.GenerateVideo];
+
+                for (const nodeType of priorityOrder) {
+                  const terminalNode = currentNodes.find(n =>
+                    terminalNodes.some(t => t.id === n.id) && n.type === nodeType
+                  );
+                  if (terminalNode?.data) {
+                    const nodeData = terminalNode.data as any;
+                    // Check various output properties
+                    const videoUrl = nodeData.outputVideoUrl || nodeData.videoUrl || nodeData.outputs?.video;
+                    if (videoUrl) {
+                      collectedVideoUrl = videoUrl;
+                      logger.info(`[Batch] Collected video from ${nodeType}:`, videoUrl.substring(0, 100));
+                      break;
+                    }
+                  }
+                }
+
+                // If no priority match, check any terminal node for video output
+                if (!collectedVideoUrl) {
+                  for (const terminalNodeRef of terminalNodes) {
+                    const terminalNode = currentNodes.find(n => n.id === terminalNodeRef.id);
+                    if (terminalNode?.data) {
+                      const nodeData = terminalNode.data as any;
+                      const videoUrl = nodeData.outputVideoUrl || nodeData.videoUrl || nodeData.outputs?.video;
+                      if (videoUrl) {
+                        collectedVideoUrl = videoUrl;
+                        logger.info(`[Batch] Collected video from terminal node ${terminalNode.type}:`, videoUrl.substring(0, 100));
+                        break;
+                      }
+                    }
+                  }
+                }
+
+                resolve();
+                return currentNodes; // Return unchanged
+              });
+            });
           } else {
             batchFailed++;
             results.push({ index: i, success: false });
+            iterationError = `${result.failed} node(s) failed`;
+          }
+
+          // Add to collected results
+          const iterationResult: BatchIterationResult = {
+            index: i,
+            scriptPreview: scripts[i].substring(0, 50) + (scripts[i].length > 50 ? "..." : ""),
+            success: result.failed === 0,
+            videoUrl: collectedVideoUrl,
+            error: iterationError,
+            timestamp: Date.now(),
+          };
+          collectedResults.push(iterationResult);
+
+          // Update ScriptQueue with collected results (incrementally)
+          if (scriptQueueNode) {
+            setNodes((prevNodes) =>
+              prevNodes.map((n) =>
+                n.id === scriptQueueNode.id
+                  ? { ...n, data: { ...n.data, collectedResults: [...collectedResults] } }
+                  : n
+              )
+            );
           }
 
           setBatchResults([...results]);
@@ -3001,12 +3094,12 @@ export function useWorkflowExecution(
           }
         }
 
-        // Mark ScriptQueue as done
+        // Mark ScriptQueue as done (keep collectedResults)
         if (scriptQueueNode) {
           setNodes((prevNodes) =>
             prevNodes.map((n) =>
               n.id === scriptQueueNode.id
-                ? { ...n, data: { ...n.data, isProcessing: false } }
+                ? { ...n, data: { ...n.data, isProcessing: false, collectedResults } }
                 : n
             )
           );
