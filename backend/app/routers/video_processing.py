@@ -242,8 +242,8 @@ async def merge_videos(
         if len(videos_data) < 2:
             raise HTTPException(status_code=400, detail="At least 2 videos required")
 
-        if len(videos_data) > 10:
-            raise HTTPException(status_code=400, detail="Maximum 10 videos allowed")
+        if len(videos_data) > 25:
+            raise HTTPException(status_code=400, detail="Maximum 25 videos allowed")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # Save all input videos and probe them
