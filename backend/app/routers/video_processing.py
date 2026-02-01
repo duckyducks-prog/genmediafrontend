@@ -71,8 +71,10 @@ class ApplyFiltersResponse(BaseModel):
 
 
 class AddMusicRequest(BaseModel):
-    video_base64: str = Field(..., description="Base64 encoded video")
-    audio_base64: str = Field(..., description="Base64 encoded audio")
+    video_base64: Optional[str] = Field(default=None, description="Base64 encoded video")
+    video_url: Optional[str] = Field(default=None, description="GCS/HTTP URL to video")
+    audio_base64: Optional[str] = Field(default=None, description="Base64 encoded audio")
+    audio_url: Optional[str] = Field(default=None, description="GCS/HTTP URL to audio")
     music_volume: int = Field(default=50, description="Music volume 0-100")
     original_volume: int = Field(default=100, description="Original audio volume 0-100")
 
@@ -550,16 +552,33 @@ async def add_music_to_video(
     try:
         logger.info(f"Add music request from user {user['email']}, music_vol={request.music_volume}, orig_vol={request.original_volume}")
 
+        # Validate input - need either video_base64 or video_url
+        if not request.video_base64 and not request.video_url:
+            raise HTTPException(status_code=400, detail="Either video_base64 or video_url must be provided")
+        if not request.audio_base64 and not request.audio_url:
+            raise HTTPException(status_code=400, detail="Either audio_base64 or audio_url must be provided")
+
         with tempfile.TemporaryDirectory() as tmpdir:
-            # Save input video
-            video_bytes = clean_base64(request.video_base64)
+            # Get video bytes from base64 or URL
+            if request.video_url:
+                logger.info(f"Downloading video from URL: {request.video_url[:80]}...")
+                video_bytes = await download_video_from_url(request.video_url)
+            else:
+                video_bytes = clean_base64(request.video_base64)
             video_path = os.path.join(tmpdir, "input.mp4")
             with open(video_path, "wb") as f:
                 f.write(video_bytes)
             logger.info(f"Saved video: {len(video_bytes)} bytes")
 
-            # Save input audio - detect format from header
-            audio_bytes = clean_base64(request.audio_base64)
+            # Get audio bytes from base64 or URL
+            if request.audio_url:
+                logger.info(f"Downloading audio from URL: {request.audio_url[:80]}...")
+                async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as client:
+                    response = await client.get(request.audio_url)
+                    response.raise_for_status()
+                    audio_bytes = response.content
+            else:
+                audio_bytes = clean_base64(request.audio_base64)
 
             # Detect audio format from magic bytes (supports mp3, wav, flac, ogg, m4a/aac)
             audio_ext = "mp3"
