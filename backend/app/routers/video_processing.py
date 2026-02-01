@@ -1,6 +1,7 @@
 """
 Video processing router for ffmpeg-based operations.
 """
+import asyncio
 import base64
 import tempfile
 import subprocess
@@ -16,6 +17,13 @@ from app.logging_config import setup_logger
 logger = setup_logger(__name__)
 
 router = APIRouter(prefix="/v1/video", tags=["video-processing"])
+
+
+async def run_ffmpeg_async(cmd: List[str], timeout: int = 120) -> subprocess.CompletedProcess:
+    """Run FFmpeg command asynchronously without blocking the event loop."""
+    def _run():
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    return await asyncio.to_thread(_run)
 
 
 def probe_video(video_path: str) -> Dict[str, Any]:
@@ -361,7 +369,7 @@ async def merge_videos(
 
             logger.info(f"Running ffmpeg merge with concat filter, {n} inputs")
             logger.debug(f"Filter complex: {filter_complex}")
-            result = subprocess.run(merge_cmd, capture_output=True, text=True)
+            result = await run_ffmpeg_async(merge_cmd)
 
             if result.returncode != 0:
                 error_msg = get_ffmpeg_error(result.stderr)
@@ -514,7 +522,7 @@ async def apply_filters_to_video(
                 output_path
             ]
 
-            result = subprocess.run(filter_cmd, capture_output=True, text=True)
+            result = await run_ffmpeg_async(filter_cmd)
 
             if result.returncode != 0:
                 error_msg = get_ffmpeg_error(result.stderr)
@@ -651,7 +659,7 @@ async def add_music_to_video(
                 ]
 
                 logger.info(f"Running ffmpeg mix with amerge")
-                result = subprocess.run(mix_cmd, capture_output=True, text=True)
+                result = await run_ffmpeg_async(mix_cmd)
 
                 if result.returncode != 0:
                     logger.warning(f"amerge failed, trying amix fallback: {get_ffmpeg_error(result.stderr)}")
@@ -674,7 +682,7 @@ async def add_music_to_video(
                         "-shortest",
                         output_path
                     ]
-                    result = subprocess.run(mix_cmd, capture_output=True, text=True)
+                    result = await run_ffmpeg_async(mix_cmd)
             else:
                 # No original audio or volume is 0 - just add music track directly
                 logger.info(f"Adding music track only (no mixing)")
@@ -707,7 +715,7 @@ async def add_music_to_video(
                         output_path
                     ]
 
-                result = subprocess.run(mix_cmd, capture_output=True, text=True)
+                result = await run_ffmpeg_async(mix_cmd)
 
             if result.returncode != 0:
                 error_msg = get_ffmpeg_error(result.stderr)
@@ -726,12 +734,12 @@ async def add_music_to_video(
                     "-shortest",
                     output_path
                 ]
-                result = subprocess.run(simple_cmd, capture_output=True, text=True)
+                result = await run_ffmpeg_async(simple_cmd)
 
                 if result.returncode != 0:
                     # Last resort: re-encode audio
                     simple_cmd[-4] = "aac"  # Change -c:a copy to -c:a aac
-                    result = subprocess.run(simple_cmd, capture_output=True, text=True)
+                    result = await run_ffmpeg_async(simple_cmd)
 
                     if result.returncode != 0:
                         error_msg = get_ffmpeg_error(result.stderr)
@@ -898,7 +906,7 @@ async def add_watermark_to_video(
 
             logger.info(f"Running ffmpeg watermark overlay: {' '.join(overlay_cmd)}")
             try:
-                result = subprocess.run(overlay_cmd, capture_output=True, text=True, timeout=120)
+                result = await run_ffmpeg_async(overlay_cmd, timeout=120)
             except subprocess.TimeoutExpired:
                 logger.error("FFmpeg watermark timed out after 120 seconds")
                 raise HTTPException(status_code=500, detail="Video processing timed out")
@@ -1093,7 +1101,7 @@ async def replace_video_segment(
             logger.info(f"Running ffmpeg segment replace")
             logger.debug(f"Filter complex: {filter_complex}")
 
-            result = subprocess.run(cmd, capture_output=True, text=True)
+            result = await run_ffmpeg_async(cmd)
 
             if result.returncode != 0:
                 error_msg = get_ffmpeg_error(result.stderr)
