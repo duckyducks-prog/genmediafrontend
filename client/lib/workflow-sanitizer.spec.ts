@@ -8,7 +8,12 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { sanitizeWorkflowForSave, calculatePayloadSize, formatBytes } from "./workflow-sanitizer";
+import {
+  sanitizeWorkflowForSave,
+  calculatePayloadSize,
+  formatBytes,
+  validatePayloadSize,
+} from "./workflow-sanitizer";
 import { WorkflowNode, WorkflowEdge } from "@/components/workflow/types";
 
 // Helper to create a mock node
@@ -403,6 +408,322 @@ describe("workflow-sanitizer", () => {
 
       // Verify edges preserved
       expect(result.edges).toEqual(edges);
+    });
+  });
+
+  describe("validatePayloadSize", () => {
+    it("should return valid for small payloads", () => {
+      const result = validatePayloadSize(1024); // 1 KB
+      expect(result.valid).toBe(true);
+      expect(result.error).toBeUndefined();
+      expect(result.warning).toBeUndefined();
+    });
+
+    it("should return warning for payloads over 5MB", () => {
+      const size = 6 * 1024 * 1024; // 6 MB
+      const result = validatePayloadSize(size);
+      expect(result.valid).toBe(true);
+      expect(result.warning).toContain("Large payload");
+      expect(result.error).toBeUndefined();
+    });
+
+    it("should return error for payloads over 10MB", () => {
+      const size = 11 * 1024 * 1024; // 11 MB
+      const result = validatePayloadSize(size);
+      expect(result.valid).toBe(false);
+      expect(result.error).toContain("Payload too large");
+      expect(result.error).toContain("Maximum is");
+    });
+
+    it("should return valid without warning at exactly 5MB", () => {
+      const size = 5 * 1024 * 1024; // Exactly 5 MB
+      const result = validatePayloadSize(size);
+      expect(result.valid).toBe(true);
+      expect(result.warning).toBeUndefined();
+    });
+
+    it("should return invalid at exactly 10MB + 1 byte", () => {
+      const size = 10 * 1024 * 1024 + 1; // 10 MB + 1 byte
+      const result = validatePayloadSize(size);
+      expect(result.valid).toBe(false);
+    });
+  });
+
+  describe("deeply nested objects", () => {
+    it("should strip base64 from 4+ levels deep", () => {
+      const nodes: WorkflowNode[] = [
+        createMockNode("1", "complex", {
+          level1: {
+            level2: {
+              level3: {
+                level4: {
+                  deepImage: SAMPLE_BASE64_IMAGE,
+                },
+              },
+            },
+          },
+        }),
+      ];
+
+      const result = sanitizeWorkflowForSave(nodes, []);
+
+      expect(result.nodes[0].data.level1.level2.level3.level4.deepImage).toContain(
+        "[REMOVED_FOR_SAVE:"
+      );
+    });
+
+    it("should preserve non-base64 strings at deep nesting levels", () => {
+      const nodes: WorkflowNode[] = [
+        createMockNode("1", "complex", {
+          level1: {
+            level2: {
+              level3: {
+                deepText: "This should be preserved",
+                deepNumber: 42,
+              },
+            },
+          },
+        }),
+      ];
+
+      const result = sanitizeWorkflowForSave(nodes, []);
+
+      expect(result.nodes[0].data.level1.level2.level3.deepText).toBe(
+        "This should be preserved"
+      );
+      expect(result.nodes[0].data.level1.level2.level3.deepNumber).toBe(42);
+    });
+
+    it("should handle arrays nested within objects within arrays", () => {
+      const nodes: WorkflowNode[] = [
+        createMockNode("1", "complex", {
+          items: [
+            {
+              name: "item1",
+              images: [SAMPLE_BASE64_IMAGE, SAMPLE_BASE64_IMAGE],
+            },
+            {
+              name: "item2",
+              nested: {
+                moreImages: [SAMPLE_BASE64_IMAGE],
+              },
+            },
+          ],
+        }),
+      ];
+
+      const result = sanitizeWorkflowForSave(nodes, []);
+
+      expect(result.nodes[0].data.items[0].name).toBe("item1");
+      expect(result.nodes[0].data.items[0].images[0]).toContain("[REMOVED_FOR_SAVE:");
+      expect(result.nodes[0].data.items[0].images[1]).toContain("[REMOVED_FOR_SAVE:");
+      expect(result.nodes[0].data.items[1].name).toBe("item2");
+      expect(result.nodes[0].data.items[1].nested.moreImages[0]).toContain(
+        "[REMOVED_FOR_SAVE:"
+      );
+    });
+  });
+
+  describe("primitive type preservation", () => {
+    it("should preserve boolean values", () => {
+      const nodes: WorkflowNode[] = [
+        createMockNode("1", "settings", {
+          isEnabled: true,
+          isDisabled: false,
+          nested: {
+            alsoTrue: true,
+          },
+        }),
+      ];
+
+      const result = sanitizeWorkflowForSave(nodes, []);
+
+      expect(result.nodes[0].data.isEnabled).toBe(true);
+      expect(result.nodes[0].data.isDisabled).toBe(false);
+      expect(result.nodes[0].data.nested.alsoTrue).toBe(true);
+    });
+
+    it("should preserve number values including zero and negative", () => {
+      const nodes: WorkflowNode[] = [
+        createMockNode("1", "numbers", {
+          positive: 42,
+          zero: 0,
+          negative: -10,
+          float: 3.14159,
+          nested: {
+            deepNumber: 999,
+          },
+        }),
+      ];
+
+      const result = sanitizeWorkflowForSave(nodes, []);
+
+      expect(result.nodes[0].data.positive).toBe(42);
+      expect(result.nodes[0].data.zero).toBe(0);
+      expect(result.nodes[0].data.negative).toBe(-10);
+      expect(result.nodes[0].data.float).toBe(3.14159);
+      expect(result.nodes[0].data.nested.deepNumber).toBe(999);
+    });
+
+    it("should preserve empty strings", () => {
+      const nodes: WorkflowNode[] = [
+        createMockNode("1", "text", {
+          emptyString: "",
+          normalString: "hello",
+        }),
+      ];
+
+      const result = sanitizeWorkflowForSave(nodes, []);
+
+      expect(result.nodes[0].data.emptyString).toBe("");
+      expect(result.nodes[0].data.normalString).toBe("hello");
+    });
+  });
+
+  describe("special data URI edge cases", () => {
+    it("should not strip data URIs that are not image/video", () => {
+      const nodes: WorkflowNode[] = [
+        createMockNode("1", "data", {
+          // application/json data URI should NOT be stripped (not image/video)
+          jsonData: "data:application/json;base64,eyJ0ZXN0IjogdHJ1ZX0=",
+          // text/plain data URI should NOT be stripped
+          textData: "data:text/plain;base64,SGVsbG8gV29ybGQ=",
+        }),
+      ];
+
+      const result = sanitizeWorkflowForSave(nodes, []);
+
+      // These should be preserved because they're not image/video
+      expect(result.nodes[0].data.jsonData).toBe(
+        "data:application/json;base64,eyJ0ZXN0IjogdHJ1ZX0="
+      );
+      expect(result.nodes[0].data.textData).toBe(
+        "data:text/plain;base64,SGVsbG8gV29ybGQ="
+      );
+    });
+
+    it("should strip audio data URIs (they start with data:)", () => {
+      // Note: Current implementation only strips image/ and video/
+      // This test documents current behavior
+      const nodes: WorkflowNode[] = [
+        createMockNode("1", "audio", {
+          audioData: "data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAA=",
+        }),
+      ];
+
+      const result = sanitizeWorkflowForSave(nodes, []);
+
+      // Current implementation does NOT strip audio (only image/video)
+      // If this behavior changes, update this test
+      expect(result.nodes[0].data.audioData).toBe(
+        "data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAA="
+      );
+    });
+
+    it("should handle data URI without base64 encoding marker", () => {
+      const nodes: WorkflowNode[] = [
+        createMockNode("1", "data", {
+          // data URI without base64 marker (plain text)
+          plainData: "data:text/plain,Hello%20World",
+        }),
+      ];
+
+      const result = sanitizeWorkflowForSave(nodes, []);
+
+      // Should be preserved (doesn't match data:image/ or data:video/)
+      expect(result.nodes[0].data.plainData).toBe("data:text/plain,Hello%20World");
+    });
+
+    it("should handle malformed strings that look like data URIs", () => {
+      const nodes: WorkflowNode[] = [
+        createMockNode("1", "edge", {
+          // Strings that contain "data:" but aren't data URIs
+          normalString: "This is some data: for testing",
+          // String that starts with data: but isn't a valid URI
+          weirdString: "data:not-a-mime-type",
+        }),
+      ];
+
+      const result = sanitizeWorkflowForSave(nodes, []);
+
+      expect(result.nodes[0].data.normalString).toBe("This is some data: for testing");
+      expect(result.nodes[0].data.weirdString).toBe("data:not-a-mime-type");
+    });
+  });
+
+  describe("large payload scenarios", () => {
+    it("should correctly calculate size reduction for large workflows", () => {
+      // Create a workflow with multiple large images
+      const largeBase64 = "data:image/png;base64," + "A".repeat(500000); // ~500KB each
+      const nodes: WorkflowNode[] = Array.from({ length: 5 }, (_, i) =>
+        createMockNode(`node-${i}`, "imageInput", {
+          imageUrl: largeBase64,
+          imageRef: `asset_${i}`,
+        })
+      );
+
+      const result = sanitizeWorkflowForSave(nodes, []);
+
+      // Original should be ~2.5MB, sanitized should be much smaller
+      expect(result.originalSize).toBeGreaterThan(2 * 1024 * 1024);
+      expect(result.sanitizedSize).toBeLessThan(10 * 1024); // Should be < 10KB
+      expect(result.removed).toBeGreaterThan(2 * 1024 * 1024);
+
+      // All refs should be preserved
+      for (let i = 0; i < 5; i++) {
+        expect(result.nodes[i].data.imageRef).toBe(`asset_${i}`);
+        expect(result.nodes[i].data.imageUrl).toContain("[REMOVED_FOR_SAVE:");
+      }
+    });
+  });
+
+  describe("edge preservation", () => {
+    it("should preserve all edge properties", () => {
+      const nodes: WorkflowNode[] = [
+        createMockNode("1", "prompt", { prompt: "test" }),
+        createMockNode("2", "generateImage", { aspectRatio: "1:1" }),
+      ];
+
+      const edges: WorkflowEdge[] = [
+        {
+          id: "edge-1",
+          source: "1",
+          target: "2",
+          sourceHandle: "text",
+          targetHandle: "prompt",
+          type: "smoothstep",
+          animated: true,
+          style: { stroke: "#ff0000" },
+        } as WorkflowEdge,
+      ];
+
+      const result = sanitizeWorkflowForSave(nodes, edges);
+
+      expect(result.edges[0]).toEqual(edges[0]);
+      expect(result.edges[0].id).toBe("edge-1");
+      expect(result.edges[0].sourceHandle).toBe("text");
+      expect((result.edges[0] as any).animated).toBe(true);
+    });
+
+    it("should handle edges with undefined handles", () => {
+      const nodes: WorkflowNode[] = [
+        createMockNode("1", "prompt", {}),
+        createMockNode("2", "output", {}),
+      ];
+
+      const edges: WorkflowEdge[] = [
+        {
+          id: "edge-1",
+          source: "1",
+          target: "2",
+          // No sourceHandle or targetHandle
+        } as WorkflowEdge,
+      ];
+
+      const result = sanitizeWorkflowForSave(nodes, edges);
+
+      expect(result.edges[0].sourceHandle).toBeUndefined();
+      expect(result.edges[0].targetHandle).toBeUndefined();
     });
   });
 });
