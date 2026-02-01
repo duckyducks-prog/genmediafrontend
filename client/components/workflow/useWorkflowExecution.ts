@@ -29,7 +29,7 @@ import { executeCompoundNode } from "@/lib/compound-nodes/executeCompound";
  * Apply filters to a video using the backend FFmpeg endpoint.
  */
 async function applyFiltersToVideo(
-  videoDataUrl: string,
+  videoInput: string,
   filters: FilterConfig[],
 ): Promise<string> {
   try {
@@ -40,18 +40,26 @@ async function applyFiltersToVideo(
     }
     const token = await user.getIdToken();
 
-    // Extract base64 from data URL
-    let videoBase64 = videoDataUrl;
-    if (videoDataUrl.startsWith("data:")) {
-      const commaIndex = videoDataUrl.indexOf(",");
-      if (commaIndex !== -1) {
-        videoBase64 = videoDataUrl.substring(commaIndex + 1);
-      }
+    // Build request body - handle both URL and base64 video inputs
+    const requestBody: any = {
+      filters: filters,
+    };
+
+    if (videoInput.startsWith("data:")) {
+      // Base64 data URL - extract the base64 portion
+      const commaIndex = videoInput.indexOf(",");
+      requestBody.video_base64 = commaIndex !== -1
+        ? videoInput.substring(commaIndex + 1)
+        : videoInput;
+    } else {
+      // Regular URL (GCS, HTTP, etc.) - send as video_url
+      requestBody.video_url = videoInput;
     }
 
     logger.debug("[applyFiltersToVideo] Sending request:", {
       filterCount: filters.length,
-      videoSize: videoBase64.length,
+      hasUrl: !!requestBody.video_url,
+      hasBase64: !!requestBody.video_base64,
     });
 
     const response = await fetch(API_ENDPOINTS.video.applyFilters, {
@@ -60,10 +68,7 @@ async function applyFiltersToVideo(
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({
-        video_base64: videoBase64,
-        filters: filters,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -1439,16 +1444,26 @@ export function useWorkflowExecution(
               const user = auth.currentUser;
               const token = await user?.getIdToken();
 
+              // Build request body - handle both URL and base64 video inputs
+              const requestBody: any = {
+                voice_id: selectedVoiceId,
+              };
+
+              if (videoInput.startsWith("data:")) {
+                // Base64 data URL - strip the prefix and send as video_base64
+                requestBody.video_base64 = videoInput.replace(/^data:video\/[^;]+;base64,/, "");
+              } else {
+                // Regular URL (GCS, HTTP, etc.) - send as video_url
+                requestBody.video_url = videoInput;
+              }
+
               const response = await fetch(API_ENDPOINTS.elevenlabs.voiceChange, {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
                   Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({
-                  video_base64: videoInput.replace(/^data:video\/[^;]+;base64,/, ""),
-                  voice_id: selectedVoiceId,
-                }),
+                body: JSON.stringify(requestBody),
               });
 
               if (!response.ok) {
@@ -1733,18 +1748,37 @@ export function useWorkflowExecution(
               const user = auth.currentUser;
               const token = await user?.getIdToken();
 
+              // Build request body - handle both URL and base64 inputs
+              const requestBody: any = {
+                music_volume: musicVolume,
+                original_volume: originalVolume,
+              };
+
+              // Handle video input
+              if (videoInput.startsWith("data:")) {
+                requestBody.video_base64 = videoInput
+                  .replace(/^data:video\/[^;]+;base64,/, "")
+                  .replace(/^data:application\/[^;]+;base64,/, "");
+              } else {
+                requestBody.video_url = videoInput;
+              }
+
+              // Handle audio input
+              if (audioInput.startsWith("data:")) {
+                requestBody.audio_base64 = audioInput
+                  .replace(/^data:audio\/[^;]+;base64,/, "")
+                  .replace(/^data:application\/[^;]+;base64,/, "");
+              } else {
+                requestBody.audio_url = audioInput;
+              }
+
               const response = await fetch(API_ENDPOINTS.video.addMusic, {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
                   Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({
-                  video_base64: videoInput.replace(/^data:video\/[^;]+;base64,/, "").replace(/^data:application\/[^;]+;base64,/, ""),
-                  audio_base64: audioInput.replace(/^data:audio\/[^;]+;base64,/, "").replace(/^data:application\/[^;]+;base64,/, ""),
-                  music_volume: musicVolume,
-                  original_volume: originalVolume,
-                }),
+                body: JSON.stringify(requestBody),
               });
 
               if (!response.ok) {
