@@ -5,10 +5,11 @@ import { PromptNodeData } from "../types";
 import { Type, CheckCircle2, Loader2, Power, Maximize2 } from "lucide-react";
 
 // Custom event for opening text edit panel
-export const openTextEditPanel = (nodeId: string, title: string, value: string, readOnly: boolean) => {
+// field: the data field to update (default: "prompt")
+export const openTextEditPanel = (nodeId: string, title: string, value: string, readOnly: boolean, field: string = "prompt") => {
   window.dispatchEvent(
     new CustomEvent("open-text-edit-panel", {
-      detail: { nodeId, title, value, readOnly },
+      detail: { nodeId, title, value, readOnly, field },
     })
   );
 };

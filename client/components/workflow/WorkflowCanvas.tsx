@@ -176,7 +176,8 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
       title: string;
       value: string;
       readOnly: boolean;
-    }>({ isOpen: false, nodeId: "", title: "", value: "", readOnly: false });
+      field: string;
+    }>({ isOpen: false, nodeId: "", title: "", value: "", readOnly: false, field: "prompt" });
 
     // Context menu state
     const [contextMenu, setContextMenu] = useState<{
@@ -305,6 +306,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           title: string;
           value: string;
           readOnly: boolean;
+          field?: string;
         }>;
         setTextEditPanel({
           isOpen: true,
@@ -312,6 +314,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
           title: customEvent.detail.title,
           value: customEvent.detail.value,
           readOnly: customEvent.detail.readOnly,
+          field: customEvent.detail.field || "prompt",
         });
       };
 
@@ -323,22 +326,30 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
     const handleTextEditPanelSave = useCallback(
       (newValue: string) => {
         if (!textEditPanel.nodeId) return;
+        const field = textEditPanel.field || "prompt";
         setNodes((nodes) =>
-          nodes.map((node) =>
-            node.id === textEditPanel.nodeId
-              ? {
-                  ...node,
-                  data: {
-                    ...node.data,
-                    prompt: newValue,
-                    outputs: { text: newValue },
-                  },
-                }
-              : node
-          )
+          nodes.map((node) => {
+            if (node.id !== textEditPanel.nodeId) return node;
+
+            // Build the update based on the field
+            const dataUpdate: Record<string, any> = {
+              ...node.data,
+              [field]: newValue,
+            };
+
+            // For prompt field, also update outputs for Text Input nodes
+            if (field === "prompt") {
+              dataUpdate.outputs = { text: newValue };
+            }
+
+            return {
+              ...node,
+              data: dataUpdate,
+            };
+          })
         );
       },
-      [textEditPanel.nodeId, setNodes]
+      [textEditPanel.nodeId, textEditPanel.field, setNodes]
     );
 
     // Listen for asset updates to specific nodes (from inline library)

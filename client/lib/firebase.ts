@@ -45,12 +45,11 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
-// Allowed emails list
-const ALLOWED_EMAILS = [
-  "ldebortolialves@hubspot.com",
-  "sfiske@hubspot.com",
-  "meganzinka@gmail.com",
-];
+// Allowed emails list - loaded from environment variable (comma-separated)
+const ALLOWED_EMAILS: string[] = (import.meta.env.VITE_ALLOWED_EMAILS || "")
+  .split(",")
+  .map((email: string) => email.trim().toLowerCase())
+  .filter((email: string) => email.length > 0);
 
 export const signInWithGoogle = async () => {
   try {
@@ -72,9 +71,9 @@ export const signInWithGoogle = async () => {
 export const logOut = () => signOut(auth);
 export { onAuthStateChanged };
 
-// Helper function to get Firebase ID token (for testing)
+// Helper function to get Firebase ID token (for testing - dev mode only)
 // Usage in browser console: window.getFirebaseToken()
-if (typeof window !== "undefined") {
+if (typeof window !== "undefined" && import.meta.env.DEV) {
   (window as any).getFirebaseToken = async () => {
     try {
       const user = auth.currentUser;

@@ -17,7 +17,7 @@ export function setupAssetRoutes(app: Express) {
 
       const assetType = req.query.asset_type as string | undefined;
       const url = assetType
-        ? `${VEO_API_BASE_URL}/v1/assets?asset_type=${assetType}`
+        ? `${VEO_API_BASE_URL}/v1/assets?asset_type=${encodeURIComponent(assetType)}`
         : `${VEO_API_BASE_URL}/v1/assets`;
 
       console.log(`[Assets Proxy] GET ${url}`);
@@ -47,7 +47,7 @@ export function setupAssetRoutes(app: Express) {
       }
 
       const { id } = req.params;
-      const url = `${VEO_API_BASE_URL}/v1/assets/${id}`;
+      const url = `${VEO_API_BASE_URL}/v1/assets/${encodeURIComponent(id)}`;
 
       console.log(`[Assets Proxy] GET ${url}`);
 
@@ -105,7 +105,7 @@ export function setupAssetRoutes(app: Express) {
       }
 
       const { id } = req.params;
-      const url = `${VEO_API_BASE_URL}/v1/assets/${id}`;
+      const url = `${VEO_API_BASE_URL}/v1/assets/${encodeURIComponent(id)}`;
 
       console.log(`[Assets Proxy] DELETE ${url}`);
 
