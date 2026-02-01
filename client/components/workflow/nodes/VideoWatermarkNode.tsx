@@ -48,30 +48,16 @@ function VideoWatermarkNode({ data, id }: NodeProps<VideoWatermarkNodeData>) {
     handleUpdate("locked", !data.locked);
   };
 
-  // Don't auto-process - wait for workflow execution
-  // This prevents "Failed to fetch" errors from large payloads
-  // and ensures proper execution order
+  // Update preview when execution completes
   useEffect(() => {
-    const videoInput = (data as any).video || (data as any).videoInput;
-    const watermarkInput = (data as any).watermark || (data as any).image;
-
-    // Just update preview URL from outputs if execution completed
-    if (data.outputs?.video && !previewUrl) {
+    // Update preview URL from outputs if execution completed
+    if (data.outputs?.video) {
       setPreviewUrl(data.outputs.video);
-    }
-
-    // Clear preview if inputs are removed
-    if (!videoInput || !watermarkInput) {
+    } else if (data.status === "ready" && !data.outputs?.video) {
+      // Only clear preview when status is reset to ready and there's no output
       setPreviewUrl(null);
     }
-  }, [
-    (data as any).video,
-    (data as any).videoInput,
-    (data as any).watermark,
-    (data as any).image,
-    data.outputs?.video,
-    previewUrl,
-  ]);
+  }, [data.outputs?.video, data.status]);
 
   const getBorderColor = () => {
     if (status === "error") return "border-red-500";
