@@ -61,6 +61,7 @@ gcloud run deploy veo-api \
   --project="$PROJECT_ID" \
   --region="$CLOUD_RUN_REGION" \
   --allow-unauthenticated \
+  --ingress=all \
   --env-vars-file="$ENV_VARS_FILE" \
   --timeout=300 \
   --memory=1Gi
