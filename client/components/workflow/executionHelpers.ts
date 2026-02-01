@@ -22,7 +22,7 @@ export async function resolveAssetToDataUrl(assetRef: string): Promise<string> {
     const user = auth.currentUser;
     const token = await user?.getIdToken();
 
-    const response = await fetch(`${API_ENDPOINTS.library.list}`, {
+    const response = await fetch(API_ENDPOINTS.library.list(), {
       headers: {
         Authorization: `Bearer ${token}`,
       },
