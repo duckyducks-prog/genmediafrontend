@@ -1,9 +1,10 @@
 import { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { LLMNodeData } from '../types';
-import { Brain, Loader2, Play, CheckCircle2, AlertCircle, Power } from 'lucide-react';
+import { Brain, Loader2, Play, CheckCircle2, AlertCircle, Power, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { openTextEditPanel } from './PromptInputNode';
 
 function LLMNode({ data, id }: NodeProps<LLMNodeData>) {
   const status = data.status || 'ready';
@@ -36,6 +37,16 @@ function LLMNode({ data, id }: NodeProps<LLMNodeData>) {
       detail: { nodeId: id },
     });
     window.dispatchEvent(event);
+  };
+
+  const handleExpandClick = () => {
+    openTextEditPanel(
+      id,
+      "LLM - System Prompt",
+      data.systemPrompt || "",
+      data.readOnly || !isEnabled,
+      "systemPrompt"
+    );
   };
 
   return (
@@ -98,9 +109,19 @@ function LLMNode({ data, id }: NodeProps<LLMNodeData>) {
       <div className="space-y-3">
         {/* System Prompt */}
         <div>
-          <label className="text-xs font-medium text-muted-foreground block mb-1">
-            System Prompt
-          </label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-xs font-medium text-muted-foreground">
+              System Prompt
+            </label>
+            <button
+              onClick={handleExpandClick}
+              disabled={data.readOnly || !isEnabled}
+              className="p-1 rounded transition-colors text-muted-foreground hover:text-primary hover:bg-primary/10 disabled:opacity-50"
+              title="Expand editor"
+            >
+              <Maximize2 className="w-3 h-3" />
+            </button>
+          </div>
           <Textarea
             value={data.systemPrompt || ''}
             onChange={(e) => handleUpdate('systemPrompt', e.target.value)}

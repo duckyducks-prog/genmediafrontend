@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { ScriptQueueNodeData, BatchIterationResult } from "../types";
-import { ListOrdered, CheckCircle2, Loader2, Power, Download, Trash2, Play, XCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { ListOrdered, CheckCircle2, Loader2, Power, Download, Trash2, Play, XCircle, ChevronDown, ChevronUp, Maximize2 } from "lucide-react";
+import { openTextEditPanel } from "./PromptInputNode";
 
 function ScriptQueueNode({ data, id }: NodeProps<ScriptQueueNodeData>) {
   const { setNodes } = useReactFlow();
@@ -162,6 +163,16 @@ function ScriptQueueNode({ data, id }: NodeProps<ScriptQueueNodeData>) {
     }
   };
 
+  const handleExpandClick = () => {
+    openTextEditPanel(
+      id,
+      "Script Queue - Batch Input",
+      data.batchInput || "",
+      data.readOnly || !isEnabled,
+      "batchInput"
+    );
+  };
+
   const status = data.status || "ready";
   const isExecuting = status === "executing";
   const isCompleted = status === "completed";
@@ -253,9 +264,19 @@ function ScriptQueueNode({ data, id }: NodeProps<ScriptQueueNodeData>) {
 
       {/* Scripts Input */}
       <div className="mb-3">
-        <label className="text-xs font-medium text-muted-foreground block mb-1">
-          Paste scripts below
-        </label>
+        <div className="flex items-center justify-between mb-1">
+          <label className="text-xs font-medium text-muted-foreground">
+            Paste scripts below
+          </label>
+          <button
+            onClick={handleExpandClick}
+            disabled={data.readOnly || !isEnabled}
+            className="p-1 rounded transition-colors text-muted-foreground hover:text-primary hover:bg-primary/10 disabled:opacity-50"
+            title="Expand editor"
+          >
+            <Maximize2 className="w-3 h-3" />
+          </button>
+        </div>
         <Textarea
           value={data.batchInput || ""}
           onChange={handleBatchInputChange}
