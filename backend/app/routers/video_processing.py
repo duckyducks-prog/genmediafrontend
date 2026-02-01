@@ -1,6 +1,7 @@
 """
 Video processing router for ffmpeg-based operations.
 """
+import asyncio
 import base64
 import tempfile
 import subprocess
@@ -16,6 +17,13 @@ from app.logging_config import setup_logger
 logger = setup_logger(__name__)
 
 router = APIRouter(prefix="/v1/video", tags=["video-processing"])
+
+
+async def run_ffmpeg_async(cmd: List[str], timeout: int = 120) -> subprocess.CompletedProcess:
+    """Run FFmpeg command asynchronously without blocking the event loop."""
+    def _run():
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    return await asyncio.to_thread(_run)
 
 
 def probe_video(video_path: str) -> Dict[str, Any]:
@@ -509,7 +517,7 @@ async def merge_videos(
 
             logger.info(f"Running ffmpeg merge with concat filter, {n} inputs")
             logger.debug(f"Filter complex: {filter_complex}")
-            result = subprocess.run(merge_cmd, capture_output=True, text=True)
+            result = await run_ffmpeg_async(merge_cmd)
 
             if result.returncode != 0:
                 error_msg = get_ffmpeg_error(result.stderr)
@@ -662,7 +670,7 @@ async def apply_filters_to_video(
                 output_path
             ]
 
-            result = subprocess.run(filter_cmd, capture_output=True, text=True)
+            result = await run_ffmpeg_async(filter_cmd)
 
             if result.returncode != 0:
                 error_msg = get_ffmpeg_error(result.stderr)
@@ -799,7 +807,7 @@ async def add_music_to_video(
                 ]
 
                 logger.info(f"Running ffmpeg mix with amerge")
-                result = subprocess.run(mix_cmd, capture_output=True, text=True)
+                result = await run_ffmpeg_async(mix_cmd)
 
                 if result.returncode != 0:
                     logger.warning(f"amerge failed, trying amix fallback: {get_ffmpeg_error(result.stderr)}")
@@ -822,7 +830,7 @@ async def add_music_to_video(
                         "-shortest",
                         output_path
                     ]
-                    result = subprocess.run(mix_cmd, capture_output=True, text=True)
+                    result = await run_ffmpeg_async(mix_cmd)
             else:
                 # No original audio or volume is 0 - just add music track directly
                 logger.info(f"Adding music track only (no mixing)")
@@ -855,7 +863,7 @@ async def add_music_to_video(
                         output_path
                     ]
 
-                result = subprocess.run(mix_cmd, capture_output=True, text=True)
+                result = await run_ffmpeg_async(mix_cmd)
 
             if result.returncode != 0:
                 error_msg = get_ffmpeg_error(result.stderr)
@@ -874,12 +882,12 @@ async def add_music_to_video(
                     "-shortest",
                     output_path
                 ]
-                result = subprocess.run(simple_cmd, capture_output=True, text=True)
+                result = await run_ffmpeg_async(simple_cmd)
 
                 if result.returncode != 0:
                     # Last resort: re-encode audio
                     simple_cmd[-4] = "aac"  # Change -c:a copy to -c:a aac
-                    result = subprocess.run(simple_cmd, capture_output=True, text=True)
+                    result = await run_ffmpeg_async(simple_cmd)
 
                     if result.returncode != 0:
                         error_msg = get_ffmpeg_error(result.stderr)
@@ -908,7 +916,8 @@ async def add_music_to_video(
 class AddWatermarkRequest(BaseModel):
     video_base64: Optional[str] = Field(default=None, description="Base64 encoded video")
     video_url: Optional[str] = Field(default=None, description="GCS/HTTP URL to video")
-    watermark_base64: str = Field(..., description="Base64 encoded watermark image (PNG with transparency)")
+    watermark_base64: Optional[str] = Field(default=None, description="Base64 encoded watermark image (PNG with transparency)")
+    watermark_url: Optional[str] = Field(default=None, description="GCS/HTTP URL to watermark image")
     position: str = Field(default="bottom-right", description="Position: top-left, top-right, bottom-left, bottom-right, center")
     opacity: float = Field(default=1.0, description="Watermark opacity (0.0 to 1.0)")
     scale: float = Field(default=0.15, description="Scale relative to video width (0.0 to 1.0)")
@@ -954,8 +963,21 @@ async def add_watermark_to_video(
                 f.write(video_bytes)
             logger.info(f"Saved video: {len(video_bytes)} bytes")
 
-            # Save watermark image
-            watermark_bytes = clean_base64(request.watermark_base64)
+            # Validate and get watermark bytes
+            if not request.watermark_base64 and not request.watermark_url:
+                raise HTTPException(status_code=400, detail="Either watermark_base64 or watermark_url must be provided")
+
+            # Get watermark bytes from URL or base64
+            if request.watermark_url:
+                logger.info(f"Downloading watermark from URL: {request.watermark_url[:80]}...")
+                async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as client:
+                    response = await client.get(request.watermark_url)
+                    if response.status_code != 200:
+                        raise HTTPException(status_code=400, detail=f"Failed to download watermark: {response.status_code}")
+                    watermark_bytes = response.content
+            else:
+                watermark_bytes = clean_base64(request.watermark_base64)
+
             watermark_path = os.path.join(tmpdir, "watermark.png")
             with open(watermark_path, "wb") as f:
                 f.write(watermark_bytes)
@@ -995,7 +1017,7 @@ async def add_watermark_to_video(
                     f"[1:v]scale={video_width}:{video_height}:force_original_aspect_ratio=decrease,"
                     f"pad={video_width}:{video_height}:(ow-iw)/2:(oh-ih)/2:color=black@0.0,"
                     f"format=rgba,colorchannelmixer=aa={request.opacity}[overlay];"
-                    f"[0:v][overlay]overlay=0:0:format=auto"
+                    f"[0:v][overlay]overlay=0:0:format=auto,format=yuv420p[vout]"
                 )
             else:
                 # Watermark mode - small logo in corner
@@ -1019,27 +1041,26 @@ async def add_watermark_to_video(
                 overlay_position = position_map.get(request.position, position_map["bottom-right"])
 
                 # Build filter for watermark
-                # Scale watermark with even height (-2 ensures even dimensions), apply opacity, then overlay
+                # Scale watermark, apply opacity, overlay, then convert to yuv420p for h264
                 filter_complex = (
                     f"[1:v]scale={watermark_width}:-2,format=rgba,"
                     f"colorchannelmixer=aa={request.opacity}[watermark];"
-                    f"[0:v][watermark]overlay={overlay_position}:format=auto"
+                    f"[0:v][watermark]overlay={overlay_position}:format=auto,format=yuv420p[vout]"
                 )
 
             output_path = os.path.join(tmpdir, "output.mp4")
 
             # Build FFmpeg command
-            # -loop 1 makes the image repeat for the duration of the video
-            # -shortest ends output when the shortest input (video) ends
+            # overlay filter applies static image to each video frame automatically
             overlay_cmd = [
                 "ffmpeg", "-y",
                 "-i", video_path,
-                "-loop", "1",  # Loop the watermark image
                 "-i", watermark_path,
                 "-filter_complex", filter_complex,
-                "-shortest",  # End when video ends
+                "-map", "[vout]",  # Use filtered video output
+                "-map", "0:a?",  # Copy audio if present
                 "-c:v", "libx264",
-                "-preset", "fast",
+                "-preset", "ultrafast",  # Faster encoding
                 "-crf", "23",
                 "-c:a", "copy",
                 "-movflags", "+faststart",
@@ -1047,8 +1068,11 @@ async def add_watermark_to_video(
             ]
 
             logger.info(f"Running ffmpeg watermark overlay: {' '.join(overlay_cmd)}")
-            logger.debug(f"Filter complex: {filter_complex}")
-            result = subprocess.run(overlay_cmd, capture_output=True, text=True)
+            try:
+                result = await run_ffmpeg_async(overlay_cmd, timeout=120)
+            except subprocess.TimeoutExpired:
+                logger.error("FFmpeg watermark timed out after 120 seconds")
+                raise HTTPException(status_code=500, detail="Video processing timed out")
 
             if result.returncode != 0:
                 error_msg = get_ffmpeg_error(result.stderr)
@@ -1241,7 +1265,7 @@ async def replace_video_segment(
             logger.info(f"Running ffmpeg segment replace")
             logger.debug(f"Filter complex: {filter_complex}")
 
-            result = subprocess.run(cmd, capture_output=True, text=True)
+            result = await run_ffmpeg_async(cmd)
 
             if result.returncode != 0:
                 error_msg = get_ffmpeg_error(result.stderr)
