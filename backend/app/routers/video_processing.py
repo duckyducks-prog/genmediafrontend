@@ -866,11 +866,15 @@ async def add_watermark_to_video(
             output_path = os.path.join(tmpdir, "output.mp4")
 
             # Build FFmpeg command
+            # -loop 1 makes the image repeat for the duration of the video
+            # -shortest ends output when the shortest input (video) ends
             overlay_cmd = [
                 "ffmpeg", "-y",
                 "-i", video_path,
+                "-loop", "1",  # Loop the watermark image
                 "-i", watermark_path,
                 "-filter_complex", filter_complex,
+                "-shortest",  # End when video ends
                 "-c:v", "libx264",
                 "-preset", "fast",
                 "-crf", "23",
