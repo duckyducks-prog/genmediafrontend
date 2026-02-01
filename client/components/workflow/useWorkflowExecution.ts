@@ -1534,6 +1534,18 @@ export function useWorkflowExecution(
           }
 
           case NodeType.MergeVideos: {
+            // Enhanced logging to debug input gathering
+            logger.debug("[MergeVideos] 🎬 Input analysis:", {
+              inputKeys: Object.keys(inputs),
+              video1: inputs.video1 ? { type: typeof inputs.video1, length: inputs.video1.length, prefix: inputs.video1.substring(0, 50) } : "MISSING",
+              video2: inputs.video2 ? { type: typeof inputs.video2, length: inputs.video2.length, prefix: inputs.video2.substring(0, 50) } : "MISSING",
+              video3: inputs.video3 ? { type: typeof inputs.video3, length: inputs.video3.length, prefix: inputs.video3.substring(0, 50) } : "MISSING",
+              video4: inputs.video4 ? { type: typeof inputs.video4, length: inputs.video4.length, prefix: inputs.video4.substring(0, 50) } : "MISSING",
+              video5: inputs.video5 ? { type: typeof inputs.video5, length: inputs.video5.length, prefix: inputs.video5.substring(0, 50) } : "MISSING",
+              video6: inputs.video6 ? { type: typeof inputs.video6, length: inputs.video6.length, prefix: inputs.video6.substring(0, 50) } : "MISSING",
+              fullInputsObject: inputs,
+            });
+
             // Get videos from input connectors (support up to 6)
             const video1 = inputs.video1;
             const video2 = inputs.video2;
@@ -1551,7 +1563,19 @@ export function useWorkflowExecution(
             if (video5) videos.push(video5);
             if (video6) videos.push(video6);
 
+            logger.debug("[MergeVideos] Collected videos array:", {
+              count: videos.length,
+              videoPreviews: videos.map((v, i) => ({
+                index: i,
+                type: typeof v,
+                isUrl: v.startsWith("http"),
+                isDataUrl: v.startsWith("data:"),
+                prefix: v.substring(0, 60),
+              })),
+            });
+
             if (videos.length < 2) {
+              logger.error("[MergeVideos] ❌ Insufficient videos - only", videos.length, "found");
               return { success: false, error: "At least 2 videos required to merge" };
             }
 
@@ -2654,8 +2678,62 @@ export function useWorkflowExecution(
       // Helper to get inputs using tracked nodes (not stale React state)
       const getTrackedInputs = (nodeId: string) => {
         const node = trackedNodes.find((n) => n.id === nodeId);
-        if (!node) return {};
-        return gatherNodeInputs(node, trackedNodes, edges);
+        if (!node) {
+          logger.warn(`[getTrackedInputs] Node ${nodeId} not found in trackedNodes`);
+          return {};
+        }
+
+        // Log the state of upstream nodes for debugging
+        const incomingEdges = edges.filter((e) => e.target === nodeId);
+        logger.debug(`[getTrackedInputs] Getting inputs for ${node.type} (${nodeId}):`, {
+          incomingEdgeCount: incomingEdges.length,
+          edges: incomingEdges.map((e) => ({
+            sourceId: e.source,
+            sourceHandle: e.sourceHandle,
+            targetHandle: e.targetHandle,
+          })),
+        });
+
+        // Check upstream node outputs - enhanced debugging
+        incomingEdges.forEach((edge) => {
+          const sourceNode = trackedNodes.find((n) => n.id === edge.source);
+          if (sourceNode) {
+            const sourceHandle = edge.sourceHandle || 'default';
+            const outputsObj = sourceNode.data.outputs as Record<string, unknown> | undefined;
+            const outputValue = outputsObj?.[sourceHandle];
+            const topLevelValue = (sourceNode.data as unknown as Record<string, unknown>)[sourceHandle];
+
+            logger.debug(`[getTrackedInputs] 🔍 Upstream node ${sourceNode.type} (${edge.source}):`, {
+              sourceHandle,
+              outputsState: {
+                exists: outputsObj !== undefined,
+                isEmpty: outputsObj ? Object.keys(outputsObj).length === 0 : true,
+                keys: outputsObj ? Object.keys(outputsObj) : [],
+                hasRequestedKey: outputValue !== undefined,
+              },
+              topLevelState: {
+                hasRequestedKey: topLevelValue !== undefined,
+                valueType: topLevelValue !== undefined ? typeof topLevelValue : 'undefined',
+              },
+              resolution: outputValue !== undefined
+                ? `✓ Found in outputs.${sourceHandle}`
+                : topLevelValue !== undefined
+                  ? `⚠️ Fallback to data.${sourceHandle}`
+                  : `❌ Not found anywhere`,
+              valuePreview: (outputValue || topLevelValue)
+                ? String(outputValue || topLevelValue).substring(0, 60) + "..."
+                : "NONE",
+            });
+          } else {
+            logger.warn(`[getTrackedInputs] ❌ Source node ${edge.source} not found in trackedNodes!`);
+          }
+        });
+
+        const inputs = gatherNodeInputs(node, trackedNodes, edges);
+        logger.debug(`[getTrackedInputs] Final inputs for ${node.type}:`, {
+          inputKeys: Object.keys(inputs),
+        });
+        return inputs;
       };
 
       // Group nodes by execution level for parallel execution
@@ -2677,6 +2755,19 @@ export function useWorkflowExecution(
         }
 
         const levelNodes = levels[levelIndex];
+
+        // Log tracked nodes state at the start of each level
+        logger.debug(`[Execution] 📊 Starting Level ${levelIndex}/${levels.length - 1}:`, {
+          nodesInLevel: levelNodes.map((n) => ({ id: n.id, type: n.type })),
+          trackedNodesWithOutputs: trackedNodes
+            .filter((n) => n.data.outputs && Object.keys(n.data.outputs as object).length > 0)
+            .map((n) => ({
+              id: n.id,
+              type: n.type,
+              outputKeys: Object.keys(n.data.outputs as object),
+              hasVideo: !!(n.data.outputs as any)?.video,
+            })),
+        });
 
         // Separate API-calling nodes from others
         // These nodes make backend HTTP calls and need sequential execution
@@ -2818,6 +2909,23 @@ export function useWorkflowExecution(
                 const updatedOutputs =
                   execResult.data.outputs || execResult.data;
 
+                // Enhanced logging to trace output structure
+                logger.debug(
+                  "[Execution] 📦 execResult.data structure:",
+                  {
+                    nodeId: node.id,
+                    nodeType: node.type,
+                    hasNestedOutputs: !!execResult.data.outputs,
+                    nestedOutputsKeys: execResult.data.outputs ? Object.keys(execResult.data.outputs) : [],
+                    topLevelDataKeys: Object.keys(execResult.data),
+                    videoInOutputs: !!execResult.data.outputs?.video,
+                    videoInTopLevel: !!execResult.data.video,
+                    videoValuePreview: (execResult.data.outputs?.video || execResult.data.video)
+                      ? String(execResult.data.outputs?.video || execResult.data.video).substring(0, 80) + "..."
+                      : "NONE",
+                  },
+                );
+
                 trackedNodes = trackedNodes.map((n) =>
                   n.id === node.id
                     ? {
@@ -2832,12 +2940,17 @@ export function useWorkflowExecution(
                     : n,
                 );
 
+                // Verify the update was applied correctly
+                const updatedNode = trackedNodes.find((n) => n.id === node.id);
                 logger.debug(
-                  "[Execution] ✓ Synchronously updated API node outputs:",
+                  "[Execution] ✓ Verified trackedNodes update:",
                   {
                     nodeId: node.id,
                     nodeType: node.type,
-                    outputKeys: Object.keys(updatedOutputs),
+                    updatedOutputKeys: updatedNode?.data.outputs ? Object.keys(updatedNode.data.outputs) : [],
+                    hasVideoInOutputs: !!updatedNode?.data.outputs?.video,
+                    hasVideoTopLevel: !!(updatedNode?.data as any)?.video,
+                    trackedNodesCount: trackedNodes.length,
                   },
                 );
               }
