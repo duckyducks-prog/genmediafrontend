@@ -1,6 +1,6 @@
 import os
 from uuid import uuid4
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.routers import generation, library, health, workflow, elevenlabs, video_processing
@@ -8,6 +8,33 @@ from app.logging_config import setup_logger
 from app.exceptions import AppError
 
 logger = setup_logger(__name__)
+
+# CORS configuration - restrict to known origins
+# Set ALLOWED_ORIGINS env var as comma-separated list to override defaults
+# Defined early so exception handlers can use it
+DEFAULT_ORIGINS = [
+    "https://a5df8c929ca74fbc80fe95abcebf06ed-br-2c5574706fc84239af4efff8b.fly.dev",
+    "https://genmedia-frontend-otfo2ctxma-uc.a.run.app",
+    "http://localhost:3000",
+    "http://localhost:8080",
+]
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", ",".join(DEFAULT_ORIGINS)).split(",")
+
+
+def _get_cors_headers(request: Request, allowed_origins: list[str]) -> dict:
+    """
+    Build CORS headers for a response based on the request origin.
+
+    This ensures error responses include proper CORS headers, which the
+    CORSMiddleware may not add when exceptions are raised.
+    """
+    origin = request.headers.get("origin")
+    if origin and origin in allowed_origins:
+        return {
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Credentials": "true",
+        }
+    return {}
 
 app = FastAPI(title="GenMedia API")
 
@@ -41,8 +68,9 @@ async def add_request_id(request: Request, call_next):
 
 
 # ============== EXCEPTION HANDLERS ==============
-# Custom exception handler for structured error responses
-# To revert: Remove this handler and the AppError import
+# Custom exception handlers with CORS headers for error responses.
+# Without explicit CORS headers on error responses, browsers block the
+# response and mask the actual error with a CORS error message.
 
 @app.exception_handler(AppError)
 async def handle_app_error(request: Request, exc: AppError):
@@ -59,20 +87,52 @@ async def handle_app_error(request: Request, exc: AppError):
     logger.warning(f"AppError {exc.code}: {exc.message} (status={exc.status})")
     return JSONResponse(
         status_code=exc.status,
-        content=exc.to_dict()
+        content=exc.to_dict(),
+        headers=_get_cors_headers(request, ALLOWED_ORIGINS)
+    )
+
+
+@app.exception_handler(HTTPException)
+async def handle_http_exception(request: Request, exc: HTTPException):
+    """
+    Handle HTTPException with CORS headers.
+
+    When routes raise HTTPException (e.g., 500 errors), the CORSMiddleware
+    may not add CORS headers to the error response. This causes browsers to
+    report a CORS error, masking the actual HTTP error from the frontend.
+
+    This handler ensures all HTTP errors include proper CORS headers so the
+    frontend can read the actual error status and message.
+    """
+    logger.warning(f"HTTPException: status={exc.status_code}, detail={exc.detail}")
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+        headers=_get_cors_headers(request, ALLOWED_ORIGINS)
+    )
+
+
+@app.exception_handler(Exception)
+async def handle_unhandled_exception(request: Request, exc: Exception):
+    """
+    Catch-all handler for unhandled exceptions.
+
+    Ensures even unexpected errors return proper CORS headers and a
+    structured error response instead of crashing without CORS headers.
+    """
+    logger.error(f"Unhandled exception: {type(exc).__name__}: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": f"Internal server error: {type(exc).__name__}",
+            "error": str(exc)
+        },
+        headers=_get_cors_headers(request, ALLOWED_ORIGINS)
     )
 
 logger.info("Starting GenMedia API application")
 
-# CORS configuration - restrict to known origins
-# Set ALLOWED_ORIGINS env var as comma-separated list to override defaults
-DEFAULT_ORIGINS = [
-    "https://a5df8c929ca74fbc80fe95abcebf06ed-br-2c5574706fc84239af4efff8b.fly.dev",
-    "https://genmedia-frontend-otfo2ctxma-uc.a.run.app",
-    "http://localhost:3000",
-]
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", ",".join(DEFAULT_ORIGINS)).split(",")
-
+# Add CORS middleware using the configuration defined at top of file
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
