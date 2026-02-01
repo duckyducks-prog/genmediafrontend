@@ -2647,8 +2647,19 @@ export function useWorkflowExecution(
       // Store executed node data
       const progress = new Map<string, string>();
 
+      // Track nodes with their outputs during this iteration
+      // This is crucial - we need to update this as nodes complete so downstream nodes can read outputs
+      let trackedNodes = [...currentNodes];
+
+      // Helper to get inputs using tracked nodes (not stale React state)
+      const getTrackedInputs = (nodeId: string) => {
+        const node = trackedNodes.find((n) => n.id === nodeId);
+        if (!node) return {};
+        return gatherNodeInputs(node, trackedNodes, edges);
+      };
+
       // Group nodes by execution level for parallel execution
-      const levels = groupNodesByLevel(executionOrder, currentNodes, edges);
+      const levels = groupNodesByLevel(executionOrder, trackedNodes, edges);
 
       let totalCompleted = 0;
       let totalFailed = 0;
@@ -2693,7 +2704,7 @@ export function useWorkflowExecution(
             setEdgeAnimated(node.id, true, false);
             updateNodeState(node.id, "executing");
 
-            const inputs = getNodeInputs(node.id);
+            const inputs = getTrackedInputs(node.id);
             const validation = validateNodeInputs(node, inputs);
             if (!validation.valid) {
               return {
@@ -2705,12 +2716,12 @@ export function useWorkflowExecution(
 
             const result = await executeNode(node, inputs);
 
-            // ✅ CRITICAL FIX: Update nodes array synchronously
+            // ✅ CRITICAL FIX: Update trackedNodes array synchronously
             // This ensures downstream nodes see the latest outputs immediately
             if (result.success && result.data) {
               const updatedOutputs = result.data.outputs || result.data;
 
-              nodes = nodes.map((n) =>
+              trackedNodes = trackedNodes.map((n) =>
                 n.id === node.id
                   ? {
                     ...n,
@@ -2749,7 +2760,7 @@ export function useWorkflowExecution(
           updateNodeState(node.id, "executing");
           setExecutionProgress(new Map(progress));
 
-          const inputs = getNodeInputs(node.id);
+          const inputs = getTrackedInputs(node.id);
 
           // Diagnostic log for input gathering verification
           logger.debug(`[Execution] Gathered inputs for ${node.type}:`, {
@@ -2801,13 +2812,13 @@ export function useWorkflowExecution(
             try {
               const execResult = await executeNode(node, inputs);
 
-              // ✅ CRITICAL FIX: Update nodes array synchronously for API nodes
+              // ✅ CRITICAL FIX: Update trackedNodes array synchronously for API nodes
               // This ensures downstream nodes see the latest outputs immediately
               if (execResult.success && execResult.data) {
                 const updatedOutputs =
                   execResult.data.outputs || execResult.data;
 
-                nodes = nodes.map((n) =>
+                trackedNodes = trackedNodes.map((n) =>
                   n.id === node.id
                     ? {
                       ...n,
