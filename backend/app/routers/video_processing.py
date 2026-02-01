@@ -391,12 +391,17 @@ async def merge_videos(
                 logger.info(f"Trim silence enabled - detecting and trimming trailing silence for {len(video_paths)} videos")
                 trimmed_paths = []
                 for i, video_path in enumerate(video_paths):
-                    # Try with -30dB first (strict), then -40dB (more lenient) if no silence found
-                    trim_point = detect_trailing_silence(video_path, noise_db=-30, min_duration=0.3)
+                    # Try progressively more sensitive thresholds
+                    # -30dB: strict (only very quiet silence)
+                    # -40dB: medium (quiet ambient)
+                    # -50dB: lenient (catches most trailing silence)
+                    trim_point = detect_trailing_silence(video_path, noise_db=-30, min_duration=0.1)
                     if trim_point is None:
-                        # Try more lenient threshold for quiet ambient audio
                         logger.debug(f"Video {i}: no silence at -30dB, trying -40dB")
-                        trim_point = detect_trailing_silence(video_path, noise_db=-40, min_duration=0.3)
+                        trim_point = detect_trailing_silence(video_path, noise_db=-40, min_duration=0.1)
+                    if trim_point is None:
+                        logger.debug(f"Video {i}: no silence at -40dB, trying -50dB")
+                        trim_point = detect_trailing_silence(video_path, noise_db=-50, min_duration=0.1)
 
                     if trim_point is not None and trim_point > 0.5:
                         # Create trimmed version
@@ -937,6 +942,21 @@ async def add_watermark_to_video(
                 f.write(watermark_bytes)
             logger.info(f"Saved watermark: {len(watermark_bytes)} bytes")
 
+            # Probe watermark image for format info
+            watermark_probe_cmd = ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", watermark_path]
+            watermark_probe_result = subprocess.run(watermark_probe_cmd, capture_output=True, text=True)
+            if watermark_probe_result.returncode == 0:
+                try:
+                    watermark_info = json.loads(watermark_probe_result.stdout)
+                    for stream in watermark_info.get("streams", []):
+                        if stream.get("codec_type") == "video":
+                            logger.info(f"Watermark info: {stream.get('width')}x{stream.get('height')}, "
+                                       f"codec={stream.get('codec_name')}, pix_fmt={stream.get('pix_fmt')}")
+                except json.JSONDecodeError:
+                    logger.warning("Could not parse watermark probe output")
+            else:
+                logger.warning(f"Watermark probe failed: {watermark_probe_result.stderr}")
+
             # Probe video for dimensions
             video_info = probe_video(video_path)
             video_width = 1280
@@ -1003,12 +1023,14 @@ async def add_watermark_to_video(
                 output_path
             ]
 
-            logger.info(f"Running ffmpeg watermark overlay")
+            logger.info(f"Running ffmpeg watermark overlay: {' '.join(overlay_cmd)}")
+            logger.debug(f"Filter complex: {filter_complex}")
             result = subprocess.run(overlay_cmd, capture_output=True, text=True)
 
             if result.returncode != 0:
                 error_msg = get_ffmpeg_error(result.stderr)
-                logger.error(f"FFmpeg watermark failed: {result.stderr}")
+                logger.error(f"FFmpeg watermark failed. Command: {' '.join(overlay_cmd)}")
+                logger.error(f"FFmpeg stderr: {result.stderr[-1000:] if len(result.stderr) > 1000 else result.stderr}")
                 raise HTTPException(status_code=500, detail=f"Failed to add watermark: {error_msg}")
 
             # Read output
