@@ -150,15 +150,37 @@ def detect_trailing_silence(video_path: str, noise_db: float = -30, min_duration
     """
     import re
 
+    # First check if video has an audio track
+    probe_info = probe_video(video_path)
+    has_audio = False
+    for stream in probe_info.get("streams", []):
+        if stream.get("codec_type") == "audio":
+            has_audio = True
+            break
+
+    if not has_audio:
+        logger.debug(f"No audio track in {video_path}, skipping silence detection")
+        return None
+
+    # Get video duration
+    duration = float(probe_info.get("format", {}).get("duration", 0))
+    if duration <= 0:
+        logger.warning(f"Could not get duration for {video_path}")
+        return None
+
     # Use silencedetect filter to find silence periods
     detect_cmd = [
-        "ffmpeg", "-y", "-i", video_path,
+        "ffmpeg", "-i", video_path,
         "-af", f"silencedetect=noise={noise_db}dB:d={min_duration}",
         "-f", "null", "-"
     ]
 
+    logger.debug(f"Running silence detection: {' '.join(detect_cmd)}")
     result = subprocess.run(detect_cmd, capture_output=True, text=True)
     stderr = result.stderr
+
+    # Log the output for debugging
+    logger.debug(f"Silence detection output: {stderr[-500:] if len(stderr) > 500 else stderr}")
 
     # Parse silence_start and silence_end from output
     # Format: [silencedetect @ 0x...] silence_start: 5.123
@@ -166,48 +188,31 @@ def detect_trailing_silence(video_path: str, noise_db: float = -30, min_duration
     silence_starts = re.findall(r'silence_start:\s*([\d.]+)', stderr)
     silence_ends = re.findall(r'silence_end:\s*([\d.]+)', stderr)
 
+    logger.info(f"Silence detection for {video_path}: found {len(silence_starts)} silence periods, duration={duration:.2f}s")
+
     if not silence_starts:
         logger.debug(f"No silence detected in {video_path}")
-        return None
-
-    # Get video duration
-    probe_info = probe_video(video_path)
-    duration = float(probe_info.get("format", {}).get("duration", 0))
-
-    if duration <= 0:
-        logger.warning(f"Could not get duration for {video_path}")
         return None
 
     # Check if the last silence extends to the end of the video
     last_silence_start = float(silence_starts[-1])
 
-    # If there's a matching silence_end, use it to check if silence ends at video end
-    if len(silence_ends) == len(silence_starts):
-        last_silence_end = float(silence_ends[-1])
-        # Silence ends before video end - not trailing
-        if last_silence_end < duration - 0.1:
-            logger.debug(f"Last silence ends at {last_silence_end}s, video duration {duration}s - not trailing")
-            return None
-    else:
-        # Last silence has no end marker - means it extends to end of video
-        pass
+    logger.debug(f"Last silence starts at {last_silence_start}s, video duration {duration}s")
 
-    # Check if the silence extends close to the end of the video (within 0.5s tolerance)
-    # If there's no silence_end for the last silence_start, it means silence goes to end
+    # Case 1: Last silence has no end marker - means it extends to end of video
     if len(silence_ends) < len(silence_starts):
-        # Last silence goes to end of video - trim at silence start
         trim_point = last_silence_start
-        logger.info(f"Trailing silence detected: starts at {trim_point}s, video duration {duration}s")
+        logger.info(f"Trailing silence detected (no end marker): starts at {trim_point:.2f}s, video duration {duration:.2f}s")
         return trim_point
 
-    # If silence_end matches duration, we have trailing silence
+    # Case 2: Last silence_end is close to video duration (within 0.5s tolerance)
     last_silence_end = float(silence_ends[-1])
     if abs(last_silence_end - duration) < 0.5:
         trim_point = last_silence_start
-        logger.info(f"Trailing silence detected: {last_silence_start}s to {last_silence_end}s (duration: {duration}s)")
+        logger.info(f"Trailing silence detected: {last_silence_start:.2f}s to {last_silence_end:.2f}s (duration: {duration:.2f}s)")
         return trim_point
 
-    logger.debug(f"No trailing silence found in {video_path}")
+    logger.debug(f"No trailing silence found in {video_path} (last silence ends at {last_silence_end:.2f}s, video ends at {duration:.2f}s)")
     return None
 
 
@@ -340,11 +345,11 @@ async def merge_videos(
         if request.video_urls and len(request.video_urls) > 0:
             videos_data = request.video_urls
             use_urls = True
-            logger.info(f"Merge videos request from user {user['email']}, count={len(videos_data)} (using URLs)")
+            logger.info(f"Merge videos request from user {user['email']}, count={len(videos_data)} (using URLs), trim_silence={request.trim_silence}")
         elif request.videos_base64 and len(request.videos_base64) > 0:
             videos_data = request.videos_base64
             use_urls = False
-            logger.info(f"Merge videos request from user {user['email']}, count={len(videos_data)} (using base64)")
+            logger.info(f"Merge videos request from user {user['email']}, count={len(videos_data)} (using base64), trim_silence={request.trim_silence}")
         else:
             raise HTTPException(status_code=400, detail="Either videos_base64 or video_urls must be provided")
 
@@ -383,15 +388,21 @@ async def merge_videos(
 
             # Apply silence trimming if enabled
             if request.trim_silence:
-                logger.info(f"Trim silence enabled - detecting and trimming trailing silence")
+                logger.info(f"Trim silence enabled - detecting and trimming trailing silence for {len(video_paths)} videos")
                 trimmed_paths = []
                 for i, video_path in enumerate(video_paths):
+                    # Try with -30dB first (strict), then -40dB (more lenient) if no silence found
                     trim_point = detect_trailing_silence(video_path, noise_db=-30, min_duration=0.3)
+                    if trim_point is None:
+                        # Try more lenient threshold for quiet ambient audio
+                        logger.debug(f"Video {i}: no silence at -30dB, trying -40dB")
+                        trim_point = detect_trailing_silence(video_path, noise_db=-40, min_duration=0.3)
+
                     if trim_point is not None and trim_point > 0.5:
                         # Create trimmed version
                         trimmed_path = os.path.join(tmpdir, f"trimmed_{i}.mp4")
                         if trim_video_to_point(video_path, trim_point, trimmed_path):
-                            logger.info(f"Video {i} trimmed: {trim_point:.2f}s")
+                            logger.info(f"Video {i} trimmed from {trim_point:.2f}s to end")
                             trimmed_paths.append(trimmed_path)
                             # Re-probe the trimmed video
                             video_infos[i] = probe_video(trimmed_path)
@@ -399,9 +410,10 @@ async def merge_videos(
                             logger.warning(f"Video {i} trim failed, using original")
                             trimmed_paths.append(video_path)
                     else:
-                        logger.debug(f"Video {i}: no trailing silence to trim")
+                        logger.info(f"Video {i}: no trailing silence detected, using original")
                         trimmed_paths.append(video_path)
                 video_paths = trimmed_paths
+                logger.info(f"Silence trimming complete, proceeding with merge")
 
             output_path = os.path.join(tmpdir, "output.mp4")
             n = len(video_paths)
