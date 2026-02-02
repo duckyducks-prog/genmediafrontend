@@ -183,6 +183,7 @@ function VideoSegmentReplaceNode({ data, id }: NodeProps<VideoSegmentReplaceNode
   const [isProcessing, setIsProcessing] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [baseDuration, setBaseDuration] = useState(data.baseDuration || 30);
+  const [replacementDuration, setReplacementDuration] = useState(0);
   const renderRequestId = useRef(0);
 
   const status = data.status || "ready";
@@ -212,24 +213,59 @@ function VideoSegmentReplaceNode({ data, id }: NodeProps<VideoSegmentReplaceNode
     const baseVideo = (data as any).base || (data as any).baseVideo;
     if (!baseVideo) return;
 
-    // If it's a data URL or blob, try to get duration via video element
-    if (baseVideo.startsWith("data:") || baseVideo.startsWith("blob:")) {
-      const video = document.createElement("video");
-      video.preload = "metadata";
-      video.onloadedmetadata = () => {
-        const duration = video.duration;
-        if (duration && isFinite(duration) && duration !== baseDuration) {
-          setBaseDuration(duration);
-          handleUpdate("baseDuration", duration);
-          // Adjust endTime if it exceeds duration
-          if (data.endTime > duration) {
-            handleUpdate("endTime", duration);
-          }
+    // Try to get duration via video element - works for any URL type
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.crossOrigin = "anonymous"; // Needed for GCS URLs
+    video.onloadedmetadata = () => {
+      const duration = video.duration;
+      if (duration && isFinite(duration) && duration !== baseDuration) {
+        logger.debug(`[VideoSegmentReplace] Base video duration detected: ${duration}s`);
+        setBaseDuration(duration);
+        handleUpdate("baseDuration", duration);
+        // Adjust endTime if it exceeds duration
+        if (data.endTime > duration) {
+          handleUpdate("endTime", duration);
         }
-      };
-      video.src = baseVideo;
-    }
+      }
+    };
+    video.onerror = () => {
+      logger.warn(`[VideoSegmentReplace] Could not load base video metadata`);
+    };
+    video.src = baseVideo;
+
+    return () => {
+      video.src = ""; // Clean up
+    };
   }, [(data as any).base, (data as any).baseVideo]);
+
+  // Detect replacement video duration
+  useEffect(() => {
+    const replacementVideo = (data as any).replacement || (data as any).replacementVideo;
+    if (!replacementVideo) {
+      setReplacementDuration(0);
+      return;
+    }
+
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.crossOrigin = "anonymous";
+    video.onloadedmetadata = () => {
+      const duration = video.duration;
+      if (duration && isFinite(duration)) {
+        logger.debug(`[VideoSegmentReplace] Replacement video duration: ${duration}s`);
+        setReplacementDuration(duration);
+      }
+    };
+    video.onerror = () => {
+      logger.warn(`[VideoSegmentReplace] Could not load replacement video metadata`);
+    };
+    video.src = replacementVideo;
+
+    return () => {
+      video.src = "";
+    };
+  }, [(data as any).replacement, (data as any).replacementVideo]);
 
   // Process segment replacement
   useEffect(() => {
@@ -304,7 +340,7 @@ function VideoSegmentReplaceNode({ data, id }: NodeProps<VideoSegmentReplaceNode
       {/* Timeline Bar */}
       <div className="mb-3">
         <label className="text-xs font-medium text-muted-foreground block mb-2">
-          Timeline
+          Timeline {baseDuration > 0 && <span className="text-primary">({formatTime(baseDuration)} base)</span>}
         </label>
         <TimelineBar
           duration={baseDuration}
@@ -314,6 +350,22 @@ function VideoSegmentReplaceNode({ data, id }: NodeProps<VideoSegmentReplaceNode
           onEndChange={(time) => handleUpdate("endTime", time)}
           disabled={data.readOnly}
         />
+        {/* Replacement video info */}
+        {replacementDuration > 0 && (
+          <div className="mt-2 text-[10px] text-purple-400">
+            Replacement video: {formatTime(replacementDuration)} |
+            Segment: {formatTime(data.endTime - data.startTime)}
+            {replacementDuration > (data.endTime - data.startTime) && (
+              <span className="text-yellow-500 ml-1">(will be trimmed)</span>
+            )}
+            {replacementDuration < (data.endTime - data.startTime) && data.fitMode === "loop" && (
+              <span className="text-blue-400 ml-1">(will loop)</span>
+            )}
+            {replacementDuration < (data.endTime - data.startTime) && data.fitMode === "stretch" && (
+              <span className="text-blue-400 ml-1">(will stretch)</span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Controls */}
