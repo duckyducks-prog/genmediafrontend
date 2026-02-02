@@ -1,6 +1,6 @@
 import { logger } from "@/lib/logger";
 import { memo, useState, useEffect, useRef, useCallback } from "react";
-import { Handle, Position, NodeProps, useReactFlow } from "reactflow";
+import { Handle, Position, NodeProps, useReactFlow, useEdges, useNodes } from "reactflow";
 import { Scissors, Loader2, CheckCircle2 } from "lucide-react";
 import {
   Select,
@@ -180,15 +180,57 @@ function TimelineBar({
 
 function VideoSegmentReplaceNode({ data, id }: NodeProps<VideoSegmentReplaceNodeData>) {
   const { setNodes } = useReactFlow();
+  const edges = useEdges();
+  const nodes = useNodes();
   const [isProcessing, setIsProcessing] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [baseDuration, setBaseDuration] = useState(data.baseDuration || 30);
   const [replacementDuration, setReplacementDuration] = useState(0);
+  const [baseVideoUrl, setBaseVideoUrl] = useState<string | null>(null);
+  const [replacementVideoUrl, setReplacementVideoUrl] = useState<string | null>(null);
   const renderRequestId = useRef(0);
 
   const status = data.status || "ready";
   const isExecuting = status === "executing" || isProcessing;
   const isCompleted = status === "completed";
+
+  // Helper to extract video URL from a source node's data
+  const getVideoUrlFromNode = useCallback((nodeData: any): string | null => {
+    // Check various places where video URL might be stored
+    if (nodeData.outputs?.video) return nodeData.outputs.video;
+    if (nodeData.videoUrl) return nodeData.videoUrl;
+    if (nodeData.video) return nodeData.video;
+    if (nodeData.generatedVideoUrl) return nodeData.generatedVideoUrl;
+    if (nodeData.url && typeof nodeData.url === 'string' && 
+        (nodeData.url.includes('video') || nodeData.url.includes('.mp4'))) {
+      return nodeData.url;
+    }
+    return null;
+  }, []);
+
+  // Detect connected videos from incoming edges
+  useEffect(() => {
+    const incomingEdges = edges.filter((edge) => edge.target === id);
+    
+    for (const edge of incomingEdges) {
+      const sourceNode = nodes.find((n) => n.id === edge.source);
+      if (!sourceNode?.data) continue;
+
+      const videoUrl = getVideoUrlFromNode(sourceNode.data);
+      
+      if (edge.targetHandle === 'base' && videoUrl) {
+        if (videoUrl !== baseVideoUrl) {
+          logger.debug(`[VideoSegmentReplace] Base video URL detected from ${sourceNode.type}`);
+          setBaseVideoUrl(videoUrl);
+        }
+      } else if (edge.targetHandle === 'replacement' && videoUrl) {
+        if (videoUrl !== replacementVideoUrl) {
+          logger.debug(`[VideoSegmentReplace] Replacement video URL detected from ${sourceNode.type}`);
+          setReplacementVideoUrl(videoUrl);
+        }
+      }
+    }
+  }, [edges, nodes, id, baseVideoUrl, replacementVideoUrl, getVideoUrlFromNode]);
 
   const handleUpdate = useCallback(
     (field: string, value: any) => {
@@ -208,10 +250,13 @@ function VideoSegmentReplaceNode({ data, id }: NodeProps<VideoSegmentReplaceNode
     handleUpdate("locked", !data.locked);
   };
 
-  // Detect base video duration when it changes
+  // Detect base video duration when URL changes
   useEffect(() => {
-    const baseVideo = (data as any).base || (data as any).baseVideo;
-    if (!baseVideo) return;
+    if (!baseVideoUrl) {
+      // Reset to default if no base connected
+      if (baseDuration !== 30) setBaseDuration(30);
+      return;
+    }
 
     // Try to get duration via video element - works for any URL type
     const video = document.createElement("video");
@@ -227,22 +272,25 @@ function VideoSegmentReplaceNode({ data, id }: NodeProps<VideoSegmentReplaceNode
         if (data.endTime > duration) {
           handleUpdate("endTime", duration);
         }
+        // Adjust startTime if it exceeds duration
+        if (data.startTime >= duration) {
+          handleUpdate("startTime", 0);
+        }
       }
     };
     video.onerror = () => {
       logger.warn(`[VideoSegmentReplace] Could not load base video metadata`);
     };
-    video.src = baseVideo;
+    video.src = baseVideoUrl;
 
     return () => {
       video.src = ""; // Clean up
     };
-  }, [(data as any).base, (data as any).baseVideo]);
+  }, [baseVideoUrl, baseDuration, data.endTime, data.startTime, handleUpdate]);
 
   // Detect replacement video duration
   useEffect(() => {
-    const replacementVideo = (data as any).replacement || (data as any).replacementVideo;
-    if (!replacementVideo) {
+    if (!replacementVideoUrl) {
       setReplacementDuration(0);
       return;
     }
@@ -260,26 +308,12 @@ function VideoSegmentReplaceNode({ data, id }: NodeProps<VideoSegmentReplaceNode
     video.onerror = () => {
       logger.warn(`[VideoSegmentReplace] Could not load replacement video metadata`);
     };
-    video.src = replacementVideo;
+    video.src = replacementVideoUrl;
 
     return () => {
       video.src = "";
     };
-  }, [(data as any).replacement, (data as any).replacementVideo]);
-
-  // Process segment replacement
-  useEffect(() => {
-    const baseVideo = (data as any).base || (data as any).baseVideo;
-    const replacementVideo = (data as any).replacement || (data as any).replacementVideo;
-
-    if (!baseVideo || !replacementVideo) {
-      setPreviewUrl(null);
-      return;
-    }
-
-    // Don't auto-process - wait for explicit execution
-    // This is a heavy operation
-  }, [(data as any).base, (data as any).replacement]);
+  }, [replacementVideoUrl]);
 
   const getBorderColor = () => {
     if (status === "error") return "border-red-500";
