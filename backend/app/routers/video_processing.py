@@ -1177,11 +1177,26 @@ async def replace_video_segment(
             base_duration = float(base_info.get("format", {}).get("duration", 0))
             replacement_duration = float(replacement_info.get("format", {}).get("duration", 0))
 
-            # Check if videos have audio streams
-            base_has_audio = any(s.get("codec_type") == "audio" for s in base_info.get("streams", []))
-            replacement_has_audio = any(s.get("codec_type") == "audio" for s in replacement_info.get("streams", []))
+            # Check if videos have audio streams and extract audio properties
+            base_audio_stream = next((s for s in base_info.get("streams", []) if s.get("codec_type") == "audio"), None)
+            replacement_audio_stream = next((s for s in replacement_info.get("streams", []) if s.get("codec_type") == "audio"), None)
+            
+            base_has_audio = base_audio_stream is not None
+            replacement_has_audio = replacement_audio_stream is not None
+            
+            # Extract audio properties from base video for matching silence generation
+            if base_has_audio:
+                base_sample_rate = int(base_audio_stream.get("sample_rate", 48000))
+                base_channels = int(base_audio_stream.get("channels", 2))
+                # Map channel count to channel layout for anullsrc
+                channel_layout_map = {1: "mono", 2: "stereo", 6: "5.1", 8: "7.1"}
+                base_channel_layout = channel_layout_map.get(base_channels, "stereo")
+            else:
+                base_sample_rate = 48000
+                base_channels = 2
+                base_channel_layout = "stereo"
 
-            logger.info(f"Base duration: {base_duration}s (audio: {base_has_audio}), Replacement duration: {replacement_duration}s (audio: {replacement_has_audio})")
+            logger.info(f"Base duration: {base_duration}s (audio: {base_has_audio}, sr={base_sample_rate}, ch={base_channels}), Replacement duration: {replacement_duration}s (audio: {replacement_has_audio})")
 
             # Validate times against base duration
             if request.end_time > base_duration:
@@ -1243,19 +1258,20 @@ async def replace_video_segment(
             if has_any_audio:
                 if request.audio_mode == "keep_base" and base_has_audio:
                     # Split and concat base audio to match video structure
+                    # Use aformat to normalize all audio streams to same format before concat
+                    audio_format_filter = f"aformat=sample_rates={base_sample_rate}:channel_layouts={base_channel_layout}"
                     audio_concat_inputs = []
                     if has_before:
-                        filter_parts.append(f"[0:a]atrim=0:{request.start_time},asetpts=PTS-STARTPTS[a_before]")
+                        filter_parts.append(f"[0:a]atrim=0:{request.start_time},asetpts=PTS-STARTPTS,{audio_format_filter}[a_before]")
                         audio_concat_inputs.append("[a_before]")
 
-                    # For the replacement segment, use silence or base audio segment
-                    # Use anullsrc to generate silence for the replacement duration
+                    # For the replacement segment, generate silence matching base audio properties
                     actual_replacement_duration = min(replacement_duration, segment_duration) if request.fit_mode == "trim" else segment_duration
-                    filter_parts.append(f"anullsrc=r=44100:cl=stereo,atrim=0:{actual_replacement_duration}[a_silence]")
+                    filter_parts.append(f"anullsrc=r={base_sample_rate}:cl={base_channel_layout},atrim=0:{actual_replacement_duration},{audio_format_filter}[a_silence]")
                     audio_concat_inputs.append("[a_silence]")
 
                     if has_after:
-                        filter_parts.append(f"[0:a]atrim={request.end_time}:{base_duration},asetpts=PTS-STARTPTS[a_after]")
+                        filter_parts.append(f"[0:a]atrim={request.end_time}:{base_duration},asetpts=PTS-STARTPTS,{audio_format_filter}[a_after]")
                         audio_concat_inputs.append("[a_after]")
 
                     n_audio_segments = len(audio_concat_inputs)
