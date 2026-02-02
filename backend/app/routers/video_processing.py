@@ -1170,14 +1170,18 @@ async def replace_video_segment(
 
             logger.info(f"Saved base video: {len(base_bytes)} bytes, replacement: {len(replacement_bytes)} bytes")
 
-            # Probe videos for duration
+            # Probe videos for duration and audio streams
             base_info = probe_video(base_path)
             replacement_info = probe_video(replacement_path)
 
             base_duration = float(base_info.get("format", {}).get("duration", 0))
             replacement_duration = float(replacement_info.get("format", {}).get("duration", 0))
 
-            logger.info(f"Base duration: {base_duration}s, Replacement duration: {replacement_duration}s")
+            # Check if videos have audio streams
+            base_has_audio = any(s.get("codec_type") == "audio" for s in base_info.get("streams", []))
+            replacement_has_audio = any(s.get("codec_type") == "audio" for s in replacement_info.get("streams", []))
+
+            logger.info(f"Base duration: {base_duration}s (audio: {base_has_audio}), Replacement duration: {replacement_duration}s (audio: {replacement_has_audio})")
 
             # Validate times against base duration
             if request.end_time > base_duration:
@@ -1232,16 +1236,22 @@ async def replace_video_segment(
             n_segments = len(concat_inputs)
             filter_parts.append(f"{''.join(concat_inputs)}concat=n={n_segments}:v=1:a=0[outv]")
 
-            # Audio filter chain based on mode
-            if request.audio_mode == "keep_replacement":
-                # Use replacement audio, pad/trim to match
-                filter_parts.append(f"[1:a]asetpts=PTS-STARTPTS[outa]")
-            elif request.audio_mode == "mix":
-                # Mix both audio tracks
-                filter_parts.append(f"[0:a][1:a]amix=inputs=2:duration=first[outa]")
-            else:  # keep_base (default)
-                # Keep original audio from base
-                filter_parts.append(f"[0:a]acopy[outa]")
+            # Audio filter chain based on mode and availability
+            has_any_audio = base_has_audio or replacement_has_audio
+
+            if has_any_audio:
+                if request.audio_mode == "keep_replacement" and replacement_has_audio:
+                    # Use replacement audio
+                    filter_parts.append(f"[1:a]asetpts=PTS-STARTPTS[outa]")
+                elif request.audio_mode == "mix" and base_has_audio and replacement_has_audio:
+                    # Mix both audio tracks
+                    filter_parts.append(f"[0:a][1:a]amix=inputs=2:duration=first[outa]")
+                elif base_has_audio:
+                    # Keep base audio (default fallback)
+                    filter_parts.append(f"[0:a]acopy[outa]")
+                elif replacement_has_audio:
+                    # Fallback to replacement audio if base has none
+                    filter_parts.append(f"[1:a]asetpts=PTS-STARTPTS[outa]")
 
             filter_complex = ";".join(filter_parts)
 
@@ -1252,15 +1262,19 @@ async def replace_video_segment(
                 "-i", replacement_path,
                 "-filter_complex", filter_complex,
                 "-map", "[outv]",
-                "-map", "[outa]",
+            ]
+
+            # Only map audio if any audio is available
+            if has_any_audio:
+                cmd.extend(["-map", "[outa]", "-c:a", "aac", "-b:a", "128k"])
+
+            cmd.extend([
                 "-c:v", "libx264",
                 "-preset", "fast",
                 "-crf", "23",
-                "-c:a", "aac",
-                "-b:a", "128k",
                 "-movflags", "+faststart",
                 output_path
-            ]
+            ])
 
             logger.info(f"Running ffmpeg segment replace")
             logger.debug(f"Filter complex: {filter_complex}")
