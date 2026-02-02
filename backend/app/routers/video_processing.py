@@ -1236,22 +1236,51 @@ async def replace_video_segment(
             n_segments = len(concat_inputs)
             filter_parts.append(f"{''.join(concat_inputs)}concat=n={n_segments}:v=1:a=0[outv]")
 
-            # Audio filter chain based on mode and availability
+            # Audio filter chain - must match video segment structure
             has_any_audio = base_has_audio or replacement_has_audio
+            audio_created = False
 
             if has_any_audio:
-                if request.audio_mode == "keep_replacement" and replacement_has_audio:
-                    # Use replacement audio
+                if request.audio_mode == "keep_base" and base_has_audio:
+                    # Split and concat base audio to match video structure
+                    audio_concat_inputs = []
+                    if has_before:
+                        filter_parts.append(f"[0:a]atrim=0:{request.start_time},asetpts=PTS-STARTPTS[a_before]")
+                        audio_concat_inputs.append("[a_before]")
+
+                    # For the replacement segment, use silence or base audio segment
+                    # Use anullsrc to generate silence for the replacement duration
+                    actual_replacement_duration = min(replacement_duration, segment_duration) if request.fit_mode == "trim" else segment_duration
+                    filter_parts.append(f"anullsrc=r=44100:cl=stereo,atrim=0:{actual_replacement_duration}[a_silence]")
+                    audio_concat_inputs.append("[a_silence]")
+
+                    if has_after:
+                        filter_parts.append(f"[0:a]atrim={request.end_time}:{base_duration},asetpts=PTS-STARTPTS[a_after]")
+                        audio_concat_inputs.append("[a_after]")
+
+                    n_audio_segments = len(audio_concat_inputs)
+                    filter_parts.append(f"{''.join(audio_concat_inputs)}concat=n={n_audio_segments}:v=0:a=1[outa]")
+                    audio_created = True
+
+                elif request.audio_mode == "keep_replacement" and replacement_has_audio:
+                    # Use replacement audio, extended/trimmed to match output duration
                     filter_parts.append(f"[1:a]asetpts=PTS-STARTPTS[outa]")
+                    audio_created = True
+
                 elif request.audio_mode == "mix" and base_has_audio and replacement_has_audio:
                     # Mix both audio tracks
-                    filter_parts.append(f"[0:a][1:a]amix=inputs=2:duration=first[outa]")
+                    filter_parts.append(f"[0:a][1:a]amix=inputs=2:duration=longest[outa]")
+                    audio_created = True
+
                 elif base_has_audio:
-                    # Keep base audio (default fallback)
+                    # Fallback: just use base audio with shortest flag
                     filter_parts.append(f"[0:a]acopy[outa]")
+                    audio_created = True
+
                 elif replacement_has_audio:
-                    # Fallback to replacement audio if base has none
+                    # Fallback to replacement audio
                     filter_parts.append(f"[1:a]asetpts=PTS-STARTPTS[outa]")
+                    audio_created = True
 
             filter_complex = ";".join(filter_parts)
 
@@ -1264,9 +1293,12 @@ async def replace_video_segment(
                 "-map", "[outv]",
             ]
 
-            # Only map audio if any audio is available
-            if has_any_audio:
+            # Only map audio if audio filter was created
+            if audio_created:
                 cmd.extend(["-map", "[outa]", "-c:a", "aac", "-b:a", "128k"])
+
+            # Add shortest flag to handle any duration mismatches
+            cmd.append("-shortest")
 
             cmd.extend([
                 "-c:v", "libx264",
