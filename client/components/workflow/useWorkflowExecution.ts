@@ -3179,6 +3179,7 @@ export function useWorkflowExecution(
               const updateData = {
                 ...result.value.data,
                 outputs: result.value.data.outputs || result.value.data,
+                error: undefined, // Clear any previous errors on success
               };
 
               logger.debug("[Workflow] Updating node state:", {

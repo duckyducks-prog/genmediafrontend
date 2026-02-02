@@ -1170,33 +1170,52 @@ async def replace_video_segment(
 
             logger.info(f"Saved base video: {len(base_bytes)} bytes, replacement: {len(replacement_bytes)} bytes")
 
-            # Probe videos for duration and audio streams
+            # Probe videos for duration and stream info
             base_info = probe_video(base_path)
             replacement_info = probe_video(replacement_path)
 
             base_duration = float(base_info.get("format", {}).get("duration", 0))
             replacement_duration = float(replacement_info.get("format", {}).get("duration", 0))
 
-            # Check if videos have audio streams and extract audio properties
-            base_audio_stream = next((s for s in base_info.get("streams", []) if s.get("codec_type") == "audio"), None)
-            replacement_audio_stream = next((s for s in replacement_info.get("streams", []) if s.get("codec_type") == "audio"), None)
+            # Extract detailed video stream info for debugging
+            def get_video_specs(info, name):
+                for stream in info.get("streams", []):
+                    if stream.get("codec_type") == "video":
+                        return {
+                            "name": name,
+                            "codec": stream.get("codec_name"),
+                            "width": stream.get("width"),
+                            "height": stream.get("height"),
+                            "pix_fmt": stream.get("pix_fmt"),
+                            "fps": stream.get("r_frame_rate"),
+                            "tbr": stream.get("tbr"),
+                        }
+                return {"name": name, "error": "no video stream"}
             
-            base_has_audio = base_audio_stream is not None
-            replacement_has_audio = replacement_audio_stream is not None
+            # Check for VALID audio streams (must have channels > 0)
+            def has_valid_audio(info, name):
+                for stream in info.get("streams", []):
+                    if stream.get("codec_type") == "audio":
+                        channels = stream.get("channels", 0)
+                        codec = stream.get("codec_name", "unknown")
+                        logger.info(f"{name} audio stream: codec={codec}, channels={channels}")
+                        if channels > 0:
+                            return True
+                        else:
+                            logger.warning(f"{name} has phantom audio stream with 0 channels!")
+                            return False
+                logger.info(f"{name} has no audio stream")
+                return False
             
-            # Extract audio properties from base video for matching silence generation
-            if base_has_audio:
-                base_sample_rate = int(base_audio_stream.get("sample_rate", 48000))
-                base_channels = int(base_audio_stream.get("channels", 2))
-                # Map channel count to channel layout for anullsrc
-                channel_layout_map = {1: "mono", 2: "stereo", 6: "5.1", 8: "7.1"}
-                base_channel_layout = channel_layout_map.get(base_channels, "stereo")
-            else:
-                base_sample_rate = 48000
-                base_channels = 2
-                base_channel_layout = "stereo"
-
-            logger.info(f"Base duration: {base_duration}s (audio: {base_has_audio}, sr={base_sample_rate}, ch={base_channels}), Replacement duration: {replacement_duration}s (audio: {replacement_has_audio})")
+            base_specs = get_video_specs(base_info, "base")
+            replacement_specs = get_video_specs(replacement_info, "replacement")
+            base_has_valid_audio = has_valid_audio(base_info, "base")
+            replacement_has_valid_audio = has_valid_audio(replacement_info, "replacement")
+            
+            logger.info(f"Base video specs: {base_specs}")
+            logger.info(f"Replacement video specs: {replacement_specs}")
+            logger.info(f"Base duration: {base_duration}s, Replacement duration: {replacement_duration}s")
+            logger.info(f"Valid audio - base: {base_has_valid_audio}, replacement: {replacement_has_valid_audio}")
 
             # Validate times against base duration
             if request.end_time > base_duration:
@@ -1233,72 +1252,64 @@ async def replace_video_segment(
             has_before = request.start_time > 0
             has_after = request.end_time < base_duration
 
-            # Video filter chain
+            # Get base video dimensions to normalize all segments
+            base_width = base_specs.get("width", 1920)
+            base_height = base_specs.get("height", 1080)
+            # Ensure even dimensions for h264
+            base_width = base_width + (base_width % 2)
+            base_height = base_height + (base_height % 2)
+            
+            # Normalization filter: scale to base dimensions, set fps to 30, set pixel format
+            normalize_filter = f"scale={base_width}:{base_height}:force_original_aspect_ratio=decrease,pad={base_width}:{base_height}:(ow-iw)/2:(oh-ih)/2,fps=30,format=yuv420p"
+
+            # Video filter chain - normalize all segments before concat
             filter_parts = []
             concat_inputs = []
 
             if has_before:
-                filter_parts.append(f"[0:v]trim=0:{request.start_time},setpts=PTS-STARTPTS[v_before]")
+                filter_parts.append(f"[0:v]trim=0:{request.start_time},setpts=PTS-STARTPTS,{normalize_filter}[v_before]")
                 concat_inputs.append("[v_before]")
 
-            filter_parts.append(f"[1:v]{replacement_filter}[v_replace]")
+            filter_parts.append(f"[1:v]{replacement_filter},{normalize_filter}[v_replace]")
             concat_inputs.append("[v_replace]")
 
             if has_after:
-                filter_parts.append(f"[0:v]trim={request.end_time}:{base_duration},setpts=PTS-STARTPTS[v_after]")
+                filter_parts.append(f"[0:v]trim={request.end_time}:{base_duration},setpts=PTS-STARTPTS,{normalize_filter}[v_after]")
                 concat_inputs.append("[v_after]")
 
             n_segments = len(concat_inputs)
             filter_parts.append(f"{''.join(concat_inputs)}concat=n={n_segments}:v=1:a=0[outv]")
 
-            # Audio filter chain - must match video segment structure
-            has_any_audio = base_has_audio or replacement_has_audio
-            audio_created = False
-
-            if has_any_audio:
-                if request.audio_mode == "keep_base" and base_has_audio:
-                    # Split and concat base audio to match video structure
-                    # Use aformat to normalize all audio streams to same format before concat
-                    audio_format_filter = f"aformat=sample_rates={base_sample_rate}:channel_layouts={base_channel_layout}"
-                    audio_concat_inputs = []
-                    if has_before:
-                        filter_parts.append(f"[0:a]atrim=0:{request.start_time},asetpts=PTS-STARTPTS,{audio_format_filter}[a_before]")
-                        audio_concat_inputs.append("[a_before]")
-
-                    # For the replacement segment, generate silence matching base audio properties
-                    actual_replacement_duration = min(replacement_duration, segment_duration) if request.fit_mode == "trim" else segment_duration
-                    filter_parts.append(f"anullsrc=r={base_sample_rate}:cl={base_channel_layout},atrim=0:{actual_replacement_duration},{audio_format_filter}[a_silence]")
-                    audio_concat_inputs.append("[a_silence]")
-
-                    if has_after:
-                        filter_parts.append(f"[0:a]atrim={request.end_time}:{base_duration},asetpts=PTS-STARTPTS,{audio_format_filter}[a_after]")
-                        audio_concat_inputs.append("[a_after]")
-
-                    n_audio_segments = len(audio_concat_inputs)
-                    filter_parts.append(f"{''.join(audio_concat_inputs)}concat=n={n_audio_segments}:v=0:a=1[outa]")
-                    audio_created = True
-
-                elif request.audio_mode == "keep_replacement" and replacement_has_audio:
-                    # Use replacement audio, extended/trimmed to match output duration
-                    filter_parts.append(f"[1:a]asetpts=PTS-STARTPTS[outa]")
-                    audio_created = True
-
-                elif request.audio_mode == "mix" and base_has_audio and replacement_has_audio:
-                    # Mix both audio tracks
-                    filter_parts.append(f"[0:a][1:a]amix=inputs=2:duration=longest[outa]")
-                    audio_created = True
-
-                elif base_has_audio:
-                    # Fallback: just use base audio with shortest flag
-                    filter_parts.append(f"[0:a]acopy[outa]")
-                    audio_created = True
-
-                elif replacement_has_audio:
-                    # Fallback to replacement audio
-                    filter_parts.append(f"[1:a]asetpts=PTS-STARTPTS[outa]")
-                    audio_created = True
+            # Audio filter chain - only include if we have valid audio streams
+            include_audio = False
+            # Use aresample instead of acopy to sanitize audio (fixes timestamps, formats, etc.)
+            # async=1 enables timestamp correction which is critical for spliced video
+            audio_sanitize_filter = "aresample=async=1:min_comp=0.01:first_pts=0"
+            
+            if request.audio_mode == "keep_replacement" and replacement_has_valid_audio:
+                filter_parts.append(f"[1:a]{audio_sanitize_filter}[outa]")
+                include_audio = True
+            elif request.audio_mode == "mix" and base_has_valid_audio and replacement_has_valid_audio:
+                filter_parts.append(f"[0:a][1:a]amix=inputs=2:duration=first[outa]")
+                include_audio = True
+            elif request.audio_mode == "keep_base" and base_has_valid_audio:
+                # Use aresample to sanitize audio - fixes broken timestamps and format issues
+                filter_parts.append(f"[0:a]{audio_sanitize_filter}[outa]")
+                include_audio = True
+            elif base_has_valid_audio:
+                # Fallback: use base audio if available
+                filter_parts.append(f"[0:a]{audio_sanitize_filter}[outa]")
+                include_audio = True
+            elif replacement_has_valid_audio:
+                # Fallback: use replacement audio if base has none
+                filter_parts.append(f"[1:a]{audio_sanitize_filter}[outa]")
+                include_audio = True
+            else:
+                logger.info("No valid audio streams - output will be video-only")
 
             filter_complex = ";".join(filter_parts)
+            logger.info(f"Filter complex: {filter_complex}")
+            logger.info(f"Include audio in output: {include_audio}")
 
             # Build FFmpeg command
             cmd = [
@@ -1308,14 +1319,11 @@ async def replace_video_segment(
                 "-filter_complex", filter_complex,
                 "-map", "[outv]",
             ]
-
-            # Only map audio if audio filter was created
-            if audio_created:
+            
+            # Only map audio if we have valid audio
+            if include_audio:
                 cmd.extend(["-map", "[outa]", "-c:a", "aac", "-b:a", "128k"])
-
-            # Add shortest flag to handle any duration mismatches
-            cmd.append("-shortest")
-
+            
             cmd.extend([
                 "-c:v", "libx264",
                 "-preset", "fast",

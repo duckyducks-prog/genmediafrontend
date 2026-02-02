@@ -463,8 +463,8 @@ function VideoSegmentReplaceNode({ data, id }: NodeProps<VideoSegmentReplaceNode
         </div>
       )}
 
-      {/* Error Display */}
-      {data.error && (
+      {/* Error Display - only show if status is error, not if we've completed successfully */}
+      {data.error && status === "error" && (
         <div className="bg-red-500/10 border border-red-500/20 rounded p-2 mb-3">
           <div className="text-xs text-red-500">{data.error}</div>
         </div>

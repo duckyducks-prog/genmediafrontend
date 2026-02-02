@@ -1,5 +1,5 @@
 import { memo, useState, useEffect, useRef } from "react";
-import { Handle, Position, NodeProps } from "reactflow";
+import { Handle, Position, NodeProps, useEdges, useNodes } from "reactflow";
 import { Button } from "@/components/ui/button";
 import { OutputNodeData, FilterConfig } from "../types";
 import { API_ENDPOINTS } from "@/lib/api-config";
@@ -13,7 +13,26 @@ import {
 } from "lucide-react";
 
 function VideoOutputNode({ data, id }: NodeProps<OutputNodeData>) {
-  const videoInput = (data as any).video || (data as any).videoUrl || data.result;
+  const edges = useEdges();
+  const nodes = useNodes();
+  
+  // Get video from connected source nodes
+  const getConnectedVideo = (): string | null => {
+    const incomingEdges = edges.filter((edge) => edge.target === id);
+    for (const edge of incomingEdges) {
+      const sourceNode = nodes.find((n) => n.id === edge.source);
+      if (!sourceNode?.data) continue;
+      const nodeData = sourceNode.data as any;
+      // Check various places where video URL might be stored
+      const videoUrl = nodeData.outputs?.video || nodeData.videoUrl || nodeData.video || nodeData.generatedVideoUrl;
+      if (videoUrl) return videoUrl;
+    }
+    return null;
+  };
+  
+  const connectedVideo = getConnectedVideo();
+  // Check multiple sources for the video input, including outputs from upstream nodes
+  const videoInput = connectedVideo || (data as any).outputs?.video || (data as any).video || (data as any).videoUrl || data.result;
   const filters: FilterConfig[] = (data as any).filters || [];
   const status = (data as any).status || "ready";
 
