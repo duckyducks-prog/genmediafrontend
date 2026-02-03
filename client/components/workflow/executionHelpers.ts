@@ -125,6 +125,7 @@ export function gatherNodeInputs(
   node: WorkflowNode,
   allNodes: WorkflowNode[],
   edges: WorkflowEdge[],
+  executionContext?: { executionId?: string }
 ): Record<string, any> {
   const inputs: Record<string, any> = {};
   if (!node.type) {
@@ -197,6 +198,20 @@ export function gatherNodeInputs(
     // First, try to get from outputs object
     const outputs = sourceNode.data.outputs as Record<string, unknown> | undefined;
     let outputValue = outputs?.[sourceHandle];
+
+    // Validate outputs are from current execution (not stale from previous run)
+    if (outputValue !== undefined && outputs) {
+      const outputExecutionId = outputs._executionId;
+      const currentExecutionId = executionContext?.executionId;
+
+      if (outputExecutionId && currentExecutionId && outputExecutionId !== currentExecutionId) {
+        logger.warn(
+          `[gatherNodeInputs] Discarding stale output from ${sourceNode.id} ` +
+          `(execution ${outputExecutionId} vs ${currentExecutionId})`
+        );
+        outputValue = undefined;  // Discard stale output, will fallback to top-level fields
+      }
+    }
 
     logger.debug(`[gatherNodeInputs] Looking for outputs["${sourceHandle}"]`, {
       found: outputValue !== undefined,

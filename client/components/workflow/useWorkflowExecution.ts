@@ -2648,6 +2648,11 @@ export function useWorkflowExecution(
 
     setIsExecuting(true);
     setAbortRequested(false);
+
+    // Generate unique execution ID to track outputs from this run
+    const executionId = `exec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    logger.info(`[executeWorkflow] Starting execution ${executionId}`);
+
     const executionOrder = getExecutionOrder();
 
     if (!executionOrder) {
@@ -2810,8 +2815,13 @@ export function useWorkflowExecution(
                     status: "ready", // Reset status for re-execution
                     // Preserve outputs for static input nodes that don't change between iterations
                     // These nodes provide constant data (like reference images) used by all iterations
+                    // Tag with execution ID to prevent stale data from previous runs being used
                     outputs: [NodeType.ScriptQueue, NodeType.ImageInput, NodeType.VideoInput, NodeType.Prompt].includes(n.type as NodeType)
-                      ? n.data.outputs
+                      ? {
+                          ...n.data.outputs,
+                          _executionId: executionId,
+                          _preservedAt: Date.now()
+                        }
                       : {}, // Clear outputs for nodes that need re-execution
                     error: undefined, // Clear any previous errors
                     // CRITICAL: Clear stale execution results from previous iteration
@@ -2904,7 +2914,7 @@ export function useWorkflowExecution(
           }
         });
 
-        const inputs = gatherNodeInputs(node, trackedNodes, edges);
+        const inputs = gatherNodeInputs(node, trackedNodes, edges, { executionId });
         logger.debug(`[getTrackedInputs] Final inputs for ${node.type}:`, {
           inputKeys: Object.keys(inputs),
         });
@@ -3587,7 +3597,7 @@ export function useWorkflowExecution(
               } else {
                 // Other post-batch nodes (AddMusicToVideo, VoiceChanger) get inputs from
                 // their connected upstream nodes (which might be other post-batch nodes)
-                postBatchInputs = gatherNodeInputs(postBatchNode, postBatchTrackedNodes, edges);
+                postBatchInputs = gatherNodeInputs(postBatchNode, postBatchTrackedNodes, edges, { executionId });
 
                 logger.info(`[Batch] ${postBatchNode.type} gathered inputs:`, {
                   inputKeys: Object.keys(postBatchInputs),
