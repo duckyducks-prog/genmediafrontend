@@ -343,58 +343,65 @@ async def merge_videos(
     Merge multiple videos into one using ffmpeg concat filter.
     Uses concat filter (not demuxer) for better compatibility with different video sources.
 
-    Accepts either:
+    Accepts:
     - videos_base64: List of base64 encoded videos (for small files)
     - video_urls: List of GCS/HTTP URLs (preferred for large files, avoids request size limits)
+    - Both can be provided for mixed format support
     """
     try:
-        # Determine which input format was provided
-        videos_data: List[str] = []
-        use_urls = False
+        # Support mixed formats: collect all videos from both sources
+        url_count = len(request.video_urls) if request.video_urls else 0
+        base64_count = len(request.videos_base64) if request.videos_base64 else 0
+        total_count = url_count + base64_count
+        
+        logger.info(f"Merge videos request from user {user['email']}, urls={url_count}, base64={base64_count}, total={total_count}, trim_silence={request.trim_silence}")
 
-        if request.video_urls and len(request.video_urls) > 0:
-            videos_data = request.video_urls
-            use_urls = True
-            logger.info(f"Merge videos request from user {user['email']}, count={len(videos_data)} (using URLs), trim_silence={request.trim_silence}")
-        elif request.videos_base64 and len(request.videos_base64) > 0:
-            videos_data = request.videos_base64
-            use_urls = False
-            logger.info(f"Merge videos request from user {user['email']}, count={len(videos_data)} (using base64), trim_silence={request.trim_silence}")
-        else:
-            raise HTTPException(status_code=400, detail="Either videos_base64 or video_urls must be provided")
-
-        if len(videos_data) < 2:
+        if total_count < 2:
             raise HTTPException(status_code=400, detail="At least 2 videos required")
 
-        if len(videos_data) > 25:
+        if total_count > 25:
             raise HTTPException(status_code=400, detail="Maximum 25 videos allowed")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # Save all input videos and probe them
             video_paths = []
             video_infos = []
-            for i, video_input in enumerate(videos_data):
-                if use_urls:
-                    # Download from URL
-                    logger.info(f"Downloading video {i} from URL: {video_input[:80]}...")
+            video_index = 0
+            
+            # Process URL videos first
+            if request.video_urls:
+                for url in request.video_urls:
+                    logger.info(f"Downloading video {video_index} from URL: {url[:80]}...")
                     try:
-                        video_bytes = await download_video_from_url(video_input)
+                        video_bytes = await download_video_from_url(url)
                     except httpx.HTTPError as e:
-                        logger.error(f"Failed to download video {i}: {e}")
-                        raise HTTPException(status_code=400, detail=f"Failed to download video {i+1}: {str(e)}")
-                else:
-                    # Decode from base64
-                    video_bytes = clean_base64(video_input)
-
-                video_path = os.path.join(tmpdir, f"input_{i}.mp4")
-                with open(video_path, "wb") as f:
-                    f.write(video_bytes)
-                video_paths.append(video_path)
-
-                # Probe each video for format info
-                info = probe_video(video_path)
-                video_infos.append(info)
-                logger.info(f"Saved video {i}: {len(video_bytes)} bytes")
+                        logger.error(f"Failed to download video {video_index}: {e}")
+                        raise HTTPException(status_code=400, detail=f"Failed to download video {video_index+1}: {str(e)}")
+                    
+                    video_path = os.path.join(tmpdir, f"input_{video_index}.mp4")
+                    with open(video_path, "wb") as f:
+                        f.write(video_bytes)
+                    video_paths.append(video_path)
+                    
+                    info = probe_video(video_path)
+                    video_infos.append(info)
+                    logger.info(f"Saved video {video_index} (URL): {len(video_bytes)} bytes")
+                    video_index += 1
+            
+            # Process base64 videos
+            if request.videos_base64:
+                for b64_data in request.videos_base64:
+                    video_bytes = clean_base64(b64_data)
+                    
+                    video_path = os.path.join(tmpdir, f"input_{video_index}.mp4")
+                    with open(video_path, "wb") as f:
+                        f.write(video_bytes)
+                    video_paths.append(video_path)
+                    
+                    info = probe_video(video_path)
+                    video_infos.append(info)
+                    logger.info(f"Saved video {video_index} (base64): {len(video_bytes)} bytes")
+                    video_index += 1
 
             # Apply silence trimming if enabled
             if request.trim_silence:
@@ -1217,12 +1224,32 @@ async def replace_video_segment(
             logger.info(f"Base duration: {base_duration}s, Replacement duration: {replacement_duration}s")
             logger.info(f"Valid audio - base: {base_has_valid_audio}, replacement: {replacement_has_valid_audio}")
 
-            # Validate times against base duration
+            # Validate and clamp times against base duration
+            # First, ensure start_time is within bounds
+            if request.start_time >= base_duration:
+                logger.warning(f"start_time ({request.start_time}) >= base_duration ({base_duration}), adjusting to 0")
+                request.start_time = 0
+            
+            # Clamp end_time to base duration
             if request.end_time > base_duration:
+                logger.warning(f"end_time ({request.end_time}) > base_duration ({base_duration}), clamping")
                 request.end_time = base_duration
-                logger.warning(f"end_time adjusted to base duration: {base_duration}")
+            
+            # Ensure end_time > start_time after adjustments
+            if request.end_time <= request.start_time:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Invalid segment: start_time ({request.start_time}s) must be less than end_time ({request.end_time}s). Base video is only {base_duration}s long."
+                )
 
             segment_duration = request.end_time - request.start_time
+            
+            # Final sanity check
+            if segment_duration <= 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Segment duration must be positive. Got {segment_duration}s"
+                )
 
             # Calculate how to fit the replacement
             if request.fit_mode == "stretch":

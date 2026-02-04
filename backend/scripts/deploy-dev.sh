@@ -1,34 +1,17 @@
 #!/bin/bash
 set -e
 
-echo "🚀 Deploying GenMedia API..."
+echo "🚀 Deploying GenMedia API to DEV..."
 
-# Production confirmation
-echo "⚠️  WARNING: This will deploy to PRODUCTION"
-read -p "Confirm production deployment? (yes/no): " confirm
-if [ "$confirm" != "yes" ]; then
-  echo "Deployment cancelled"
-  exit 0
+# Load development environment
+if [ ! -f .env.development ]; then
+  echo "❌ Error: .env.development not found"
+  exit 1
 fi
 
-# Load production environment
-if [ ! -f .env.production ]; then
-  echo "⚠️  Warning: .env.production not found"
-  if [ -f .env ]; then
-    echo "  Falling back to .env"
-    set -a
-    source .env
-    set +a
-  fi
-else
-  echo "✓ Using .env.production"
-  set -a
-  source .env.production
-  set +a
-fi
-
-# Force production Firestore environment
-FIRESTORE_ENVIRONMENT="prod"
+set -a  # Auto-export all variables
+source .env.development
+set +a
 
 # Extract values from config.py using uv environment
 PROJECT_ID=$(uv run python -c "from app.config import settings; print(settings.project_id)")
@@ -37,11 +20,12 @@ GCS_BUCKET=$(uv run python -c "from app.config import settings; print(settings.g
 WORKFLOWS_BUCKET=$(uv run python -c "from app.config import settings; print(settings.workflows_bucket)")
 FIREBASE_PROJECT_ID=$(uv run python -c "from app.config import settings; print(settings.firebase_project_id)")
 
-# Environment variables (from .env.production or .env)
+# Use env vars from .env.development
 ALLOWED_EMAILS="${ALLOWED_EMAILS:-}"
 ALLOWED_DOMAINS="${ALLOWED_DOMAINS:-}"
 ADMIN_EMAILS="${ADMIN_EMAILS:-}"
 ELEVENLABS_API_KEY="${ELEVENLABS_API_KEY:-}"
+FIRESTORE_ENVIRONMENT="${FIRESTORE_ENVIRONMENT:-dev}"
 ALLOWED_ORIGINS="${ALLOWED_ORIGINS:-}"
 
 if [ -z "$ALLOWED_EMAILS" ] && [ -z "$ALLOWED_DOMAINS" ]; then
@@ -52,10 +36,10 @@ fi
 CLOUD_RUN_REGION="us-central1"
 
 echo "📋 Deployment config:"
-echo "  Environment: PRODUCTION"
+echo "  Environment: DEVELOPMENT"
 echo "  Project ID: $PROJECT_ID"
 echo "  Cloud Run Region: $CLOUD_RUN_REGION"
-echo "  Service: veo-api"
+echo "  Service: veo-api-dev"
 echo "  API Location: $API_LOCATION"
 echo "  GCS Bucket: $GCS_BUCKET"
 echo "  Workflows Bucket: $WORKFLOWS_BUCKET"
@@ -84,7 +68,7 @@ EOF
 # Clean up temp file on exit
 trap "rm -f $ENV_VARS_FILE" EXIT
 
-gcloud run deploy veo-api \
+gcloud run deploy veo-api-dev \
   --source . \
   --project="$PROJECT_ID" \
   --region="$CLOUD_RUN_REGION" \
@@ -96,7 +80,7 @@ gcloud run deploy veo-api \
   --cpu=2
 
 # Get the service URL dynamically
-SERVICE_URL=$(gcloud run services describe veo-api --region="$CLOUD_RUN_REGION" --project="$PROJECT_ID" --format='value(status.url)')
+SERVICE_URL=$(gcloud run services describe veo-api-dev --region="$CLOUD_RUN_REGION" --project="$PROJECT_ID" --format='value(status.url)')
 
-echo "✅ Deployment complete!"
+echo "✅ Development deployment complete!"
 echo "🔗 $SERVICE_URL"

@@ -1,14 +1,12 @@
 #!/bin/bash
 # =============================================================================
-# Deploy script for Cloud Run
+# Deploy script for Cloud Run - DEVELOPMENT ENVIRONMENT
 # =============================================================================
 #
-# Usage: ./deploy.sh
+# Usage: ./deploy-dev.sh
 #
-# This script reads environment variables from (in order of priority):
-#   1. .env.production
-#   2. .env.local
-#   3. .env
+# This script deploys to the dev Cloud Run service (genmedia-frontend-dev)
+# and reads environment variables from .env.development
 #
 # Required variables:
 #   - VITE_FIREBASE_API_KEY (for frontend Firebase auth)
@@ -26,51 +24,24 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-echo -e "${GREEN}=== GenMedia Frontend Deployment ===${NC}"
+echo -e "${BLUE}=== GenMedia Frontend - Development Deployment ===${NC}"
 echo ""
 
 # -----------------------------------------------------------------------------
-# Production Confirmation
+# Load environment variables
 # -----------------------------------------------------------------------------
-echo -e "${RED}⚠️  WARNING: This will deploy to PRODUCTION ⚠️${NC}"
-echo ""
-read -p "Are you sure you want to deploy to production? (yes/no): " confirm
-if [ "$confirm" != "yes" ]; then
-    echo -e "${YELLOW}Deployment cancelled${NC}"
-    exit 0
-fi
-echo ""
-
-# -----------------------------------------------------------------------------
-# Load environment variables (prioritize .env.production)
-# -----------------------------------------------------------------------------
-ENV_FILE=""
-if [ -f .env.production ]; then
-    ENV_FILE=".env.production"
-    echo -e "${GREEN}✓ Using .env.production${NC}"
-elif [ -f .env.local ]; then
-    echo -e "${YELLOW}⚠️  Warning: .env.production not found, falling back to .env.local${NC}"
-    echo -e "${YELLOW}   For production deployments, create .env.production from .env.example${NC}"
-    ENV_FILE=".env.local"
-elif [ -f .env ]; then
-    echo -e "${YELLOW}⚠️  Warning: .env.production not found, falling back to .env${NC}"
-    echo -e "${YELLOW}   For production deployments, create .env.production from .env.example${NC}"
-    ENV_FILE=".env"
-fi
-
-if [ -n "$ENV_FILE" ]; then
-    echo -e "${BLUE}Loading environment from: ${ENV_FILE}${NC}"
-    export $(grep -v '^#' "$ENV_FILE" | grep -v '^$' | xargs)
-else
-    echo -e "${RED}Error: No .env file found${NC}"
-    echo -e "${RED}Create .env.production from .env.example for production deployments${NC}"
+ENV_FILE=".env.development"
+if [ ! -f "$ENV_FILE" ]; then
+    echo -e "${RED}Error: $ENV_FILE not found${NC}"
+    echo "Create it from .env.example with development configuration"
     exit 1
 fi
 
-# Force production service name
-SERVICE_NAME="genmedia-frontend"
-# Force production Firestore environment
-FIRESTORE_ENVIRONMENT="prod"
+echo -e "${BLUE}Loading environment from: ${ENV_FILE}${NC}"
+export $(grep -v '^#' "$ENV_FILE" | grep -v '^$' | xargs)
+
+# Override service name for dev
+SERVICE_NAME="genmedia-frontend-dev"
 
 # -----------------------------------------------------------------------------
 # Validate GCP Project
@@ -79,7 +50,7 @@ if [ -z "$GCP_PROJECT_ID" ]; then
     GCP_PROJECT_ID=$(gcloud config get-value project 2>/dev/null)
     if [ -z "$GCP_PROJECT_ID" ]; then
         echo -e "${RED}Error: GCP_PROJECT_ID not set${NC}"
-        echo "Set it in your .env file or run: gcloud config set project your-project-id"
+        echo "Set it in your .env.development file or run: gcloud config set project your-project-id"
         exit 1
     fi
 fi
@@ -103,8 +74,7 @@ echo ""
 # Check if API key is set (required)
 if [ -z "$VITE_FIREBASE_API_KEY" ]; then
     echo -e "${RED}Error: VITE_FIREBASE_API_KEY is required${NC}"
-    echo "Add it to your .env.production file or export it:"
-    echo "  export VITE_FIREBASE_API_KEY=your-api-key"
+    echo "Add it to your .env.development file"
     exit 1
 fi
 
@@ -112,18 +82,17 @@ fi
 # Build Configuration
 # -----------------------------------------------------------------------------
 echo -e "${BLUE}Deployment Configuration:${NC}"
-echo -e "  Environment:  ${GREEN}PRODUCTION${NC}"
+echo -e "  Environment:  ${YELLOW}DEVELOPMENT${NC}"
 echo -e "  GCP Project:  ${GCP_PROJECT_ID}"
 echo -e "  Service Name: ${SERVICE_NAME}"
-echo -e "  REQUIRE_AUTH: ${GREEN}true${NC} (always enabled for production)"
-echo -e "  Firestore Env: ${FIRESTORE_ENVIRONMENT}"
+echo -e "  REQUIRE_AUTH: ${GREEN}${REQUIRE_AUTH:-true}${NC}"
+echo -e "  Firestore Env: ${FIRESTORE_ENVIRONMENT:-dev}"
 echo ""
 
 # -----------------------------------------------------------------------------
 # Build substitutions for Cloud Build
 # -----------------------------------------------------------------------------
-# Force REQUIRE_AUTH=true and use explicit service name for production
-SUBSTITUTIONS="_REQUIRE_AUTH=true,_SERVICE_NAME=${SERVICE_NAME},_FIRESTORE_ENVIRONMENT=${FIRESTORE_ENVIRONMENT}"
+SUBSTITUTIONS="_REQUIRE_AUTH=${REQUIRE_AUTH:-true},_SERVICE_NAME=${SERVICE_NAME}"
 
 # Add Firebase config
 [ -n "$VITE_FIREBASE_API_KEY" ] && SUBSTITUTIONS="${SUBSTITUTIONS},_VITE_FIREBASE_API_KEY=${VITE_FIREBASE_API_KEY}"
@@ -133,24 +102,29 @@ SUBSTITUTIONS="_REQUIRE_AUTH=true,_SERVICE_NAME=${SERVICE_NAME},_FIRESTORE_ENVIR
 [ -n "$VITE_FIREBASE_MESSAGING_SENDER_ID" ] && SUBSTITUTIONS="${SUBSTITUTIONS},_VITE_FIREBASE_MESSAGING_SENDER_ID=${VITE_FIREBASE_MESSAGING_SENDER_ID}"
 [ -n "$VITE_FIREBASE_APP_ID" ] && SUBSTITUTIONS="${SUBSTITUTIONS},_VITE_FIREBASE_APP_ID=${VITE_FIREBASE_APP_ID}"
 [ -n "$VITE_FIREBASE_MEASUREMENT_ID" ] && SUBSTITUTIONS="${SUBSTITUTIONS},_VITE_FIREBASE_MEASUREMENT_ID=${VITE_FIREBASE_MEASUREMENT_ID}"
+
+# Add Firestore environment
+[ -n "$FIRESTORE_ENVIRONMENT" ] && SUBSTITUTIONS="${SUBSTITUTIONS},_FIRESTORE_ENVIRONMENT=${FIRESTORE_ENVIRONMENT}"
+
 # Escape commas in ALLOWED_EMAILS (replace , with ;;) - will be unescaped in cloudbuild.yaml
 if [ -n "$VITE_ALLOWED_EMAILS" ]; then
     ESCAPED_EMAILS=$(echo "$VITE_ALLOWED_EMAILS" | sed 's/,/;;/g')
     SUBSTITUTIONS="${SUBSTITUTIONS},_VITE_ALLOWED_EMAILS=${ESCAPED_EMAILS}"
 fi
+
 # Escape commas in ALLOWED_ORIGINS (replace , with ;;) - will be unescaped in cloudbuild.yaml
 if [ -n "$ALLOWED_ORIGINS" ]; then
     ESCAPED_ORIGINS=$(echo "$ALLOWED_ORIGINS" | sed 's/,/;;/g')
     SUBSTITUTIONS="${SUBSTITUTIONS},_ALLOWED_ORIGINS=${ESCAPED_ORIGINS}"
 fi
 
-# Add rate limit configuration
+# Add rate limit config for dev
 [ -n "$RATE_LIMIT_MAX" ] && SUBSTITUTIONS="${SUBSTITUTIONS},_RATE_LIMIT_MAX=${RATE_LIMIT_MAX}"
 
 # -----------------------------------------------------------------------------
 # Deploy
 # -----------------------------------------------------------------------------
-echo -e "${YELLOW}Starting Cloud Build...${NC}"
+echo -e "${YELLOW}Starting Cloud Build for DEV environment...${NC}"
 echo ""
 
 gcloud builds submit \
@@ -159,7 +133,7 @@ gcloud builds submit \
     --substitutions="${SUBSTITUTIONS}"
 
 echo ""
-echo -e "${GREEN}=== Production deployment complete! ===${NC}"
+echo -e "${GREEN}=== Development deployment complete! ===${NC}"
 echo ""
 echo -e "App URL:  https://${SERVICE_NAME}-856765593724.us-central1.run.app"
 echo -e "Logs:     gcloud run logs read --project=${GCP_PROJECT_ID} ${SERVICE_NAME}"

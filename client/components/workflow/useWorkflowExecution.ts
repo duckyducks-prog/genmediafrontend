@@ -1619,18 +1619,18 @@ export function useWorkflowExecution(
               }
             }
 
-            // Decide which format to send
-            // Prefer URLs to avoid 32MB request limit
+            // Support mixed formats by sending both URLs and base64 to backend
+            // Backend will handle downloading URLs and combining with base64
+            const useMixed = videoUrls.length > 0 && videosBase64.length > 0;
             const useUrls = videoUrls.length === videos.length;
             const useBase64 = videosBase64.length === videos.length;
 
-            logger.debug("[MergeVideos] Starting execution:", {
-              videoCount: videos.length,
-              urlCount: videoUrls.length,
-              base64Count: videosBase64.length,
+            logger.debug("[MergeVideos] Format analysis:", {
               useUrls,
               useBase64,
-              firstVideoPreview: videos[0]?.substring(0, 100),
+              useMixed,
+              urlCount: videoUrls.length,
+              base64Count: videosBase64.length,
             });
 
             // CRITICAL: Check if we're trying to send 3+ videos as base64
@@ -1644,15 +1644,6 @@ export function useWorkflowExecution(
               };
             }
 
-            if (!useUrls && !useBase64) {
-              // Mixed formats - not supported yet
-              logger.warn("[MergeVideos] Mixed URL and base64 formats");
-              return {
-                success: false,
-                error: "Mixed video formats detected. Please ensure all videos are from the same source type."
-              };
-            }
-
             try {
               const user = auth.currentUser;
               const token = await user?.getIdToken();
@@ -1661,18 +1652,21 @@ export function useWorkflowExecution(
               const aspectRatio = (node.data as any).aspectRatio || "16:9";
               const trimSilence = (node.data as any).trimSilence || false;
 
-              // Build request body - prefer URLs (no size limit)
+              // Build request body - support URLs, base64, or mixed
               const requestBody: { video_urls?: string[]; videos_base64?: string[]; aspect_ratio?: string; trim_silence?: boolean } = {
                 aspect_ratio: aspectRatio,
                 trim_silence: trimSilence,
               };
-              if (useUrls) {
+              
+              // Send both if we have mixed formats, otherwise send whichever we have
+              if (videoUrls.length > 0) {
                 requestBody.video_urls = videoUrls;
-                logger.info(`[MergeVideos] Sending ${videoUrls.length} video URLs to backend, aspect ratio: ${aspectRatio}, trim silence: ${trimSilence}`);
-              } else {
-                requestBody.videos_base64 = videosBase64;
-                logger.info(`[MergeVideos] Sending ${videosBase64.length} videos as base64, aspect ratio: ${aspectRatio}, trim silence: ${trimSilence}`);
               }
+              if (videosBase64.length > 0) {
+                requestBody.videos_base64 = videosBase64;
+              }
+              
+              logger.info(`[MergeVideos] Sending ${videoUrls.length} URLs + ${videosBase64.length} base64 videos, aspect ratio: ${aspectRatio}, trim silence: ${trimSilence}`);
 
               const response = await fetch(API_ENDPOINTS.video.merge, {
                 method: "POST",

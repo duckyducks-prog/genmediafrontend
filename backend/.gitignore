@@ -11,6 +11,10 @@ wheels/
 
 # Environment variables and secrets
 .env
+.env.development
+.env.production
+.env.local
+.env.test
 *.json
 !pyproject.json
 serviceAccountKey.json
