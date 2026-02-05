@@ -1594,22 +1594,19 @@ export function useWorkflowExecution(
               return { success: false, error: "At least 2 videos required to merge" };
             }
 
-            // Separate videos by type: URLs (GCS) vs data URLs (base64)
-            // URLs are preferred as they avoid the 32MB request limit
-            const videoUrls: string[] = [];
-            const videosBase64: string[] = [];
+            // Prepare videos in order using new API format to preserve order
+            const orderedVideos: Array<{ base64?: string; url?: string }> = [];
 
             for (let i = 0; i < videos.length; i++) {
               const v = videos[i];
               if (v.startsWith('https://') || v.startsWith('http://')) {
                 // GCS/HTTP URL - backend will download directly
-                videoUrls.push(v);
+                orderedVideos.push({ url: v });
               } else if (v.startsWith('data:')) {
                 // Data URL - extract base64
-                videosBase64.push(
-                  v.replace(/^data:video\/[^;]+;base64,/, "")
-                    .replace(/^data:application\/[^;]+;base64,/, "")
-                );
+                const base64Data = v.replace(/^data:video\/[^;]+;base64,/, "")
+                  .replace(/^data:application\/[^;]+;base64,/, "");
+                orderedVideos.push({ base64: base64Data });
               } else {
                 logger.error(`[MergeVideos] Video ${i + 1} has invalid format:`, v.substring(0, 50));
                 return {
@@ -1619,23 +1616,21 @@ export function useWorkflowExecution(
               }
             }
 
-            // Support mixed formats by sending both URLs and base64 to backend
-            // Backend will handle downloading URLs and combining with base64
-            const useMixed = videoUrls.length > 0 && videosBase64.length > 0;
-            const useUrls = videoUrls.length === videos.length;
-            const useBase64 = videosBase64.length === videos.length;
-
-            logger.debug("[MergeVideos] Format analysis:", {
-              useUrls,
-              useBase64,
-              useMixed,
-              urlCount: videoUrls.length,
-              base64Count: videosBase64.length,
+            logger.debug("[MergeVideos] Ordered videos for API:", {
+              count: orderedVideos.length,
+              videoTypes: orderedVideos.map((v, i) => ({
+                index: i,
+                hasUrl: !!v.url,
+                hasBase64: !!v.base64,
+                urlPreview: v.url ? v.url.substring(0, 60) : null,
+                base64Preview: v.base64 ? `base64 (${v.base64.length} chars)` : null,
+              })),
             });
 
             // CRITICAL: Check if we're trying to send 3+ videos as base64
             // This will fail due to Cloud Run's 32MB request limit
-            if (useBase64 && videosBase64.length >= 3) {
+            const base64VideoCount = orderedVideos.filter(v => v.base64).length;
+            if (base64VideoCount >= 3) {
               logger.error("[MergeVideos] Cannot merge 3+ videos as base64 - would exceed 32MB limit");
               logger.error("[MergeVideos] Videos are data URLs instead of GCS URLs.");
               return {
@@ -1652,21 +1647,14 @@ export function useWorkflowExecution(
               const aspectRatio = (node.data as any).aspectRatio || "16:9";
               const trimSilence = (node.data as any).trimSilence || false;
 
-              // Build request body - support URLs, base64, or mixed
-              const requestBody: { video_urls?: string[]; videos_base64?: string[]; aspect_ratio?: string; trim_silence?: boolean } = {
+              // Use new ordered API format
+              const requestBody = {
+                videos: orderedVideos,
                 aspect_ratio: aspectRatio,
                 trim_silence: trimSilence,
               };
               
-              // Send both if we have mixed formats, otherwise send whichever we have
-              if (videoUrls.length > 0) {
-                requestBody.video_urls = videoUrls;
-              }
-              if (videosBase64.length > 0) {
-                requestBody.videos_base64 = videosBase64;
-              }
-              
-              logger.info(`[MergeVideos] Sending ${videoUrls.length} URLs + ${videosBase64.length} base64 videos, aspect ratio: ${aspectRatio}, trim silence: ${trimSilence}`);
+              logger.info(`[MergeVideos] Sending ${orderedVideos.length} videos in order, aspect ratio: ${aspectRatio}, trim silence: ${trimSilence}`);
 
               const response = await fetch(API_ENDPOINTS.video.merge, {
                 method: "POST",

@@ -56,9 +56,25 @@ def get_ffmpeg_error(stderr: str) -> str:
     return '; '.join(non_empty[-3:]) if non_empty else "Unknown FFmpeg error"
 
 
+class VideoInput(BaseModel):
+    """A single video input that can be either base64 or URL"""
+    base64: Optional[str] = Field(default=None, description="Base64 encoded video data")
+    url: Optional[str] = Field(default=None, description="GCS/HTTP URL to video")
+    
+    def validate_input(self):
+        if not self.base64 and not self.url:
+            raise ValueError("Either base64 or url must be provided")
+        if self.base64 and self.url:
+            raise ValueError("Only one of base64 or url should be provided")
+
 class MergeVideosRequest(BaseModel):
-    videos_base64: Optional[List[str]] = Field(default=None, description="List of base64 encoded videos to merge")
-    video_urls: Optional[List[str]] = Field(default=None, description="List of GCS/HTTP URLs to merge (preferred for large files)")
+    # New ordered input format (preferred)
+    videos: Optional[List[VideoInput]] = Field(default=None, description="List of videos to merge in order")
+    
+    # Legacy format for backward compatibility
+    videos_base64: Optional[List[str]] = Field(default=None, description="[DEPRECATED] List of base64 encoded videos to merge")
+    video_urls: Optional[List[str]] = Field(default=None, description="[DEPRECATED] List of GCS/HTTP URLs to merge (preferred for large files)")
+    
     aspect_ratio: str = Field(default="16:9", description="Output aspect ratio: 16:9, 9:16, 1:1, 4:3, or 4:5")
     trim_silence: bool = Field(default=False, description="Auto-trim trailing silence from video clips before merging")
 
@@ -349,12 +365,33 @@ async def merge_videos(
     - Both can be provided for mixed format support
     """
     try:
-        # Support mixed formats: collect all videos from both sources
-        url_count = len(request.video_urls) if request.video_urls else 0
-        base64_count = len(request.videos_base64) if request.videos_base64 else 0
-        total_count = url_count + base64_count
-        
-        logger.info(f"Merge videos request from user {user['email']}, urls={url_count}, base64={base64_count}, total={total_count}, trim_silence={request.trim_silence}")
+        # Handle new ordered format vs legacy format
+        if request.videos:
+            # New format - preserve order
+            video_inputs = request.videos
+            for video_input in video_inputs:
+                video_input.validate_input()
+            total_count = len(video_inputs)
+            logger.info(f"Merge videos request from user {user['email']}, ordered_inputs={total_count}, trim_silence={request.trim_silence}")
+        else:
+            # Legacy format - process URLs first, then base64 (maintains existing behavior for old clients)
+            video_inputs = []
+            
+            # Add URL videos first
+            if request.video_urls:
+                for url in request.video_urls:
+                    video_inputs.append(VideoInput(url=url))
+                    
+            # Add base64 videos second
+            if request.videos_base64:
+                for b64_data in request.videos_base64:
+                    video_inputs.append(VideoInput(base64=b64_data))
+                    
+            url_count = len(request.video_urls) if request.video_urls else 0
+            base64_count = len(request.videos_base64) if request.videos_base64 else 0
+            total_count = url_count + base64_count
+            
+            logger.info(f"Merge videos request from user {user['email']}, urls={url_count}, base64={base64_count}, total={total_count}, trim_silence={request.trim_silence}")
 
         if total_count < 2:
             raise HTTPException(status_code=400, detail="At least 2 videos required")
@@ -363,45 +400,38 @@ async def merge_videos(
             raise HTTPException(status_code=400, detail="Maximum 25 videos allowed")
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            # Save all input videos and probe them
+            # Save all input videos and probe them in order
             video_paths = []
             video_infos = []
-            video_index = 0
             
-            # Process URL videos first
-            if request.video_urls:
-                for url in request.video_urls:
-                    logger.info(f"Downloading video {video_index} from URL: {url[:80]}...")
+            for video_index, video_input in enumerate(video_inputs):
+                logger.info(f"Processing video {video_index + 1} of {total_count}")
+                
+                # Get video bytes
+                if video_input.url:
+                    logger.info(f"Downloading video {video_index} from URL: {video_input.url[:80]}...")
                     try:
-                        video_bytes = await download_video_from_url(url)
+                        video_bytes = await download_video_from_url(video_input.url)
                     except httpx.HTTPError as e:
                         logger.error(f"Failed to download video {video_index}: {e}")
                         raise HTTPException(status_code=400, detail=f"Failed to download video {video_index+1}: {str(e)}")
-                    
-                    video_path = os.path.join(tmpdir, f"input_{video_index}.mp4")
-                    with open(video_path, "wb") as f:
-                        f.write(video_bytes)
-                    video_paths.append(video_path)
-                    
-                    info = probe_video(video_path)
-                    video_infos.append(info)
-                    logger.info(f"Saved video {video_index} (URL): {len(video_bytes)} bytes")
-                    video_index += 1
-            
-            # Process base64 videos
-            if request.videos_base64:
-                for b64_data in request.videos_base64:
-                    video_bytes = clean_base64(b64_data)
-                    
-                    video_path = os.path.join(tmpdir, f"input_{video_index}.mp4")
-                    with open(video_path, "wb") as f:
-                        f.write(video_bytes)
-                    video_paths.append(video_path)
-                    
-                    info = probe_video(video_path)
-                    video_infos.append(info)
-                    logger.info(f"Saved video {video_index} (base64): {len(video_bytes)} bytes")
-                    video_index += 1
+                elif video_input.base64:
+                    video_bytes = clean_base64(video_input.base64)
+                else:
+                    raise HTTPException(status_code=400, detail=f"Video {video_index+1} has no data")
+                
+                # Save video file
+                video_path = os.path.join(tmpdir, f"input_{video_index}.mp4")
+                with open(video_path, "wb") as f:
+                    f.write(video_bytes)
+                video_paths.append(video_path)
+                
+                # Probe video info
+                info = probe_video(video_path)
+                video_infos.append(info)
+                
+                source_type = "URL" if video_input.url else "base64"
+                logger.info(f"Saved video {video_index} ({source_type}): {len(video_bytes)} bytes")
 
             # Apply silence trimming if enabled
             if request.trim_silence:
@@ -1307,29 +1337,72 @@ async def replace_video_segment(
             n_segments = len(concat_inputs)
             filter_parts.append(f"{''.join(concat_inputs)}concat=n={n_segments}:v=1:a=0[outv]")
 
-            # Audio filter chain - only include if we have valid audio streams
+            # Audio filter chain - need to carefully handle timestamp alignment
             include_audio = False
-            # Use aresample instead of acopy to sanitize audio (fixes timestamps, formats, etc.)
-            # async=1 enables timestamp correction which is critical for spliced video
-            audio_sanitize_filter = "aresample=async=1:min_comp=0.01:first_pts=0"
+            # Use consistent audio format and rate
+            audio_format_filter = "aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo"
             
             if request.audio_mode == "keep_replacement" and replacement_has_valid_audio:
-                filter_parts.append(f"[1:a]{audio_sanitize_filter}[outa]")
+                # Use only replacement audio, fitted to segment duration
+                if request.fit_mode == "stretch":
+                    # Stretch replacement audio to match segment duration
+                    speed_factor = replacement_duration / segment_duration if segment_duration > 0 else 1.0
+                    filter_parts.append(f"[1:a]atempo={speed_factor},{audio_format_filter}[outa]")
+                elif request.fit_mode == "loop" and replacement_duration < segment_duration:
+                    # Loop replacement audio
+                    loop_count = int(segment_duration / replacement_duration) + 1
+                    filter_parts.append(f"[1:a]aloop=loop={loop_count}:size=999999,atrim=duration={segment_duration},{audio_format_filter}[outa]")
+                else:
+                    # Use replacement as-is, trim if needed
+                    if replacement_duration > segment_duration:
+                        filter_parts.append(f"[1:a]atrim=duration={segment_duration},{audio_format_filter}[outa]")
+                    else:
+                        filter_parts.append(f"[1:a]{audio_format_filter}[outa]")
                 include_audio = True
             elif request.audio_mode == "mix" and base_has_valid_audio and replacement_has_valid_audio:
-                filter_parts.append(f"[0:a][1:a]amix=inputs=2:duration=first[outa]")
+                # Mix audio - need to align replacement audio to the segment position
+                base_audio_parts = []
+                
+                if has_before:
+                    base_audio_parts.append(f"[0:a]atrim=0:{request.start_time},asetpts=PTS-STARTPTS")
+                
+                # Process replacement audio for the segment
+                replacement_audio_filter = f"[1:a]"
+                if request.fit_mode == "stretch":
+                    speed_factor = replacement_duration / segment_duration if segment_duration > 0 else 1.0
+                    replacement_audio_filter += f"atempo={speed_factor},"
+                elif request.fit_mode == "loop" and replacement_duration < segment_duration:
+                    loop_count = int(segment_duration / replacement_duration) + 1
+                    replacement_audio_filter += f"aloop=loop={loop_count}:size=999999,atrim=duration={segment_duration},"
+                elif replacement_duration > segment_duration:
+                    replacement_audio_filter += f"atrim=duration={segment_duration},"
+                
+                replacement_audio_filter += "asetpts=PTS-STARTPTS"
+                base_audio_parts.append(replacement_audio_filter)
+                
+                if has_after:
+                    base_audio_parts.append(f"[0:a]atrim={request.end_time}:{base_duration},asetpts=PTS-STARTPTS")
+                
+                # Concatenate all audio parts and format
+                n_audio_segments = len(base_audio_parts)
+                if n_audio_segments > 1:
+                    audio_concat = ";".join(base_audio_parts) + f";{''.join([f'[aud{i}]' for i in range(n_audio_segments)])}concat=n={n_audio_segments}:v=0:a=1[mixed_audio]"
+                    filter_parts.append(f"{audio_concat};[mixed_audio]{audio_format_filter}[outa]")
+                else:
+                    filter_parts.append(f"{base_audio_parts[0]},{audio_format_filter}[outa]")
                 include_audio = True
             elif request.audio_mode == "keep_base" and base_has_valid_audio:
-                # Use aresample to sanitize audio - fixes broken timestamps and format issues
-                filter_parts.append(f"[0:a]{audio_sanitize_filter}[outa]")
+                # Keep base audio completely untouched - this preserves sync
+                # The key insight: don't modify the base audio timeline at all
+                filter_parts.append(f"[0:a]{audio_format_filter}[outa]")
                 include_audio = True
             elif base_has_valid_audio:
-                # Fallback: use base audio if available
-                filter_parts.append(f"[0:a]{audio_sanitize_filter}[outa]")
+                # Fallback: use base audio
+                filter_parts.append(f"[0:a]{audio_format_filter}[outa]")
                 include_audio = True
             elif replacement_has_valid_audio:
-                # Fallback: use replacement audio if base has none
-                filter_parts.append(f"[1:a]{audio_sanitize_filter}[outa]")
+                # Fallback: use replacement audio
+                filter_parts.append(f"[1:a]{audio_format_filter}[outa]")
                 include_audio = True
             else:
                 logger.info("No valid audio streams - output will be video-only")
