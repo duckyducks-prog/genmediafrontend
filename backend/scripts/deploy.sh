@@ -6,32 +6,50 @@ echo "🚀 Deploying GenMedia API..."
 # Configure uv to use public PyPI
 export UV_INDEX_URL="https://pypi.org/simple/"
 
-# Production confirmation
-echo "⚠️  WARNING: This will deploy to PRODUCTION"
-read -p "Confirm production deployment? (yes/no): " confirm
-if [ "$confirm" != "yes" ]; then
-  echo "Deployment cancelled"
-  exit 0
+
+# Ask for environment
+echo "Select deployment environment:"
+echo "1) Development"
+echo "2) Production"
+read -p "Choose environment (1 or 2): " env_choice
+
+case $env_choice in
+  1)
+    ENVIRONMENT="dev"
+    SERVICE_NAME="veo-api-dev"
+    ENV_FILE=".env.development"
+    ;;
+  2)
+    ENVIRONMENT="prod"
+    SERVICE_NAME="veo-api"
+    ENV_FILE=".env.production"
+    echo "⚠️  WARNING: This will deploy to PRODUCTION"
+    read -p "Confirm production deployment? (yes/no): " confirm
+    if [ "$confirm" != "yes" ]; then
+      echo "Deployment cancelled"
+      exit 0
+    fi
+    ;;
+  *)
+    echo "Invalid choice. Exiting."
+    exit 1
+    ;;
+esac
+
+# Load environment file
+if [ ! -f "$ENV_FILE" ]; then
+  echo "❌ Error: $ENV_FILE not found"
+  exit 1
 fi
 
-# Load production environment
-if [ ! -f .env.production ]; then
-  echo "⚠️  Warning: .env.production not found"
-  if [ -f .env ]; then
-    echo "  Falling back to .env"
-    set -a
-    source .env
-    set +a
-  fi
-else
-  echo "✓ Using .env.production"
-  set -a
-  source .env.production
-  set +a
-fi
+set -a
+source "$ENV_FILE"
+set +a
 
-# Force production Firestore environment
-FIRESTORE_ENVIRONMENT="prod"
+# Set Firestore environment variable for prod
+if [ "$ENVIRONMENT" = "prod" ]; then
+  FIRESTORE_ENVIRONMENT="prod"
+fi
 
 # Extract values from config.py using uv environment
 PROJECT_ID=$(uv run python -c "from app.config import settings; print(settings.project_id)")
@@ -55,10 +73,10 @@ fi
 CLOUD_RUN_REGION="us-central1"
 
 echo "📋 Deployment config:"
-echo "  Environment: PRODUCTION"
+echo "  Environment: $ENVIRONMENT"
 echo "  Project ID: $PROJECT_ID"
 echo "  Cloud Run Region: $CLOUD_RUN_REGION"
-echo "  Service: veo-api"
+echo "  Service: $SERVICE_NAME"
 echo "  API Location: $API_LOCATION"
 echo "  GCS Bucket: $GCS_BUCKET"
 echo "  Workflows Bucket: $WORKFLOWS_BUCKET"
@@ -87,7 +105,7 @@ EOF
 # Clean up temp file on exit
 trap "rm -f $ENV_VARS_FILE" EXIT
 
-gcloud run deploy veo-api \
+gcloud run deploy "$SERVICE_NAME" \
   --source . \
   --project="$PROJECT_ID" \
   --region="$CLOUD_RUN_REGION" \
@@ -99,7 +117,7 @@ gcloud run deploy veo-api \
   --cpu=2
 
 # Get the service URL dynamically
-SERVICE_URL=$(gcloud run services describe veo-api --region="$CLOUD_RUN_REGION" --project="$PROJECT_ID" --format='value(status.url)')
+SERVICE_URL=$(gcloud run services describe "$SERVICE_NAME" --region="$CLOUD_RUN_REGION" --project="$PROJECT_ID" --format='value(status.url)')
 
 echo "✅ Deployment complete!"
 echo "🔗 $SERVICE_URL"
