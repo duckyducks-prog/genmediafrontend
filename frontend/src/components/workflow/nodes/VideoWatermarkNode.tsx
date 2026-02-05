@@ -223,12 +223,12 @@ function VideoWatermarkNode({ data, id }: NodeProps<VideoWatermarkNodeData>) {
           <div className="text-xs font-medium text-muted-foreground mb-1">
             Preview:
           </div>
-          <div className="relative rounded-lg overflow-hidden bg-black border border-border flex items-center justify-center">
+          <div className="relative rounded-lg overflow-hidden bg-black border border-border">
             <video
               src={previewUrl}
               controls
-              className="max-w-full max-h-[150px] object-contain"
-              style={{ aspectRatio: 'auto' }}
+              className="w-full h-auto"
+              style={{ maxHeight: '200px' }}
             />
           </div>
         </div>
