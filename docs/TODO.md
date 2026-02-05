@@ -1,9 +1,9 @@
 # GenMedia Frontend TODO
 
 ## Phase 1: Documentation & Technical Architecture
-- [ ] **Architecture Diagram** - Document current vs proposed HubSpot infrastructure
+- [ ] **Architecture Diagram** - Document current vs proposed company infrastructure
   - Current: Leticia's GCP (Cloud Run frontend/backend, Firebase auth)
-  - Proposed: HubSpot infrastructure (GCP account, auth strategy)
+  - Proposed: compmany infrastructure (GCP account, auth strategy)
   - Include data flows, external dependencies, API integrations
 - [ ] **Technical Requirements Documentation**
   - Video processing concerns & GPU requirements
@@ -31,12 +31,12 @@
   - Address large bundle warning (1.5MB main chunk)
   - Review Firebase imports (mixed static/dynamic imports warning)
 
-## Phase 4: Security & Deployment Strategy (HubSpot Compliance)
-- [ ] **Repository Migration** - Move to HubSpot GitHub Enterprise
-- [ ] **GCP Account Migration** - Move to HubSpot-owned GCP account
+## Phase 4: Security & Deployment Strategy (company Compliance)
+- [ ] **Repository Migration** - Move to company GitHub Enterprise
+- [ ] **GCP Account Migration** - Move to company-owned GCP account
 - [ ] **Environment Strategy Overhaul**:
   - Implement proper dev/staging/prod environment separation
-  - Move secrets to GCP Secret Manager (or HubSpot standard)
+  - Move secrets to GCP Secret Manager (or company standard)
   - Standardize environment variable naming across frontend/backend
   - Create environment-specific service accounts
   - Implement infrastructure as code (Terraform/Pulumi)
