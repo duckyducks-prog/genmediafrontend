@@ -1653,7 +1653,7 @@ export function useWorkflowExecution(
                 aspect_ratio: aspectRatio,
                 trim_silence: trimSilence,
               };
-              
+
               logger.info(`[MergeVideos] Sending ${orderedVideos.length} videos in order, aspect ratio: ${aspectRatio}, trim silence: ${trimSilence}`);
 
               const response = await fetch(API_ENDPOINTS.video.merge, {
@@ -2800,10 +2800,10 @@ export function useWorkflowExecution(
                     // Tag with execution ID to prevent stale data from previous runs being used
                     outputs: [NodeType.ScriptQueue, NodeType.ImageInput, NodeType.VideoInput, NodeType.Prompt].includes(n.type as NodeType)
                       ? {
-                          ...n.data.outputs,
-                          _executionId: executionId,
-                          _preservedAt: Date.now()
-                        }
+                        ...n.data.outputs,
+                        _executionId: executionId,
+                        _preservedAt: Date.now()
+                      }
                       : {}, // Clear outputs for nodes that need re-execution
                     error: undefined, // Clear any previous errors
                     // CRITICAL: Clear stale execution results from previous iteration
