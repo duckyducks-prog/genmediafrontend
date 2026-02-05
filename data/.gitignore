@@ -1,7 +1,0 @@
-# Ignore all user workflow files
-workflows/*.json
-
-# But keep sample templates and structure
-!workflows/wf_*_demo*.json
-!workflows/index.json
-!workflows/.gitkeep

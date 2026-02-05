@@ -7,8 +7,8 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 WORKDIR /app
 
-COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev
+COPY pyproject.toml ./
+RUN UV_INDEX_URL=https://pypi.org/simple UV_EXTRA_INDEX_URL= uv sync --no-dev
 
 COPY app/ ./app/
 
