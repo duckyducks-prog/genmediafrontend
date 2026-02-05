@@ -8,7 +8,7 @@ The app now uses Firebase Authentication with Google Sign-in. Users must be auth
 
 ## Key Files
 
-### 1. `client/lib/firebase.ts`
+### 1. `src/lib/firebase.ts`
 
 Firebase configuration and auth utilities:
 
@@ -27,18 +27,18 @@ const ALLOWED_EMAILS = [
 ];
 ```
 
-### 2. `client/lib/AuthContext.tsx`
+### 2. `src/lib/AuthContext.tsx`
 
 React Context that provides auth state throughout the app:
 
 - `useAuth()` hook - Returns `{ user, loading }`
 - `AuthProvider` - Wraps the app to provide auth state
 
-### 3. `client/pages/Login.tsx`
+### 3. `src/pages/Login.tsx`
 
 Login page with Google sign-in button. Shown when user is not authenticated.
 
-### 4. `client/hooks/use-user-id.ts`
+### 4. `src/hooks/use-user-id.ts`
 
 Convenience hook to get the current user's ID for API calls.
 
@@ -114,7 +114,7 @@ The frontend checks the user's email immediately after Google sign-in:
 
 1. User clicks "Sign in with Google"
 2. Google authentication succeeds
-3. Email is checked against `ALLOWED_EMAILS` in `client/lib/firebase.ts`
+3. Email is checked against `ALLOWED_EMAILS` in `src/lib/firebase.ts`
 4. If email is NOT in the list:
    - User is immediately signed out
    - Error message is displayed: "Access denied. Your email is not authorized."
@@ -124,7 +124,7 @@ The frontend checks the user's email immediately after Google sign-in:
 
 To authorize a new user:
 
-1. Open `client/lib/firebase.ts`
+1. Open `src/lib/firebase.ts`
 2. Add their email (lowercase) to the `ALLOWED_EMAILS` array
 3. Save the file - changes take effect immediately
 
@@ -141,7 +141,7 @@ The Login page displays errors in two ways:
 
 ## Protected Routes
 
-The main Index page (`client/pages/Index.tsx`) is automatically protected:
+The main Index page (`src/pages/Index.tsx`) is automatically protected:
 
 - Shows loading spinner while checking auth state
 - Shows Login page if not authenticated

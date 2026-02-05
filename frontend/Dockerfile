@@ -61,9 +61,6 @@ RUN pnpm install --prod --frozen-lockfile && pnpm store prune
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
 
-# Create data directory for workflow storage (relative to dist/server)
-RUN mkdir -p /app/dist/data/workflows && chown -R nodejs:nodejs /app/dist/data
-
 # Switch to non-root user
 USER nodejs
 
@@ -76,10 +73,10 @@ EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT}/api/ping || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT}/ping || exit 1
 
 # Use dumb-init for proper PID 1 handling
 ENTRYPOINT ["dumb-init", "--"]
 
-# Start the server
+# Start the Express server
 CMD ["node", "dist/server/node-build.mjs"]

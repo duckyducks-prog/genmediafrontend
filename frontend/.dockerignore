@@ -1,0 +1,40 @@
+# Test files and directories
+tests/
+**/*.test.*
+**/*.spec.*
+**/__tests__/
+
+# Development files
+.env.test
+vitest.config.ts
+e2e/
+
+# Build artifacts
+dist/
+node_modules/
+.pnpm-store/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Documentation (optional - remove if you want docs in production)
+README.md
+docs/
+
+.git/
+.github/

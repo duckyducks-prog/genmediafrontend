@@ -27,7 +27,7 @@
 
 substitutions:
   _REGION: us-central1
-  _SERVICE_NAME: genmedia-frontend  # Override with genmedia-frontend-dev for dev deployments
+  _SERVICE_NAME: genmedia-frontend-refactor # Override with genmedia-frontend-dev for dev deployments
   _REPOSITORY: genmedia
   _IMAGE_TAG: latest
   _REQUIRE_AUTH: 'true'

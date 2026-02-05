@@ -11,11 +11,11 @@ export default defineConfig({
       // Load test environment variables
       ...process.env,
     },
-    setupFiles: process.env.VITE_MOCK_API === 'true' ? ['./e2e/setup-mocks.ts'] : [],
+    setupFiles: process.env.VITE_MOCK_API === 'true' ? ['./tests/e2e/setup-mocks.ts'] : [],
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './client'),
+      '@': path.resolve(__dirname, './src'),
       '@shared': path.resolve(__dirname, './shared'),
     },
   },
