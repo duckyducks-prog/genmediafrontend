@@ -1392,9 +1392,34 @@ async def replace_video_segment(
                     filter_parts.append(f"{base_audio_parts[0]},{audio_format_filter}[outa]")
                 include_audio = True
             elif request.audio_mode == "keep_base" and base_has_valid_audio:
-                # Keep base audio completely untouched - this preserves sync
-                # The key insight: don't modify the base audio timeline at all
-                filter_parts.append(f"[0:a]{audio_format_filter}[outa]")
+                # Keep base audio but properly align it with the modified video timeline
+                # We need to recreate the audio timeline to match the video segments
+                base_audio_parts = []
+                
+                if has_before:
+                    base_audio_parts.append(f"[0:a]atrim=0:{request.start_time},asetpts=PTS-STARTPTS")
+                
+                # For the replacement segment, we use silence from the base audio duration
+                # to maintain the original audio timeline structure
+                segment_duration = request.end_time - request.start_time
+                base_audio_parts.append(f"[0:a]atrim={request.start_time}:{request.end_time},asetpts=PTS-STARTPTS")
+                
+                if has_after:
+                    base_audio_parts.append(f"[0:a]atrim={request.end_time}:{base_duration},asetpts=PTS-STARTPTS")
+                
+                # Concatenate all base audio parts to match the video timeline
+                n_audio_segments = len(base_audio_parts)
+                if n_audio_segments > 1:
+                    # Create labeled outputs for each segment
+                    audio_segments = []
+                    for i, part in enumerate(base_audio_parts):
+                        filter_parts.append(f"{part}[aud{i}]")
+                        audio_segments.append(f"[aud{i}]")
+                    
+                    # Concatenate audio segments
+                    filter_parts.append(f"{''.join(audio_segments)}concat=n={n_audio_segments}:v=0:a=1,{audio_format_filter}[outa]")
+                else:
+                    filter_parts.append(f"{base_audio_parts[0]},{audio_format_filter}[outa]")
                 include_audio = True
             elif base_has_valid_audio:
                 # Fallback: use base audio
