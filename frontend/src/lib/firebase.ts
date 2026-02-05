@@ -56,11 +56,11 @@ export const signInWithGoogle = async () => {
     const result = await signInWithPopup(auth, googleProvider);
     const email = result.user.email?.toLowerCase();
 
-    // Check if email is allowed
-    if (!email || !ALLOWED_EMAILS.includes(email)) {
-      await signOut(auth);
-      throw new Error("Access denied. Your email is not authorized.");
-    }
+    // Email authorization check disabled - temporary until we replace with Okta/IAP
+    // if (!email || !ALLOWED_EMAILS.includes(email)) {
+    //   await signOut(auth);
+    //   throw new Error("Access denied. Your email is not authorized.");
+    // }
 
     return result;
   } catch (error) {
