@@ -138,27 +138,27 @@ function VideoWatermarkNode({ data, id }: NodeProps<VideoWatermarkNodeData>) {
 
         {/* Position - only for watermark mode */}
         {(data.mode || "watermark") === "watermark" && (
-        <div>
-          <label className="text-xs font-medium text-muted-foreground block mb-1">
-            Position
-          </label>
-          <Select
-            value={data.position}
-            onValueChange={(value) => handleUpdate("position", value)}
-            disabled={data.readOnly}
-          >
-            <SelectTrigger className="w-full h-9">
-              <SelectValue placeholder="Select position" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="top-left">Top Left</SelectItem>
-              <SelectItem value="top-right">Top Right</SelectItem>
-              <SelectItem value="bottom-left">Bottom Left</SelectItem>
-              <SelectItem value="bottom-right">Bottom Right</SelectItem>
-              <SelectItem value="center">Center</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground block mb-1">
+              Position
+            </label>
+            <Select
+              value={data.position}
+              onValueChange={(value) => handleUpdate("position", value)}
+              disabled={data.readOnly}
+            >
+              <SelectTrigger className="w-full h-9">
+                <SelectValue placeholder="Select position" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="top-left">Top Left</SelectItem>
+                <SelectItem value="top-right">Top Right</SelectItem>
+                <SelectItem value="bottom-left">Bottom Left</SelectItem>
+                <SelectItem value="bottom-right">Bottom Right</SelectItem>
+                <SelectItem value="center">Center</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         )}
 
         {/* Opacity */}
@@ -180,40 +180,40 @@ function VideoWatermarkNode({ data, id }: NodeProps<VideoWatermarkNodeData>) {
 
         {/* Scale - only for watermark mode */}
         {(data.mode || "watermark") === "watermark" && (
-        <div>
-          <label className="text-xs font-medium text-muted-foreground block mb-1">
-            Size: {Math.round(data.scale * 100)}%
-          </label>
-          <input
-            type="range"
-            min="5"
-            max="50"
-            value={data.scale * 100}
-            onChange={(e) => handleUpdate("scale", parseInt(e.target.value) / 100)}
-            onPointerDown={(e) => e.stopPropagation()}
-            disabled={data.readOnly}
-            className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer nodrag"
-          />
-        </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground block mb-1">
+              Size: {Math.round(data.scale * 100)}%
+            </label>
+            <input
+              type="range"
+              min="5"
+              max="50"
+              value={data.scale * 100}
+              onChange={(e) => handleUpdate("scale", parseInt(e.target.value) / 100)}
+              onPointerDown={(e) => e.stopPropagation()}
+              disabled={data.readOnly}
+              className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer nodrag"
+            />
+          </div>
         )}
 
         {/* Margin - only for watermark mode */}
         {(data.mode || "watermark") === "watermark" && (
-        <div>
-          <label className="text-xs font-medium text-muted-foreground block mb-1">
-            Margin: {data.margin}px
-          </label>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={data.margin}
-            onChange={(e) => handleUpdate("margin", parseInt(e.target.value))}
-            onPointerDown={(e) => e.stopPropagation()}
-            disabled={data.readOnly}
-            className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer nodrag"
-          />
-        </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground block mb-1">
+              Margin: {data.margin}px
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={data.margin}
+              onChange={(e) => handleUpdate("margin", parseInt(e.target.value))}
+              onPointerDown={(e) => e.stopPropagation()}
+              disabled={data.readOnly}
+              className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer nodrag"
+            />
+          </div>
         )}
       </div>
 
