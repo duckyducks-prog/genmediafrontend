@@ -3,6 +3,9 @@ set -e
 
 echo "🚀 Deploying GenMedia API to DEV..."
 
+# Configure uv to use public PyPI
+export UV_INDEX_URL="https://pypi.org/simple/"
+
 # Load development environment
 if [ ! -f .env.development ]; then
   echo "❌ Error: .env.development not found"

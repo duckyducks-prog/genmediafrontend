@@ -3,6 +3,9 @@ set -e
 
 echo "🚀 Deploying GenMedia API..."
 
+# Configure uv to use public PyPI
+export UV_INDEX_URL="https://pypi.org/simple/"
+
 # Production confirmation
 echo "⚠️  WARNING: This will deploy to PRODUCTION"
 read -p "Confirm production deployment? (yes/no): " confirm
