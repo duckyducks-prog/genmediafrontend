@@ -1290,22 +1290,20 @@ async def replace_video_segment(
                 # Loop replacement if shorter, trim if longer
                 if replacement_duration < segment_duration:
                     loop_count = int(segment_duration / replacement_duration) + 1
-                    replacement_filter = f"loop=loop={loop_count}:size=999999,trim=duration={segment_duration},setpts=PTS-STARTPTS"
+                    # Calculate frame count based on 30fps (safe estimate)
+                    # size = number of frames in the source video to loop
+                    estimated_frames = int(replacement_duration * 30) + 30  # Add buffer
+                    replacement_filter = f"loop=loop={loop_count}:size={estimated_frames},trim=duration={segment_duration},setpts=PTS-STARTPTS"
                 else:
                     replacement_filter = f"trim=duration={segment_duration},setpts=PTS-STARTPTS"
             else:  # trim (default)
-                # Use replacement as-is, trim if longer than segment
-                if replacement_duration > segment_duration:
-                    replacement_filter = f"trim=duration={segment_duration},setpts=PTS-STARTPTS"
-                else:
-                    replacement_filter = "setpts=PTS-STARTPTS"
+                # Use replacement as-is, but ALWAYS enforce exact duration for sync
+                # Even if durations appear equal, frame-rate differences can cause drift
+                replacement_filter = f"trim=duration={segment_duration},setpts=PTS-STARTPTS"
 
             output_path = os.path.join(tmpdir, "output.mp4")
-
-            # Build FFmpeg filter based on audio mode
-            # Split base video into: before (0 to start), after (end to duration)
-            # Insert replacement in the middle
-
+            
+            # Check segment boundaries
             has_before = request.start_time > 0
             has_after = request.end_time < base_duration
 
@@ -1318,147 +1316,167 @@ async def replace_video_segment(
             
             # Normalization filter: scale to base dimensions, set fps to 30, set pixel format
             normalize_filter = f"scale={base_width}:{base_height}:force_original_aspect_ratio=decrease,pad={base_width}:{base_height}:(ow-iw)/2:(oh-ih)/2,fps=30,format=yuv420p"
-
-            # Video filter chain - normalize all segments before concat
-            filter_parts = []
-            concat_inputs = []
-
-            if has_before:
-                filter_parts.append(f"[0:v]trim=0:{request.start_time},setpts=PTS-STARTPTS,{normalize_filter}[v_before]")
-                concat_inputs.append("[v_before]")
-
-            filter_parts.append(f"[1:v]{replacement_filter},{normalize_filter}[v_replace]")
-            concat_inputs.append("[v_replace]")
-
-            if has_after:
-                filter_parts.append(f"[0:v]trim={request.end_time}:{base_duration},setpts=PTS-STARTPTS,{normalize_filter}[v_after]")
-                concat_inputs.append("[v_after]")
-
-            n_segments = len(concat_inputs)
-            filter_parts.append(f"{''.join(concat_inputs)}concat=n={n_segments}:v=1:a=0[outv]")
-
-            # Audio filter chain - need to carefully handle timestamp alignment
-            include_audio = False
+            
             # Use consistent audio format and rate
             audio_format_filter = "aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo"
-            
-            if request.audio_mode == "keep_replacement" and replacement_has_valid_audio:
-                # Use only replacement audio, fitted to segment duration
-                if request.fit_mode == "stretch":
-                    # Stretch replacement audio to match segment duration
-                    speed_factor = replacement_duration / segment_duration if segment_duration > 0 else 1.0
-                    filter_parts.append(f"[1:a]atempo={speed_factor},{audio_format_filter}[outa]")
-                elif request.fit_mode == "loop" and replacement_duration < segment_duration:
-                    # Loop replacement audio
-                    loop_count = int(segment_duration / replacement_duration) + 1
-                    filter_parts.append(f"[1:a]aloop=loop={loop_count}:size=999999,atrim=duration={segment_duration},{audio_format_filter}[outa]")
-                else:
-                    # Use replacement as-is, trim if needed
-                    if replacement_duration > segment_duration:
-                        filter_parts.append(f"[1:a]atrim=duration={segment_duration},{audio_format_filter}[outa]")
-                    else:
-                        filter_parts.append(f"[1:a]{audio_format_filter}[outa]")
-                include_audio = True
-            elif request.audio_mode == "mix" and base_has_valid_audio and replacement_has_valid_audio:
-                # Mix audio - need to align replacement audio to the segment position
-                base_audio_parts = []
+
+            if request.audio_mode == "keep_base" and base_has_valid_audio:
+                logger.info("Using keep_base audio mode - continuous base audio, video-only edit")
+                logger.info(f"Segment duration: {segment_duration}s, Replacement video: {replacement_duration}s")
+                
+                # KEY CONCEPT: Like a video editing timeline
+                # - Audio track: ONE continuous uncut base audio stream
+                # - Video track: splice in replacement video (VIDEO ONLY, no audio from replacement)
+                
+                # Force replacement video to exactly match segment duration
+                replacement_video_filter = f"{replacement_filter},trim=duration={segment_duration},setpts=PTS-STARTPTS,{normalize_filter}"
+                
+                # Build video-only concat filter
+                video_filter_parts = []
+                video_concat_inputs = []
                 
                 if has_before:
-                    base_audio_parts.append(f"[0:a]atrim=0:{request.start_time},asetpts=PTS-STARTPTS")
+                    video_filter_parts.append(f"[0:v]trim=0:{request.start_time},setpts=PTS-STARTPTS,{normalize_filter}[v_before]")
+                    video_concat_inputs.append("[v_before]")
                 
-                # Process replacement audio for the segment
-                replacement_audio_filter = f"[1:a]"
-                if request.fit_mode == "stretch":
-                    speed_factor = replacement_duration / segment_duration if segment_duration > 0 else 1.0
-                    replacement_audio_filter += f"atempo={speed_factor},"
-                elif request.fit_mode == "loop" and replacement_duration < segment_duration:
-                    loop_count = int(segment_duration / replacement_duration) + 1
-                    replacement_audio_filter += f"aloop=loop={loop_count}:size=999999,atrim=duration={segment_duration},"
-                elif replacement_duration > segment_duration:
-                    replacement_audio_filter += f"atrim=duration={segment_duration},"
-                
-                replacement_audio_filter += "asetpts=PTS-STARTPTS"
-                base_audio_parts.append(replacement_audio_filter)
+                # Replacement video (VIDEO ONLY - no audio)
+                video_filter_parts.append(f"[1:v]{replacement_video_filter}[v_replace]")
+                video_concat_inputs.append("[v_replace]")
                 
                 if has_after:
-                    base_audio_parts.append(f"[0:a]atrim={request.end_time}:{base_duration},asetpts=PTS-STARTPTS")
+                    video_filter_parts.append(f"[0:v]trim={request.end_time}:{base_duration},setpts=PTS-STARTPTS,{normalize_filter}[v_after]")
+                    video_concat_inputs.append("[v_after]")
                 
-                # Concatenate all audio parts and format
-                n_audio_segments = len(base_audio_parts)
-                if n_audio_segments > 1:
-                    audio_concat = ";".join(base_audio_parts) + f";{''.join([f'[aud{i}]' for i in range(n_audio_segments)])}concat=n={n_audio_segments}:v=0:a=1[mixed_audio]"
-                    filter_parts.append(f"{audio_concat};[mixed_audio]{audio_format_filter}[outa]")
-                else:
-                    filter_parts.append(f"{base_audio_parts[0]},{audio_format_filter}[outa]")
-                include_audio = True
-            elif request.audio_mode == "keep_base" and base_has_valid_audio:
-                # Keep base audio but properly align it with the modified video timeline
-                # We need to recreate the audio timeline to match the video segments
-                base_audio_parts = []
+                n_video_segments = len(video_concat_inputs)
+                video_filter_parts.append(f"{''.join(video_concat_inputs)}concat=n={n_video_segments}:v=1:a=0[outv]")
                 
-                if has_before:
-                    base_audio_parts.append(f"[0:a]atrim=0:{request.start_time},asetpts=PTS-STARTPTS")
+                video_filter = ";".join(video_filter_parts)
                 
-                # For the replacement segment, we use silence from the base audio duration
-                # to maintain the original audio timeline structure
-                segment_duration = request.end_time - request.start_time
-                base_audio_parts.append(f"[0:a]atrim={request.start_time}:{request.end_time},asetpts=PTS-STARTPTS")
-                
-                if has_after:
-                    base_audio_parts.append(f"[0:a]atrim={request.end_time}:{base_duration},asetpts=PTS-STARTPTS")
-                
-                # Concatenate all base audio parts to match the video timeline
-                n_audio_segments = len(base_audio_parts)
-                if n_audio_segments > 1:
-                    # Create labeled outputs for each segment
-                    audio_segments = []
-                    for i, part in enumerate(base_audio_parts):
-                        filter_parts.append(f"{part}[aud{i}]")
-                        audio_segments.append(f"[aud{i}]")
-                    
-                    # Concatenate audio segments
-                    filter_parts.append(f"{''.join(audio_segments)}concat=n={n_audio_segments}:v=0:a=1,{audio_format_filter}[outa]")
-                else:
-                    filter_parts.append(f"{base_audio_parts[0]},{audio_format_filter}[outa]")
-                include_audio = True
-            elif base_has_valid_audio:
-                # Fallback: use base audio
-                filter_parts.append(f"[0:a]{audio_format_filter}[outa]")
-                include_audio = True
-            elif replacement_has_valid_audio:
-                # Fallback: use replacement audio
-                filter_parts.append(f"[1:a]{audio_format_filter}[outa]")
-                include_audio = True
+                # Simple approach: edit video, keep base audio as-is
+                cmd = [
+                    "ffmpeg", "-y",
+                    "-i", base_path,           # [0] - base video (use its audio uncut)
+                    "-i", replacement_path,    # [1] - replacement video (video only)
+                    "-filter_complex", video_filter,
+                    "-map", "[outv]",          # Use edited video track
+                    "-map", "0:a",             # Use ORIGINAL UNCUT base audio
+                    "-c:v", "libx264", "-preset", "fast", "-crf", "23",
+                    "-c:a", "aac", "-b:a", "128k",
+                    "-shortest",               # End when shortest stream ends
+                    "-movflags", "+faststart",
+                    output_path
+                ]
             else:
-                logger.info("No valid audio streams - output will be video-only")
+                # Fall back to original approach for other audio modes
+                # Video filter chain - normalize all segments before concat
+                filter_parts = []
+                concat_inputs = []
 
-            filter_complex = ";".join(filter_parts)
-            logger.info(f"Filter complex: {filter_complex}")
-            logger.info(f"Include audio in output: {include_audio}")
+                if has_before:
+                    filter_parts.append(f"[0:v]trim=0:{request.start_time},setpts=PTS-STARTPTS,{normalize_filter}[v_before]")
+                    concat_inputs.append("[v_before]")
 
-            # Build FFmpeg command
-            cmd = [
-                "ffmpeg", "-y",
-                "-i", base_path,
-                "-i", replacement_path,
-                "-filter_complex", filter_complex,
-                "-map", "[outv]",
-            ]
-            
-            # Only map audio if we have valid audio
-            if include_audio:
-                cmd.extend(["-map", "[outa]", "-c:a", "aac", "-b:a", "128k"])
-            
-            cmd.extend([
-                "-c:v", "libx264",
-                "-preset", "fast",
-                "-crf", "23",
-                "-movflags", "+faststart",
-                output_path
-            ])
+                filter_parts.append(f"[1:v]{replacement_filter},{normalize_filter}[v_replace]")
+                concat_inputs.append("[v_replace]")
+
+                if has_after:
+                    filter_parts.append(f"[0:v]trim={request.end_time}:{base_duration},setpts=PTS-STARTPTS,{normalize_filter}[v_after]")
+                    concat_inputs.append("[v_after]")
+
+                n_segments = len(concat_inputs)
+                filter_parts.append(f"{''.join(concat_inputs)}concat=n={n_segments}:v=1:a=0[outv]")
+
+                # Audio filter chain - need to carefully handle timestamp alignment
+                include_audio = False
+                
+                if request.audio_mode == "keep_replacement" and replacement_has_valid_audio:
+                    # Use only replacement audio, fitted to segment duration
+                    if request.fit_mode == "stretch":
+                        # Stretch replacement audio to match segment duration
+                        speed_factor = replacement_duration / segment_duration if segment_duration > 0 else 1.0
+                        filter_parts.append(f"[1:a]atempo={speed_factor},{audio_format_filter}[outa]")
+                    elif request.fit_mode == "loop" and replacement_duration < segment_duration:
+                        # Loop replacement audio
+                        loop_count = int(segment_duration / replacement_duration) + 1
+                        filter_parts.append(f"[1:a]aloop=loop={loop_count}:size=999999,atrim=duration={segment_duration},{audio_format_filter}[outa]")
+                    else:
+                        # Use replacement as-is, trim if needed
+                        if replacement_duration > segment_duration:
+                            filter_parts.append(f"[1:a]atrim=duration={segment_duration},{audio_format_filter}[outa]")
+                        else:
+                            filter_parts.append(f"[1:a]{audio_format_filter}[outa]")
+                    include_audio = True
+                elif request.audio_mode == "mix" and base_has_valid_audio and replacement_has_valid_audio:
+                    # Mix audio - need to align replacement audio to the segment position
+                    base_audio_parts = []
+                    
+                    if has_before:
+                        base_audio_parts.append(f"[0:a]atrim=0:{request.start_time},asetpts=PTS-STARTPTS")
+                    
+                    # Process replacement audio for the segment
+                    replacement_audio_filter = f"[1:a]"
+                    if request.fit_mode == "stretch":
+                        speed_factor = replacement_duration / segment_duration if segment_duration > 0 else 1.0
+                        replacement_audio_filter += f"atempo={speed_factor},"
+                    elif request.fit_mode == "loop" and replacement_duration < segment_duration:
+                        loop_count = int(segment_duration / replacement_duration) + 1
+                        replacement_audio_filter += f"aloop=loop={loop_count}:size=999999,atrim=duration={segment_duration},"
+                    elif replacement_duration > segment_duration:
+                        replacement_audio_filter += f"atrim=duration={segment_duration},"
+                    
+                    replacement_audio_filter += "asetpts=PTS-STARTPTS"
+                    base_audio_parts.append(replacement_audio_filter)
+                    
+                    if has_after:
+                        base_audio_parts.append(f"[0:a]atrim={request.end_time}:{base_duration},asetpts=PTS-STARTPTS")
+                    
+                    # Concatenate all audio parts and format
+                    n_audio_segments = len(base_audio_parts)
+                    if n_audio_segments > 1:
+                        audio_concat = ";".join(base_audio_parts) + f";{''.join([f'[aud{i}]' for i in range(n_audio_segments)])}concat=n={n_audio_segments}:v=0:a=1[mixed_audio]"
+                        filter_parts.append(f"{audio_concat};[mixed_audio]{audio_format_filter}[outa]")
+                    else:
+                        filter_parts.append(f"{base_audio_parts[0]},{audio_format_filter}[outa]")
+                    include_audio = True
+                elif base_has_valid_audio:
+                    # Fallback: use base audio
+                    filter_parts.append(f"[0:a]{audio_format_filter}[outa]")
+                    include_audio = True
+                elif replacement_has_valid_audio:
+                    # Fallback: use replacement audio
+                    filter_parts.append(f"[1:a]{audio_format_filter}[outa]")
+                    include_audio = True
+                else:
+                    logger.info("No valid audio streams - output will be video-only")
+
+                filter_complex = ";".join(filter_parts)
+                logger.info(f"Filter complex: {filter_complex}")
+                logger.info(f"Include audio in output: {include_audio}")
+
+                # Build FFmpeg command
+                cmd = [
+                    "ffmpeg", "-y",
+                    "-i", base_path,
+                    "-i", replacement_path,
+                    "-filter_complex", filter_complex,
+                    "-map", "[outv]",
+                ]
+                
+                # Only map audio if we have valid audio
+                if include_audio:
+                    cmd.extend(["-map", "[outa]", "-c:a", "aac", "-b:a", "128k"])
+                
+                cmd.extend([
+                    "-c:v", "libx264",
+                    "-preset", "fast",
+                    "-crf", "23",
+                    "-movflags", "+faststart",
+                    output_path
+                ])
 
             logger.info(f"Running ffmpeg segment replace")
-            logger.debug(f"Filter complex: {filter_complex}")
+            if 'filter_complex' in locals():
+                logger.debug(f"Filter complex: {filter_complex}")
 
             result = await run_ffmpeg_async(cmd)
 
