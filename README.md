@@ -19,19 +19,11 @@ GenMedia is a full-stack AI-powered media generation platform. It features a Fas
 
 ## Features
 - AI-powered image, video, and text generation (Google Gemini & Veo)
-- RESTful API backend (FastAPI)
+# GenMediaFrontend
 - Modern React/Vite frontend
 - Google Firebase authentication
 - Environment-based config (dev/prod)
 - Dockerized for local and cloud deployment
-- One-command deploy scripts for both frontend and backend
-- CORS and access control for secure environments
-
-## Architecture
-- **Backend:** FastAPI, Python 3.11+, Google Cloud, Firebase, Docker
-- **Frontend:** React, Vite, TypeScript, Firebase Auth, Docker
-- **Deployment:** Google Cloud Run, Cloud Build, Docker
-
 ## Quick Start
 ### Prerequisites
 - Python 3.11+
@@ -48,9 +40,6 @@ GenMedia is a full-stack AI-powered media generation platform. It features a Fas
    ```
 2. Install dependencies:
    ```bash
-   cd backend
-   uv pip install -r requirements.txt
-   ```
 3. Run locally:
    ```bash
    uvicorn app.main:app --reload
@@ -77,15 +66,10 @@ GenMedia is a full-stack AI-powered media generation platform. It features a Fas
   ```bash
   cd backend
   ./scripts/deploy.sh
-  # Choose dev or prod when prompted
   ```
 - **Frontend:**
-  ```bash
-  cd frontend
   ./scripts/deploy.sh
   # Choose dev or prod when prompted
-  ```
-- See [docs/DEPLOY.md](docs/DEPLOY.md) for advanced options.
 
 ## Environment Strategy
 - See [ENVIRONMENT_STRATEGY.md](ENVIRONMENT_STRATEGY.md) for details on dev/prod separation, CORS, and Firestore usage.
@@ -96,12 +80,7 @@ GenMedia is a full-stack AI-powered media generation platform. It features a Fas
 
 ## Troubleshooting
 - See `BACKEND_TROUBLESHOOTING.md` and `DEVELOPMENT_GUIDE.md` for common issues.
-- CORS errors: Ensure frontend and backend are deployed to matching environments and CORS origins are set correctly in `.env` files.
-
-## Contributing
-- Fork the repo, create a feature branch, and submit a PR.
 - Please include clear commit messages and update documentation as needed.
-
 ---
 
 For more, see the `docs/` folder and in-code comments.
