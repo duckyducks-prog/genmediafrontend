@@ -599,7 +599,9 @@ async def merge_videos(
                         filter_parts.append(f"[{i}:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[a{i}]")
                     else:
                         # Generate silent audio for videos without audio
-                        filter_parts.append(f"anullsrc=r=44100:cl=stereo[a{i}]")
+                        # Get video duration to match the silence length
+                        video_duration = float(video_infos[i].get("format", {}).get("duration", 1.0))
+                        filter_parts.append(f"anullsrc=r=44100:cl=stereo:d={video_duration}[a{i}]")
                     concat_inputs += f"[a{i}]"
 
             # Add concat filter
