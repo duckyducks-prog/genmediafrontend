@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from app.auth import get_current_user
 from app.logging_config import setup_logger
+from io import BytesIO
 
 logger = setup_logger(__name__)
 
@@ -267,6 +268,80 @@ def trim_video_to_point(video_path: str, trim_point: float, output_path: str) ->
     ]
 
     result = subprocess.run(trim_cmd, capture_output=True, text=True)
+
+
+def convert_svg_to_png(svg_bytes: bytes, output_path: str, width: Optional[int] = None, height: Optional[int] = None) -> bool:
+    """
+    Convert SVG bytes to PNG format using cairosvg.
+    
+    Args:
+        svg_bytes: Raw SVG file bytes
+        output_path: Path to save the PNG file
+        width: Optional target width (maintains aspect ratio if only width is provided)
+        height: Optional target height
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    try:
+        import cairosvg
+        from PIL import Image
+        
+        # Convert SVG to PNG in memory
+        png_bytes = cairosvg.svg2png(
+            bytestring=svg_bytes,
+            output_width=width,
+            output_height=height
+        )
+        
+        # Save PNG using PIL to ensure proper format
+        with Image.open(BytesIO(png_bytes)) as img:
+            # Convert to RGBA if not already
+            if img.mode != 'RGBA':
+                img = img.convert('RGBA')
+            img.save(output_path, 'PNG')
+        
+        logger.info(f"Successfully converted SVG to PNG: {output_path}")
+        return True
+        
+    except ImportError:
+        logger.error("SVG conversion not available. Please install cairosvg: pip install cairosvg")
+        raise HTTPException(
+            status_code=500,
+            detail="SVG conversion not available. Please install cairosvg: pip install cairosvg"
+        )
+    except Exception as e:
+        logger.error(f"Failed to convert SVG to PNG: {e}")
+        return False
+
+
+def detect_image_format(image_bytes: bytes) -> str:
+    """
+    Detect image format from bytes.
+    
+    Args:
+        image_bytes: Raw image file bytes
+        
+    Returns:
+        Format string: 'svg', 'png', 'jpg', 'jpeg', 'gif', or 'unknown'
+    """
+    # Check for SVG (XML-based)
+    if image_bytes.startswith(b'<svg') or image_bytes.startswith(b'<?xml') or b'<svg' in image_bytes[:200]:
+        return 'svg'
+    
+    # Check for PNG
+    if image_bytes.startswith(b'\x89PNG\r\n\x1a\n'):
+        return 'png'
+    
+    # Check for JPEG
+    if image_bytes.startswith(b'\xff\xd8\xff'):
+        return 'jpeg'
+    
+    # Check for GIF
+    if image_bytes.startswith(b'GIF87a') or image_bytes.startswith(b'GIF89a'):
+        return 'gif'
+    
+    return 'unknown'
 
     if result.returncode != 0:
         logger.warning(f"Trim failed for {video_path}: {get_ffmpeg_error(result.stderr)}")
@@ -1015,42 +1090,23 @@ async def add_watermark_to_video(
             else:
                 watermark_bytes = clean_base64(request.watermark_base64)
 
-            # Check if watermark is SVG and convert it
-            is_svg = watermark_bytes.startswith(b'<svg') or watermark_bytes.startswith(b'<?xml')
-            
+            # Detect image format
+            image_format = detect_image_format(watermark_bytes)
+            logger.info(f"Detected watermark format: {image_format}")
+
+            # Convert SVG to PNG if needed
             watermark_path = os.path.join(tmpdir, "watermark.png")
-            
-            if is_svg:
-                logger.info(f"SVG watermark detected ({len(watermark_bytes)} bytes), converting to PNG...")
-                try:
-                    from PIL import Image
-                    from io import BytesIO
-                    import cairosvg
-                    
-                    # Convert SVG to PNG using cairosvg
-                    png_bytes = cairosvg.svg2png(bytestring=watermark_bytes)
-                    
-                    # Save PNG
-                    with open(watermark_path, "wb") as f:
-                        f.write(png_bytes)
-                    logger.info(f"Successfully converted SVG to PNG: {len(png_bytes)} bytes")
-                    
-                except ImportError:
-                    raise HTTPException(
-                        status_code=400,
-                        detail="SVG conversion not available. Please install cairosvg: pip install cairosvg"
-                    )
-                except Exception as e:
-                    logger.error(f"Failed to convert SVG: {e}")
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"Failed to convert SVG watermark: {str(e)}"
-                    )
+            if image_format == 'svg':
+                logger.info("Converting SVG to PNG...")
+                success = convert_svg_to_png(watermark_bytes, watermark_path)
+                if not success:
+                    raise HTTPException(status_code=400, detail="Failed to convert SVG watermark to PNG")
             else:
-                # Not SVG - save as PNG directly
+                # Save as-is for other formats
                 with open(watermark_path, "wb") as f:
                     f.write(watermark_bytes)
-                logger.info(f"Saved watermark: {len(watermark_bytes)} bytes")
+            
+            logger.info(f"Saved watermark: {len(watermark_bytes)} bytes")
 
             # Probe watermark image for format info
             watermark_probe_cmd = ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", watermark_path]
