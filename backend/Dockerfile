@@ -3,12 +3,10 @@ FROM python:3.11-slim
 # Install ffmpeg for video/audio processing and system dependencies for cairosvg
 RUN apt-get update && apt-get install -y \
     ffmpeg \
-    libcairo2 \
-    libpango-1.0-0 \
-    libpangocairo-1.0-0 \
-    libgdk-pixbuf2.0-0 \
-    libffi-dev \
-    shared-mime-info \
+    libcairo2-dev \
+    libpango1.0-dev \
+    libgdk-pixbuf2.0-dev \
+    pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
