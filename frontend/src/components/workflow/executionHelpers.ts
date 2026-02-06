@@ -362,6 +362,26 @@ export function gatherNodeInputs(
     }
   });
 
+  // AUTO-INCLUDE FILTERS: When a source node provides video/image but filters travel on a separate handle,
+  // automatically include filters from that source node if no explicit filters edge exists.
+  // This allows a single wire (e.g., Noise video → Preview video) to carry both video and filters.
+  if (!inputs.filters) {
+    incomingEdges.forEach((edge) => {
+      const sourceNode = allNodes.find((n) => n.id === edge.source);
+      if (!sourceNode) return;
+      const sourceHandle = edge.sourceHandle || "default";
+      // Only auto-include filters when the edge carries video or image
+      if (sourceHandle === "video" || sourceHandle === "image") {
+        const sourceOutputs = sourceNode.data.outputs as Record<string, unknown> | undefined;
+        const sourceFilters = sourceOutputs?.filters || (sourceNode.data as unknown as Record<string, unknown>).filters;
+        if (Array.isArray(sourceFilters) && sourceFilters.length > 0) {
+          inputs.filters = sourceFilters;
+          logger.debug(`[gatherNodeInputs] ✓ Auto-included ${sourceFilters.length} filters from source node ${sourceNode.id} (via ${sourceHandle} edge)`);
+        }
+      }
+    });
+  }
+
   logger.debug(`[gatherNodeInputs] Final inputs keys:`, Object.keys(inputs));
   return inputs;
 }

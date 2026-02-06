@@ -2588,8 +2588,23 @@ export function useWorkflowExecution(
             };
           }
 
-          default:
-            return { success: true, data: {} };
+          default: {
+            // Pass through all inputs as outputs (covers Preview, Download, and other display nodes)
+            // This ensures video+filters data flows through to the node's data for useEffect to pick up
+            const passThrough: Record<string, any> = {};
+            if (inputs.image) passThrough.image = inputs.image;
+            if (inputs.video) passThrough.video = inputs.video;
+            if (inputs.text) passThrough.text = inputs.text;
+            if (inputs.filters) passThrough.filters = inputs.filters;
+
+            return {
+              success: true,
+              data: {
+                ...passThrough,
+                outputs: passThrough,
+              },
+            };
+          }
         }
       } catch (error) {
         return {
