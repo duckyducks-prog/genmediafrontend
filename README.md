@@ -31,7 +31,7 @@ GenMedia is a full-stack AI-powered media generation platform. It features a Fas
 - **Backend:** FastAPI, Python 3.11+, Google Cloud, Firebase, Docker
 - **Frontend:** React, Vite, TypeScript, Firebase Auth, Docker
 - **Deployment:** Google Cloud Run, Cloud Build, Docker
-## Quick Start
+## Quick Start 
 ### Prerequisites
 - Python 3.11+
 - Node.js 18+
@@ -67,11 +67,11 @@ GenMedia is a full-stack AI-powered media generation platform. It features a Fas
 2. Install dependencies:
    ```bash
    cd frontend
-   pnpm install
+   npm install
    ```
 3. Run locally:
    ```bash
-   pnpm dev
+   npm run dev
    ```
 
 ## Deployment
