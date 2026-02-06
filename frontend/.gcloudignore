@@ -1,0 +1,42 @@
+# Ignore node_modules and local dev files
+node_modules/
+.pnpm-store/
+
+# Ignore test files and folders
+tests/
+e2e/
+**/*.test.*
+**/*.spec.*
+**/__tests__/
+
+# Ignore build artifacts
+dist/
+build/
+.next/
+.output/
+
+# Ignore environment and config files not needed in build
+.env*
+!.env.production
+
+# Ignore IDE/editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore logs and temp files
+*.log
+logs/
+*.tmp
+*.temp
+
+# Ignore documentation and git
+README.md
+docs/
+.git/
+.github/
