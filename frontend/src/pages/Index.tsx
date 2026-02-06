@@ -30,6 +30,7 @@ import Login from "./Login";
 import { useToast } from "@/hooks/use-toast";
 import { WorkflowProvider } from "@/contexts/WorkflowContext";
 import { ThemeProvider } from "@/components/ui/theme-provider";
+import { SectionErrorBoundary } from "@/components/SectionErrorBoundary";
 
 export default function Index() {
   const { user, loading } = useAuth();
@@ -836,6 +837,7 @@ export default function Index() {
               </TabsContent>
 
               <TabsContent value="workflow" className="h-[calc(100vh-180px)]">
+                <SectionErrorBoundary sectionName="Workflow Canvas">
                 <WorkflowCanvas
                   ref={workflowCanvasRef}
                   onAssetGenerated={() => {
@@ -854,6 +856,7 @@ export default function Index() {
                     }
                   }}
                 />
+                </SectionErrorBoundary>
               </TabsContent>
             </Tabs>
           </div>

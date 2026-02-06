@@ -6,6 +6,7 @@ import {
   NodeType,
 } from "./types";
 import { API_ENDPOINTS } from "@/lib/api-config";
+import { calculateBackoff } from "@/lib/retry";
 
 /**
  * Resolve an asset reference (imageRef, videoRef) to a data URL
@@ -677,8 +678,13 @@ export async function pollVideoStatus(
   const { auth } = await import("@/lib/firebase");
 
   for (let attempts = 1; attempts <= maxAttempts; attempts++) {
-    // Wait 10 seconds between polls
-    await new Promise((resolve) => setTimeout(resolve, 10000));
+    // Wait with exponential backoff + jitter (5s → 20s)
+    const delay = calculateBackoff(attempts - 1, {
+      baseDelayMs: 5000,
+      maxDelayMs: 20000,
+      jitterFactor: 0.3,
+    });
+    await new Promise((resolve) => setTimeout(resolve, delay));
 
     if (onProgress) {
       onProgress(attempts);

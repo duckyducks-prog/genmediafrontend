@@ -2,6 +2,7 @@ import { logger } from "@/lib/logger";
 import { auth } from "./firebase";
 import { WorkflowNode, WorkflowEdge } from "@/components/workflow/types";
 import { API_ENDPOINTS } from "./api-config";
+import { parseApiError, parseNetworkError, isApiError } from "./api-error";
 
 // Workflow storage API - now using VEO backend directly
 // Previously used Express server at /api, now using VEO API at /v1/workflows
@@ -136,46 +137,11 @@ export function cleanWorkflowForSave(workflow: SavedWorkflow): SavedWorkflow {
 }
 
 /**
- * Centralized API error handler for consistent error messages
- * Maps HTTP status codes and error patterns to user-friendly messages
+ * Centralized API error handler — parses response into structured ApiError and throws.
+ * Handles all backend formats: AppError, HTTPException, Pydantic 422.
  */
 export async function handleApiError(response: Response): Promise<never> {
-  let errorDetail = "Unknown error";
-
-  try {
-    const body = await response.text();
-    const parsed = JSON.parse(body);
-    errorDetail = parsed.detail || parsed.message || body;
-  } catch {
-    // If not JSON, try to use status text
-    errorDetail = response.statusText || `HTTP ${response.status}`;
-  }
-
-  // Map status codes to user-friendly messages
-  switch (response.status) {
-    case 400:
-      throw new Error(`Validation error: ${errorDetail}`);
-    case 401:
-      throw new Error(
-        "Authentication failed. Please sign out and sign in again.",
-      );
-    case 403:
-      throw new Error(
-        "Access denied. You may not have permission to access this resource.",
-      );
-    case 404:
-      throw new Error(`Not found: ${errorDetail}`);
-    case 413:
-      throw new Error(`Request too large. ${errorDetail}`);
-    case 500:
-      throw new Error(`Server error. ${errorDetail}`);
-    case 503:
-      throw new Error(
-        "Backend service is temporarily unavailable. Please try again later.",
-      );
-    default:
-      throw new Error(`API error (${response.status}): ${errorDetail}`);
-  }
+  throw await parseApiError(response);
 }
 
 /**
@@ -425,56 +391,12 @@ export async function saveWorkflow(
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("[saveWorkflow] Error Response:", {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorText,
-        headers: Object.fromEntries(response.headers.entries()),
-      });
-
-      // Try to parse backend error message
-      try {
-        const errorJson = JSON.parse(errorText);
-        const message =
-          errorJson.detail ||
-          errorJson.message ||
-          `Server error: ${response.status}`;
-        throw new Error(message);
-      } catch (parseError) {
-        // If not JSON, use raw text
-        if (response.status === 404) {
-          throw new Error(
-            "Workflow API endpoint not found (404). The backend may not be properly deployed or the router is not mounted at /workflows.",
-          );
-        } else if (response.status === 401) {
-          throw new Error(
-            "Authentication failed (401). Please sign out and sign in again.",
-          );
-        } else if (response.status === 403) {
-          throw new Error(
-            "Access denied (403). You may not have permission to save workflows.",
-          );
-        } else if (response.status === 413) {
-          throw new Error(
-            `Payload too large (413). The workflow data exceeds server limits. Payload size: ${payloadSizeMB} MB`,
-          );
-        } else if (response.status >= 500) {
-          throw new Error(
-            `Backend server error (${response.status}): ${errorText.substring(0, 200)}`,
-          );
-        } else {
-          throw new Error(
-            `Failed to save workflow (${response.status}): ${errorText.substring(0, 200)}`,
-          );
-        }
-      }
+      throw await parseApiError(response);
     }
 
     const result = await response.json();
     logger.debug("[saveWorkflow] Success:", result);
 
-    // Validate response
     if (!result.id) {
       console.error("[saveWorkflow] Invalid response - missing id:", result);
       throw new Error("Backend returned invalid response: missing workflow ID");
@@ -482,26 +404,8 @@ export async function saveWorkflow(
 
     return result;
   } catch (error) {
-    // Network errors or fetch failures
-    if (error instanceof TypeError) {
-      if (error.message.includes("Failed to fetch")) {
-        console.error("[saveWorkflow] Network error:", error);
-        throw new Error(
-          "Cannot connect to backend API. Please check your internet connection or the API may be down.",
-        );
-      } else if (
-        error.message.includes("NetworkError") ||
-        error.message.includes("network")
-      ) {
-        console.error("[saveWorkflow] Network error:", error);
-        throw new Error(
-          "Network error occurred while saving workflow. Please try again.",
-        );
-      }
-    }
-
-    // Re-throw other errors as-is
-    throw error;
+    if (isApiError(error)) throw error;
+    throw parseNetworkError(error);
   }
 }
 
@@ -522,17 +426,22 @@ export async function updateWorkflow(
   // ✅ Strip resolved URLs before sending (keep asset refs)
   const cleanWorkflow = cleanWorkflowForSave(workflow);
 
-  const response = await fetch(API_ENDPOINTS.workflows.update(workflowId), {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(cleanWorkflow),
-  });
+  try {
+    const response = await fetch(API_ENDPOINTS.workflows.update(workflowId), {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(cleanWorkflow),
+    });
 
-  if (!response.ok) {
-    throw new Error(`Failed to update workflow: ${response.status}`);
+    if (!response.ok) {
+      throw await parseApiError(response);
+    }
+  } catch (error) {
+    if (isApiError(error)) throw error;
+    throw parseNetworkError(error);
   }
 }
 
@@ -547,17 +456,23 @@ export async function loadWorkflow(workflowId: string): Promise<SavedWorkflow> {
 
   const token = await user.getIdToken();
 
-  const response = await fetch(API_ENDPOINTS.workflows.get(workflowId), {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  let workflow: any;
+  try {
+    const response = await fetch(API_ENDPOINTS.workflows.get(workflowId), {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-  if (!response.ok) {
-    throw new Error(`Failed to load workflow: ${response.status}`);
+    if (!response.ok) {
+      throw await parseApiError(response);
+    }
+
+    workflow = await response.json();
+  } catch (error) {
+    if (isApiError(error)) throw error;
+    throw parseNetworkError(error);
   }
-
-  const workflow = await response.json();
 
   // Parse nodes/edges if they're stringified JSON
   let nodes = workflow.nodes;
@@ -638,30 +553,17 @@ export async function listMyWorkflows(): Promise<WorkflowListItem[]> {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("[listMyWorkflows] Error:", {
-        status: response.status,
-        body: errorText,
-      });
-      throw new Error(`Failed to list workflows: ${response.status}`);
+      throw await parseApiError(response);
     }
 
     const data = await response.json();
-
-    // ✅ List returns metadata only (no nodes/edges for performance)
     const workflows = (data.workflows || []) as WorkflowListItem[];
 
     logger.debug("[listMyWorkflows] Loaded", workflows.length, "workflows");
     return workflows;
   } catch (error) {
-    if (
-      error instanceof TypeError &&
-      error.message.includes("Failed to fetch")
-    ) {
-      console.error("[listMyWorkflows] Network error");
-      throw new Error("Cannot connect to backend API");
-    }
-    throw error;
+    if (isApiError(error)) throw error;
+    throw parseNetworkError(error);
   }
 }
 
@@ -693,30 +595,17 @@ export async function listPublicWorkflows(): Promise<WorkflowListItem[]> {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("[listPublicWorkflows] Error:", {
-        status: response.status,
-        body: errorText,
-      });
-      throw new Error(`Failed to list public workflows: ${response.status}`);
+      throw await parseApiError(response);
     }
 
     const data = await response.json();
-
-    // ✅ List returns metadata only (no nodes/edges for performance)
     const workflows = (data.workflows || []) as WorkflowListItem[];
 
     logger.debug("[listPublicWorkflows] Loaded", workflows.length, "templates");
     return workflows;
   } catch (error) {
-    if (
-      error instanceof TypeError &&
-      error.message.includes("Failed to fetch")
-    ) {
-      console.error("[listPublicWorkflows] Network error");
-      throw new Error("Cannot connect to backend API");
-    }
-    throw error;
+    if (isApiError(error)) throw error;
+    throw parseNetworkError(error);
   }
 }
 
@@ -731,15 +620,20 @@ export async function deleteWorkflow(workflowId: string): Promise<void> {
 
   const token = await user.getIdToken();
 
-  const response = await fetch(API_ENDPOINTS.workflows.delete(workflowId), {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  try {
+    const response = await fetch(API_ENDPOINTS.workflows.delete(workflowId), {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-  if (!response.ok) {
-    throw new Error(`Failed to delete workflow: ${response.status}`);
+    if (!response.ok) {
+      throw await parseApiError(response);
+    }
+  } catch (error) {
+    if (isApiError(error)) throw error;
+    throw parseNetworkError(error);
   }
 }
 
@@ -756,16 +650,21 @@ export async function cloneWorkflow(
 
   const token = await user.getIdToken();
 
-  const response = await fetch(API_ENDPOINTS.workflows.clone(workflowId), {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  try {
+    const response = await fetch(API_ENDPOINTS.workflows.clone(workflowId), {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-  if (!response.ok) {
-    throw new Error(`Failed to clone workflow: ${response.status}`);
+    if (!response.ok) {
+      throw await parseApiError(response);
+    }
+
+    return await response.json();
+  } catch (error) {
+    if (isApiError(error)) throw error;
+    throw parseNetworkError(error);
   }
-
-  return await response.json();
 }
