@@ -32,19 +32,26 @@ case $env_choice in
     ;;
 esac
 
-# Firebase config (same for both environments)
-VITE_FIREBASE_API_KEY="AIzaSyB-gawPKdKhQ4AcmqmWKRtKZo4rAmYzthU"
-VITE_FIREBASE_AUTH_DOMAIN="genmediastudio.firebaseapp.com"
-VITE_FIREBASE_PROJECT_ID="genmediastudio"
-VITE_FIREBASE_STORAGE_BUCKET="genmediastudio.firebasestorage.app"
-VITE_FIREBASE_MESSAGING_SENDER_ID="856765593724"
-VITE_FIREBASE_APP_ID="1:856765593724:web:2d56922818e4dd876ff1f9"
-VITE_FIREBASE_MEASUREMENT_ID="G-M4801D5V62"
+# Load environment variables from .env.local
+if [ -f .env.local ]; then
+  echo "Loading environment variables from .env.local..."
+  set -a
+  source .env.local
+  set +a
+else
+  echo "⚠️  .env.local file not found! Firebase config and other env vars may be missing."
+fi
 
 echo "📋 Deployment config:"
 echo "  Environment: $ENVIRONMENT"
 echo "  Service Name: $SERVICE_NAME"
 echo "  API Base URL: $API_BASE_URL"
+echo "  Firebase Project ID: $VITE_FIREBASE_PROJECT_ID"
+echo "  Firebase Auth Domain: $VITE_FIREBASE_AUTH_DOMAIN"
+echo "  Firebase Storage Bucket: $VITE_FIREBASE_STORAGE_BUCKET"
+echo "  Firebase Messaging Sender ID: $VITE_FIREBASE_MESSAGING_SENDER_ID"
+echo "  Firebase App ID: $VITE_FIREBASE_APP_ID"
+echo "  Firebase Measurement ID: $VITE_FIREBASE_MEASUREMENT_ID"
 
 # Deploy with Cloud Build
 gcloud builds submit --config cloudbuild.yaml \
