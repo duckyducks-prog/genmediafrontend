@@ -86,48 +86,70 @@ import VideoSegmentReplaceNode from "./nodes/VideoSegmentReplaceNode";
 import StickyNoteNode from "./nodes/StickyNoteNode";
 import TextOutputNode from "./nodes/TextOutputNode";
 import ScriptQueueNode from "./nodes/ScriptQueueNode";
+import NodeErrorFallback from "./nodes/NodeErrorFallback";
+import { SectionErrorBoundary } from "@/components/SectionErrorBoundary";
+
+/**
+ * Wraps a React Flow node component with an error boundary.
+ * If the node crashes, the fallback preserves Handle elements so edges stay connected.
+ */
+function withNodeErrorBoundary(
+  NodeComponent: React.ComponentType<any>,
+  nodeType: string,
+) {
+  const WrappedNode = (props: any) => (
+    <SectionErrorBoundary
+      sectionName={nodeType}
+      fallback={<NodeErrorFallback nodeType={nodeType} />}
+    >
+      <NodeComponent {...props} />
+    </SectionErrorBoundary>
+  );
+  WrappedNode.displayName = `Guarded(${nodeType})`;
+  return WrappedNode;
+}
 
 const nodeTypes: NodeTypes = {
   // Input nodes
-  [NodeType.Prompt]: PromptInputNode,
-  [NodeType.ImageInput]: ImageUploadNode,
-  [NodeType.VideoInput]: VideoUploadNode,
-  [NodeType.ScriptQueue]: ScriptQueueNode,
+  [NodeType.Prompt]: withNodeErrorBoundary(PromptInputNode, NodeType.Prompt),
+  [NodeType.ImageInput]: withNodeErrorBoundary(ImageUploadNode, NodeType.ImageInput),
+  [NodeType.VideoInput]: withNodeErrorBoundary(VideoUploadNode, NodeType.VideoInput),
+  [NodeType.ScriptQueue]: withNodeErrorBoundary(ScriptQueueNode, NodeType.ScriptQueue),
 
   // Modifier nodes
-  [NodeType.PromptConcatenator]: PromptConcatenatorNode,
-  [NodeType.TextIterator]: TextIteratorNode,
-  [NodeType.BrightnessContrast]: BrightnessContrastNode,
-  [NodeType.Blur]: BlurNode,
-  [NodeType.Sharpen]: SharpenNode,
-  [NodeType.HueSaturation]: HueSaturationNode,
-  [NodeType.Noise]: NoiseNode,
-  [NodeType.FilmGrain]: FilmGrainNode,
-  [NodeType.Vignette]: VignetteNode,
-  [NodeType.Crop]: CropNode,
-  [NodeType.ImageComposite]: ImageCompositeNode,
-  [NodeType.ExtractLastFrame]: ExtractLastFrameNode,
-  [NodeType.VideoWatermark]: VideoWatermarkNode,
-  [NodeType.VideoSegmentReplace]: VideoSegmentReplaceNode,
+  [NodeType.PromptConcatenator]: withNodeErrorBoundary(PromptConcatenatorNode, NodeType.PromptConcatenator),
+  [NodeType.TextIterator]: withNodeErrorBoundary(TextIteratorNode, NodeType.TextIterator),
+  [NodeType.BrightnessContrast]: withNodeErrorBoundary(BrightnessContrastNode, NodeType.BrightnessContrast),
+  [NodeType.Blur]: withNodeErrorBoundary(BlurNode, NodeType.Blur),
+  [NodeType.Sharpen]: withNodeErrorBoundary(SharpenNode, NodeType.Sharpen),
+  [NodeType.HueSaturation]: withNodeErrorBoundary(HueSaturationNode, NodeType.HueSaturation),
+  [NodeType.Noise]: withNodeErrorBoundary(NoiseNode, NodeType.Noise),
+  [NodeType.FilmGrain]: withNodeErrorBoundary(FilmGrainNode, NodeType.FilmGrain),
+  [NodeType.Vignette]: withNodeErrorBoundary(VignetteNode, NodeType.Vignette),
+  [NodeType.Crop]: withNodeErrorBoundary(CropNode, NodeType.Crop),
+  [NodeType.ImageComposite]: withNodeErrorBoundary(ImageCompositeNode, NodeType.ImageComposite),
+  [NodeType.ExtractLastFrame]: withNodeErrorBoundary(ExtractLastFrameNode, NodeType.ExtractLastFrame),
+  [NodeType.VideoWatermark]: withNodeErrorBoundary(VideoWatermarkNode, NodeType.VideoWatermark),
+  [NodeType.VideoSegmentReplace]: withNodeErrorBoundary(VideoSegmentReplaceNode, NodeType.VideoSegmentReplace),
 
   // Action nodes
-  [NodeType.GenerateImage]: GenerateImageNode,
-  [NodeType.GenerateVideo]: GenerateVideoNode,
-  [NodeType.GenerateMusic]: GenerateMusicNode,
-  [NodeType.VoiceChanger]: VoiceChangerNode,
-  [NodeType.MergeVideos]: MergeVideosNode,
-  [NodeType.AddMusicToVideo]: AddMusicToVideoNode,
-  [NodeType.LLM]: LLMNode,
-  [NodeType.Preview]: PreviewNode,
-  [NodeType.Download]: DownloadNode,
+  [NodeType.GenerateImage]: withNodeErrorBoundary(GenerateImageNode, NodeType.GenerateImage),
+  [NodeType.GenerateVideo]: withNodeErrorBoundary(GenerateVideoNode, NodeType.GenerateVideo),
+  [NodeType.GenerateMusic]: withNodeErrorBoundary(GenerateMusicNode, NodeType.GenerateMusic),
+  [NodeType.VoiceChanger]: withNodeErrorBoundary(VoiceChangerNode, NodeType.VoiceChanger),
+  [NodeType.MergeVideos]: withNodeErrorBoundary(MergeVideosNode, NodeType.MergeVideos),
+  [NodeType.AddMusicToVideo]: withNodeErrorBoundary(AddMusicToVideoNode, NodeType.AddMusicToVideo),
+  [NodeType.LLM]: withNodeErrorBoundary(LLMNode, NodeType.LLM),
+  [NodeType.Preview]: withNodeErrorBoundary(PreviewNode, NodeType.Preview),
+  [NodeType.Download]: withNodeErrorBoundary(DownloadNode, NodeType.Download),
 
   // Output nodes
-  [NodeType.ImageOutput]: ImageOutputNode,
-  [NodeType.VideoOutput]: VideoOutputNode,
-  [NodeType.TextOutput]: TextOutputNode,
+  [NodeType.ImageOutput]: withNodeErrorBoundary(ImageOutputNode, NodeType.ImageOutput),
+  [NodeType.VideoOutput]: withNodeErrorBoundary(VideoOutputNode, NodeType.VideoOutput),
+  [NodeType.TextOutput]: withNodeErrorBoundary(TextOutputNode, NodeType.TextOutput),
 
   // Documentation/Utility nodes
-  [NodeType.StickyNote]: StickyNoteNode,
+  [NodeType.StickyNote]: withNodeErrorBoundary(StickyNoteNode, NodeType.StickyNote),
 };
 
 export interface WorkflowCanvasRef {

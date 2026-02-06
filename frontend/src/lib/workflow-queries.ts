@@ -25,6 +25,9 @@ import {
   WorkflowListItem,
 } from "./workflow-api";
 import { useAuth } from "./AuthContext";
+import { isApiError } from "./api-error";
+import { logger } from "./logger";
+import { toast } from "sonner";
 
 // Query keys for cache management
 export const workflowKeys = {
@@ -113,15 +116,17 @@ export function useSaveWorkflow() {
   return useMutation({
     mutationFn: saveWorkflow,
     onSuccess: (result) => {
-      // Invalidate the list so it refetches
       queryClient.invalidateQueries({ queryKey: workflowKeys.myList() });
-
-      // Optionally prefetch the new workflow
       if (result.id) {
         queryClient.invalidateQueries({
           queryKey: workflowKeys.detail(result.id),
         });
       }
+    },
+    onError: (error: unknown) => {
+      const msg = isApiError(error) ? error.message : String(error);
+      logger.error("[useSaveWorkflow] Failed:", error);
+      toast.error("Failed to save workflow", { description: msg });
     },
   });
 }
@@ -142,12 +147,15 @@ export function useUpdateWorkflow() {
       workflow: SavedWorkflow;
     }) => updateWorkflow(workflowId, workflow),
     onSuccess: (_, variables) => {
-      // Invalidate the specific workflow
       queryClient.invalidateQueries({
         queryKey: workflowKeys.detail(variables.workflowId),
       });
-      // Invalidate the list (metadata might have changed)
       queryClient.invalidateQueries({ queryKey: workflowKeys.myList() });
+    },
+    onError: (error: unknown) => {
+      const msg = isApiError(error) ? error.message : String(error);
+      logger.error("[useUpdateWorkflow] Failed:", error);
+      toast.error("Failed to update workflow", { description: msg });
     },
   });
 }
@@ -161,12 +169,42 @@ export function useDeleteWorkflow() {
 
   return useMutation({
     mutationFn: deleteWorkflow,
-    onSuccess: (_, workflowId) => {
-      // Remove the specific workflow from cache
+    onMutate: async (workflowId) => {
+      // Cancel outgoing refetches to avoid overwriting optimistic update
+      await queryClient.cancelQueries({ queryKey: workflowKeys.myList() });
+
+      // Snapshot previous value for rollback
+      const previousWorkflows = queryClient.getQueryData<WorkflowListItem[]>(
+        workflowKeys.myList(),
+      );
+
+      // Optimistically remove from list
+      if (previousWorkflows) {
+        queryClient.setQueryData<WorkflowListItem[]>(
+          workflowKeys.myList(),
+          previousWorkflows.filter((w) => w.id !== workflowId),
+        );
+      }
+
+      return { previousWorkflows };
+    },
+    onError: (error: unknown, _workflowId, context) => {
+      // Rollback on failure
+      if (context?.previousWorkflows) {
+        queryClient.setQueryData(
+          workflowKeys.myList(),
+          context.previousWorkflows,
+        );
+      }
+      const msg = isApiError(error) ? error.message : String(error);
+      logger.error("[useDeleteWorkflow] Failed:", error);
+      toast.error("Failed to delete workflow", { description: msg });
+    },
+    onSettled: (_, __, workflowId) => {
+      // Always refetch for consistency
       queryClient.removeQueries({
         queryKey: workflowKeys.detail(workflowId),
       });
-      // Invalidate the list
       queryClient.invalidateQueries({ queryKey: workflowKeys.myList() });
     },
   });
@@ -182,8 +220,12 @@ export function useCloneWorkflow() {
   return useMutation({
     mutationFn: cloneWorkflow,
     onSuccess: () => {
-      // Invalidate the list to show the new clone
       queryClient.invalidateQueries({ queryKey: workflowKeys.myList() });
+    },
+    onError: (error: unknown) => {
+      const msg = isApiError(error) ? error.message : String(error);
+      logger.error("[useCloneWorkflow] Failed:", error);
+      toast.error("Failed to clone workflow", { description: msg });
     },
   });
 }
