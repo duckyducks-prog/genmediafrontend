@@ -622,7 +622,7 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
     ],
   },
 
-  // ========== IMAGE MODIFIER NODES (PixiJS filters) ==========
+  // ========== IMAGE/VIDEO MODIFIER NODES (PixiJS for images, FFmpeg for video) ==========
   [NodeType.BrightnessContrast]: {
     type: NodeType.BrightnessContrast,
     label: "Brightness/Contrast",
@@ -633,42 +633,14 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "image",
         label: "Image",
         type: ConnectorType.Image,
-        required: true,
-        acceptsMultiple: false,
-      },
-      {
-        id: "filters",
-        label: "Filters",
-        type: ConnectorType.Any, // Array of FilterConfig
         required: false,
         acceptsMultiple: false,
       },
-    ],
-    outputConnectors: [
       {
-        id: "image",
-        label: "Image",
-        type: ConnectorType.Image, // Pass-through original
-      },
-      {
-        id: "filters",
-        label: "Filters",
-        type: ConnectorType.Any, // Updated filter config array
-      },
-    ],
-  },
-
-  [NodeType.Blur]: {
-    type: NodeType.Blur,
-    label: "Blur",
-    category: "modifier",
-    description: "Apply Gaussian blur",
-    inputConnectors: [
-      {
-        id: "image",
-        label: "Image",
-        type: ConnectorType.Image,
-        required: true,
+        id: "video",
+        label: "Video",
+        type: ConnectorType.Video,
+        required: false,
         acceptsMultiple: false,
       },
       {
@@ -684,6 +656,58 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "image",
         label: "Image",
         type: ConnectorType.Image,
+      },
+      {
+        id: "video",
+        label: "Video",
+        type: ConnectorType.Video,
+      },
+      {
+        id: "filters",
+        label: "Filters",
+        type: ConnectorType.Any,
+      },
+    ],
+  },
+
+  [NodeType.Blur]: {
+    type: NodeType.Blur,
+    label: "Blur",
+    category: "modifier",
+    description: "Apply Gaussian blur",
+    inputConnectors: [
+      {
+        id: "image",
+        label: "Image",
+        type: ConnectorType.Image,
+        required: false,
+        acceptsMultiple: false,
+      },
+      {
+        id: "video",
+        label: "Video",
+        type: ConnectorType.Video,
+        required: false,
+        acceptsMultiple: false,
+      },
+      {
+        id: "filters",
+        label: "Filters",
+        type: ConnectorType.Any,
+        required: false,
+        acceptsMultiple: false,
+      },
+    ],
+    outputConnectors: [
+      {
+        id: "image",
+        label: "Image",
+        type: ConnectorType.Image,
+      },
+      {
+        id: "video",
+        label: "Video",
+        type: ConnectorType.Video,
       },
       {
         id: "filters",
@@ -703,7 +727,14 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "image",
         label: "Image",
         type: ConnectorType.Image,
-        required: true,
+        required: false,
+        acceptsMultiple: false,
+      },
+      {
+        id: "video",
+        label: "Video",
+        type: ConnectorType.Video,
+        required: false,
         acceptsMultiple: false,
       },
       {
@@ -719,6 +750,11 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "image",
         label: "Image",
         type: ConnectorType.Image,
+      },
+      {
+        id: "video",
+        label: "Video",
+        type: ConnectorType.Video,
       },
       {
         id: "filters",
@@ -738,7 +774,14 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "image",
         label: "Image",
         type: ConnectorType.Image,
-        required: true,
+        required: false,
+        acceptsMultiple: false,
+      },
+      {
+        id: "video",
+        label: "Video",
+        type: ConnectorType.Video,
+        required: false,
         acceptsMultiple: false,
       },
       {
@@ -754,6 +797,11 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "image",
         label: "Image",
         type: ConnectorType.Image,
+      },
+      {
+        id: "video",
+        label: "Video",
+        type: ConnectorType.Video,
       },
       {
         id: "filters",
@@ -773,7 +821,14 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "image",
         label: "Image",
         type: ConnectorType.Image,
-        required: true,
+        required: false,
+        acceptsMultiple: false,
+      },
+      {
+        id: "video",
+        label: "Video",
+        type: ConnectorType.Video,
+        required: false,
         acceptsMultiple: false,
       },
       {
@@ -789,6 +844,11 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "image",
         label: "Image",
         type: ConnectorType.Image,
+      },
+      {
+        id: "video",
+        label: "Video",
+        type: ConnectorType.Video,
       },
       {
         id: "filters",
@@ -808,7 +868,14 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "image",
         label: "Image",
         type: ConnectorType.Image,
-        required: true,
+        required: false,
+        acceptsMultiple: false,
+      },
+      {
+        id: "video",
+        label: "Video",
+        type: ConnectorType.Video,
+        required: false,
         acceptsMultiple: false,
       },
       {
@@ -824,6 +891,11 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "image",
         label: "Image",
         type: ConnectorType.Image,
+      },
+      {
+        id: "video",
+        label: "Video",
+        type: ConnectorType.Video,
       },
       {
         id: "filters",
@@ -843,7 +915,14 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "image",
         label: "Image",
         type: ConnectorType.Image,
-        required: true,
+        required: false,
+        acceptsMultiple: false,
+      },
+      {
+        id: "video",
+        label: "Video",
+        type: ConnectorType.Video,
+        required: false,
         acceptsMultiple: false,
       },
       {
@@ -859,6 +938,11 @@ export const NODE_CONFIGURATIONS: Record<NodeType, NodeConfiguration> = {
         id: "image",
         label: "Image",
         type: ConnectorType.Image,
+      },
+      {
+        id: "video",
+        label: "Video",
+        type: ConnectorType.Video,
       },
       {
         id: "filters",

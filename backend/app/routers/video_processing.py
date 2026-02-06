@@ -1015,10 +1015,42 @@ async def add_watermark_to_video(
             else:
                 watermark_bytes = clean_base64(request.watermark_base64)
 
+            # Check if watermark is SVG and convert it
+            is_svg = watermark_bytes.startswith(b'<svg') or watermark_bytes.startswith(b'<?xml')
+            
             watermark_path = os.path.join(tmpdir, "watermark.png")
-            with open(watermark_path, "wb") as f:
-                f.write(watermark_bytes)
-            logger.info(f"Saved watermark: {len(watermark_bytes)} bytes")
+            
+            if is_svg:
+                logger.info(f"SVG watermark detected ({len(watermark_bytes)} bytes), converting to PNG...")
+                try:
+                    from PIL import Image
+                    from io import BytesIO
+                    import cairosvg
+                    
+                    # Convert SVG to PNG using cairosvg
+                    png_bytes = cairosvg.svg2png(bytestring=watermark_bytes)
+                    
+                    # Save PNG
+                    with open(watermark_path, "wb") as f:
+                        f.write(png_bytes)
+                    logger.info(f"Successfully converted SVG to PNG: {len(png_bytes)} bytes")
+                    
+                except ImportError:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="SVG conversion not available. Please install cairosvg: pip install cairosvg"
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to convert SVG: {e}")
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Failed to convert SVG watermark: {str(e)}"
+                    )
+            else:
+                # Not SVG - save as PNG directly
+                with open(watermark_path, "wb") as f:
+                    f.write(watermark_bytes)
+                logger.info(f"Saved watermark: {len(watermark_bytes)} bytes")
 
             # Probe watermark image for format info
             watermark_probe_cmd = ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", watermark_path]
@@ -1328,8 +1360,23 @@ async def replace_video_segment(
                 # - Audio track: ONE continuous uncut base audio stream
                 # - Video track: splice in replacement video (VIDEO ONLY, no audio from replacement)
                 
-                # Force replacement video to exactly match segment duration
-                replacement_video_filter = f"{replacement_filter},trim=duration={segment_duration},setpts=PTS-STARTPTS,{normalize_filter}"
+                # CRITICAL: Video concat must match base duration exactly for sync
+                # In keep_base mode, we MUST ensure replacement is exactly segment_duration
+                # regardless of fit_mode setting
+                if replacement_duration < segment_duration:
+                    # Replacement too short - pad by freezing last frame
+                    pad_duration = segment_duration - replacement_duration
+                    logger.info(f"Padding replacement video: adding {pad_duration}s to reach {segment_duration}s")
+                    # Don't trim first - just pad to exact duration
+                    replacement_video_filter = f"setpts=PTS-STARTPTS,tpad=stop_mode=clone:stop_duration={pad_duration},{normalize_filter}"
+                elif replacement_duration > segment_duration:
+                    # Replacement too long - trim to exact duration
+                    logger.info(f"Trimming replacement video: {replacement_duration}s → {segment_duration}s")
+                    replacement_video_filter = f"trim=duration={segment_duration},setpts=PTS-STARTPTS,{normalize_filter}"
+                else:
+                    # Exact match - just normalize
+                    logger.info(f"Replacement video matches segment duration exactly: {segment_duration}s")
+                    replacement_video_filter = f"setpts=PTS-STARTPTS,{normalize_filter}"
                 
                 # Build video-only concat filter
                 video_filter_parts = []

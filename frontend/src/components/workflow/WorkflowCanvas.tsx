@@ -268,6 +268,7 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
                   targetType: targetNode.type,
                   propagatedData: {
                     hasImage: !!allOutputs.image,
+                    hasVideo: !!allOutputs.video,
                     filterCount: allOutputs.filters?.length || 0,
                   },
                 });
