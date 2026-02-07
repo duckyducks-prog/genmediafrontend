@@ -503,7 +503,6 @@ export function useWorkflowExecution(
               );
               try {
                 // Get the asset info to get the GCS URL
-                const { auth } = await import("@/lib/firebase");
                 const user = auth.currentUser;
                 const token = await user?.getIdToken();
 

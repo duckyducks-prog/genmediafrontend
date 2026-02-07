@@ -7,6 +7,7 @@ import {
 } from "./types";
 import { API_ENDPOINTS } from "@/lib/api-config";
 import { calculateBackoff } from "@/lib/retry";
+import { auth } from "@/lib/firebase";
 
 /**
  * Resolve an asset reference (imageRef, videoRef) to a data URL
@@ -16,10 +17,6 @@ export async function resolveAssetToDataUrl(assetRef: string): Promise<string> {
   logger.debug("[resolveAssetToDataUrl] Resolving asset:", assetRef);
 
   try {
-    // Import dynamically to avoid circular dependencies
-    const { auth } = await import("@/lib/firebase");
-
-    // Get asset metadata from library
     const user = auth.currentUser;
     const token = await user?.getIdToken();
 
@@ -735,9 +732,6 @@ export async function pollVideoStatus(
   // Track consecutive 500 errors to detect persistent backend issues
   let consecutive500Errors = 0;
   const MAX_CONSECUTIVE_500 = 5;
-
-  // Import auth dynamically to avoid circular dependencies
-  const { auth } = await import("@/lib/firebase");
 
   for (let attempts = 1; attempts <= maxAttempts; attempts++) {
     // Wait with exponential backoff + jitter (5s → 20s)
