@@ -47,12 +47,6 @@ GenMedia is a full-stack AI-powered media generation platform. It features a Fas
    ```
 2. Install dependencies:
    ```bash
-<<<<<<< HEAD
-   cd backend
-   uv pip install -r requirements.txt
-   ```
-=======
->>>>>>> cc6608a0b55db447dc76095c251142b59f6ed6a1
 3. Run locally:
    ```bash
    uvicorn app.main:app --reload
@@ -79,22 +73,10 @@ GenMedia is a full-stack AI-powered media generation platform. It features a Fas
   ```bash
   cd backend
   ./scripts/deploy.sh
-<<<<<<< HEAD
-  # Choose dev or prod when prompted
-  ```
-- **Frontend:**
-  ```bash
-  cd frontend
-  ./scripts/deploy.sh
-  # Choose dev or prod when prompted
-  ```
-- See [docs/DEPLOY.md](docs/DEPLOY.md) for advanced options.
-=======
   ```
 - **Frontend:**
   ./scripts/deploy.sh
   # Choose dev or prod when prompted
->>>>>>> cc6608a0b55db447dc76095c251142b59f6ed6a1
 
 ## Environment Strategy
 - See [ENVIRONMENT_STRATEGY.md](ENVIRONMENT_STRATEGY.md) for details on dev/prod separation, CORS, and Firestore usage.
@@ -105,16 +87,7 @@ GenMedia is a full-stack AI-powered media generation platform. It features a Fas
 
 ## Troubleshooting
 - See `BACKEND_TROUBLESHOOTING.md` and `DEVELOPMENT_GUIDE.md` for common issues.
-<<<<<<< HEAD
-- CORS errors: Ensure frontend and backend are deployed to matching environments and CORS origins are set correctly in `.env` files.
-
-## Contributing
-- Fork the repo, create a feature branch, and submit a PR.
 - Please include clear commit messages and update documentation as needed.
-
-=======
-- Please include clear commit messages and update documentation as needed.
->>>>>>> cc6608a0b55db447dc76095c251142b59f6ed6a1
 ---
 
 For more, see the `docs/` folder and in-code comments.
