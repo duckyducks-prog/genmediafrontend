@@ -400,18 +400,18 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               const newData =
                 assetType === "video"
                   ? {
-                      ...node.data,
-                      videoUrl: url,
-                      videoRef: assetId,
-                      thumbnailUrl: url,
-                      outputs: { video: url },
-                    }
+                    ...node.data,
+                    videoUrl: url,
+                    videoRef: assetId,
+                    thumbnailUrl: url,
+                    outputs: { video: url },
+                  }
                   : {
-                      ...node.data,
-                      imageUrl: url,
-                      imageRef: assetId,
-                      outputs: { image: url },
-                    };
+                    ...node.data,
+                    imageUrl: url,
+                    imageRef: assetId,
+                    outputs: { image: url },
+                  };
 
               // Dispatch node update event
               setTimeout(() => {
@@ -583,13 +583,13 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               nds.map((node) =>
                 node.id === params.target
                   ? {
-                      ...node,
-                      data: {
-                        ...node.data,
-                        ...allOutputs, // Merge all outputs
-                        error: undefined, // Clear any validation errors when connection is made
-                      },
-                    }
+                    ...node,
+                    data: {
+                      ...node.data,
+                      ...allOutputs, // Merge all outputs
+                      error: undefined, // Clear any validation errors when connection is made
+                    },
+                  }
                   : node,
               ),
             );
@@ -599,12 +599,12 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
               nds.map((node) =>
                 node.id === params.target
                   ? {
-                      ...node,
-                      data: {
-                        ...node.data,
-                        error: undefined, // Clear validation errors
-                      },
-                    }
+                    ...node,
+                    data: {
+                      ...node.data,
+                      error: undefined, // Clear validation errors
+                    },
+                  }
                   : node,
               ),
             );

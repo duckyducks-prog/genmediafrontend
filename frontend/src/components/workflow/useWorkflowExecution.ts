@@ -2228,6 +2228,15 @@ export function useWorkflowExecution(
             const videoInput = inputs.video;
             const watermarkInput = inputs.watermark;
 
+            logger.debug("[VideoWatermark] 🔍 Input diagnosis:", {
+              allInputKeys: Object.keys(inputs),
+              videoInput: videoInput ? `${typeof videoInput} (${String(videoInput).substring(0, 80)}...)` : "MISSING/NULL",
+              watermarkInput: watermarkInput ? `${typeof watermarkInput} (${String(watermarkInput).substring(0, 80)}...)` : "MISSING/NULL",
+              rawInputs: Object.fromEntries(
+                Object.entries(inputs).map(([k, v]) => [k, v ? `${typeof v}[${String(v).length}]` : 'null/undefined'])
+              ),
+            });
+
             if (!videoInput) {
               return {
                 success: false,
@@ -2455,6 +2464,12 @@ export function useWorkflowExecution(
           case NodeType.VideoOutput: {
             // Get video from input - support both "video" and legacy names
             const videoUrl = inputs["video-input"] || inputs.video || null;
+            logger.debug("[VideoOutput] 🔍 Execution diagnosis:", {
+              allInputKeys: Object.keys(inputs),
+              hasVideoInput: !!inputs["video-input"],
+              hasVideo: !!inputs.video,
+              resolvedVideoUrl: videoUrl ? `${typeof videoUrl}[${String(videoUrl).length}] ${String(videoUrl).substring(0, 80)}...` : "NULL",
+            });
             return {
               success: true,
               data: {
