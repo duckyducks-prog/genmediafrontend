@@ -1,6 +1,7 @@
 import { logger } from "@/lib/logger";
 import { auth } from "./firebase";
 import { API_ENDPOINTS } from "./api-config";
+import { parseApiError, parseNetworkError, isApiError } from "./api-error";
 
 interface SaveToLibraryParams {
   imageUrl: string; // data URI or URL
@@ -36,33 +37,30 @@ export async function saveToLibrary(params: SaveToLibraryParams) {
     promptLength: params.prompt.length,
   });
 
-  const response = await fetch(API_ENDPOINTS.library.save, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      data: base64Data,
-      prompt: params.prompt,
-      asset_type: params.assetType,
-      mime_type: mimeType,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("[saveToLibrary] Failed:", {
-      status: response.status,
-      statusText: response.statusText,
-      body: errorText,
+  try {
+    const response = await fetch(API_ENDPOINTS.library.save, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        data: base64Data,
+        prompt: params.prompt,
+        asset_type: params.assetType,
+        mime_type: mimeType,
+      }),
     });
-    throw new Error(
-      `Failed to save to library: ${response.status} ${response.statusText}`,
-    );
-  }
 
-  const result = await response.json();
-  logger.debug("[saveToLibrary] Success:", result);
-  return result;
+    if (!response.ok) {
+      throw await parseApiError(response);
+    }
+
+    const result = await response.json();
+    logger.debug("[saveToLibrary] Success:", result);
+    return result;
+  } catch (error) {
+    if (isApiError(error)) throw error;
+    throw parseNetworkError(error);
+  }
 }

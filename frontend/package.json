@@ -36,7 +36,8 @@
     "jszip": "^3.10.1",
     "pixi-filters": "^6.1.5",
     "pixi.js": "^8.14.3",
-    "reactflow": "^11.11.4"
+    "reactflow": "^11.11.4",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@hookform/resolvers": "^5.2.1",
