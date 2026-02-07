@@ -160,8 +160,8 @@ export function gatherNodeInputs(
         : [],
       sourceNodeTopLevelKeys: sourceNode?.data
         ? Object.keys(sourceNode.data).filter(
-            (k) => !["label", "status", "isGenerating"].includes(k),
-          )
+          (k) => !["label", "status", "isGenerating"].includes(k),
+        )
         : [],
     });
 
@@ -295,6 +295,22 @@ export function gatherNodeInputs(
             suggestion: "Asset resolution needed",
           },
         );
+      }
+    }
+
+    // Media-output handle alias (used by VideoOutput/ImageOutput for chaining)
+    if (outputValue === undefined && sourceHandle === "media-output") {
+      outputValue =
+        outputs?.video ||
+        outputs?.image ||
+        outputs?.videoUrl ||
+        outputs?.imageUrl ||
+        nodeData.video ||
+        nodeData.videoUrl ||
+        nodeData.image ||
+        nodeData.imageUrl;
+      if (outputValue !== undefined) {
+        console.warn(`[gatherNodeInputs] ⚠️ Found via media-output alias (video/image)`);
       }
     }
 
@@ -766,10 +782,10 @@ export async function pollVideoStatus(
           const errorMsg = statusResponse.status === 401
             ? "Authentication failed. Please sign in again."
             : statusResponse.status === 403
-            ? "Access denied. You may not have permission to check this video."
-            : statusResponse.status === 404
-            ? "Video operation not found. It may have expired or been deleted."
-            : `Request failed with status ${statusResponse.status}`;
+              ? "Access denied. You may not have permission to check this video."
+              : statusResponse.status === 404
+                ? "Video operation not found. It may have expired or been deleted."
+                : `Request failed with status ${statusResponse.status}`;
 
           console.error(
             `[pollVideoStatus] Fatal error (${statusResponse.status}): ${errorMsg}`,

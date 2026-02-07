@@ -2439,13 +2439,34 @@ export function useWorkflowExecution(
           case NodeType.ImageOutput: {
             // Get image from input - support both "image" and legacy names
             const imageUrl = inputs["image-input"] || inputs.image || null;
-            return { success: true, data: { imageUrl, type: "image" } };
+            return {
+              success: true,
+              data: {
+                imageUrl,
+                image: imageUrl,
+                type: "image",
+                outputs: {
+                  image: imageUrl,
+                },
+              },
+            };
           }
 
           case NodeType.VideoOutput: {
             // Get video from input - support both "video" and legacy names
             const videoUrl = inputs["video-input"] || inputs.video || null;
-            return { success: true, data: { videoUrl, type: "video" } };
+            return {
+              success: true,
+              data: {
+                videoUrl,
+                video: videoUrl,
+                type: "video",
+                outputs: {
+                  video: videoUrl,
+                  "media-output": videoUrl, // Match the source handle ID used by VideoOutput
+                },
+              },
+            };
           }
 
           case NodeType.Download: {
@@ -3229,8 +3250,8 @@ export function useWorkflowExecution(
                 const downstreamNode = nodes.find((n) => n.id === downstreamNodeId);
                 if (downstreamNode?.data?.error) {
                   // Only clear validation-type errors, not execution errors
-                  const isValidationError = downstreamNode.data.error.includes("not connected") || 
-                                            downstreamNode.data.error.includes("has no value");
+                  const isValidationError = downstreamNode.data.error.includes("not connected") ||
+                    downstreamNode.data.error.includes("has no value");
                   if (isValidationError) {
                     logger.debug("[Workflow] Clearing validation error on downstream node:", {
                       upstreamNode: node.id,
