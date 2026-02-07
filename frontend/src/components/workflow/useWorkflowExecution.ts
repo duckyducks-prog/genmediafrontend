@@ -3218,6 +3218,32 @@ export function useWorkflowExecution(
               setEdgeAnimated(node.id, false, true);
               updateNodeState(node.id, "completed", updateData);
 
+              // Clear validation errors on downstream nodes when this node completes successfully
+              // This fixes the issue where downstream nodes show "Required input not connected" 
+              // errors even after upstream nodes have generated outputs
+              const downstreamNodes = edges
+                .filter((e) => e.source === node.id)
+                .map((e) => e.target);
+
+              downstreamNodes.forEach((downstreamNodeId) => {
+                const downstreamNode = nodes.find((n) => n.id === downstreamNodeId);
+                if (downstreamNode?.data?.error) {
+                  // Only clear validation-type errors, not execution errors
+                  const isValidationError = downstreamNode.data.error.includes("not connected") || 
+                                            downstreamNode.data.error.includes("has no value");
+                  if (isValidationError) {
+                    logger.debug("[Workflow] Clearing validation error on downstream node:", {
+                      upstreamNode: node.id,
+                      downstreamNode: downstreamNodeId,
+                      clearedError: downstreamNode.data.error
+                    });
+                    updateNodeState(downstreamNodeId, downstreamNode.data.status, {
+                      error: undefined,
+                    });
+                  }
+                }
+              });
+
               // Clear completion flash after 500ms
               setTimeout(() => {
                 setEdgeAnimated(node.id, false, false);
