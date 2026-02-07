@@ -2228,6 +2228,15 @@ export function useWorkflowExecution(
             const videoInput = inputs.video;
             const watermarkInput = inputs.watermark;
 
+            logger.debug("[VideoWatermark] 🔍 Input diagnosis:", {
+              allInputKeys: Object.keys(inputs),
+              videoInput: videoInput ? `${typeof videoInput} (${String(videoInput).substring(0, 80)}...)` : "MISSING/NULL",
+              watermarkInput: watermarkInput ? `${typeof watermarkInput} (${String(watermarkInput).substring(0, 80)}...)` : "MISSING/NULL",
+              rawInputs: Object.fromEntries(
+                Object.entries(inputs).map(([k, v]) => [k, v ? `${typeof v}[${String(v).length}]` : 'null/undefined'])
+              ),
+            });
+
             if (!videoInput) {
               return {
                 success: false,
@@ -2439,13 +2448,40 @@ export function useWorkflowExecution(
           case NodeType.ImageOutput: {
             // Get image from input - support both "image" and legacy names
             const imageUrl = inputs["image-input"] || inputs.image || null;
-            return { success: true, data: { imageUrl, type: "image" } };
+            return {
+              success: true,
+              data: {
+                imageUrl,
+                image: imageUrl,
+                type: "image",
+                outputs: {
+                  image: imageUrl,
+                },
+              },
+            };
           }
 
           case NodeType.VideoOutput: {
             // Get video from input - support both "video" and legacy names
             const videoUrl = inputs["video-input"] || inputs.video || null;
-            return { success: true, data: { videoUrl, type: "video" } };
+            logger.debug("[VideoOutput] 🔍 Execution diagnosis:", {
+              allInputKeys: Object.keys(inputs),
+              hasVideoInput: !!inputs["video-input"],
+              hasVideo: !!inputs.video,
+              resolvedVideoUrl: videoUrl ? `${typeof videoUrl}[${String(videoUrl).length}] ${String(videoUrl).substring(0, 80)}...` : "NULL",
+            });
+            return {
+              success: true,
+              data: {
+                videoUrl,
+                video: videoUrl,
+                type: "video",
+                outputs: {
+                  video: videoUrl,
+                  "media-output": videoUrl, // Match the source handle ID used by VideoOutput
+                },
+              },
+            };
           }
 
           case NodeType.Download: {
@@ -3217,6 +3253,32 @@ export function useWorkflowExecution(
               // Flash completion, then stop animation
               setEdgeAnimated(node.id, false, true);
               updateNodeState(node.id, "completed", updateData);
+
+              // Clear validation errors on downstream nodes when this node completes successfully
+              // This fixes the issue where downstream nodes show "Required input not connected" 
+              // errors even after upstream nodes have generated outputs
+              const downstreamNodes = edges
+                .filter((e) => e.source === node.id)
+                .map((e) => e.target);
+
+              downstreamNodes.forEach((downstreamNodeId) => {
+                const downstreamNode = nodes.find((n) => n.id === downstreamNodeId);
+                if (downstreamNode?.data?.error) {
+                  // Only clear validation-type errors, not execution errors
+                  const isValidationError = downstreamNode.data.error.includes("not connected") ||
+                    downstreamNode.data.error.includes("has no value");
+                  if (isValidationError) {
+                    logger.debug("[Workflow] Clearing validation error on downstream node:", {
+                      upstreamNode: node.id,
+                      downstreamNode: downstreamNodeId,
+                      clearedError: downstreamNode.data.error
+                    });
+                    updateNodeState(downstreamNodeId, downstreamNode.data.status, {
+                      error: undefined,
+                    });
+                  }
+                }
+              });
 
               // Clear completion flash after 500ms
               setTimeout(() => {
