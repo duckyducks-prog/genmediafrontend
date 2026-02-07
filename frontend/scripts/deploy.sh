@@ -47,28 +47,26 @@ else
   exit 1
 fi
 
-# Load .env.local for secrets (Firebase keys, etc.)
-if [ -f .env.local ]; then
-  echo "Loading secrets from .env.local..."
-  set -a
-  source .env.local
-  set +a
-else
-  echo "⚠️  .env.local file not found! Firebase config and other env vars may be missing."
-fi
-
 echo "📋 Deployment config:"
 echo "  Environment: $ENVIRONMENT"
 echo "  Service Name: $SERVICE_NAME"
 echo "  API Base URL: $VITE_API_BASE_URL"
-echo "  Allowed CORS Origins: $ALLOWED_ORIGINS"
 echo "  Firebase Project ID: $VITE_FIREBASE_PROJECT_ID"
 echo "  Firebase Auth Domain: $VITE_FIREBASE_AUTH_DOMAIN"
 
 # Deploy with Cloud Build
 gcloud builds submit --config cloudbuild.yaml \
   --project="$PROJECT_ID" \
-  --substitutions=_SERVICE_NAME="$SERVICE_NAME",_VITE_FIREBASE_API_KEY="$VITE_FIREBASE_API_KEY",_VITE_FIREBASE_AUTH_DOMAIN="$VITE_FIREBASE_AUTH_DOMAIN",_VITE_FIREBASE_PROJECT_ID="$VITE_FIREBASE_PROJECT_ID",_VITE_FIREBASE_STORAGE_BUCKET="$VITE_FIREBASE_STORAGE_BUCKET",_VITE_FIREBASE_MESSAGING_SENDER_ID="$VITE_FIREBASE_MESSAGING_SENDER_ID",_VITE_FIREBASE_APP_ID="$VITE_FIREBASE_APP_ID",_VITE_FIREBASE_MEASUREMENT_ID="$VITE_FIREBASE_MEASUREMENT_ID",_VITE_API_BASE_URL="$VITE_API_BASE_URL",_ALLOWED_ORIGINS="$ALLOWED_ORIGINS"
+  --substitutions="\
+_SERVICE_NAME=$SERVICE_NAME,\
+_VITE_FIREBASE_API_KEY=$VITE_FIREBASE_API_KEY,\
+_VITE_FIREBASE_AUTH_DOMAIN=$VITE_FIREBASE_AUTH_DOMAIN,\
+_VITE_FIREBASE_PROJECT_ID=$VITE_FIREBASE_PROJECT_ID,\
+_VITE_FIREBASE_STORAGE_BUCKET=$VITE_FIREBASE_STORAGE_BUCKET,\
+_VITE_FIREBASE_MESSAGING_SENDER_ID=$VITE_FIREBASE_MESSAGING_SENDER_ID,\
+_VITE_FIREBASE_APP_ID=$VITE_FIREBASE_APP_ID,\
+_VITE_FIREBASE_MEASUREMENT_ID=$VITE_FIREBASE_MEASUREMENT_ID,\
+_VITE_API_BASE_URL=$VITE_API_BASE_URL"
 
 # Get the service URL
 SERVICE_URL=$(gcloud run services describe "$SERVICE_NAME" \
