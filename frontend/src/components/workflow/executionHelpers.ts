@@ -246,9 +246,12 @@ export function gatherNodeInputs(
     const nodeData = sourceNode.data as unknown as Record<string, unknown>;
     if (outputValue === undefined && sourceHandle === "image") {
       outputValue =
-        (sourceNode.data.outputs as Record<string, unknown>)?.imageUrl || nodeData.imageUrl;
+        outputs?.image ||
+        outputs?.imageUrl ||
+        nodeData.image ||
+        nodeData.imageUrl;
       if (outputValue !== undefined) {
-        console.warn(`[gatherNodeInputs] ⚠️ Found via imageUrl alias`);
+        console.warn(`[gatherNodeInputs] ⚠️ Found via image/imageUrl alias`);
       } else if (nodeData.imageRef) {
         console.error(
           `[gatherNodeInputs] ❌ CRITICAL: Node has imageRef but no imageUrl!`,
@@ -262,16 +265,27 @@ export function gatherNodeInputs(
       }
     }
 
+    // Images handle alias (for array of images)
+    if (outputValue === undefined && sourceHandle === "images") {
+      outputValue =
+        outputs?.images ||
+        nodeData.images;
+      if (outputValue !== undefined) {
+        console.warn(`[gatherNodeInputs] ⚠️ Found via images alias`);
+      }
+    }
+
     // Video handle alias
     if (outputValue === undefined && sourceHandle === "video") {
-      const outputs = sourceNode.data.outputs as Record<string, unknown> | undefined;
       outputValue =
-        outputs?.videoUrl ||
         outputs?.video ||
+        outputs?.videoUrl ||
+        outputs?.gcsUrl ||
+        nodeData.video ||
         nodeData.videoUrl ||
-        nodeData.video;
+        nodeData.gcsUrl;
       if (outputValue !== undefined) {
-        console.warn(`[gatherNodeInputs] ⚠️ Found via video alias`);
+        console.warn(`[gatherNodeInputs] ⚠️ Found via video/videoUrl/gcsUrl alias`);
       } else if (nodeData.videoRef) {
         console.error(
           `[gatherNodeInputs] ❌ CRITICAL: Node has videoRef but no videoUrl!`,
@@ -281,6 +295,18 @@ export function gatherNodeInputs(
             suggestion: "Asset resolution needed",
           },
         );
+      }
+    }
+
+    // Audio handle alias
+    if (outputValue === undefined && sourceHandle === "audio") {
+      outputValue =
+        outputs?.audio ||
+        outputs?.audioUrl ||
+        nodeData.audio ||
+        nodeData.audioUrl;
+      if (outputValue !== undefined) {
+        console.warn(`[gatherNodeInputs] ⚠️ Found via audio/audioUrl alias`);
       }
     }
 
