@@ -13,6 +13,7 @@ import { API_ENDPOINTS } from "@/lib/api-config";
 import { auth } from "@/lib/firebase";
 import { NodeLockToggle } from "../NodeLockToggle";
 import { VideoSegmentReplaceNodeData } from "../types";
+import { RunNodeButton } from "./RunNodeButton";
 
 // Format seconds to MM:SS
 function formatTime(seconds: number): string {
@@ -482,6 +483,8 @@ function VideoSegmentReplaceNode({ data, id }: NodeProps<VideoSegmentReplaceNode
           <span>Replacement = video to insert at segment</span>
         </div>
       </div>
+
+      <RunNodeButton nodeId={id} disabled={data.readOnly} isExecuting={isExecuting} />
 
       {/* Output Handle */}
       <Handle

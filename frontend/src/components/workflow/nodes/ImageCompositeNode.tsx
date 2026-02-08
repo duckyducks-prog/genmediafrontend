@@ -13,6 +13,7 @@ import {
 import { gatherNodeInputs } from "../executionHelpers";
 import { renderCompositeWithPixi } from "@/lib/pixi-renderer";
 import { NodeLockToggle } from "../NodeLockToggle";
+import { RunNodeButton } from "./RunNodeButton";
 
 function ImageCompositeNode({ data, id }: NodeProps<ImageCompositeNodeData>) {
   const config = NODE_CONFIGURATIONS[NodeType.ImageComposite];
@@ -319,6 +320,8 @@ function ImageCompositeNode({ data, id }: NodeProps<ImageCompositeNodeData>) {
           <div className="text-xs text-red-500">{data.error}</div>
         </div>
       )}
+
+      <RunNodeButton nodeId={id} isExecuting={isRendering || status === "executing"} disabled={data.readOnly} />
 
       {/* Output Handle - Right side */}
       <div className="flex items-center justify-end gap-2 relative h-6">

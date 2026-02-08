@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { NodeLockToggle } from "../NodeLockToggle";
+import { RunNodeButton } from "./RunNodeButton";
 
 export interface VideoWatermarkNodeData {
   label: string;
@@ -256,6 +257,8 @@ function VideoWatermarkNode({ data, id }: NodeProps<VideoWatermarkNodeData>) {
           </span>
         </div>
       </div>
+
+      <RunNodeButton nodeId={id} disabled={data.readOnly} isExecuting={isExecuting} />
 
       {/* Output Handle */}
       <Handle

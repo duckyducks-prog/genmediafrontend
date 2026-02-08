@@ -2,6 +2,7 @@ import { memo, useEffect } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { ExtractLastFrameNodeData, NODE_CONFIGURATIONS, NodeType } from "../types";
 import { Film, CheckCircle2, Loader2, Image as ImageIcon } from "lucide-react";
+import { RunNodeButton } from "./RunNodeButton";
 
 function ExtractLastFrameNode({ data, id }: NodeProps<ExtractLastFrameNodeData>) {
   const config = NODE_CONFIGURATIONS[NodeType.ExtractLastFrame];
@@ -156,6 +157,8 @@ function ExtractLastFrameNode({ data, id }: NodeProps<ExtractLastFrameNodeData>)
           </div>
         )}
       </div>
+
+      <RunNodeButton nodeId={id} disabled={data.readOnly} isExecuting={isExecuting} />
 
       {/* Output Handle - Right side */}
       <Handle

@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { RunNodeButton } from "./RunNodeButton";
 
 const ASPECT_RATIOS = {
   "1:1": { ratio: 1, width: 1080, height: 1080 },
@@ -798,6 +799,8 @@ function CropNode({ data, id }: NodeProps<CropNodeData>) {
           </div>
         </div>
       </div>
+
+      <RunNodeButton nodeId={id} disabled={data.readOnly} />
 
       {/* Output Handles */}
       <Handle

@@ -4,6 +4,7 @@ import { VignetteNodeData } from "../types";
 import { ModifierSlider as Slider } from "@/components/ui/modifier-slider";
 import { Circle } from "lucide-react";
 import { FilterConfig, FILTER_DEFINITIONS } from "@/lib/pixi-filter-configs";
+import { RunNodeButton } from "./RunNodeButton";
 
 function VignetteNode({ data, id }: NodeProps<VignetteNodeData>) {
   // Get incoming data - support both image and video
@@ -136,6 +137,8 @@ function VignetteNode({ data, id }: NodeProps<VignetteNodeData>) {
           />
         </div>
       </div>
+
+      <RunNodeButton nodeId={id} disabled={data.readOnly} />
 
       <Handle
         type="source"

@@ -8,6 +8,7 @@ import { FilterConfig } from "@/lib/pixi-filter-configs";
 import { NodeLockToggle } from "../NodeLockToggle";
 import { API_ENDPOINTS } from "@/lib/api-config";
 import { auth } from "@/lib/firebase";
+import { RunNodeButton } from "./RunNodeButton";
 
 export interface PreviewNodeData {
   label: string;
@@ -314,6 +315,8 @@ function PreviewNode({ data, id }: NodeProps<PreviewNodeData>) {
         className="!w-3 !h-3 !border-2 !border-background"
         style={{ top: "75%", transform: "translateY(-50%)" }}
       />
+
+      <RunNodeButton nodeId={id} disabled={data.readOnly} isExecuting={isExecuting} />
 
       {/* Output Handles */}
       <Handle

@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { RunNodeButton } from "./RunNodeButton";
 
 // Preset configurations
 const PRESETS = {
@@ -362,6 +363,8 @@ function FilmGrainNode({ data, id }: NodeProps<FilmGrainNodeData>) {
             </div>
           </div>
         )}
+
+        <RunNodeButton nodeId={id} disabled={data.readOnly} />
       </div>
 
       <Handle

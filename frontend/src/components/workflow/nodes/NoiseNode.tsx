@@ -4,6 +4,7 @@ import { NoiseNodeData } from "../types";
 import { ModifierSlider as Slider } from "@/components/ui/modifier-slider";
 import { Radio } from "lucide-react";
 import { FilterConfig, FILTER_DEFINITIONS } from "@/lib/pixi-filter-configs";
+import { RunNodeButton } from "./RunNodeButton";
 
 function NoiseNode({ data, id }: NodeProps<NoiseNodeData>) {
   // Get incoming data - support both image and video
@@ -115,6 +116,8 @@ function NoiseNode({ data, id }: NodeProps<NoiseNodeData>) {
           />
         </div>
       </div>
+
+      <RunNodeButton nodeId={id} disabled={data.readOnly} />
 
       <Handle
         type="source"

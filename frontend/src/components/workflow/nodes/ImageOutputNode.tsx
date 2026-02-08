@@ -22,6 +22,7 @@ import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { renderWithPixi } from "@/lib/pixi-renderer";
 import { FilterConfig } from "@/lib/pixi-filter-configs";
+import { RunNodeButton } from "./RunNodeButton";
 
 function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
   const [upscaleFactor, setUpscaleFactor] = useState<string>("x2");
@@ -323,6 +324,8 @@ function ImageOutputNode({ data, id }: NodeProps<OutputNodeData>) {
           </div>
         )}
       </div>
+
+      <RunNodeButton nodeId={id} disabled={data.readOnly} isExecuting={isExecuting} />
 
       {/* Output Handle for chaining */}
       <Handle

@@ -6,6 +6,7 @@ import { ModifierSlider as Slider } from "@/components/ui/modifier-slider";
 import { Sun, Power } from "lucide-react";
 import { FilterConfig, FILTER_DEFINITIONS } from "@/lib/pixi-filter-configs";
 import { NodeLockToggle } from "../NodeLockToggle";
+import { RunNodeButton } from "./RunNodeButton";
 
 function BrightnessContrastNode({
   data,
@@ -210,6 +211,8 @@ function BrightnessContrastNode({
           />
         </div>
       </div>
+
+      <RunNodeButton nodeId={id} disabled={data.readOnly} />
 
       {/* Output Handles */}
       <Handle

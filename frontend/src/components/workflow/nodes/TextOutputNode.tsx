@@ -4,6 +4,7 @@ import { TextOutputNodeData, NODE_CONFIGURATIONS, NodeType } from "../types";
 import { Type, CheckCircle2, Loader2, Copy, Power } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { RunNodeButton } from "./RunNodeButton";
 
 function TextOutputNode({ data, id }: NodeProps<TextOutputNodeData>) {
   const config = NODE_CONFIGURATIONS[NodeType.TextOutput];
@@ -167,6 +168,8 @@ function TextOutputNode({ data, id }: NodeProps<TextOutputNodeData>) {
           </div>
         )}
       </div>
+
+      <RunNodeButton nodeId={id} disabled={data.readOnly} isExecuting={isExecuting} />
     </div>
   );
 }

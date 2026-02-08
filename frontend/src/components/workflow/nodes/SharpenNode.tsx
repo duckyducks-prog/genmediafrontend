@@ -4,6 +4,7 @@ import { SharpenNodeData } from "../types";
 import { ModifierSlider as Slider } from "@/components/ui/modifier-slider";
 import { Focus } from "lucide-react";
 import { FilterConfig, FILTER_DEFINITIONS } from "@/lib/pixi-filter-configs";
+import { RunNodeButton } from "./RunNodeButton";
 
 function SharpenNode({ data, id }: NodeProps<SharpenNodeData>) {
   // Get incoming data - support both image and video
@@ -110,6 +111,8 @@ function SharpenNode({ data, id }: NodeProps<SharpenNodeData>) {
           />
         </div>
       </div>
+
+      <RunNodeButton nodeId={id} disabled={data.readOnly} />
 
       <Handle
         type="source"

@@ -3,6 +3,7 @@ import { Handle, Position, NodeProps, useReactFlow } from "reactflow";
 import { Textarea } from "@/components/ui/textarea";
 import { PromptNodeData } from "../types";
 import { Type, CheckCircle2, Loader2, Power, Maximize2 } from "lucide-react";
+import { RunNodeButton } from "./RunNodeButton";
 
 // Custom event for opening text edit panel
 // field: the data field to update (default: "prompt")
@@ -141,6 +142,8 @@ function PromptInputNode({ data, id }: NodeProps<PromptNodeData>) {
           disabled={data.readOnly || !isEnabled}
         />
       </div>
+
+      <RunNodeButton nodeId={id} isExecuting={isExecuting} disabled={data.readOnly || !isEnabled} />
 
       {/* Output Handle */}
       <Handle

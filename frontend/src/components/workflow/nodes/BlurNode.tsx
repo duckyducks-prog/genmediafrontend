@@ -5,6 +5,7 @@ import { ModifierSlider as Slider } from "@/components/ui/modifier-slider";
 import { Blend } from "lucide-react";
 import { FilterConfig, FILTER_DEFINITIONS } from "@/lib/pixi-filter-configs";
 import { NodeLockToggle } from "../NodeLockToggle";
+import { RunNodeButton } from "./RunNodeButton";
 
 function BlurNode({ data, id }: NodeProps<BlurNodeData>) {
   const toggleLock = () => {
@@ -137,6 +138,8 @@ function BlurNode({ data, id }: NodeProps<BlurNodeData>) {
           />
         </div>
       </div>
+
+      <RunNodeButton nodeId={id} disabled={data.readOnly} />
 
       <Handle
         type="source"

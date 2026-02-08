@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { ScriptQueueNodeData, BatchIterationResult } from "../types";
 import { ListOrdered, CheckCircle2, Loader2, Power, Download, Trash2, Play, XCircle, ChevronDown, ChevronUp, Maximize2 } from "lucide-react";
 import { openTextEditPanel } from "./PromptInputNode";
+import { RunNodeButton } from "./RunNodeButton";
 
 function ScriptQueueNode({ data, id }: NodeProps<ScriptQueueNodeData>) {
   const { setNodes } = useReactFlow();
@@ -428,6 +429,8 @@ function ScriptQueueNode({ data, id }: NodeProps<ScriptQueueNodeData>) {
           </div>
         </div>
       )}
+
+      <RunNodeButton nodeId={id} isExecuting={isExecuting} disabled={data.readOnly || !isEnabled} />
 
       {/* Output Handle */}
       <Handle

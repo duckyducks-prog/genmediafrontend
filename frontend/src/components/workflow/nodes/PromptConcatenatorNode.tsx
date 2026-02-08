@@ -3,6 +3,7 @@ import { Handle, Position, NodeProps, useReactFlow } from 'reactflow';
 import { PromptConcatenatorNodeData, NODE_CONFIGURATIONS, NodeType, WorkflowNode, WorkflowEdge } from '../types';
 import { Combine, ChevronDown } from 'lucide-react';
 import { gatherNodeInputs, executeConcatenator } from '../executionHelpers';
+import { RunNodeButton } from "./RunNodeButton";
 
 
 function PromptConcatenatorNode({ data, id }: NodeProps<PromptConcatenatorNodeData>) {
@@ -123,6 +124,8 @@ function PromptConcatenatorNode({ data, id }: NodeProps<PromptConcatenatorNodeDa
           </div>
         )}
       </div>
+
+      <RunNodeButton nodeId={id} disabled={data.readOnly} />
 
       {/* Output Handle - Right side */}
       <Handle

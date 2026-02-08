@@ -11,6 +11,7 @@ import {
   Loader2,
   Download,
 } from "lucide-react";
+import { RunNodeButton } from "./RunNodeButton";
 
 function VideoOutputNode({ data, id }: NodeProps<OutputNodeData>) {
   const edges = useEdges();
@@ -239,6 +240,8 @@ function VideoOutputNode({ data, id }: NodeProps<OutputNodeData>) {
           </div>
         )}
       </div>
+
+      <RunNodeButton nodeId={id} disabled={data.readOnly} isExecuting={isExecuting} />
 
       {/* Output Handle for chaining */}
       <Handle

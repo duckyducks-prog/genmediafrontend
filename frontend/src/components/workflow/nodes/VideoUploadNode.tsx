@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, X, Film, Play, FolderOpen, Loader2 } from "lucide-react";
 import { VideoInputNodeData } from "../types";
 import { saveToLibrary } from "@/lib/api-helpers";
+import { RunNodeButton } from "./RunNodeButton";
 
 function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
   // Initialize from data, which may be pre-populated from library
@@ -594,6 +595,8 @@ function VideoUploadNode({ data, id }: NodeProps<VideoInputNodeData>) {
           <p className="text-xs text-muted-foreground">✓ Saved to library</p>
         )}
       </div>
+
+      <RunNodeButton nodeId={id} isExecuting={isExecuting} disabled={data.readOnly} />
 
       {/* Output Handle */}
       <Handle

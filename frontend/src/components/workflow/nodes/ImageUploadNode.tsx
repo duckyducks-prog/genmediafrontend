@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ImageInputNodeData } from "../types";
 import { Upload, X, Image as ImageIcon, Loader2, FolderOpen } from "lucide-react";
 import { saveToLibrary } from "@/lib/api-helpers";
+import { RunNodeButton } from "./RunNodeButton";
 
 function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
   // Use imageUrl from data, which may be resolved from imageRef on workflow load
@@ -265,6 +266,8 @@ function ImageUploadNode({ data, id }: NodeProps<ImageInputNodeData>) {
           <p className="text-xs text-muted-foreground">✓ Saved to library</p>
         )}
       </div>
+
+      <RunNodeButton nodeId={id} isExecuting={isExecuting} disabled={data.readOnly} />
 
       {/* Output Handle */}
       <Handle

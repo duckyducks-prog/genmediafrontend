@@ -4,6 +4,7 @@ import { HueSaturationNodeData } from "../types";
 import { ModifierSlider as Slider } from "@/components/ui/modifier-slider";
 import { Palette } from "lucide-react";
 import { FilterConfig, FILTER_DEFINITIONS } from "@/lib/pixi-filter-configs";
+import { RunNodeButton } from "./RunNodeButton";
 
 function HueSaturationNode({ data, id }: NodeProps<HueSaturationNodeData>) {
   // Get incoming data - support both image and video
@@ -133,6 +134,8 @@ function HueSaturationNode({ data, id }: NodeProps<HueSaturationNodeData>) {
           />
         </div>
       </div>
+
+      <RunNodeButton nodeId={id} disabled={data.readOnly} />
 
       <Handle
         type="source"
