@@ -10,8 +10,8 @@ import {
 } from "../types";
 import { List, ChevronDown, AlertCircle } from "lucide-react";
 import { gatherNodeInputs } from "../executionHelpers";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { RunNodeButton } from "./RunNodeButton";
 
 function parseBatchInput(input: string, separator: string): string[] {
   if (!input?.trim()) return [];
@@ -268,33 +268,36 @@ function TextIteratorNode({ data, id }: NodeProps<TextIteratorNodeData>) {
 
       {/* Node Content */}
       <div className="space-y-3">
-        {/* Fixed Section Input */}
+        {/* Fixed Section Display (received via input connector) */}
         <div>
           <label className="text-xs font-medium text-muted-foreground block mb-1">
             Fixed Section (Applied to all)
           </label>
-          <Input
-            value={data.fixedSection}
-            onChange={(e) => handleUpdate("fixedSection", e.target.value)}
-            placeholder="Character blocking: Person at desk"
-            className="text-sm"
-            disabled={data.readOnly}
-          />
+          {data.fixedSection ? (
+            <div className="bg-muted/50 p-2 rounded border border-border text-xs font-mono leading-relaxed break-words">
+              {data.fixedSection}
+            </div>
+          ) : (
+            <div className="bg-muted/30 p-2 rounded border border-dashed border-border text-xs text-muted-foreground">
+              Connect a Text Input for fixed section
+            </div>
+          )}
         </div>
 
-        {/* Batch Input Text Area */}
+        {/* Variable Items Display (received via input connector) */}
         <div>
           <label className="text-xs font-medium text-muted-foreground block mb-1">
-            Variable Items (one per line)
+            Variable Items
           </label>
-          <Textarea
-            value={data.batchInput}
-            onChange={(e) => handleUpdate("batchInput", e.target.value)}
-            placeholder="Hello everyone&#10;Today I'll show you&#10;How to use this tool"
-            rows={4}
-            className="text-sm font-mono"
-            disabled={data.readOnly}
-          />
+          {data.batchInput ? (
+            <div className="bg-muted/50 p-2 rounded border border-border text-xs font-mono leading-relaxed break-words max-h-24 overflow-y-auto">
+              {data.batchInput}
+            </div>
+          ) : (
+            <div className="bg-muted/30 p-2 rounded border border-dashed border-border text-xs text-muted-foreground">
+              Connect a Text Input for variable items
+            </div>
+          )}
         </div>
 
         {/* Separator Selection */}
@@ -370,6 +373,12 @@ function TextIteratorNode({ data, id }: NodeProps<TextIteratorNodeData>) {
             {data.error}
           </div>
         )}
+
+        <RunNodeButton
+          nodeId={id}
+          isExecuting={status === "executing"}
+          disabled={data.readOnly}
+        />
       </div>
 
       {/* Dynamic Output Handles */}
