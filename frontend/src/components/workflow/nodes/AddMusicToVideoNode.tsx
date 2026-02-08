@@ -1,19 +1,16 @@
 "use client";
 
-import { memo, useCallback } from "react";
+import { memo } from "react";
 import { NodeProps, Handle, Position } from "reactflow";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import {
-  Loader2,
   Music,
   CheckCircle,
   AlertCircle,
   Info,
   Volume2,
-  Play,
   Power,
   Mic,
 } from "lucide-react";
@@ -22,17 +19,11 @@ import {
   NODE_CONFIGURATIONS,
   NodeType,
 } from "../types";
+import { RunNodeButton } from "./RunNodeButton";
 
 function AddMusicToVideoNode({ data, id }: NodeProps<AddMusicToVideoNodeData>) {
   const config = NODE_CONFIGURATIONS[NodeType.AddMusicToVideo];
   const isEnabled = data.enabled !== false;
-
-  const handleRunNode = () => {
-    const event = new CustomEvent("node-execute", {
-      detail: { nodeId: id },
-    });
-    window.dispatchEvent(event);
-  };
 
   const handleUpdate = (field: keyof AddMusicToVideoNodeData, value: any) => {
     if (data.readOnly) return;
@@ -224,24 +215,7 @@ function AddMusicToVideoNode({ data, id }: NodeProps<AddMusicToVideoNodeData>) {
         )}
 
         {/* Run Node Button */}
-        <Button
-          onClick={handleRunNode}
-          variant="outline"
-          className="w-full"
-          disabled={data.isMixing || data.readOnly || !isEnabled}
-        >
-          {data.isMixing ? (
-            <>
-              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-              Mixing...
-            </>
-          ) : (
-            <>
-              <Play className="w-3 h-3 mr-1" />
-              Run Node
-            </>
-          )}
-        </Button>
+        <RunNodeButton nodeId={id} isExecuting={data.isMixing} disabled={data.readOnly || !isEnabled} label="Add Music" loadingLabel="Adding..." />
 
         {/* Output Video Preview */}
         {data.outputVideoUrl && (

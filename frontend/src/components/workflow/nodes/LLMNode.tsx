@@ -1,10 +1,10 @@
 import { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { LLMNodeData } from '../types';
-import { Brain, Loader2, Play, CheckCircle2, AlertCircle, Power, Maximize2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Brain, Loader2, CheckCircle2, AlertCircle, Power, Maximize2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { openTextEditPanel } from './PromptInputNode';
+import { RunNodeButton } from './RunNodeButton';
 
 function LLMNode({ data, id }: NodeProps<LLMNodeData>) {
   const status = data.status || 'ready';
@@ -30,13 +30,6 @@ function LLMNode({ data, id }: NodeProps<LLMNodeData>) {
   const handleToggleEnabled = () => {
     if (data.readOnly) return;
     handleUpdate('enabled', !isEnabled);
-  };
-
-  const handleRun = () => {
-    const event = new CustomEvent('node-execute', {
-      detail: { nodeId: id },
-    });
-    window.dispatchEvent(event);
   };
 
   const handleExpandClick = () => {
@@ -166,25 +159,7 @@ function LLMNode({ data, id }: NodeProps<LLMNodeData>) {
         )}
 
         {/* Run Node Button */}
-        <Button
-          onClick={handleRun}
-          disabled={isGenerating}
-          variant="ghost"
-          size="sm"
-          className="w-full text-xs"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <Play className="w-3 h-3 mr-1" />
-              Run Node
-            </>
-          )}
-        </Button>
+        <RunNodeButton nodeId={id} isExecuting={isGenerating} disabled={data.readOnly} label="Run" loadingLabel="Running..." />
       </div>
 
       {/* Output Handle - Right side */}

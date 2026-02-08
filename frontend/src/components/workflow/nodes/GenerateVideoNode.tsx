@@ -10,10 +10,10 @@ import {
   AlertCircle,
   Download,
   AlertTriangle,
-  Play,
   ChevronDown,
   Power,
 } from "lucide-react";
+import { RunNodeButton } from "./RunNodeButton";
 
 function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
   const config = NODE_CONFIGURATIONS[NodeType.GenerateVideo];
@@ -261,30 +261,7 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
             </Button>
 
             {/* Run Node Button */}
-            <Button
-              onClick={() => {
-                const event = new CustomEvent("node-execute", {
-                  detail: { nodeId: id },
-                });
-                window.dispatchEvent(event);
-              }}
-              disabled={isGenerating || data.readOnly || !isEnabled}
-              variant="ghost"
-              size="sm"
-              className="w-full text-xs"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Play className="w-3 h-3 mr-1" />
-                  Run Node
-                </>
-              )}
-            </Button>
+            <RunNodeButton nodeId={id} isExecuting={isGenerating} disabled={data.readOnly || !isEnabled} label="Regenerate" loadingLabel="Generating..." />
           </div>
         )}
 
@@ -302,30 +279,7 @@ function GenerateVideoNode({ data, id }: NodeProps<GenerateVideoNodeData>) {
             </div>
 
             {/* Run Node Button */}
-            <Button
-              onClick={() => {
-                const event = new CustomEvent("node-execute", {
-                  detail: { nodeId: id },
-                });
-                window.dispatchEvent(event);
-              }}
-              disabled={isGenerating || data.readOnly || !isEnabled}
-              variant="ghost"
-              size="sm"
-              className="w-full text-xs"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Play className="w-3 h-3 mr-1" />
-                  Run Node
-                </>
-              )}
-            </Button>
+            <RunNodeButton nodeId={id} isExecuting={isGenerating} disabled={data.readOnly || !isEnabled} label="Generate Video" loadingLabel="Generating..." />
           </div>
         )}
 

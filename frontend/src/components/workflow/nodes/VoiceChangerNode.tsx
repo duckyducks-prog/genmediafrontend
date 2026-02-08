@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
+import { RunNodeButton } from "./RunNodeButton";
 
 interface ElevenLabsVoice {
   voice_id: string;
@@ -337,31 +338,7 @@ function VoiceChangerNode({ data, id }: NodeProps<VoiceChangerNodeData>) {
         )}
 
         {/* Run Node Button */}
-        <Button
-          onClick={() => {
-            const event = new CustomEvent("node-execute", {
-              detail: { nodeId: id },
-            });
-            window.dispatchEvent(event);
-          }}
-          disabled={
-            isChanging || data.readOnly || !data.selectedVoiceId
-          }
-          className="w-full"
-          size="sm"
-        >
-          {isChanging ? (
-            <>
-              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-              Changing Voice...
-            </>
-          ) : (
-            <>
-              <Mic className="w-3 h-3 mr-1" />
-              Change Voice
-            </>
-          )}
-        </Button>
+        <RunNodeButton nodeId={id} isExecuting={isChanging} disabled={data.readOnly || !data.selectedVoiceId} label="Change Voice" loadingLabel="Changing..." />
       </div>
 
       {/* Output Handle - Right side */}

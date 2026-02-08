@@ -3,7 +3,6 @@
 import { memo } from "react";
 import { NodeProps, Handle, Position } from "reactflow";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -13,18 +12,12 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Loader2, Combine, CheckCircle, AlertCircle, Info, Play, Volume2 } from "lucide-react";
+import { Combine, CheckCircle, AlertCircle, Info, Volume2 } from "lucide-react";
 import { MergeVideosNodeData, NODE_CONFIGURATIONS, NodeType } from "../types";
+import { RunNodeButton } from "./RunNodeButton";
 
 function MergeVideosNode({ data, id }: NodeProps<MergeVideosNodeData>) {
   const config = NODE_CONFIGURATIONS[NodeType.MergeVideos];
-
-  const handleRunNode = () => {
-    const event = new CustomEvent("node-execute", {
-      detail: { nodeId: id },
-    });
-    window.dispatchEvent(event);
-  };
 
   const getStatusIcon = () => {
     if (data.status === "completed") {
@@ -166,24 +159,7 @@ function MergeVideosNode({ data, id }: NodeProps<MergeVideosNodeData>) {
         )}
 
         {/* Run Node Button */}
-        <Button
-          onClick={handleRunNode}
-          variant="outline"
-          className="w-full"
-          disabled={data.isMerging || data.readOnly}
-        >
-          {data.isMerging ? (
-            <>
-              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-              Merging...
-            </>
-          ) : (
-            <>
-              <Play className="w-3 h-3 mr-1" />
-              Run Node
-            </>
-          )}
-        </Button>
+        <RunNodeButton nodeId={id} isExecuting={data.isMerging} disabled={data.readOnly} label="Merge Videos" loadingLabel="Merging..." />
 
         {/* Output Video Preview */}
         {data.outputVideoUrl && (
