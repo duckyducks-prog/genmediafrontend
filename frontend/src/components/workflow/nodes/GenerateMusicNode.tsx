@@ -1,10 +1,8 @@
 import { memo, useState, useEffect, useRef } from "react";
 import { Handle, Position, NodeProps } from "reactflow";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { GenerateMusicNodeData, NODE_CONFIGURATIONS, NodeType, MusicDuration } from "../types";
-import { API_ENDPOINTS } from "@/lib/api-config";
 import {
   Music,
   Loader2,
@@ -16,8 +14,7 @@ import {
   Volume2,
   Clock,
 } from "lucide-react";
-import { auth } from "@/lib/firebase";
-import { useToast } from "@/hooks/use-toast";
+import { RunNodeButton } from "./RunNodeButton";
 
 const DURATION_OPTIONS: { label: string; value: MusicDuration }[] = [
   { label: "Auto", value: "auto" },
@@ -43,7 +40,6 @@ function GenerateMusicNode({ data, id }: NodeProps<GenerateMusicNodeData>) {
   const [customDurationInput, setCustomDurationInput] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const { toast } = useToast();
 
   // Parse custom duration input (format: "M:SS" or just seconds)
   const parseCustomDuration = (input: string): number | null => {
@@ -185,18 +181,20 @@ function GenerateMusicNode({ data, id }: NodeProps<GenerateMusicNodeData>) {
 
       {/* Node Content */}
       <div className="space-y-3">
-        {/* Prompt Input */}
+        {/* Prompt Display (received via input connector) */}
         <div>
           <label className="text-xs font-medium text-muted-foreground block mb-1">
             Music Description
           </label>
-          <Textarea
-            value={data.prompt || ""}
-            onChange={(e) => handleUpdate("prompt", e.target.value)}
-            placeholder="Describe the music you want...&#10;&#10;e.g., Upbeat electronic music with driving beat, synth melodies, and energetic drums."
-            className="min-h-[80px] text-sm nodrag"
-            disabled={isGenerating || data.readOnly}
-          />
+          {data.prompt ? (
+            <div className="bg-muted/50 p-2 rounded border border-border text-xs font-mono leading-relaxed break-words max-h-20 overflow-y-auto">
+              {data.prompt}
+            </div>
+          ) : (
+            <div className="bg-muted/30 p-2 rounded border border-dashed border-border text-xs text-muted-foreground">
+              Connect a Text Input to provide a prompt
+            </div>
+          )}
         </div>
 
         {/* Duration Selector */}
@@ -348,31 +346,13 @@ function GenerateMusicNode({ data, id }: NodeProps<GenerateMusicNodeData>) {
               Download Audio
             </Button>
 
-            {/* Run Node Button */}
-            <Button
-              onClick={() => {
-                const event = new CustomEvent("node-execute", {
-                  detail: { nodeId: id },
-                });
-                window.dispatchEvent(event);
-              }}
-              disabled={isGenerating || data.readOnly}
-              variant="ghost"
-              size="sm"
-              className="w-full text-xs"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Play className="w-3 h-3 mr-1" />
-                  Regenerate
-                </>
-              )}
-            </Button>
+            <RunNodeButton
+              nodeId={id}
+              isExecuting={isGenerating}
+              disabled={data.readOnly}
+              label="Regenerate"
+              loadingLabel="Generating..."
+            />
           </div>
         )}
 
@@ -389,31 +369,13 @@ function GenerateMusicNode({ data, id }: NodeProps<GenerateMusicNodeData>) {
               </p>
             </div>
 
-            {/* Run Node Button */}
-            <Button
-              onClick={() => {
-                const event = new CustomEvent("node-execute", {
-                  detail: { nodeId: id },
-                });
-                window.dispatchEvent(event);
-              }}
-              disabled={isGenerating || data.readOnly || !data.prompt}
-              variant="default"
-              size="sm"
-              className="w-full"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Music className="w-3 h-3 mr-1" />
-                  Generate Music
-                </>
-              )}
-            </Button>
+            <RunNodeButton
+              nodeId={id}
+              isExecuting={isGenerating}
+              disabled={data.readOnly || !data.prompt}
+              label="Generate Music"
+              loadingLabel="Generating..."
+            />
           </div>
         )}
 
