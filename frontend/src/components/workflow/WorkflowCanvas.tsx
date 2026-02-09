@@ -350,40 +350,27 @@ const WorkflowCanvasInner = forwardRef<WorkflowCanvasRef, WorkflowCanvasProps>(
       (newValue: string) => {
         if (!textEditPanel.nodeId) return;
         const field = textEditPanel.field || "prompt";
-
-        // Build the update based on the field
-        const dataUpdate: Record<string, any> = {
-          [field]: newValue,
-        };
-
-        // For prompt field, also update outputs for Text Input nodes
-        if (field === "prompt") {
-          dataUpdate.outputs = { text: newValue };
-        }
-
-        // Update node state
         setNodes((nodes) =>
           nodes.map((node) => {
             if (node.id !== textEditPanel.nodeId) return node;
 
+            // Build the update based on the field
+            const dataUpdate: Record<string, any> = {
+              ...node.data,
+              [field]: newValue,
+            };
+
+            // For prompt field, also update outputs for Text Input nodes
+            if (field === "prompt") {
+              dataUpdate.outputs = { text: newValue };
+            }
+
             return {
               ...node,
-              data: {
-                ...node.data,
-                ...dataUpdate,
-              },
+              data: dataUpdate,
             };
           })
         );
-
-        // Dispatch node-update event to notify downstream nodes
-        const event = new CustomEvent("node-update", {
-          detail: {
-            id: textEditPanel.nodeId,
-            data: dataUpdate,
-          },
-        });
-        window.dispatchEvent(event);
       },
       [textEditPanel.nodeId, textEditPanel.field, setNodes]
     );
