@@ -40,7 +40,6 @@ substitutions:
   _VITE_FIREBASE_MEASUREMENT_ID: ''
   _VITE_ALLOWED_EMAILS: ''
   _VITE_API_BASE_URL: ''
-  _ALLOWED_ORIGINS: ''
   _FIRESTORE_ENVIRONMENT: 'prod'  # Override with 'dev' for dev deployments
   _RATE_LIMIT_MAX: '200'  # Override with higher value for dev
 
@@ -55,9 +54,6 @@ steps:
         EMAILS=$$(echo "${_VITE_ALLOWED_EMAILS}" | sed 's/;;/,/g')
         echo "$$EMAILS" > /workspace/allowed_emails.txt
         echo "Allowed emails: $$EMAILS"
-        ORIGINS=$$(echo "${_ALLOWED_ORIGINS}" | sed 's/;;/,/g')
-        echo "$$ORIGINS" > /workspace/allowed_origins.txt
-        echo "Allowed origins: $$ORIGINS"
 
   # Step 1: Build the Docker image
   - name: 'gcr.io/cloud-builders/docker'
@@ -96,7 +92,6 @@ steps:
     args:
       - '-c'
       - |
-        ORIGINS=$$(cat /workspace/allowed_origins.txt)
         gcloud run deploy ${_SERVICE_NAME} \
           --image ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${_IMAGE_TAG} \
           --region ${_REGION} \
@@ -110,8 +105,7 @@ steps:
           --set-env-vars "REQUIRE_AUTH=${_REQUIRE_AUTH}" \
           --set-env-vars "GCP_PROJECT_ID=${PROJECT_ID}" \
           --set-env-vars "FIRESTORE_ENVIRONMENT=${_FIRESTORE_ENVIRONMENT}" \
-          --set-env-vars "RATE_LIMIT_MAX=${_RATE_LIMIT_MAX}" \
-          --set-env-vars "^@^ALLOWED_ORIGINS=$$ORIGINS"
+          --set-env-vars "RATE_LIMIT_MAX=${_RATE_LIMIT_MAX}"
 
 # Store images in Artifact Registry
 images:
