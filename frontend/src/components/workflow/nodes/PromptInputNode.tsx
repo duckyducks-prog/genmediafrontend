@@ -42,19 +42,17 @@ function PromptInputNode({ data, id }: NodeProps<PromptNodeData>) {
     if (data.readOnly) return;
 
     const newPrompt = e.target.value;
-    setNodes((nodes) =>
-      nodes.map((node) =>
-        node.id === id
-          ? {
-              ...node,
-              data: {
-                ...node.data,
-                prompt: newPrompt,
-                outputs: { text: newPrompt },
-              },
-            }
-          : node,
-      ),
+    window.dispatchEvent(
+      new CustomEvent("node-update", {
+        detail: {
+          id,
+          data: {
+            ...data,
+            prompt: newPrompt,
+            outputs: { text: newPrompt },
+          },
+        },
+      })
     );
   };
 
@@ -135,7 +133,7 @@ function PromptInputNode({ data, id }: NodeProps<PromptNodeData>) {
       {/* Node Content */}
       <div>
         <Textarea
-          defaultValue={data.prompt}
+          value={data.prompt || ''}
           onChange={handleChange}
           placeholder="Enter your prompt..."
           className="min-h-[100px] nodrag"
